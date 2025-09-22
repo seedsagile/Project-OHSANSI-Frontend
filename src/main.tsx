@@ -1,10 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import './index.css'
-import AppRouter from './routes/AppRouter'
+import "./styles/index.css"
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppRouter />
+    <>
+      <h1>Hola rata de mrd</h1>
+    </>
   </React.StrictMode>
 )
