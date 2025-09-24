@@ -10,7 +10,7 @@
     --breakpoint-xl: 1280px;
     --breakpoint-2xl: 1440px;
 
-    /* ─── Paleta de colores: BRAND (Morado principal del dashboard) ─── */
+    /*Paleta de colores*/
     --color-brand-50:  #f5f3ff;
     --color-brand-100: #ede9fe;
     --color-brand-200: #ddd6fe;
@@ -22,17 +22,17 @@
     --color-brand-800: #5b21b6;
     --color-brand-900: #4c1d95;
 
-    /* ─── TEALX – Verde agua para botones/indicadores ─── */
+    
     --color-tealx-500: #14b8a6;
     --color-tealx-600: #0d9488;
     --color-tealx-700: #0f766e;
 
-    /* ─── AMBERX – Amarillo para tarjetas/KPIs ─── */
+    
     --color-amberx-500: #f59e0b;
     --color-amberx-600: #d97706;
     --color-amberx-700: #b45309;
 
-    /* ─── Colores NEUTROS (gris/negro) ─── */
+    
     --color-neutral-50:  #f9fafb;
     --color-neutral-100: #f3f4f6;
     --color-neutral-200: #e5e7eb;
@@ -44,7 +44,7 @@
     --color-neutral-800: #1f2937;
     --color-neutral-900: #111827;
 
-    /* ─── Blanco y negro directo ─── */
+    
     --color-black: #000000;
     --color-white: #ffffff;
 

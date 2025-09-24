@@ -7,9 +7,9 @@ type FilaCompetidorProps = {
     encabezados: (keyof Competidor)[];
 };
 
-// Componente para cada fila de la tabla
+
 const FilaCompetidor = ({ competidor, encabezados }: FilaCompetidorProps) => (
-    // Mejora: Usamos un borde neutro más suave
+    
     <tr className="h-10 hover:bg-neutral-50">
         {encabezados.map((llave) => (
             <td
@@ -42,9 +42,9 @@ export function PaginaImportarCompetidores() {
         <div className="bg-neutral-100 min-h-screen flex items-center justify-center p-4">
             <main className="bg-white w-full max-w-5xl rounded-lg shadow-panel p-6 md:p-8">
                 
-                {/* Mejora: Layout del header con Flexbox para mayor robustez */}
+                
                 <header className="flex justify-between items-center mb-8">
-                    {/* Placeholder invisible para ayudar a centrar el título */}
+                    
                     <div className="w-8"></div>
                     <h1 className="text-3xl md:text-4xl font-bold text-neutral-800">
                         Registrar Competidores
@@ -55,7 +55,7 @@ export function PaginaImportarCompetidores() {
                 </header>
 
                 <section className="flex flex-col md:flex-row gap-4 mb-8">
-                    {/* Mejora: Botón "Cargar CSV" usando un color neutro oscuro */}
+                    
                     <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors duration-300">
                         Cargar CSV
                     </button>
@@ -65,7 +65,7 @@ export function PaginaImportarCompetidores() {
                 </section>
 
                 <section className="overflow-x-auto">
-                    {/* Mejora: Usamos un borde neutro más suave para toda la tabla */}
+                    
                     <table className="w-full border-collapse border border-neutral-200 text-left">
                         <thead>
                             <tr>
@@ -92,7 +92,6 @@ export function PaginaImportarCompetidores() {
                     </table>
                 </section>
 
-                {/* Mejora: Botones alineados a la derecha y con la jerarquía de colores correcta */}
                 <footer className="flex flex-col md:flex-row justify-center items-center gap-50 mt-8">
                     <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors">
                         Volver
