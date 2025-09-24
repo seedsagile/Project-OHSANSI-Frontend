@@ -55,7 +55,7 @@ export function PaginaImportarCompetidores() {
 
                 <section className="flex flex-col md:flex-row gap-4 mb-8">
                     
-                    <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors duration-300">
+                    <button className="bg-neutral-300 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors duration-300">
                         Cargar CSV
                     </button>
                     <div className="flex-grow border-2 border-dashed border-neutral-300 rounded-lg flex items-center justify-center p-4 text-neutral-500">
@@ -92,7 +92,7 @@ export function PaginaImportarCompetidores() {
                 </section>
 
                 <footer className="flex flex-col md:flex-row justify-center items-center gap-50 mt-8">
-                    <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors">
+                    <button className="borde border-black border-2 rounded bg-brand-300 text-black font-semibold py-2 px-6 rounded-lg hover:bg-brand-600 hover:text-white transition-colors">
                         Volver
                     </button>
                     <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors">
