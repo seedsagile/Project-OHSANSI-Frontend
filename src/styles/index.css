@@ -1,59 +1,177 @@
 @import "tailwindcss";
+
 @theme {
-    /* ─── Tipografia base ─── */
-    --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+    /*
+    * --------------------------------------------------------------------------
+    * SECCIÓN 1: PRIMITIVOS - La Paleta de Colores Base
+    * --------------------------------------------------------------------------
+    * Estos son los colores puros. No se usan directamente en los componentes,
+    * sino que se asignan a las variables de rol en la siguiente sección.
+    */
 
-    /* ─── Pantallas Responsives ─── */
-    --breakpoint-sm: 640px;
-    --breakpoint-md: 768px;
-    --breakpoint-lg: 1024px;
-    --breakpoint-xl: 1280px;
-    --breakpoint-2xl: 1440px;
+    /*Color Principal (Azul) - Usado para la marca, enlaces y acciones primarias.*/
+    --color-principal-50:  #eff6ff;
+    --color-principal-100: #dbeafe;
+    --color-principal-200: #bfdbfe;
+    --color-principal-300: #93c5fd;
+    --color-principal-400: #60a5fa;
+    --color-principal-500: #0076FF; /*Tono principal*/
+    --color-principal-600: #005BCC; /*Tono para hovers*/
+    --color-principal-700: #0046a1;
+    --color-principal-800: #003377;
+    --color-principal-900: #002652;
 
-    /*Paleta de colores*/
-    --color-brand-50:  #f5f3ff;
-    --color-brand-100: #ede9fe;
-    --color-brand-200: #ddd6fe;
-    --color-brand-300: #c4b5fd;
-    --color-brand-400: #a78bfa;
-    --color-brand-500: #8b5cf6;
-    --color-brand-600: #7c3aed;   /* color principal */
-    --color-brand-700: #6d28d9;
-    --color-brand-800: #5b21b6;
-    --color-brand-900: #4c1d95;
+    /*Color de Acento (Rojo) - Usado para errores, alertas y acciones destructivas.*/
+    --color-acento-50:  #fef2f2;
+    --color-acento-100: #fee2e2;
+    --color-acento-200: #fecaca;
+    --color-acento-300: #fca5a5;
+    --color-acento-400: #f87171;
+    --color-acento-500: #E02E45; /*Tono principal*/
+    --color-acento-600: #B81C32; /*Tono para hovers*/
+    --color-acento-700: #8f1627;
+    --color-acento-800: #6b101d;
+    --color-acento-900: #4a0b15;
 
-    
-    --color-tealx-500: #14b8a6;
-    --color-tealx-600: #0d9488;
-    --color-tealx-700: #0f766e;
+    /*Colores Neutros - La base para fondos, textos, bordes e inputs.*/
+    --color-neutro-50:  #f9fafb;
+    --color-neutro-100: #f3f4f6;
+    --color-neutro-200: #e5e7eb;
+    --color-neutro-300: #d1d5db; /*Tono para bordes*/
+    --color-neutro-400: #9ca3af;
+    --color-neutro-500: #5A5F66;
+    --color-neutro-600: #4b5563;
+    --color-neutro-700: #2B2F36; /*Tono para texto principal*/
+    --color-neutro-800: #1f2937;
+    --color-neutro-900: #111827;
 
-    
-    --color-amberx-500: #f59e0b;
-    --color-amberx-600: #d97706;
-    --color-amberx-700: #b45309;
+    --color-negro: #000000;
+    --color-blanco: #ffffff;
 
-    
-    --color-neutral-50:  #f9fafb;
-    --color-neutral-100: #f3f4f6;
-    --color-neutral-200: #e5e7eb;
-    --color-neutral-300: #d1d5db;
-    --color-neutral-400: #9ca3af;
-    --color-neutral-500: #6b7280; /* texto secundario */
-    --color-neutral-600: #4b5563;
-    --color-neutral-700: #374151; /* texto principal oscuro */
-    --color-neutral-800: #1f2937;
-    --color-neutral-900: #111827;
+    /* Colores Semanticos Adicionales - Para estados especificos.*/
+    --color-exito-500: #22c55e;
+    --color-exito-600: #16a34a;
+    --color-advertencia-500: #f59e0b;
+    --color-advertencia-600: #d97706;
+    --color-info-500: #3b82f6;
+    --color-info-600: #2563eb;
 
-    
-    --color-black: #000000;
-    --color-white: #ffffff;
+    /*
+    * --------------------------------------------------------------------------
+    * SECCIÓN 2: SEMANTICOS - Asignacion de Roles a los Colores
+    * --------------------------------------------------------------------------
+    * Estas son las variables que usaremos en la aplicación. Hacen referencia
+    * a la paleta de arriba. Si cambiamos un color base, se actualiza en todos
+    * los lugares que usan estas variables de rol.
+    * --------------------------------------------------------------------------
+    */
 
-    /* ─── Colores de estado ─── */
-    --color-success-500: #22c55e;
-    --color-danger-500:  #ef4444;
-    --color-warning-500: #f59e0b;
+    /* --- Roles de Fondo --- */
+    --fondo-principal: var(--color-blanco);           /* Color de fondo general de la página */
+    --fondo-superficie: var(--color-neutro-50);       /* Color para secciones ligeramente distintas al fondo */
+    --fondo-elevado: var(--color-blanco);             /* Color para elementos "flotantes" como modales o dropdowns */
+    --fondo-navbar: var(--color-principal-500);       /* Fondo de la barra de navegación */
 
-    /* ─── Transiciones/easings ─── */
-    --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
-    --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+    /* --- Roles de Texto --- */
+    --texto-titulo: var(--color-negro);               /* Para los títulos H1 más importantes */
+    --texto-subtitulo: var(--color-neutro-700);       /* Para subtítulos H2, H3 */
+    --texto-parrafo: var(--color-neutro-500);         /* Para el cuerpo de texto principal */
+    --texto-suave: var(--color-neutro-400);           /* Para texto de ayuda, placeholders o metadatos */
+    --texto-invertido: var(--color-blanco);           /* Texto que va sobre fondos oscuros o de color */
+    --texto-navbar: var(--color-blanco);              /* Texto de los enlaces de la barra de navegación */
+
+    /* --- Roles de Enlaces --- */
+    --enlace: var(--color-principal-500);
+    --enlace-hover: var(--color-principal-600);
+
+    /* --- Roles de Botones --- */
+    --boton-principal-fondo: var(--color-principal-500);
+    --boton-principal-texto: var(--color-blanco);
+    --boton-principal-hover: var(--color-principal-600);
+    --boton-secundario-fondo: var(--color-neutro-700);
+    --boton-secundario-texto: var(--color-blanco);
+    --boton-secundario-hover: var(--color-neutro-800);
+    --boton-peligro-fondo: var(--color-acento-500);
+    --boton-peligro-hover: var(--color-acento-600);
+    --boton-ghost-texto: var(--color-principal-600);
+    --boton-ghost-hover: rgba(0,118,255,0.1);
+
+    /* --- Roles de Tablas --- */
+    --tabla-encabezado-fondo: var(--color-principal-500);
+    --tabla-encabezado-texto: var(--color-blanco);
+    --tabla-fila-alterna: var(--color-neutro-100);
+    --tabla-hover: rgba(0,118,255,0.06);
+    --tabla-borde: var(--color-neutro-300);
+
+    /* --- Roles de Alertas --- */
+    --alerta-info-fondo: #e0f2ff;
+    --alerta-info-texto: var(--color-info-600);
+    --alerta-exito-fondo: #dcfce7;
+    --alerta-exito-texto: var(--color-exito-600);
+    --alerta-advertencia-fondo: #fef9c3;
+    --alerta-advertencia-texto: var(--color-advertencia-600);
+    --alerta-error-fondo: #fee2e2;
+    --alerta-error-texto: var(--color-acento-600);
+
+    /* --- Roles de Inputs y Formularios --- */
+    --input-fondo: var(--color-blanco);
+    --input-texto: var(--color-neutro-700);
+    --input-placeholder: var(--color-neutro-400);
+    --input-borde: var(--color-neutro-300);
+    --input-hover: var(--color-neutro-400);
+    --input-focus: var(--color-principal-500);
+    --anillo-enfoque: 0 0 0 3px rgba(0, 118, 255, 0.3); /* Sombra de anillo para accesibilidad en focus */
+
+    /*
+   * --------------------------------------------------------------------------
+   * SECCIÓN 3: DARK MODE - Redefinición de Roles para el Tema Oscuro
+   * --------------------------------------------------------------------------
+   * Este bloque se activa automáticamente si el sistema operativo del
+   * usuario está en modo oscuro. Redefine las variables de rol.
+   * --------------------------------------------------------------------------
+   */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            /* --- Fondos en Dark Mode --- */
+            --fondo-principal: #0f1420;
+            --fondo-superficie: #0b1019;
+            --fondo-elevado: #121826;
+
+            /* --- Textos en Dark Mode --- */
+            --texto-titulo: #f3f4f6;
+            --texto-subtitulo: #e5e7eb;
+            --texto-parrafo: #cbd5e1;
+            --texto-suave: #94a3b8;
+            --texto-invertido: var(--color-negro);
+
+            /* --- Bordes y Enlaces en Dark Mode --- */
+            --tabla-borde: #334155;
+            --enlace: #79aaff;
+            --enlace-hover: #9bc0ff;
+
+            /* --- Botones en Dark Mode --- */
+            --boton-secundario-fondo: #2a3346;
+            --boton-secundario-hover: #343f57;
+            --boton-ghost-texto: #9bc0ff;
+            --boton-ghost-hover: rgba(123,167,255,.12);
+
+            /* --- Inputs en Dark Mode --- */
+            --input-fondo: #0f1420;
+            --input-texto: #e5e7eb;
+            --input-placeholder: #8a93a5;
+            --input-borde: #334155;
+            --input-hover: #475569;
+            --anillo-enfoque: 0 0 0 3px rgba(0, 118, 255, 0.35);
+
+            /* --- Alertas en Dark Mode --- */
+            --alerta-info-fondo: #0f1b33;
+            --alerta-info-texto: #9bc0ff;
+            --alerta-exito-fondo: #0f2a1d;
+            --alerta-exito-texto: #87e2a8;
+            --alerta-advertencia-fondo: #2b2106;
+            --alerta-advertencia-texto: #f5c76a;
+            --alerta-error-fondo: #2b0f13;
+            --alerta-error-texto: #ff9aa7;
+        }
+    }
 }
