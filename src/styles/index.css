@@ -1,1 +1,59 @@
 @import "tailwindcss";
+@theme {
+    /* ─── Tipografia base ─── */
+    --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    /* ─── Pantallas Responsives ─── */
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1440px;
+
+    /* ─── Paleta de colores: BRAND (Morado principal del dashboard) ─── */
+    --color-brand-50:  #f5f3ff;
+    --color-brand-100: #ede9fe;
+    --color-brand-200: #ddd6fe;
+    --color-brand-300: #c4b5fd;
+    --color-brand-400: #a78bfa;
+    --color-brand-500: #8b5cf6;
+    --color-brand-600: #7c3aed;   /* color principal */
+    --color-brand-700: #6d28d9;
+    --color-brand-800: #5b21b6;
+    --color-brand-900: #4c1d95;
+
+    /* ─── TEALX – Verde agua para botones/indicadores ─── */
+    --color-tealx-500: #14b8a6;
+    --color-tealx-600: #0d9488;
+    --color-tealx-700: #0f766e;
+
+    /* ─── AMBERX – Amarillo para tarjetas/KPIs ─── */
+    --color-amberx-500: #f59e0b;
+    --color-amberx-600: #d97706;
+    --color-amberx-700: #b45309;
+
+    /* ─── Colores NEUTROS (gris/negro) ─── */
+    --color-neutral-50:  #f9fafb;
+    --color-neutral-100: #f3f4f6;
+    --color-neutral-200: #e5e7eb;
+    --color-neutral-300: #d1d5db;
+    --color-neutral-400: #9ca3af;
+    --color-neutral-500: #6b7280; /* texto secundario */
+    --color-neutral-600: #4b5563;
+    --color-neutral-700: #374151; /* texto principal oscuro */
+    --color-neutral-800: #1f2937;
+    --color-neutral-900: #111827;
+
+    /* ─── Blanco y negro directo ─── */
+    --color-black: #000000;
+    --color-white: #ffffff;
+
+    /* ─── Colores de estado ─── */
+    --color-success-500: #22c55e;
+    --color-danger-500:  #ef4444;
+    --color-warning-500: #f59e0b;
+
+    /* ─── Transiciones/easings ─── */
+    --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
+    --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+}

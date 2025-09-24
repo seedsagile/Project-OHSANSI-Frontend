@@ -2,7 +2,6 @@ import React from 'react';
 import { IconoUsuario } from '../componentes/IconoUsuario';
 import type { Competidor } from '../tipos';
 
-
 type FilaCompetidorProps = {
     competidor: Partial<Competidor>;
     encabezados: (keyof Competidor)[];
@@ -10,11 +9,12 @@ type FilaCompetidorProps = {
 
 // Componente para cada fila de la tabla
 const FilaCompetidor = ({ competidor, encabezados }: FilaCompetidorProps) => (
+    // Mejora: Usamos un borde neutro más suave
     <tr className="h-10 hover:bg-neutral-50">
         {encabezados.map((llave) => (
             <td
                 key={llave}
-                className="border-x border-black p-2 text-sm text-neutral-600"
+                className="border border-neutral-200 p-2 text-sm text-neutral-700"
             >
                 {competidor[llave] || ''}
             </td>
@@ -41,22 +41,22 @@ export function PaginaImportarCompetidores() {
     return (
         <div className="bg-neutral-100 min-h-screen flex items-center justify-center p-4">
             <main className="bg-white w-full max-w-5xl rounded-lg shadow-panel p-6 md:p-8">
-                <header className="relative mb-8 h-12 flex items-center justify-center">
-                    {/* Texto centrado */}
-                    <h1 className="absolute left-1/2 transform -translate-x-1/2 text-3xl md:text-4xl font-bold text-neutral-800">
+                
+                {/* Mejora: Layout del header con Flexbox para mayor robustez */}
+                <header className="flex justify-between items-center mb-8">
+                    {/* Placeholder invisible para ayudar a centrar el título */}
+                    <div className="w-8"></div>
+                    <h1 className="text-3xl md:text-4xl font-bold text-neutral-800">
                         Registrar Competidores
                     </h1>
-
-                    {/* Icono alineado al borde derecho */}
-                    <div className="absolute right-0 pr-2 text-neutral-600">
+                    <div className="text-neutral-600">
                         <IconoUsuario />
                     </div>
                 </header>
 
-
-                {/* Sección de carga de CSV */}
                 <section className="flex flex-col md:flex-row gap-4 mb-8">
-                    <button className="bg-purple-800 text-white hover:text-black font-semibold py-2 px-6 rounded-lg hover:bg-purple-500 transition-colors duration-300">
+                    {/* Mejora: Botón "Cargar CSV" usando un color neutro oscuro */}
+                    <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors duration-300">
                         Cargar CSV
                     </button>
                     <div className="flex-grow border-2 border-dashed border-neutral-300 rounded-lg flex items-center justify-center p-4 text-neutral-500">
@@ -64,15 +64,16 @@ export function PaginaImportarCompetidores() {
                     </div>
                 </section>
 
-                {/* Tabla de datos */}
                 <section className="overflow-x-auto">
-                    <table className="w-full border border-black border-collapse text-left">
+                    {/* Mejora: Usamos un borde neutro más suave para toda la tabla */}
+                    <table className="w-full border-collapse border border-neutral-200 text-left">
                         <thead>
                             <tr>
                                 {encabezadosTabla.map(({ label }) => (
+                                    
                                     <th
                                         key={label}
-                                        className="border bg-purple-800 text-white p-3 bg-brand-50 font-medium text-brand-800"
+                                        className="border-b border-brand-200 bg-brand-600 p-3 font-medium text-white text-sm"
                                     >
                                         {label}
                                     </th>
@@ -91,18 +92,18 @@ export function PaginaImportarCompetidores() {
                     </table>
                 </section>
 
-                {/* Botones de acción */}
-                <div className="flex flex-col md:flex-row justify-center gap-x-50 mt-8">
-                    <button className="bg-purple-800 text-white hover:text-black font-semibold py-2 px-6 rounded-lg hover:bg-purple-500 transition-colors duration-300">
+                {/* Mejora: Botones alineados a la derecha y con la jerarquía de colores correcta */}
+                <footer className="flex flex-col md:flex-row justify-center items-center gap-50 mt-8">
+                    <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors">
                         Volver
                     </button>
-                    <button className="bg-purple-800 text-white hover:text-black font-semibold py-2 px-6 rounded-lg hover:bg-purple-500 transition-colors duration-300">
+                    <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors">
                         Cancelar
                     </button>
-                    <button className="bg-purple-800 text-white hover:text-black font-semibold py-2 px-6 rounded-lg hover:bg-purple-500 transition-colors duration-300">
+                    <button className="bg-brand-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-brand-700 transition-colors">
                         Guardar
                     </button>
-                </div>
+                </footer>
             </main>
         </div>
     );
