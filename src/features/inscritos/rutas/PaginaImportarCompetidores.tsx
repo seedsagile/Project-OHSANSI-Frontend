@@ -9,7 +9,6 @@ type FilaCompetidorProps = {
 
 
 const FilaCompetidor = ({ competidor, encabezados }: FilaCompetidorProps) => (
-    
     <tr className="h-10 hover:bg-neutral-50">
         {encabezados.map((llave) => (
             <td
