@@ -103,13 +103,13 @@ export const FormularioEvaluador = ({ onGuardar, onCancelar }: FormularioEvaluad
                     <div className="flex gap-4 pt-8">
                         <button
                             onClick={handleGuardar}
-                            className="px-8 py-2 border-2 border-gray-800 bg-white text-gray-800 hover:bg-gray-800 hover:text-white transition-colors"
+                            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors"
                         >
                             Guardar
                         </button>
                         <button
                             onClick={onCancelar}
-                            className="px-8 py-2 border-2 border-gray-800 bg-white text-gray-800 hover:bg-gray-800 hover:text-white transition-colors"
+                            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-700 text-blanco hover:bg-gray-800 transition-colors"
                         >
                             Cancelar
                         </button>
