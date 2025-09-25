@@ -25,8 +25,8 @@ export const ModalCrearArea = ({ isOpen, onClose, onGuardar }: ModalCrearAreaPro
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 pointer-events-auto">
                 <h2 className="text-xl font-semibold text-center mb-6">Crear área</h2>
                 
                 <div className="mb-6">
