@@ -1,0 +1,63 @@
+import { useState } from 'react';
+
+type ModalCrearAreaProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    onGuardar: (nombre: string) => void;
+};
+
+export const ModalCrearArea = ({ isOpen, onClose, onGuardar }: ModalCrearAreaProps) => {
+    const [nombre, setNombre] = useState('');
+
+    if (!isOpen) return null;
+
+    const handleGuardar = () => {
+        if (nombre.trim()) {
+            onGuardar(nombre.trim());
+            setNombre('');
+            onClose();
+        }
+    };
+
+    const handleCancelar = () => {
+        setNombre('');
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+                <h2 className="text-xl font-semibold text-center mb-6">Crear área</h2>
+                
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre del Área:
+                    </label>
+                    <input
+                        type="text"
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        placeholder="Ingrese el nombre del área"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        autoFocus
+                    />
+                </div>
+
+                <div className="flex gap-4 justify-center">
+                    <button
+                        onClick={handleCancelar}
+                        className="px-6 py-2 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleGuardar}
+                        className="px-6 py-2 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
+                    >
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
