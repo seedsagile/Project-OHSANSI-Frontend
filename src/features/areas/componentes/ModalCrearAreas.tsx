@@ -3,19 +3,20 @@ import { useState } from 'react';
 type ModalCrearAreaProps = {
     isOpen: boolean;
     onClose: () => void;
-    onGuardar: (nombre: string) => void;
+    onGuardar: (data:{nombre: string, descripcion?: string}) => void;
+    loading?: boolean;
 };
 
-export const ModalCrearArea = ({ isOpen, onClose, onGuardar }: ModalCrearAreaProps) => {
+export const ModalCrearArea = ({ isOpen, onClose, onGuardar, loading=false }: ModalCrearAreaProps) => {
     const [nombre, setNombre] = useState('');
 
     if (!isOpen) return null;
 
     const handleGuardar = () => {
         if (nombre.trim()) {
-            onGuardar(nombre.trim());
+            onGuardar({nombre:nombre.trim()});
             setNombre('');
-            onClose();
+            //onClose();
         }
     };
 
@@ -40,21 +41,24 @@ export const ModalCrearArea = ({ isOpen, onClose, onGuardar }: ModalCrearAreaPro
                         placeholder="Ingrese el nombre del área"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         autoFocus
+                        disabled={loading}
                     />
                 </div>
 
                 <div className="flex gap-4 justify-center">
                     <button
                         onClick={handleCancelar}
+                        disabled = {loading}
                         className="px-6 py-2 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={handleGuardar}
+                        disabled={loading||!nombre.trim()}
                         className="px-6 py-2 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
                     >
-                        Guardar
+                        {loading ?"Guardando.. ":'Guardar'}
                     </button>
                 </div>
             </div>
