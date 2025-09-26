@@ -61,7 +61,8 @@ export function PaginaAreas() {
             await cargarAreas();
             
             // Mostrar mensaje de éxito
-            setMensajeExito(`Área "${nuevaArea.nombre}" creada exitosamente`);
+            const nombreCreada = nuevaArea?.nombre || data.nombre;
+            setMensajeExito(`Área "${nombreCreada}" creada exitosamente`);
             
             // Auto-ocultar mensaje después de 5 segundos
             setTimeout(() => {
