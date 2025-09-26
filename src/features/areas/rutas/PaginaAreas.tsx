@@ -49,13 +49,12 @@ export function PaginaAreas() {
 
     return (
         <div className="min-h-screen p-6">
-            {/* Título principal centrado */}
-            <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">
+            
+            <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">{/* este es para Título principal centrado */}
                 Áreas y Niveles
             </h1>
-
-            {/* Contenedor principal con dos columnas, ojito aqui esta la línea divisoria */}
-            <div className="max-w-7xl mx-auto relative">
+            
+            <div className="max-w-7xl mx-auto relative"> {/* Contenedor principal con dos columnas, ojito aqui esta la línea divisoria */}
                 {/* Línea divisoria vertical */}
                 <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 transform -translate-x-1/2 z-10"></div>
                 
