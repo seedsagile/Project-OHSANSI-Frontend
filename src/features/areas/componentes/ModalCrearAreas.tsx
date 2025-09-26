@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X, Save } from 'lucide-react';
 
 type ModalCrearAreaProps = {
     isOpen: boolean;
@@ -50,15 +51,17 @@ export const ModalCrearArea = ({ isOpen, onClose, onGuardar, loading=false }: Mo
                     <button
                         onClick={handleCancelar}
                         disabled={loading}
-                        className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-700 text-blanco hover:bg-neutro-800 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-700 text-blanco hover:bg-neutro-800 transition-colors disabled:opacity-50"
                     >
+                        <X size={18}/>
                         Cancelar
                     </button>
                     <button
                         onClick={handleGuardar}
                         disabled={loading}
-                        className="font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:opacity-50"
+                        className="inline-flex intems-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:opacity-50"
                     >
+                        <Save size={18}/>
                         {loading ? "Guardando..." : 'Guardar'}
                     </button>
                 </div>
