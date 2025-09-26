@@ -1,7 +1,7 @@
 // src/features/areas/componentes/ModalCrearAreas.tsx
 import { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { crearAreaEsquema, validarNombreUnico } from '../validaciones/esquemas';
+import { crearAreaEsquema, validarNombreUnico, formatearNombre } from '../validaciones/esquemas';
 import type { ErroresValidacion } from '../validaciones/esquemas';
 import type { Area } from '../tipos';
 
@@ -76,7 +76,9 @@ export const ModalCrearArea = ({
 
     const handleGuardar = () => {
         if (validarFormulario()) {
-            onGuardar({ nombre: nombre.trim() });
+            // Formatear el nombre antes de enviarlo (Primera letra mayúscula)
+            const nombreFormateado = formatearNombre(nombre);
+            onGuardar({ nombre: nombreFormateado });
         }
     };
 
