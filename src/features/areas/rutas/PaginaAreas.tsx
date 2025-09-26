@@ -61,7 +61,7 @@ export function PaginaAreas() {
                         <button
                             onClick={() => setModalAbierto(true)}
                             disabled={loading}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 px-4 py-2 font-semibold rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <IconoPlus />
                             Nueva Área
@@ -88,25 +88,25 @@ export function PaginaAreas() {
 
                     {/* Tabla ocupa todo el espacio restante */}
                     <div className="flex-1 overflow-auto">
-                        <table className="w-full border border-gray-200 rounded-lg">
+                        <table className="w-full border border-principal-500 rounded-lg">
                             <thead>
-                                <tr className="bg-gray-100 border-b border-gray-200">
-                                    <th className="text-left py-3 px-4 font-medium text-gray-600">Nro</th>
-                                    <th className="text-left py-3 px-4 font-medium text-gray-600">Nombre de Área</th>
+                                <tr className="bg-principal-500 text-blanco">
+                                    <th className="text-left py-3 px-4 font-simibold">Nro</th>
+                                    <th className="text-left py-3 px-4 font-simibold">Nombre de Área</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {areas.length === 0 ? (
                                     <tr>
-                                        <td colSpan={2} className="py-12 px-4 text-center text-gray-500">
+                                        <td colSpan={2} className="text-center p-10 text-gray-400">
                                             No hay áreas registradas
                                         </td>
                                     </tr>
                                 ) : (
                                     areas.map((area) => (
-                                        <tr key={area.id_area} className="border-b border-gray-100 hover:bg-gray-50">
-                                            <td className="py-3 px-4 text-gray-800">{area.id_area}</td>
-                                            <td className="py-3 px-4 text-gray-800">{area.nombre}</td>
+                                        <tr key={area.id_area} className="border-b border-principal-500 hover:bg-principal-600 hover:text-blanco transition-colors">
+                                            <td className="py-3 px-4">{area.id_area}</td>
+                                            <td className="py-3 px-4">{area.nombre}</td>
                                         </tr>
                                     ))
                                 )}

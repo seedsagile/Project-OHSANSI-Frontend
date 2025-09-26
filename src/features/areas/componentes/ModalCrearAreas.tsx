@@ -49,14 +49,14 @@ export const ModalCrearArea = ({ isOpen, onClose, onGuardar, loading=false }: Mo
                     <button
                         onClick={handleCancelar}
                         disabled = {loading}
-                        className="px-6 py-2 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
+                        className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-700 text-blanco hover:bg-neutro-800 transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={handleGuardar}
                         disabled={loading||!nombre.trim()}
-                        className="px-6 py-2 bg-gray-800 text-white font-medium rounded-md hover:bg-gray-900 transition-colors"
+                        className="font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors"
                     >
                         {loading ?"Guardando.. ":'Guardar'}
                     </button>
