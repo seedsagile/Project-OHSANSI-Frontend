@@ -59,6 +59,7 @@ export function PaginaImportarCompetidores() {
       { accessorKey: 'grado', header: 'Grado' },
       { accessorKey: 'nivel', header: 'Nivel' },
       { accessorKey: 'area', header: 'Área' }, // 'área' -> 'area'
+      {accessorKey: 'tipo de inscripcion', header: 'Tipo de Inscripción' }, // individual o grupal
     ],
     []
   );
@@ -86,9 +87,11 @@ export function PaginaImportarCompetidores() {
         <section className="flex items-center gap-6 mb-8">
           <button 
             onClick={open}
-            className="bg-principal-500 text-blanco font-semibold py-2 px-5 rounded-md hover:bg-principal-600 transition-all duration-base shadow-sombra-2 hover:shadow-sombra-3 hover:-translate-y-px"
+            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500/10 text-principal-600 hover:bg-principal-500/20 transition-colors"
           >
-            Cargar CSV
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 14 12 9 7 14"/><line x1="12" y1="9" x2="12" y2="21"/></svg>
+            <span>Cargar CSV</span>
+
           </button>
           <div {...getRootProps({ className: 'flex-grow border-2 border-dashed border-neutro-300 rounded-lg flex items-center justify-center p-4 text-neutro-400' })}>
             <input {...getInputProps()} />
@@ -141,15 +144,21 @@ export function PaginaImportarCompetidores() {
         </div>
 
         <footer className="flex justify-end items-center gap-4 mt-12">
-            <button className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
-              Volver
-            </button>
-            <button className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-700 text-blanco hover:bg-neutro-800 transition-colors">
-              Cancelar
-            </button>
-            <button className="font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors">
-              Guardar
-            </button>
+          {/* Botón Terciario (Gris suave) */}
+          <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Volver</span>
+          </button>
+          {/* Botones Secundarios (Gris oscuro con fondo suave) */}
+          <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Cancelar</span>
+          </button>
+          {/* Botón Primario Principal (Sólido para máximo énfasis) */}
+          <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Guardar</span>
+          </button>
         </footer>
       </main>
     </div>
