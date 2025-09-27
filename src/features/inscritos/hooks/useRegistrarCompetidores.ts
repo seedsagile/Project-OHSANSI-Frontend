@@ -9,12 +9,19 @@ import type { FileRejection } from 'react-dropzone';
 import { separarNombreCompleto } from '../../responsables/hooks/useAsignarResponsable';
 
 
-const ENCABEZADOS_REQUERIDOS = ['nombre', 'ci', 'telftutor', 'colegio', 'departamento', 'grado', 'nivel', 'area'];
+const ENCABEZADOS_REQUERIDOS = ['nombre', 'ci', 'telftutor', 'colegio', 'departamento', 'grado', 'nivel', 'area', 'tipodeinscripcion'];
 
 
 const filaSchema = z.object({
     nombre: z.string().min(1, 'El nombre no puede estar vacío.'),
     ci: z.string().min(1, 'El CI no puede estar vacío.'),
+    telftutor: z.string().min(1, 'El teléfono del tutor no puede estar vacío.'),
+    colegio: z.string().min(1, 'El colegio no puede estar vacío.'),
+    departamento: z.string().min(1, 'El departamento no puede estar vacío.'),
+    grado: z.string().min(1, 'El grado no puede estar vacío.'),
+    nivel: z.string().min(1, 'El nivel no puede estar vacío.'),
+    area: z.string().min(1, 'La área no puede estar vacía.'),
+    tipodeinscripcion: z.string().min(1, 'El tipo de inscripción no puede estar vacío.'),
 });
 
 export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (msg: string) => void; onError: (msg: string) => void; }) {
