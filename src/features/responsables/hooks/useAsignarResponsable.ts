@@ -12,7 +12,7 @@ function separarNombreCompleto(nombreCompleto: string): { nombre: string; apelli
     return { nombre: '', apellido: '' };
   }
 
-  const palabras = nombreCompleto.trim().split(' ').filter(p => p); // Divide y elimina espacios extra
+  const palabras = nombreCompleto.trim().split(' ').filter(p => p);
 
   if (palabras.length <= 1) {
     return { nombre: palabras[0] || '', apellido: '' };
@@ -22,7 +22,6 @@ function separarNombreCompleto(nombreCompleto: string): { nombre: string; apelli
     return { nombre: palabras[0], apellido: palabras[1] };
   }
 
-  // Si hay 3 o más palabras, los dos últimos son apellidos
   const apellido = palabras.slice(-2).join(' ');
   const nombre = palabras.slice(0, -2).join(' ');
 
@@ -83,17 +82,13 @@ export function useAsignarResponsable() {
   });
 
   const onSubmit = (data: FormularioData) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Usamos nuestra función de utilidad para hacer la separación
     const { nombre, apellido } = separarNombreCompleto(data.nombreCompleto);
-    // --- FIN DE LA MODIFICACIÓN ---
-
     const payload: PayloadResponsable = {
       codigo_encargado: data.codigo_encargado,
       fecha_asignacion: format(new Date(), 'yyyy-MM-dd'),
       persona: {
-        nombre: nombre, // Usamos el nombre separado
-        apellido: apellido, // Usamos el apellido separado
+        nombre: nombre,
+        apellido: apellido, 
         ci: data.ci,
         email: data.email,
         fecha_nac: '1990-01-01',
@@ -101,7 +96,6 @@ export function useAsignarResponsable() {
         telefono: generarTelefonoRandom(),
       },
     };
-    
     mutate(payload);
   };
 

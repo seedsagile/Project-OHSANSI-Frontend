@@ -1,7 +1,6 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import type { FormularioData } from '../IndexResponsable';
 
-// Las props se simplifican
 type Props = {
   register: UseFormRegister<FormularioData>;
   errors: FieldErrors<FormularioData>;
@@ -9,11 +8,10 @@ type Props = {
 
 export function FormularioAsignarResponsable({ register, errors }: Props) {
   return (
-    // Se elimina el tag <form> de este componente
+    
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-neutro-800">Datos del Responsable</h2>
       
-      {/* Campo: Nombre Completo */}
       <div>
         <label htmlFor="nombreCompleto" className="block text-md font-medium text-neutro-600 mb-1">
           Nombre completo del responsable
@@ -28,7 +26,6 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         {errors.nombreCompleto && <p className="text-acento-600 text-sm mt-1">{errors.nombreCompleto.message}</p>}
       </div>
 
-      {/* Campo: Correo Institucional */}
       <div>
         <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
           Correo electrónico institucional
@@ -43,7 +40,6 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         {errors.email && <p className="text-acento-600 text-sm mt-1">{errors.email.message}</p>}
       </div>
 
-      {/* Campo: Carnet de Identidad */}
       <div>
         <label htmlFor="ci" className="block text-md font-medium text-neutro-600 mb-1">
           Carnet de Identidad
@@ -58,7 +54,6 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         {errors.ci && <p className="text-acento-600 text-sm mt-1">{errors.ci.message}</p>}
       </div>
       
-      {/* Campo: Código de Acceso */}
       <div>
         <label htmlFor="codigo_encargado" className="block text-md font-medium text-neutro-600 mb-1">
           Código de Acceso de Responsable

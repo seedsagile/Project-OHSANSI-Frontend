@@ -9,17 +9,17 @@ export type Persona = {
   email: string;
 };
 
-// Define la estructura del payload que se enviará a la API
+// Define la estructura del payload que se enviara a la API
 export type PayloadResponsable = {
   codigo_encargado: string;
   fecha_asignacion: string;
   persona: Persona;
 };
 
-// Tipo para los datos que vienen del formulario.
+// Tipo para los datos que vienen del formulario
 export type FormularioData = {
     nombreCompleto: string;
     email: string;
     ci: string;
-    codigo_encargado: string; // El usuario lo ingresará directamente
+    codigo_encargado: string;
 };

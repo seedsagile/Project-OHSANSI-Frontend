@@ -3,7 +3,6 @@ import { Spinner } from '../components/Spinner';
 import { useAsignarResponsable } from '../hooks/useAsignarResponsable';
 
 export function PaginaAsignarResponsable() {
-  // El hook se llama aquí, en el componente padre.
   const { 
     register, 
     handleSubmit, 
@@ -21,7 +20,6 @@ export function PaginaAsignarResponsable() {
           </h1>
         </header>
 
-        {/* El tag <form> ahora vive aquí y envuelve al componente de campos */}
         <form id="asignar-responsable-form" onSubmit={handleSubmit}>
           <FormularioAsignarResponsable
             register={register}
