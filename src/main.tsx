@@ -12,11 +12,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { PaginaEvaluadores } from './features/evaluadores/rutas/PaginaEvaluadores';
+//import { PaginaAsignarEvaluador} from './feature/evaluadores/routes/PaginaAsignarEvaluador';
+import { PaginaAsignarEvaluador } from './features/evaluadores/routes/PaginaAsignarEvaluador';
 import "./styles/index.css";
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <PaginaEvaluadores />
+    <PaginaAsignarEvaluador />
   </React.StrictMode>
 );
