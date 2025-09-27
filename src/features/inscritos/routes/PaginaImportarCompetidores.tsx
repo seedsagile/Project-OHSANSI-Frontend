@@ -8,11 +8,9 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { IconoUsuario } from '../componentes/IconoUsuario';
-import type { Competidor } from '../tipos';
+import { IconoUsuario } from '../components/IconoUsuario';
+import type { Competidor } from '../types/indexInscritos';
 
-// Esta función "limpia" los encabezados del CSV.
-// Por ejemplo: " Nombre Completo " -> "nombrecompleto"
 const normalizarEncabezado = (header: string) => {
   return header.trim().toLowerCase().replace(/\s+/g, '');
 };
@@ -29,7 +27,6 @@ export function PaginaImportarCompetidores() {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        // ¡LA SOLUCIÓN! Usamos la función para normalizar los encabezados.
         transformHeader: header => normalizarEncabezado(header),
         complete: (results: ParseResult<Competidor>) => {
           console.log("Datos parseados (después de normalizar encabezados):", results.data);
@@ -50,16 +47,15 @@ export function PaginaImportarCompetidores() {
 
   const columns = useMemo<ColumnDef<Competidor>[]>(
     () => [
-      // Aseguramos que los accessorKey coincidan con los encabezados normalizados
       { accessorKey: 'nombre', header: 'Nombre' },
       { accessorKey: 'ci', header: 'CI' },
-      { accessorKey: 'telftutor', header: 'Telf. Tutor' }, // 'telf. tutor' -> 'telftutor'
+      { accessorKey: 'telftutor', header: 'Telf. Tutor' },
       { accessorKey: 'colegio', header: 'Colegio' },
       { accessorKey: 'departamento', header: 'Departamento' },
       { accessorKey: 'grado', header: 'Grado' },
       { accessorKey: 'nivel', header: 'Nivel' },
-      { accessorKey: 'area', header: 'Área' }, // 'área' -> 'area'
-      {accessorKey: 'tipo de inscripcion', header: 'Tipo de Inscripción' }, // individual o grupal
+      { accessorKey: 'area', header: 'Área' }, 
+      {accessorKey: 'tipo de inscripcion', header: 'Tipo de Inscripción' },
     ],
     []
   );
