@@ -1,5 +1,5 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
-import type { FormularioData } from '../tipos/IndexResponsable';
+import type { FormularioData } from '../IndexResponsable';
 
 type Props = {
   register: UseFormRegister<FormularioData>;
