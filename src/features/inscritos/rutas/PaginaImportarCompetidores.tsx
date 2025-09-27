@@ -1,114 +1,166 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import Papa from 'papaparse';
+import type { ParseResult } from 'papaparse';
 import {
-    useReactTable,
-    getCoreRowModel,
-    flexRender,
-    type ColumnDef,
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  type ColumnDef,
 } from '@tanstack/react-table';
 import { IconoUsuario } from '../componentes/IconoUsuario';
 import type { Competidor } from '../tipos';
 
-const datosDeEjemplo: Competidor[] = [
-  { nombre: 'Ana García', ci: '1234567', telfTutor: '77712345', colegio: 'Colegio Don Bosco', departamento: 'Cochabamba', grado: '5to', nivel: 'Secundaria', area: 'Matemáticas' },
-  { nombre: 'Juan Pérez', ci: '7654321', telfTutor: '77754321', colegio: 'Colegio La Salle', departamento: 'Santa Cruz', grado: '6to', nivel: 'Secundaria', area: 'Física' },
-  { nombre: 'María López', ci: '9876543', telfTutor: '77798765', colegio: 'Instituto Americano', departamento: 'La Paz', grado: '4to', nivel: 'Secundaria', area: 'Química' },
-  { nombre: 'Carlos Quispe', ci: '8765432', telfTutor: '77787654', colegio: 'Colegio Alemán', departamento: 'Cochabamba', grado: '5to', nivel: 'Secundaria', area: 'Biología' },
-  { nombre: 'Lucía Fernández', ci: '2345678', telfTutor: '77723456', colegio: 'Hughes Schools', departamento: 'Tarija', grado: '6to', nivel: 'Secundaria', area: 'Informática' },
-  { nombre: 'Pedro Mamani', ci: '8765433', telfTutor: '77787655', colegio: 'Saint Andrew\'s', departamento: 'La Paz', grado: '3ro', nivel: 'Secundaria', area: 'Robótica' },
-  { nombre: 'Sofía Rojas', ci: '3456789', telfTutor: '77734567', colegio: 'Franco Boliviano', departamento: 'Santa Cruz', grado: '5to', nivel: 'Secundaria', area: 'Matemáticas' },
-  { nombre: 'Miguel Choque', ci: '4567890', telfTutor: '77745678', colegio: 'Colegio Don Bosco', departamento: 'Cochabamba', grado: '4to', nivel: 'Secundaria', area: 'Física' },
-  { nombre: 'Valeria Mendoza', ci: '5678901', telfTutor: '77756789', colegio: 'La Salle', departamento: 'Beni', grado: '6to', nivel: 'Secundaria', area: 'Química' },
-];
+// Esta función "limpia" los encabezados del CSV.
+// Por ejemplo: " Nombre Completo " -> "nombrecompleto"
+const normalizarEncabezado = (header: string) => {
+  return header.trim().toLowerCase().replace(/\s+/g, '');
+};
 
 export function PaginaImportarCompetidores() {
-    const [data] = useState<Competidor[]>(() => [...datosDeEjemplo]);
+  const [data, setData] = useState<Competidor[]>([]);
+  const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
 
-    const columns = useMemo<ColumnDef<Competidor>[]>(
-        () => [
-            { accessorKey: 'nombre', header: 'Nombre' },
-            { accessorKey: 'ci', header: 'CI' },
-            { accessorKey: 'telfTutor', header: 'Telf. Tutor' },
-            { accessorKey: 'colegio', header: 'Colegio' },
-            { accessorKey: 'departamento', header: 'Departamento' },
-            { accessorKey: 'grado', header: 'Grado' },
-            { accessorKey: 'nivel', header: 'Nivel' },
-            { accessorKey: 'area', header: 'Área' },
-        ],
-        []
-    );
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      setNombreArchivo(file.name);
 
-    const table = useReactTable({
-        data,
-        columns,
-        getCoreRowModel: getCoreRowModel(),
-    });
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        // ¡LA SOLUCIÓN! Usamos la función para normalizar los encabezados.
+        transformHeader: header => normalizarEncabezado(header),
+        complete: (results: ParseResult<Competidor>) => {
+          console.log("Datos parseados (después de normalizar encabezados):", results.data);
+          setData(results.data);
+        },
+        error: (error: Error) => {
+          console.error("Error al parsear el archivo:", error);
+        }
+      });
+    }
+  }, []);
 
-    return (
-        <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-            <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-8">
-                <header className="flex justify-between items-center mb-10">
-                    <div className="w-8"></div>
-                        <h1 className="text-4xl font-extrabold text-negro tracking-tighter">
-                            Registrar Competidores
-                        </h1>
-                    <div className="text-neutro-500">
-                        <IconoUsuario />
-                    </div>
-                </header>
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    onDrop,
+    noClick: true,
+    accept: { 'text/csv': ['.csv'] }
+  });
 
-                <section className="flex items-center gap-6 mb-8">
-                    <button className="bg-principal-500 text-blanco font-semibold py-2 px-5 rounded-md hover:bg-principal-600 transition-all duration-base shadow-sombra-2 hover:shadow-sombra-3 hover:-translate-y-px">
-                        Cargar CSV
-                    </button>
-                    <div className="flex-grow border-2 border-dashed border-neutro-300 rounded-lg flex items-center justify-center p-4 text-neutro-400">
-                        <span>o soltar archivo aquí</span>
-                    </div>
-                </section>
-                <div className="rounded-lg border border-neutro-200 overflow-hidden">
-                    <div className="max-h-96 overflow-y-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-principal-500 sticky top-0 z-10">
-                                {table.getHeaderGroups().map(headerGroup => (
-                                    <tr key={headerGroup.id}>
-                                        {headerGroup.headers.map(header => (
-                                            <th
-                                                key={header.id}
-                                                className="p-4 text-sm font-bold text-blanco tracking-wider uppercase"
-                                            >
-                                                {flexRender(header.column.columnDef.header, header.getContext())}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </thead>
-                            <tbody className="divide-y divide-neutro-200">
-                                {table.getRowModel().rows.map(row => (
-                                    <tr key={row.id} className="even:bg-neutro-100 hover:bg-principal-100 transition-colors">
-                                        {row.getVisibleCells().map(cell => (
-                                            <td key={cell.id} className="p-4 text-neutro-500">
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+  const columns = useMemo<ColumnDef<Competidor>[]>(
+    () => [
+      // Aseguramos que los accessorKey coincidan con los encabezados normalizados
+      { accessorKey: 'nombre', header: 'Nombre' },
+      { accessorKey: 'ci', header: 'CI' },
+      { accessorKey: 'telftutor', header: 'Telf. Tutor' }, // 'telf. tutor' -> 'telftutor'
+      { accessorKey: 'colegio', header: 'Colegio' },
+      { accessorKey: 'departamento', header: 'Departamento' },
+      { accessorKey: 'grado', header: 'Grado' },
+      { accessorKey: 'nivel', header: 'Nivel' },
+      { accessorKey: 'area', header: 'Área' }, // 'área' -> 'area'
+      {accessorKey: 'tipo de inscripcion', header: 'Tipo de Inscripción' }, // individual o grupal
+    ],
+    []
+  );
 
-                <footer className="flex justify-end items-center gap-4 mt-12">
-                    <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
-                        Volver
-                    </button>
-                    <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-700 text-blanco hover:bg-neutro-800 transition-colors">
-                        Cancelar
-                    </button>
-                    <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors">
-                        Guardar
-                    </button>
-                </footer>
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
-            </main>
+  return (
+    <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
+      <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-8">
+        
+        <header className="flex justify-between items-center mb-10">
+          <div className="w-8"></div>
+          <h1 className="text-4xl font-extrabold text-negro tracking-tighter">
+            Registrar Competidores
+          </h1>
+          <div className="text-neutro-500">
+            <IconoUsuario />
+          </div>
+        </header>
+
+        <section className="flex items-center gap-6 mb-8">
+          <button 
+            onClick={open}
+            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500/10 text-principal-600 hover:bg-principal-500/20 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 14 12 9 7 14"/><line x1="12" y1="9" x2="12" y2="21"/></svg>
+            <span>Cargar CSV</span>
+
+          </button>
+          <div {...getRootProps({ className: 'flex-grow border-2 border-dashed border-neutro-300 rounded-lg flex items-center justify-center p-4 text-neutro-400' })}>
+            <input {...getInputProps()} />
+            {isDragActive ? (
+              <p className="text-principal-500 font-semibold">Suelta el archivo aquí...</p>
+            ) : (
+              <p>{nombreArchivo || 'o soltar archivo aquí'}</p>
+            )}
+          </div>
+        </section>
+
+        <div className="rounded-lg border border-neutro-200 overflow-hidden">
+          <div className="max-h-96 overflow-y-auto">
+            <table className="w-full text-left">
+              <thead className="bg-principal-500 sticky top-0 z-10">
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="divide-y divide-neutro-200">
+                {table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="text-center p-10 text-neutro-400">
+                      Aún no se han cargado datos.
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map(row => (
+                    <tr key={row.id} className="even:bg-neutro-100 hover:bg-principal-100 transition-colors">
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id} className="p-4 text-neutro-500">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-    );
+
+        <footer className="flex justify-end items-center gap-4 mt-12">
+          {/* Botón Terciario (Gris suave) */}
+          <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Volver</span>
+          </button>
+          {/* Botones Secundarios (Gris oscuro con fondo suave) */}
+          <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Cancelar</span>
+          </button>
+          {/* Botón Primario Principal (Sólido para máximo énfasis) */}
+          <button className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Guardar</span>
+          </button>
+        </footer>
+      </main>
+    </div>
+  );
 }
