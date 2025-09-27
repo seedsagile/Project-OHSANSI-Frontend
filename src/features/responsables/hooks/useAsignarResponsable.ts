@@ -5,14 +5,9 @@ import { useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { AxiosError } from 'axios';
 
-// Asumo que estos son tus archivos de tipos y servicios
 import { asignarResponsableAPI } from '../services/ApiResposableArea';
 import type { FormularioData, PayloadResponsable } from '../tipos/IndexResponsable';
 
-/**
- * Define la estructura esperada para la respuesta de error de la API.
- * Esto nos permite evitar el uso de 'any'.
- */
 type ApiErrorResponse = {
   error: string;
 };
@@ -46,10 +41,7 @@ function generarTelefonoRandom(): string {
   }
   return primerDigito + restoNumero;
 }
-/**
- * Esquema de validación de Zod que implementa todos los criterios
- * de aceptación para el formulario del responsable.
- */
+
 const schemaResponsable = z.object({
   nombreCompleto: z.string()
     .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
@@ -70,10 +62,6 @@ const schemaResponsable = z.object({
     .max(10, 'El campo Código de acceso tiene un límite máximo de 10 caracteres.'),
 });
 
-/**
- * Hook personalizado que encapsula toda la lógica para registrar un responsable.
- * @param mostrarModal - Función callback para mostrar un modal de feedback.
- */
 export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
   const {
     register,
@@ -82,34 +70,28 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
     reset,
   } = useForm<FormularioData>({
     resolver: zodResolver(schemaResponsable),
-    mode: 'onBlur', // Mejora la UX validando al perder el foco
+    mode: 'onBlur',
   });
 
   const { mutate, isPending } = useMutation({
     mutationFn: asignarResponsableAPI,
     onSuccess: () => {
       mostrarModal('success', '¡Registro Exitoso!', 'El nuevo responsable ha sido registrado correctamente.');
-      reset(); // Limpia el formulario tras el éxito
+      reset();
     },
     onError: (error: AxiosError<ApiErrorResponse>) => {
-      // Manejo de errores de la API con tipos seguros
       const errorMessage = error.response?.data?.error || "Ocurrió un error inesperado.";
 
       if (errorMessage.includes("Ya existe un responsable asignado para esta área")) {
         mostrarModal('error', 'Área ya Asignada', errorMessage);
       } else if (errorMessage.toLowerCase().includes("duplicate")) {
-         mostrarModal('error', 'Registro Duplicado', 'El CI, correo o código de encargado ya existe en el sistema.');
+        mostrarModal('error', 'Registro Duplicado', 'El CI, correo o código de encargado ya existe en el sistema.');
       } else {
         mostrarModal('error', 'Error del Servidor', errorMessage);
       }
       console.error(error);
     },
   });
-
-  /**
-   * Procesa los datos del formulario, los transforma al formato esperado
-   * por la API y ejecuta la mutación para enviarlos.
-   */
   const onSubmit = (data: FormularioData) => {
     const { nombre, apellido } = separarNombreCompleto(data.nombreCompleto);
 
@@ -121,7 +103,6 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
         apellido: apellido,
         ci: data.ci,
         email: data.email,
-        // Datos placeholder como se definió
         fecha_nac: '1990-01-01',
         genero: 'M',
         telefono: generarTelefonoRandom(),
