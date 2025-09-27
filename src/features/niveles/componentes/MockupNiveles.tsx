@@ -23,12 +23,14 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     }
   }, [areaSeleccionada]);
 
+  // Función para cargar niveles desde backend
   const cargarNiveles = async (idArea: number) => {
     try {
       setLoading(true);
       const todosNiveles = await getNiveles();
       // Filtramos solo los niveles de esta área
-      setNiveles(todosNiveles.filter((n) => n.orden === idArea));
+      const nivelesFiltrados = todosNiveles.filter((n) => n.orden === idArea);
+      setNiveles(nivelesFiltrados);
     } catch (error) {
       console.error("Error al cargar niveles:", error);
     } finally {
@@ -36,16 +38,21 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     }
   };
 
+  // Crear un nuevo nivel
   const handleCrearNivel = async (data: {
     nombre: string;
     descripcion?: string;
     orden: number;
   }) => {
+    if (!areaSeleccionada) return;
+
     try {
       setLoading(true);
-      const nuevo = await createNivel(data);
-      // Actualizamos la lista de niveles
-      setNiveles((prev) => [...prev, nuevo]);
+      await createNivel(data);
+
+      // Recargar niveles del área seleccionada desde backend
+      await cargarNiveles(areaSeleccionada.id_area);
+
       setModalAbierto(false);
     } catch (error) {
       console.error("Error al crear nivel:", error);
@@ -90,10 +97,10 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
                 ) : (
                   niveles.map((nivel, index) => (
                     <tr
-                      key={index}
+                      key={nivel.id_nivel}
                       className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
                     >
-                      <td className="py-4 px-4">{nivel.orden}</td>
+                      <td className="py-4 px-4">{nivel.id_nivel}</td>
                       <td className="py-4 px-4">{nivel.nombre}</td>
                     </tr>
                   ))

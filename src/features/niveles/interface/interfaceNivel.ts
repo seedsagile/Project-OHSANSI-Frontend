@@ -1,5 +1,5 @@
 export interface Nivel {
-  id?: number;
+  id_nivel?: number;
   nombre: string;
   descripcion?: string;
   orden: number;
