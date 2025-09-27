@@ -12,7 +12,7 @@ type ApiErrorResponse = {
   error: string;
 };
 
-function separarNombreCompleto(nombreCompleto: string): { nombre: string; apellido: string } {
+export function separarNombreCompleto(nombreCompleto: string): { nombre: string; apellido: string } {
   if (!nombreCompleto || typeof nombreCompleto !== 'string') {
     return { nombre: '', apellido: '' };
   }
@@ -33,7 +33,7 @@ function separarNombreCompleto(nombreCompleto: string): { nombre: string; apelli
   return { nombre, apellido };
 }
 
-function generarTelefonoRandom(): string {
+export function generarTelefonoRandom(): string {
   const primerDigito = Math.random() < 0.5 ? '6' : '7';
   let restoNumero = '';
   for (let i = 0; i < 7; i++) {
