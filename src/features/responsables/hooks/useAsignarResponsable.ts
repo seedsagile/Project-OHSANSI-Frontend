@@ -123,7 +123,7 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
         email: data.email,
         // Datos placeholder como se definió
         fecha_nac: '1990-01-01',
-        genero: 'O',
+        genero: 'M',
         telefono: generarTelefonoRandom(),
       },
     };
