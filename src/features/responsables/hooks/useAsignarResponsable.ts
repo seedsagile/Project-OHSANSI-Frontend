@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
-import type { FormularioData, PayloadResponsable } from '../IndexResponsable';
+import type { FormularioData, PayloadResponsable } from '../tipos/IndexResponsable';
 import { asignarResponsableAPI } from '../services/ApiResposableArea';
 
 function separarNombreCompleto(nombreCompleto: string): { nombre: string; apellido: string } {
