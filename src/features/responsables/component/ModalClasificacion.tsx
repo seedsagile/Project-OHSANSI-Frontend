@@ -7,15 +7,14 @@ import {
 type ModalClasificacionProps = {
   isOpen: boolean;
   onClose: () => void;
-  tipo: "nota" | "cantidad"; // nota mínima o cantidad máxima
 };
 
 export const ModalClasificacion: React.FC<ModalClasificacionProps> = ({
   isOpen,
   onClose,
-  tipo,
 }) => {
-  const [valor, setValor] = useState("");
+  const [notaMinima, setNotaMinima] = useState("");
+  const [cantidadMaxima, setCantidadMaxima] = useState("");
   const [nombre, setNombre] = useState("");
   const [orden, setOrden] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -23,28 +22,28 @@ export const ModalClasificacion: React.FC<ModalClasificacionProps> = ({
 
   if (!isOpen) return null;
 
-  const label =
-    tipo === "nota" ? "Nota mínima" : "Cantidad máxima a clasificar";
-
   const handleGuardar = async () => {
-    // Validar campos básicos
-    if (!valor || !nombre || !orden) {
+    // Validar campos obligatorios
+    if (!notaMinima || !cantidadMaxima || !nombre || !orden) {
       alert("Por favor completa todos los campos obligatorios.");
       return;
     }
 
-    const nuevaFase: ParametroClasificacion = {
-      valor: Number(valor),
+    const nuevaFase: ParametroClasificacion & {
+      Nota_minima_clasificacion: number;
+      cantidad_maxima_de_clasificados: number;
+    } = {
+      valor: Number(notaMinima), // seguir usando valor por compatibilidad
       nombre,
       orden: Number(orden),
       descripcion: descripcion || undefined,
+      Nota_minima_clasificacion: Number(notaMinima),
+      cantidad_maxima_de_clasificados: Number(cantidadMaxima),
     };
 
     try {
       setLoading(true);
       const creado = await crearFase(nuevaFase);
-
-      // Mostrar alert de confirmación
       alert(
         `Fase enviada al backend correctamente:\n${JSON.stringify(
           creado,
@@ -54,7 +53,8 @@ export const ModalClasificacion: React.FC<ModalClasificacionProps> = ({
       );
 
       // Limpiar campos después de guardar
-      setValor("");
+      setNotaMinima("");
+      setCantidadMaxima("");
       setNombre("");
       setOrden("");
       setDescripcion("");
@@ -71,17 +71,25 @@ export const ModalClasificacion: React.FC<ModalClasificacionProps> = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
       <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-semibold text-center mb-6">
-          Añadir {label}
-        </h2>
+        <h2 className="text-xl font-semibold text-center mb-6">Añadir Fase</h2>
 
         <div className="space-y-4">
           <div>
             <input
               type="number"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder={label}
+              value={notaMinima}
+              onChange={(e) => setNotaMinima(e.target.value)}
+              placeholder="Nota mínima"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 border-gray-300 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <input
+              type="number"
+              value={cantidadMaxima}
+              onChange={(e) => setCantidadMaxima(e.target.value)}
+              placeholder="Cantidad máxima a clasificar"
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 border-gray-300 focus:ring-blue-500"
             />
           </div>
