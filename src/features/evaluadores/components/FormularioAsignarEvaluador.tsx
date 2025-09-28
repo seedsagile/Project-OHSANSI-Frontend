@@ -28,20 +28,6 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
-          Correo electrónico institucional
-        </label>
-        <input
-          type="email"
-          id="email"
-          placeholder="ejemplo@institucion.edu"
-          {...register('email')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.email && <p className="text-acento-600 text-sm mt-1">{errors.email.message}</p>}
-      </div>
-
-      <div>
         <label htmlFor="ci" className="block text-md font-medium text-neutro-600 mb-1">
           Carnet de Identidad
         </label>
@@ -54,19 +40,19 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         />
         {errors.ci && <p className="text-acento-600 text-sm mt-1">{errors.ci.message}</p>}
       </div>
-
-      <div>
-        <label htmlFor="username" className="block text-md font-medium text-neutro-600 mb-1">
-          Nombre de usuario
+    
+        <div>
+        <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
+          Correo electrónico institucional
         </label>
         <input
-          type="text"
-          id="username"
-          placeholder="Ingrese el nombre de usuario"
-          {...register('username')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.username ? 'border-acento-500' : 'border-neutro-300'}`}
+          type="email"
+          id="email"
+          placeholder="ejemplo@institucion.edu"
+          {...register('email')}
+          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
         />
-        {errors.username && <p className="text-acento-600 text-sm mt-1">{errors.username.message}</p>}
+        {errors.email && <p className="text-acento-600 text-sm mt-1">{errors.email.message}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
