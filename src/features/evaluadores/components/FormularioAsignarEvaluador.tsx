@@ -60,12 +60,12 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     
       <div>
         <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
-          Correo electrónico institucional
+          Correo electrónico 
         </label>
         <input
           type="email"
           id="email"
-          placeholder="ejemplo@institucion.edu"
+          placeholder="ejemplo@institucion.com"
           {...register('email')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
         />
@@ -116,7 +116,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         />
         {errors.codigo_evaluador && <p className="text-acento-600 text-sm mt-1">{errors.codigo_evaluador.message}</p>}
         <p className="text-sm text-neutro-500 mt-1">
-          Este código es proporcionado por la institución y valida el rol del evaluador.
+          Este código es proporcionado por la institución.
         </p>
       </div>
     </div>
