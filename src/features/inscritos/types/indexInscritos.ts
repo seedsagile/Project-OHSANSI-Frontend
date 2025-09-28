@@ -4,7 +4,6 @@ export type CompetidorCSV = {
     telftutor: string;
     colegio: string;
     departamento: string;
-    grado: string;
     nivel: string;
     area: string;
     tipodeinscripcion: string;
@@ -14,25 +13,25 @@ export type PersonaPayload = {
     nombre: string;
     apellido: string;
     ci: string;
-    fecha_nac: string;
-    genero: string;
     telefono: string;
-    email: string;
+    fecha_nac?: string;
+    genero?: string;
+    email?: string;
 };
 
 export type CompetidorPayload = {
     grado_escolar: string;
     departamento: string;
     contacto_tutor: string;
-    contacto_emergencia: string;
+    contacto_emergencia?: string;
 };
 
 export type InstitucionPayload = {
     nombre: string;
-    tipo: string;
     departamento: string;
-    direccion: string;
-    telefono: string;
+    tipo?: string;
+    direccion?: string;
+    telefono?: string;
 };
 
 export type GrupoPayload = {
