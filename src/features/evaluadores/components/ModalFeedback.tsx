@@ -1,5 +1,6 @@
 // src/evaluadores/components/ModalFeedback.tsx
 
+import React from 'react';
 import type { ReactNode } from 'react';
 
 const SuccessIcon = () => (

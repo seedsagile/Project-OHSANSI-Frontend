@@ -1,5 +1,7 @@
 // src/evaluadores/components/Spinner.tsx
 
+//import { useState } from 'react';
+
 export function Spinner() {
   return (
     <svg

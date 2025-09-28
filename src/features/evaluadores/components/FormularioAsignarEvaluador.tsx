@@ -13,18 +13,35 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-neutro-800">Datos del Evaluador</h2>
       
-      <div>
-        <label htmlFor="nombreCompleto" className="block text-md font-medium text-neutro-600 mb-1">
-          Nombre completo del evaluador
-        </label>
-        <input
-          type="text"
-          id="nombreCompleto"
-          placeholder="Ingrese el nombre y apellidos"
-          {...register('nombreCompleto')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombreCompleto ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.nombreCompleto && <p className="text-acento-600 text-sm mt-1">{errors.nombreCompleto.message}</p>}
+      {/* Nombre y Apellido lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="nombre" className="block text-md font-medium text-neutro-600 mb-1">
+            Nombre del evaluador
+          </label>
+          <input
+            type="text"
+            id="nombre"
+            placeholder="Ingrese el nombre"
+            {...register('nombre')}
+            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombre ? 'border-acento-500' : 'border-neutro-300'}`}
+          />
+          {errors.nombre && <p className="text-acento-600 text-sm mt-1">{errors.nombre.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="apellido" className="block text-md font-medium text-neutro-600 mb-1">
+            Apellido del evaluador
+          </label>
+          <input
+            type="text"
+            id="apellido"
+            placeholder="Ingrese el apellido"
+            {...register('apellido')}
+            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.apellido ? 'border-acento-500' : 'border-neutro-300'}`}
+          />
+          {errors.apellido && <p className="text-acento-600 text-sm mt-1">{errors.apellido.message}</p>}
+        </div>
       </div>
 
       <div>
@@ -41,7 +58,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         {errors.ci && <p className="text-acento-600 text-sm mt-1">{errors.ci.message}</p>}
       </div>
     
-        <div>
+      <div>
         <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
           Correo electrónico institucional
         </label>
@@ -55,6 +72,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         {errors.email && <p className="text-acento-600 text-sm mt-1">{errors.email.message}</p>}
       </div>
 
+      {/* Contraseñas lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="password" className="block text-md font-medium text-neutro-600 mb-1">
@@ -92,7 +110,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         <input
           type="text"
           id="codigo_evaluador"
-          placeholder="Ingrese el código único. Ej: 1234"
+          placeholder="Ej: E123MAT"
           {...register('codigo_evaluador')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_evaluador ? 'border-acento-500' : 'border-neutro-300'}`}
         />
