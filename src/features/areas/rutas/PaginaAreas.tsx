@@ -146,7 +146,7 @@ export function PaginaAreas() {
                         )}
 
                         {/* Tabla de áreas con scroll */}
-                        <div className="mb-4 overflow-hidden rounded-lg border border-blue-500">
+                        <div className="mb-4 overflow-hidden rounded-lg">
                             <div className="overflow-y-auto" style={{ maxHeight: '384px' }}>
                                 <table className="w-full">
                                     <thead className="sticky top-0 bg-blue-500 text-white z-10">
@@ -159,8 +159,8 @@ export function PaginaAreas() {
                                         {filasParaMostrar.map((area, index) => (
                                             <tr 
                                                 key={area.id_area || `empty-${index}`} 
-                                                className={`border-b border-blue-300 ${
-                                                    index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                                                className={` ${
+                                                    index % 2 === 0 ? 'bg-gray-50' : 'bg-neutro-200'
                                                 } ${area.nombre ? 'hover:bg-blue-50 transition-colors' : ''}`}
                                                 style={{ height: '64px' }}
                                             >
