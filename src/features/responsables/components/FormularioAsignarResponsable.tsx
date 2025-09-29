@@ -67,7 +67,7 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         <input
           type="text"
           id="codigo_encargado"
-          placeholder="Ingrese el código único. Ej: 2025-MAT"
+          placeholder="Ingrese el código único. Ej: MAT01"
           maxLength={CODIGO_MAX_LENGTH}
           onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CODIGO)}
           {...register('codigo_encargado')}
