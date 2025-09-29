@@ -102,20 +102,20 @@ export const ModalCrearArea = ({
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-4 sm:p-6 pointer-events-auto">
+            <div className="bg-white rounded-lg shadow-lg border-2 border-black w-full max-w-md p-4 sm:p-6 pointer-events-auto">
                 <h2 className="text-lg sm:text-xl font-semibold text-center mb-4 sm:mb-6">Crear Area</h2>
                 
                 <div className="mb-4 sm:mb-6">
-                    <div className="mb-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
                             Nombre del Area: <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             value={nombre}
                             onChange={(e) => handleNombreChange(e.target.value)}
-                            placeholder="Ingrese el nombre del área"
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
+                            //placeholder="Ingrese el nombre del área"
+                            className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                                 errores.nombre 
                                     ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
