@@ -99,21 +99,31 @@ export function PaginaAreas() {
         setMensajeExito(null);
     };
 
+    // Crear filas vacías para completar siempre 6 filas
+    const filasParaMostrar = [...areas];
+    while (filasParaMostrar.length < 6) {
+        filasParaMostrar.push({ 
+            id_area: 0, 
+            nombre: '', 
+            activo: 0, 
+            created_at: '', 
+            update_ad: '' 
+        } as Area);
+    }
+
     return (
-        <div className="min-h-screen p-6">
+        <div className="min-h-screen p-4 sm:p-6">
             
-            <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-6 sm:mb-8">
                 Áreas y Niveles
             </h1>
             
-            <div className="max-w-7xl mx-auto relative">
-                {/* Línea divisoria vertical */}
-                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 transform -translate-x-1/2 z-10"></div>
-                
-                <div className="grid grid-cols-2 gap-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Layout en 2 columnas SIEMPRE (en todos los dispositivos) */}
+                <div className="grid grid-cols-2 gap-4 sm:gap-8">
                     {/* Columna izquierda: Áreas */}
-                    <div className="p-4 pr-8">
-                        <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
+                    <div className="p-2 sm:p-4 pr-4 sm:pr-8 border-r border-gray-300">
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-700 text-center mb-4">
                             Lista de Áreas
                         </h2>
                         
@@ -121,7 +131,7 @@ export function PaginaAreas() {
                         {error && (
                             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                                 <div className="flex items-center">
-                                    <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg className="w-5 h-5 text-red-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                     </svg>
                                     <p className="text-red-600 text-sm">{error}</p>
@@ -135,50 +145,40 @@ export function PaginaAreas() {
                             </div>
                         )}
 
-                        {/* Tabla de áreas */}
-                        <div className="mb-4">
-                            <table className="w-full border border-blue-500 rounded-lg overflow-hidden">
-                                <thead>
-                                    <tr className="bg-blue-500 text-white">
-                                        <th className="text-left py-3 px-4 font-semibold">NRO</th>
-                                        <th className="text-left py-3 px-4 font-semibold">ÁREA</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {areas.length === 0 ? (
-                                        <>
-                                            <tr className="bg-gray-100">
-                                                <td className="py-4 px-4"></td>
-                                                <td className="py-4 px-4"></td>
-                                            </tr>
-                                            <tr className="bg-white">
-                                                <td className="py-4 px-4"></td>
-                                                <td className="py-4 px-4"></td>
-                                            </tr>
-                                        </>
-                                    ) : (
-                                        areas.map((area, index) => (
+                        {/* Tabla de áreas con scroll */}
+                        <div className="mb-4 overflow-hidden rounded-lg border border-blue-500">
+                            <div className="overflow-y-auto" style={{ maxHeight: '384px' }}>
+                                <table className="w-full">
+                                    <thead className="sticky top-0 bg-blue-500 text-white z-10">
+                                        <tr>
+                                            <th className="text-left py-3 px-4 font-semibold">NRO</th>
+                                            <th className="text-left py-3 px-4 font-semibold">ÁREA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filasParaMostrar.map((area, index) => (
                                             <tr 
-                                                key={area.id_area} 
-                                                className={`border-b border-blue-300 hover:bg-blue-50 transition-colors ${
+                                                key={area.id_area || `empty-${index}`} 
+                                                className={`border-b border-blue-300 ${
                                                     index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                                }`}
+                                                } ${area.nombre ? 'hover:bg-blue-50 transition-colors' : ''}`}
+                                                style={{ height: '64px' }}
                                             >
-                                                <td className="py-3 px-4">{area.id_area}</td>
-                                                <td className="py-3 px-4">{area.nombre}</td>
+                                                <td className="py-3 px-4">{area.id_area || ''}</td>
+                                                <td className="py-3 px-4">{area.nombre || ''}</td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
-                        {/* Botón Nueva Área alineado a la derecha */}
+                        {/* Botón Nueva Área */}
                         <div className="flex justify-end">
                             <button
                                 onClick={() => setModalAbierto(true)}
                                 disabled={loading}
-                                className="inline-flex items-center gap-2 px-6 py-2 font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                             >
                                 <IconoPlus />
                                 Nueva Área
@@ -187,7 +187,7 @@ export function PaginaAreas() {
                     </div>
                     
                     {/* Columna derecha: Mockup de Niveles */}
-                    <div className="pl-8">
+                    <div className="p-2 sm:p-4 pl-4 sm:pl-8">
                         <MockupNiveles />
                     </div>
                 </div>

@@ -10,6 +10,9 @@ export const crearAreaEsquema = z.object({
       /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/,
       'Solo se permiten letras, espacios y acentos'
     )
+    .refine(val => val.trim().length > 0, {
+      message: 'No se permiten espacios en blanco'
+    })
     .transform(val => val.trim())
 });
 
@@ -50,17 +53,6 @@ export const validarNombreUnico = (nombre: string, areasExistentes: { nombre: st
            areaSinS === nombreNormalizado ||
            areaSinS === nombreSinS;
   });
-};
-
-// Función para formatear nombre (Primera letra mayúscula, resto minúsculas)
-export const formatearNombre = (nombre: string): string => {
-  return nombre
-    .trim()
-    .replace(/\s+/g, ' ') // Normalizar espacios múltiples
-    .toLowerCase()
-    .split(' ')
-    .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1))
-    .join(' ');
 };
 
 // Tipos para manejo de errores
