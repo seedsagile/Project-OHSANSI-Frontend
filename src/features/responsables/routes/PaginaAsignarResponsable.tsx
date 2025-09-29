@@ -13,7 +13,6 @@ type ModalState = {
 }
 
 export function PaginaAsignarResponsable() {
-  // 1. Estado para manejar la visibilidad y contenido del modal
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     type: 'success',
@@ -21,7 +20,6 @@ export function PaginaAsignarResponsable() {
     message: ''
   });
 
-  // 2. Funciones para controlar el modal
   const mostrarModal = (type: 'success' | 'error', title: string, message: string) => {
     setModalState({ isOpen: true, type, title, message });
   };
@@ -30,7 +28,6 @@ export function PaginaAsignarResponsable() {
     setModalState(prevState => ({ ...prevState, isOpen: false }));
   };
   
-  // 3. Se inicializa el hook de lógica, pasándole la función para mostrar el modal
   const { 
     register, 
     handleSubmit,
@@ -39,7 +36,6 @@ export function PaginaAsignarResponsable() {
   } = useAsignarResponsable({ mostrarModal });
 
   return (
-    // Se usa un Fragment (<>) para poder renderizar el modal fuera del div principal
     <>
       <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
         <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-8">
@@ -50,7 +46,6 @@ export function PaginaAsignarResponsable() {
             </h1>
           </header>
 
-          {/* 4. La página contiene el tag <form> y pasa el manejador de envío */}
           <form id="asignar-responsable-form" onSubmit={handleSubmit}>
             <FormularioAsignarResponsable
               register={register}
@@ -90,7 +85,6 @@ export function PaginaAsignarResponsable() {
         </main>
       </div>
 
-      {/* 6. El componente Modal se renderiza aquí y se controla con el estado de la página */}
       <ModalFeedback
         isOpen={modalState.isOpen}
         onClose={cerrarModal}

@@ -60,16 +60,11 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
       mostrarModal('success', '¡Registro Exitoso!', 'El nuevo responsable ha sido registrado correctamente.');
       reset();
     },
-    onError: (error: AxiosError<ApiErrorResponse>) => {
-      const errorMessage = error.response?.data?.error || "Ocurrió un error inesperado.";
 
-      if (errorMessage.includes("Ya existe un responsable asignado para esta área")) {
-        mostrarModal('error', 'Área ya Asignada', errorMessage);
-      } else if (errorMessage.toLowerCase().includes("duplicate")) {
-        mostrarModal('error', 'Registro Duplicado', 'El CI, correo o código de encargado ya existe en el sistema.');
-      } else {
-        mostrarModal('error', 'Error del Servidor', errorMessage);
-      }
+    onError: (error: AxiosError<ApiErrorResponse>) => {
+      const errorMessage = error.response?.data?.error || "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
+      mostrarModal('error', '¡Ups! Algo Salió Mal', errorMessage);
+      
       console.error(error);
     },
   });
