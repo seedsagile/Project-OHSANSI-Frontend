@@ -39,10 +39,21 @@ export function ModalFeedback({ isOpen, onClose, type, title, children }: Props)
   };
 
   return (
-    // Fondo oscuro semi-transparente
-    <div className="fixed inset-0 bg-negro bg-opacity-60 flex items-center justify-center z-50 transition-opacity">
-      {/* Contenedor del Modal */}
-      <div className="bg-blanco rounded-xl shadow-sombra-3 w-full max-w-md p-8 text-center animate-fade-in-up">
+    // Sin fondo negro - solo overlay transparente para centrar
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      {/* Modal con sombra fuerte para destacar */}
+      <div className="bg-blanco rounded-xl shadow-2xl border border-neutro-200 w-full max-w-md p-8 text-center relative">
+        {/* Botón X para cerrar */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-neutro-400 hover:text-neutro-600 transition-colors"
+          aria-label="Cerrar modal"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
         {icons[type]}
         <h2 className="text-3xl font-bold text-negro mt-4">{title}</h2>
         <div className="text-neutro-500 mt-2 text-lg">
