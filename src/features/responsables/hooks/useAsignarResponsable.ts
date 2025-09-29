@@ -57,10 +57,16 @@ function generarTelefonoRandom(): string {
 
 const schemaResponsable = z.object({
   nombreCompleto: z.string()
-    .min(1, 'El campo Nombre Completo es obligatorio.')
-    .min(NOMBRE_MIN_LENGTH, `El nombre debe tener al menos ${NOMBRE_MIN_LENGTH} caracteres.`)
-    .max(NOMBRE_MAX_LENGTH, `El nombre no puede tener más de ${NOMBRE_MAX_LENGTH} caracteres.`)
-    .regex(CARACTERES_ACETADOS_NOMBRE_COMPLETO, 'El campo Nombre solo permite letras, espacios y acentos.'),
+    .refine(val => val.trim().replace(/\s+/g, ' ') === val, {
+      message: 'El nombre no debe tener espacios innecesarios al inicio, al final o entre palabras.',
+    })
+    .transform(val => val.trim().replace(/\s+/g, ' '))
+    .pipe(z.string()
+      .min(1, 'El campo Nombre Completo es obligatorio.')
+      .min(NOMBRE_MIN_LENGTH, `El nombre debe tener al menos ${NOMBRE_MIN_LENGTH} caracteres.`)
+      .max(NOMBRE_MAX_LENGTH, `El nombre no puede tener más de ${NOMBRE_MAX_LENGTH} caracteres.`)
+      .regex(CARACTERES_ACETADOS_NOMBRE_COMPLETO, 'El campo Nombre solo permite letras, espacios y acentos.')
+    ),
 
   email: z.string()
     .min(1, 'El campo Email es obligatorio.')
