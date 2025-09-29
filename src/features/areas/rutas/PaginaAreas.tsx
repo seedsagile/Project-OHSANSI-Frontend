@@ -101,7 +101,7 @@ export function PaginaAreas() {
 
     // Crear filas vacías para completar siempre 6 filas
     const filasParaMostrar = [...areas];
-    while (filasParaMostrar.length < 6) {
+    while (filasParaMostrar.length < 5) {
         filasParaMostrar.push({ 
             id_area: 0, 
             nombre: '', 
@@ -181,7 +181,7 @@ export function PaginaAreas() {
                                 className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                             >
                                 <IconoPlus />
-                                Nueva Área
+                                Nueva Area
                             </button>
                         </div>
                     </div>

@@ -103,12 +103,12 @@ export const ModalCrearArea = ({
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-4 sm:p-6 pointer-events-auto">
-                <h2 className="text-lg sm:text-xl font-semibold text-center mb-4 sm:mb-6">Crear Área</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-center mb-4 sm:mb-6">Crear Area</h2>
                 
                 <div className="mb-4 sm:mb-6">
                     <div className="mb-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nombre del Área: <span className="text-red-500">*</span>
+                            Nombre del Area: <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
