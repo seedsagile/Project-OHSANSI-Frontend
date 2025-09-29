@@ -13,46 +13,51 @@ export type PersonaPayload = {
     nombre: string;
     apellido: string;
     ci: string;
-    telefono: string;
-    fecha_nac?: string;
-    genero?: string;
-    email?: string;
+    telefono: string | null;
+    fecha_nac: string;
+    genero: 'M' | 'F' | null;
+    email: string;
 };
 
 export type CompetidorPayload = {
-    grado_escolar: string;
-    departamento: string;
-    contacto_tutor: string;
-    contacto_emergencia?: string;
+    grado_escolar: string | null;
+    departamento: string | null;
+    contacto_tutor: string | null;
+    contacto_emergencia: string | null;
 };
 
 export type InstitucionPayload = {
     nombre: string;
-    departamento: string;
-    tipo?: string;
-    direccion?: string;
-    telefono?: string;
+    tipo: string | null;
+    departamento: string | null;
+    direccion: string | null;
+    telefono: string | null;
 };
 
 export type GrupoPayload = {
-    nombre: string;
-    descripcion: string;
+    nombre: string | null;
+    descripcion: string | null;
+    max_integrantes: number | null;
 };
 
-export type InscripcionPayload = {
+export type CompetidorIndividualPayload = {
     persona: PersonaPayload;
     competidor: CompetidorPayload;
     institucion: InstitucionPayload;
     grupo: GrupoPayload;
-    max_integrantes: number;
-    area: { 
-        nombre: string;
-    };
-    nivel: { 
-        nombre: string;
-    };
+    area: { nombre: string };
+    nivel: { nombre: string };
 };
 
+export type InscripcionPayload = {
+    competidores: CompetidorIndividualPayload[];
+};
+
+// Para manejar los errores de validación del backend
 export type ApiErrorResponse = {
-    error: string;
+    message?: string;
+    error?: string;
+    errors?: {
+        [key: string]: string[];
+    };
 };
