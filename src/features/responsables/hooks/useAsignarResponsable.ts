@@ -6,7 +6,20 @@ import { format } from 'date-fns';
 import { AxiosError } from 'axios';
 
 import { asignarResponsableAPI } from '../services/ApiResposableArea';
-import type { FormularioData, PayloadResponsable } from '../tipos/IndexResponsable';
+import type { FormularioData, PayloadResponsable } from '../types/IndexResponsable';
+
+export const NOMBRE_MIN_LENGTH = 2;
+export const NOMBRE_MAX_LENGTH = 40;
+export const CI_MIN_LENGTH = 4;
+export const CI_MAX_LENGTH = 15;
+export const CODIGO_MIN_LENGTH = 4;
+export const CODIGO_MAX_LENGTH = 10;
+export const CARACTERES_ACETADOS_NOMBRE_COMPLETO = /^[a-zA-Z\s\u00C0-\u017F]+$/;
+export const CARACTERES_ACETADOS_EMAIL = /^[a-zA-Z0-9.@]$/;
+export const CARACTERES_ACETADOS_CI = /[a-zA-Z0-9-]$/;
+export const CARACTERES_ACETADOS_CODIGO = /^[a-zA-Z0-9]+$/;
+
+const DEFECTO_FECHA_NAC = '1990-01-01';
 
 type ApiErrorResponse = {
   error: string;
@@ -44,22 +57,26 @@ function generarTelefonoRandom(): string {
 
 const schemaResponsable = z.object({
   nombreCompleto: z.string()
-    .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
-    .max(40, 'El campo Nombre tiene un límite máximo de 40 caracteres.')
-    .regex(/^[a-zA-Z\s\u00C0-\u017F]+$/, 'El campo Nombre solo permite letras, espacios y acentos.'),
+    .min(1, 'El campo Nombre Completo es obligatorio.')
+    .min(NOMBRE_MIN_LENGTH, `El nombre debe tener al menos ${NOMBRE_MIN_LENGTH} caracteres.`)
+    .max(NOMBRE_MAX_LENGTH, `El nombre no puede tener más de ${NOMBRE_MAX_LENGTH} caracteres.`)
+    .regex(CARACTERES_ACETADOS_NOMBRE_COMPLETO, 'El campo Nombre solo permite letras, espacios y acentos.'),
 
   email: z.string()
     .min(1, 'El campo Email es obligatorio.')
-    .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).'),
-
+    .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).')
+    .regex(CARACTERES_ACETADOS_EMAIL, 'El campo Email tiene un formato inválido.'),
   ci: z.string()
-    .min(4, 'El campo CI requiere un mínimo de 4 caracteres.')
-    .max(15, 'El campo CI tiene un límite máximo de 15 caracteres.')
-    .regex(/^[a-zA-Z0-9\s-]+$/, 'El campo CI solo permite letras, números, espacios y guiones.'),
+    .min(1, 'El campo CI es obligatorio.')
+    .min(CODIGO_MIN_LENGTH, `El CI debe tener al menos ${CI_MIN_LENGTH} caracteres.`)
+    .max(CODIGO_MAX_LENGTH, `El campo CI tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
+    .regex(CARACTERES_ACETADOS_CI, 'El CI solo permite letras, números, espacios y guiones.'),
 
   codigo_encargado: z.string()
-    .min(4, 'El código de acceso debe tener al menos 4 caracteres.')
-    .max(10, 'El campo Código de acceso tiene un límite máximo de 10 caracteres.'),
+    .min(1, 'El campo Código de acceso es obligatorio.')
+    .min(CODIGO_MIN_LENGTH, `El código debe tener al menos ${CODIGO_MIN_LENGTH} caracteres.`)
+    .max(CODIGO_MAX_LENGTH, `El campo Código de acceso tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
+    .regex(CARACTERES_ACETADOS_CODIGO, 'El código solo permite letras, números y guiones.'),
 });
 
 export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
@@ -103,7 +120,7 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
         apellido: apellido,
         ci: data.ci,
         email: data.email,
-        fecha_nac: '1990-01-01',
+        fecha_nac: DEFECTO_FECHA_NAC,
         genero: 'M',
         telefono: generarTelefonoRandom(),
       },

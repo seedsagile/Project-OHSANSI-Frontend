@@ -67,7 +67,6 @@ export function PaginaAsignarResponsable() {
               <span>Cancelar</span>
             </button>
             
-            {/* 5. El botón de envío reacciona al estado 'isSubmitting' */}
             <button 
               type="submit" 
               form="asignar-responsable-form"
