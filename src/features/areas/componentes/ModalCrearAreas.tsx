@@ -50,8 +50,8 @@ export const ModalCrearArea = ({
 
             setErrores({});
             return true;
-        } catch (error) {
-            // Manejo simple de errores sin any
+        } catch {
+            // Manejo simple de errores
             if (nombre.trim() === '') {
                 setErrores({ nombre: 'No se permiten espacios en blanco. Por favor ingrese un nombre válido' });
             } else if (nombre.length > 30) {

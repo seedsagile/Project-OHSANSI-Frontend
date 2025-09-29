@@ -151,8 +151,8 @@ export function PaginaAreas() {
                                 <table className="w-full">
                                     <thead className="sticky top-0 bg-blue-500 text-white z-10">
                                         <tr>
-                                            <th className="text-left py-3 px-4 font-semibold">NRO</th>
-                                            <th className="text-left py-3 px-4 font-semibold">ÁREA</th>
+                                            <th className="text-center py-3 px-4 font-semibold">NRO</th>
+                                            <th className="text-center py-3 px-4 font-semibold">ÁREA</th>
                                         </tr>
                                     </thead>
                                     <tbody>
