@@ -1,7 +1,7 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import type { FormularioData } from '../types/IndexResponsable';
-import { CARACTERES_ACETADOS_CI, CARACTERES_ACETADOS_CODIGO, CARACTERES_ACETADOS_EMAIL, CARACTERES_ACETADOS_NOMBRE_COMPLETO, CI_MAX_LENGTH, CODIGO_MAX_LENGTH, NOMBRE_MAX_LENGTH } from '../hooks/useAsignarResponsable';
 import { restringirCaracteres } from '../utils/formUtils';
+import { NOMBRE_MAX_LENGTH, CARACTERES_ACETADOS_NOMBRE_COMPLETO, CARACTERES_ACETADOS_EMAIL, CI_MAX_LENGTH, CARACTERES_ACETADOS_CI, CODIGO_MAX_LENGTH, CARACTERES_ACETADOS_CODIGO } from '../utils/resposableVarGlobalesUtils';
 
 type Props = {
   register: UseFormRegister<FormularioData>;

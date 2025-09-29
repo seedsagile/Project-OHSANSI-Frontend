@@ -7,53 +7,12 @@ import { AxiosError } from 'axios';
 
 import { asignarResponsableAPI } from '../services/ApiResposableArea';
 import type { FormularioData, PayloadResponsable } from '../types/IndexResponsable';
-
-export const NOMBRE_MIN_LENGTH = 2;
-export const NOMBRE_MAX_LENGTH = 40;
-export const CI_MIN_LENGTH = 4;
-export const CI_MAX_LENGTH = 15;
-export const CODIGO_MIN_LENGTH = 4;
-export const CODIGO_MAX_LENGTH = 10;
-export const CARACTERES_ACETADOS_NOMBRE_COMPLETO = /^[a-zA-Z\s\u00C0-\u017F]+$/;
-export const CARACTERES_ACETADOS_EMAIL = /^[a-zA-Z0-9.@]$/;
-export const CARACTERES_ACETADOS_CI = /[a-zA-Z0-9-]$/;
-export const CARACTERES_ACETADOS_CODIGO = /^[a-zA-Z0-9]+$/;
-
-const DEFECTO_FECHA_NAC = '1990-01-01';
+import { separarNombreCompleto, generarTelefonoRandom } from '../utils/responsableUtils';
+import { NOMBRE_MIN_LENGTH, NOMBRE_MAX_LENGTH, CARACTERES_ACETADOS_NOMBRE_COMPLETO, CI_MIN_LENGTH, CI_MAX_LENGTH, CARACTERES_ACETADOS_CI, CODIGO_MIN_LENGTH, CODIGO_MAX_LENGTH, CARACTERES_ACETADOS_CODIGO, DEFECTO_FECHA_NAC } from '../utils/resposableVarGlobalesUtils';
 
 type ApiErrorResponse = {
   error: string;
 };
-
-function separarNombreCompleto(nombreCompleto: string): { nombre: string; apellido: string } {
-  if (!nombreCompleto || typeof nombreCompleto !== 'string') {
-    return { nombre: '', apellido: '' };
-  }
-
-  const palabras = nombreCompleto.trim().split(' ').filter(p => p);
-
-  if (palabras.length <= 1) {
-    return { nombre: palabras[0] || '', apellido: '' };
-  }
-
-  if (palabras.length === 2) {
-    return { nombre: palabras[0], apellido: palabras[1] };
-  }
-
-  const apellido = palabras.slice(-2).join(' ');
-  const nombre = palabras.slice(0, -2).join(' ');
-
-  return { nombre, apellido };
-}
-
-function generarTelefonoRandom(): string {
-  const primerDigito = Math.random() < 0.5 ? '6' : '7';
-  let restoNumero = '';
-  for (let i = 0; i < 7; i++) {
-    restoNumero += Math.floor(Math.random() * 10);
-  }
-  return primerDigito + restoNumero;
-}
 
 const schemaResponsable = z.object({
   nombreCompleto: z.string()
