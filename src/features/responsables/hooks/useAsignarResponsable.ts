@@ -64,12 +64,11 @@ const schemaResponsable = z.object({
 
   email: z.string()
     .min(1, 'El campo Email es obligatorio.')
-    .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).')
-    .regex(CARACTERES_ACETADOS_EMAIL, 'El campo Email tiene un formato inválido.'),
+    .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).'),
   ci: z.string()
     .min(1, 'El campo CI es obligatorio.')
-    .min(CODIGO_MIN_LENGTH, `El CI debe tener al menos ${CI_MIN_LENGTH} caracteres.`)
-    .max(CODIGO_MAX_LENGTH, `El campo CI tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
+    .min(CI_MIN_LENGTH, `El CI debe tener al menos ${CI_MIN_LENGTH} caracteres.`)
+    .max(CI_MAX_LENGTH, `El campo CI tiene un límite máximo de ${CI_MAX_LENGTH} caracteres.`)
     .regex(CARACTERES_ACETADOS_CI, 'El CI solo permite letras, números, espacios y guiones.'),
 
   codigo_encargado: z.string()
