@@ -167,7 +167,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         />
         {errors.codigo_evaluador && <p className="text-acento-600 text-sm mt-1">{errors.codigo_evaluador.message}</p>}
         <p className="text-sm text-neutro-500 mt-1">
-          Este código es proporcionado por la institución y valida el rol del evaluador.
+          Este código es proporcionado por la institución .
         </p>
       </div>
     </div>
