@@ -10,7 +10,6 @@ type Props = {
 
 export function FormularioAsignarResponsable({ register, errors }: Props) {
   return (
-    
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-neutro-800">Datos del Responsable</h2>
       
@@ -52,7 +51,7 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         <input
           type="text"
           id="ci"
-          placeholder="Ej: 1234567 CB"
+          placeholder="Ej: 1234567 o 1234567-1B"
           maxLength={CI_MAX_LENGTH}
           onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CI)}
           {...register('ci')}
