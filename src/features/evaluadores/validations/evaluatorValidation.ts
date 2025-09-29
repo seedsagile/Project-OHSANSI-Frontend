@@ -3,21 +3,19 @@
 import { z } from 'zod';
 
 export const schemaEvaluador = z.object({
-  // Validaciones para Nombre (criterios 1-4) - sin espacios vacíos
+  // Validaciones para Nombre (criterios 1-4)
   nombre: z.string()
     .min(1, 'El campo Nombre es obligatorio.')
-    .trim()
     .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
     .max(20, 'El campo Nombre tiene un límite máximo de 20 caracteres.')
-    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$/, 'El campo Nombre solo permite letras, espacios y acentos.'),
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre solo permite letras, espacios y acentos.'),
 
-  // Validaciones para Apellido - sin espacios vacíos
+  // Validaciones para Apellido (mismas reglas que nombre)
   apellido: z.string()
     .min(1, 'El campo Apellido es obligatorio.')
-    .trim()
     .min(2, 'El campo Apellido requiere un mínimo de 2 caracteres.')
     .max(20, 'El campo Apellido tiene un límite máximo de 20 caracteres.')
-    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$/, 'El campo Apellido solo permite letras, espacios y acentos.'),
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido solo permite letras, espacios y acentos.'),
 
   // Validaciones para Email (criterios 5-8)
   email: z.string()
@@ -36,7 +34,7 @@ export const schemaEvaluador = z.object({
   password: z.string()
     .min(1, 'El campo Contraseña es obligatorio.')
     .min(8, 'La contraseña debe tener al menos 8 caracteres.')
-    .max(50, 'La contraseña tiene un límite máximo de 50 caracteres.'),
+    .max(32, 'La contraseña tiene un límite máximo de 32 caracteres.'),
 
   // Validación para Confirmación de Contraseña
   password_confirmation: z.string()
