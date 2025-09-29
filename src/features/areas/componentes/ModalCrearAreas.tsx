@@ -69,25 +69,26 @@ export const ModalCrearArea = ({
         // Permitir solo caracteres válidos en tiempo real
         const valorLimpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
         
-        // Limitar a 30 caracteres
+        // Limitar a 30 caracteres (no permitir escribir más)
         if (valorLimpio.length <= 30) {
             setNombre(valorLimpio);
-        } else {
-            // Mostrar error si intenta exceder el límite
-            setErrores({ nombre: 'El límite es de 30 caracteres' });
-            return;
+            // Limpiar errores mientras escribe
+            if (errores.nombre) {
+                setErrores(prev => ({ ...prev, nombre: undefined }));
+            }
         }
-
-        // Limpiar errores mientras escribe
-        if (errores.nombre) {
-            setErrores(prev => ({ ...prev, nombre: undefined }));
-        }
+        // Si intenta escribir más de 30, simplemente no lo permite (sin mostrar error)
     };
 
     const handleGuardar = () => {
         if (validarFormulario()) {
             // Enviar el nombre tal cual fue escrito (sin normalizar)
             onGuardar({ nombre: nombre.trim() });
+            // Limpiar el campo después de guardar (mantener errores si los hay)
+            setNombre('');
+        } else {
+            // Si la validación falla, limpiar el campo pero mantener el error
+            setNombre('');
         }
     };
 
@@ -143,11 +144,11 @@ export const ModalCrearArea = ({
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                <div className="flex flex-row gap-3 sm:gap-4 justify-center">
                     <button
                         onClick={handleCancelar}
                         disabled={loading}
-                        className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-gray-700 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 order-2 sm:order-1"
+                        className="flex items-center justify-center gap-2 font-semibold py-2.5 px-4 sm:px-6 rounded-lg bg-gray-700 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 text-sm sm:text-base"
                     >
                         <X size={20} className='flex-shrink-0'/>
                         <span>Cancelar</span>
@@ -155,7 +156,7 @@ export const ModalCrearArea = ({
                     <button
                         onClick={handleGuardar}
                         disabled={loading}
-                        className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
+                        className="flex items-center justify-center gap-2 font-semibold py-2.5 px-4 sm:px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                     >
                         <Save size={20} className="flex-shrink-0"/>
                         <span>{loading ? "Guardando..." : "Guardar"}</span>
