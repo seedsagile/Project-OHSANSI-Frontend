@@ -7,14 +7,14 @@ export const schemaEvaluador = z.object({
   nombre: z.string()
     .min(1, 'El campo Nombre es obligatorio.')
     .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
-    .max(40, 'El campo Nombre tiene un límite máximo de 40 caracteres.')
+    .max(20, 'El campo Nombre tiene un límite máximo de 40 caracteres.')
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre solo permite letras, espacios y acentos.'),
 
   // Validaciones para Apellido (mismas reglas que nombre)
   apellido: z.string()
     .min(1, 'El campo Apellido es obligatorio.')
     .min(2, 'El campo Apellido requiere un mínimo de 2 caracteres.')
-    .max(40, 'El campo Apellido tiene un límite máximo de 40 caracteres.')
+    .max(20, 'El campo Apellido tiene un límite máximo de 40 caracteres.')
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido solo permite letras, espacios y acentos.'),
 
   // Validaciones para Email (criterios 5-8)

@@ -65,7 +65,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         <input
           type="email"
           id="email"
-          placeholder="ejemplo@institucion.com"
+          placeholder="ejemplo@letras.com"
           {...register('email')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
         />
