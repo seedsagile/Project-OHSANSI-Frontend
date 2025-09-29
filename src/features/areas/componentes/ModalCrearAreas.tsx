@@ -148,7 +148,8 @@ export const ModalCrearArea = ({
                     <button
                         onClick={handleCancelar}
                         disabled={loading}
-                        className="flex items-center justify-center gap-2 font-semibold py-2.5 px-4 sm:px-6 rounded-lg bg-gray-400 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                        //className="flex items-center justify-center gap-2 font-semibold py-2.5 px-4 sm:px-6 rounded-lg bg-gray-400 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                        className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors'
                     >
                         <X size={20} className='flex-shrink-0'/>
                         <span>Cancelar</span>
