@@ -123,7 +123,7 @@ export function PaginaAreas() {
                 <div className="grid grid-cols-2 gap-4 sm:gap-8">
                     {/* Columna izquierda: Áreas */}
                     <div className="p-2 sm:p-4 pr-4 sm:pr-8 border-r border-gray-300">
-                        <h2 className="text-lg sm:text-xl font-semibold text-gray-700 text-center mb-4">
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 text-center mb-4">
                             Lista de Áreas
                         </h2>
                         
