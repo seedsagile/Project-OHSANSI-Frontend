@@ -7,17 +7,14 @@ import type { CompetidorCSV } from '../types/indexInscritos';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
 import { IconoUsuario } from '../components/IconoUsuario';
 
-// --- Interfaces de Props para Subcomponentes ---
 interface BotonProps { onClick: () => void; disabled?: boolean; }
 interface DropzoneAreaProps { getRootProps: <T extends DropzoneRootProps>(props?: T) => T; getInputProps: <T extends DropzoneInputProps>(props?: T) => T; isDragActive: boolean; nombreArchivo: string | null; }
 interface TablaResultadosProps { data: CompetidorCSV[]; columns: ColumnDef<CompetidorCSV>[]; }
 interface AccionesFooterProps { onCancel: () => void; onSave: () => void; esGuardable: boolean; isSubmitting: boolean; }
 
-// --- Subcomponentes ---
 const BotonCargar = ({ onClick }: BotonProps) => ( <button onClick={onClick} className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500/10 text-principal-600 hover:bg-principal-500/20 transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 14 12 9 7 14"/><line x1="12" y1="9" x2="12" y2="21"/></svg> <span>Cargar CSV</span> </button> );
 const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo }: DropzoneAreaProps) => ( <div {...getRootProps({ className: 'flex-grow border-2 border-dashed border-neutro-300 rounded-lg flex items-center justify-center p-4 text-neutro-400' })}> <input {...getInputProps()} /> {isDragActive ? <p className="text-principal-500 font-semibold">Suelta el archivo aquí...</p> : <p>{nombreArchivo || 'o arrastra un archivo aquí'}</p>} </div> );
 
-// CORRECCIÓN: Se eliminaron los espacios en blanco entre las etiquetas de la tabla.
 const TablaResultados = ({ data, columns }: TablaResultadosProps) => {
     const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
 
@@ -57,7 +54,6 @@ const TablaResultados = ({ data, columns }: TablaResultadosProps) => {
 
 const AccionesFooter = ({ onCancel, onSave, esGuardable, isSubmitting }: AccionesFooterProps) => ( <footer className="flex justify-end items-center gap-4 mt-12"> <button onClick={onCancel} className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> <span>Cancelar</span> </button> <button onClick={onSave} disabled={!esGuardable || isSubmitting} className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]"> {isSubmitting ? ( <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blanco"></div> ) : ( <> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Guardar</span> </> )} </button> </footer> );
 
-// --- Componente Principal ---
 export function PaginaImportarCompetidores() {
     
     const {
