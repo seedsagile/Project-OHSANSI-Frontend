@@ -81,7 +81,7 @@ const schemaResponsable = z.object({
     .min(1, 'El campo Código de acceso es obligatorio.')
     .min(CODIGO_MIN_LENGTH, `El código debe tener al menos ${CODIGO_MIN_LENGTH} caracteres.`)
     .max(CODIGO_MAX_LENGTH, `El campo Código de acceso tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
-    .regex(CARACTERES_ACETADOS_CODIGO, 'El código solo permite letras, números y guiones.'),
+    .regex(CARACTERES_ACETADOS_CODIGO, 'El código solo permite letras y números.'),
 });
 
 export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
