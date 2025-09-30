@@ -14,7 +14,6 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
   const [niveles, setNiveles] = useState<Nivel[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar niveles cuando cambie el área seleccionada
   useEffect(() => {
     if (areaSeleccionada) {
       cargarNiveles(areaSeleccionada.id_area);
@@ -23,7 +22,6 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     }
   }, [areaSeleccionada]);
 
-  // ✅ Función para cargar niveles desde backend
   const cargarNiveles = async (idArea: number) => {
     try {
       setLoading(true);
@@ -38,7 +36,6 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     }
   };
 
-  // ✅ Crear un nuevo nivel
   const handleCrearNivel = async (data: { nombre: string }) => {
     if (!areaSeleccionada) return;
 
@@ -47,10 +44,9 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
 
       await createNivel({
         nombre: data.nombre,
-        id_area: areaSeleccionada.id_area, // le pasamos el id del área seleccionada
+        id_area: areaSeleccionada.id_area,
       });
 
-      // Recargar niveles del área seleccionada desde backend
       await cargarNiveles(areaSeleccionada.id_area);
 
       setModalAbierto(false);
