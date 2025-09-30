@@ -1,6 +1,6 @@
 //PUEDES EDITAR TODO LO NECESARIO Y DESCHAER SI ES POSIBLE
 import { useState } from 'react';
-import { IconoPlus } from '../../areas/componentes/IconoPlus';
+import { IconoPlus } from '../../areas/components/IconoPlus';
 import { ModalCrearNivel } from './ModalCrearNivel';
 
 export const MockupNiveles = () => {

@@ -6,7 +6,7 @@ import {
 import { RootLayout } from "../components/layout/RootLayout";
 import { PaginaImportarCompetidores } from "../features/inscritos/routes/PaginaImportarCompetidores";
 import { PaginaAsignarResponsable } from "../features/responsables/routes/PaginaAsignarResponsable";
-import { PaginaAreas } from "../features/areas/rutas/PaginaAreas";
+import { PaginaAreas } from "../features/areas/routes/PaginaAreas";
 
 const Dashboard = () => (
     <div className="p-8">
