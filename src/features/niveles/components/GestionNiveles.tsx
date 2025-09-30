@@ -5,6 +5,7 @@ import { useGestionNiveles } from '../hooks/useGestionNiveles';
 import type { Area } from '../../areas/types';
 import type { Nivel } from '../types';
 import { ModalCrearNivel } from './ModalCrearNivel';
+import { ModalConfirmacion } from '../../areas/components/ModalConfirmacion';
 
 type Props = {
     areaSeleccionada?: Area;
@@ -16,20 +17,22 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
         isLoading,
         isCreating,
         modalCrearAbierto,
+        confirmationModal,
         abrirModalCrear,
         cerrarModalCrear,
-        crearNivel
+        cerrarModalConfirmacion,
+        handleGuardarNivel,
     } = useGestionNiveles(areaSeleccionada?.id_area);
 
     const columns = useMemo<ColumnDef<Nivel>[]>(() => [
-        { accessorKey: 'id_nivel', header: 'NRO' },
+        { id: 'nro', header: 'NRO', cell: info => info.row.index + 1 },
         { accessorKey: 'nombre', header: 'NIVEL' },
     ], []);
 
     const table = useReactTable({ data: niveles, columns, getCoreRowModel: getCoreRowModel() });
 
     return (
-        <>
+        <div className="flex flex-col h-full">
             <div className="mb-4 p-3 bg-neutro-100 rounded-lg text-center">
                 <span className="font-semibold text-neutro-700">Área Seleccionada: </span>
                 <span className="font-bold text-principal-600">
@@ -41,8 +44,8 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
                 Lista de Niveles
             </h2>
             
-            <div className="rounded-lg border border-neutro-200 overflow-hidden">
-                <div className="max-h-[20.5rem] overflow-y-auto">
+            <div className="rounded-lg border border-neutro-200 overflow-hidden flex-grow relative">
+                <div className="h-100 overflow-y-auto">
                     <table className="w-full text-left">
                         <thead className="bg-principal-500 sticky top-0 z-10">
                             {table.getHeaderGroups().map(headerGroup => (
@@ -75,7 +78,7 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
                     </table>
                 </div>
             </div>
-            
+
             <div className="flex justify-end mt-4">
                 <button
                     onClick={abrirModalCrear}
@@ -90,10 +93,21 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
             <ModalCrearNivel
                 isOpen={modalCrearAbierto}
                 onClose={cerrarModalCrear}
-                onGuardar={crearNivel}
+                onGuardar={handleGuardarNivel}
                 loading={isCreating}
                 nombreArea={areaSeleccionada?.nombre}
             />
-        </>
+
+            <ModalConfirmacion
+                isOpen={confirmationModal.isOpen}
+                onClose={cerrarModalConfirmacion}
+                onConfirm={confirmationModal.onConfirm}
+                title={confirmationModal.title}
+                type={confirmationModal.type}
+                loading={isCreating}
+            >
+                {confirmationModal.message}
+            </ModalConfirmacion>
+        </div>
     );
 }

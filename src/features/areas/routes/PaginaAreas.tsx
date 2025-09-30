@@ -23,7 +23,7 @@ export function PaginaAreas() {
     } = useGestionAreas();
 
     const columns = useMemo<ColumnDef<Area>[]>(() => [
-        { accessorKey: 'id_area', header: 'NRO' },
+        { id: 'nro', header: 'NRO', cell: info => info.row.index + 1 },
         { accessorKey: 'nombre', header: 'ÁREA' },
     ], []);
 
@@ -39,12 +39,14 @@ export function PaginaAreas() {
                 </header>
                 
                 <div className="grid grid-cols-2 gap-8">
-                    <div>
+                    {/* Columna de Áreas */}
+                    <div className="flex flex-col">
                         <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
                             Lista de Áreas
                         </h2>
-                        <div className="rounded-lg border border-neutro-200 overflow-hidden">
-                            <div className="max-h-96 overflow-y-auto">
+                        
+                        <div className="rounded-lg border border-neutro-200 overflow-hidden flex-grow relative">
+                            <div className="absolute inset-0 overflow-y-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-principal-500 sticky top-0 z-10">
                                         {table.getHeaderGroups().map(headerGroup => (
@@ -87,7 +89,8 @@ export function PaginaAreas() {
                         </div>
                     </div>
                     
-                    <div>
+                    {/* Columna de Niveles */}
+                    <div className="flex flex-col">
                         <GestionNiveles areaSeleccionada={areaSeleccionada} />
                     </div>
                 </div>
