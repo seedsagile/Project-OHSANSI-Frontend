@@ -1,5 +1,7 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
-import type { FormularioData } from '../tipos/IndexResponsable';
+import type { FormularioData } from '../types/IndexResponsable';
+import { restringirCaracteres } from '../utils/formUtils';
+import { NOMBRE_MAX_LENGTH, CARACTERES_ACETADOS_NOMBRE_COMPLETO, CARACTERES_ACETADOS_EMAIL, CI_MAX_LENGTH, CARACTERES_ACETADOS_CI, CODIGO_MAX_LENGTH, CARACTERES_ACETADOS_CODIGO } from '../utils/resposableVarGlobalesUtils';
 
 type Props = {
   register: UseFormRegister<FormularioData>;
@@ -8,7 +10,6 @@ type Props = {
 
 export function FormularioAsignarResponsable({ register, errors }: Props) {
   return (
-    
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-neutro-800">Datos del Responsable</h2>
       
@@ -20,6 +21,8 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
           type="text"
           id="nombreCompleto"
           placeholder="Ingrese el nombre y apellidos"
+          maxLength={NOMBRE_MAX_LENGTH}
+          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_NOMBRE_COMPLETO)}         
           {...register('nombreCompleto')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombreCompleto ? 'border-acento-500' : 'border-neutro-300'}`}
         />
@@ -34,6 +37,7 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
           type="email"
           id="email"
           placeholder="ejemplo@institucion.edu"
+          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_EMAIL)}
           {...register('email')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
         />
@@ -47,7 +51,9 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         <input
           type="text"
           id="ci"
-          placeholder="Ej: 1234567 CB"
+          placeholder="Ej: 1234567 o 1234567-1B"
+          maxLength={CI_MAX_LENGTH}
+          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CI)}
           {...register('ci')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.ci ? 'border-acento-500' : 'border-neutro-300'}`}
         />
@@ -61,7 +67,9 @@ export function FormularioAsignarResponsable({ register, errors }: Props) {
         <input
           type="text"
           id="codigo_encargado"
-          placeholder="Ingrese el código único. Ej: 2025-MAT"
+          placeholder="Ingrese el código único. Ej: MAT01"
+          maxLength={CODIGO_MAX_LENGTH}
+          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CODIGO)}
           {...register('codigo_encargado')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_encargado ? 'border-acento-500' : 'border-neutro-300'}`}
         />

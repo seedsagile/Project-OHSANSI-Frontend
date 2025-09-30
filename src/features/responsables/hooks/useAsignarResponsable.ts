@@ -6,60 +6,41 @@ import { format } from 'date-fns';
 import { AxiosError } from 'axios';
 
 import { asignarResponsableAPI } from '../services/ApiResposableArea';
-import type { FormularioData, PayloadResponsable } from '../tipos/IndexResponsable';
+import type { FormularioData, PayloadResponsable } from '../types/IndexResponsable';
+import { separarNombreCompleto, generarTelefonoRandom } from '../utils/responsableUtils';
+import { NOMBRE_MIN_LENGTH, NOMBRE_MAX_LENGTH, CARACTERES_ACETADOS_NOMBRE_COMPLETO, CI_MIN_LENGTH, CI_MAX_LENGTH, CARACTERES_ACETADOS_CI, CODIGO_MIN_LENGTH, CODIGO_MAX_LENGTH, CARACTERES_ACETADOS_CODIGO, DEFECTO_FECHA_NAC } from '../utils/resposableVarGlobalesUtils';
 
 type ApiErrorResponse = {
   error: string;
 };
 
-export function separarNombreCompleto(nombreCompleto: string): { nombre: string; apellido: string } {
-  if (!nombreCompleto || typeof nombreCompleto !== 'string') {
-    return { nombre: '', apellido: '' };
-  }
-
-  const palabras = nombreCompleto.trim().split(' ').filter(p => p);
-
-  if (palabras.length <= 1) {
-    return { nombre: palabras[0] || '', apellido: '' };
-  }
-
-  if (palabras.length === 2) {
-    return { nombre: palabras[0], apellido: palabras[1] };
-  }
-
-  const apellido = palabras.slice(-2).join(' ');
-  const nombre = palabras.slice(0, -2).join(' ');
-
-  return { nombre, apellido };
-}
-
-export function generarTelefonoRandom(): string {
-  const primerDigito = Math.random() < 0.5 ? '6' : '7';
-  let restoNumero = '';
-  for (let i = 0; i < 7; i++) {
-    restoNumero += Math.floor(Math.random() * 10);
-  }
-  return primerDigito + restoNumero;
-}
-
 const schemaResponsable = z.object({
   nombreCompleto: z.string()
-    .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
-    .max(40, 'El campo Nombre tiene un límite máximo de 40 caracteres.')
-    .regex(/^[a-zA-Z\s\u00C0-\u017F]+$/, 'El campo Nombre solo permite letras, espacios y acentos.'),
+    .refine(val => val.trim().replace(/\s+/g, ' ') === val, {
+      message: 'El nombre no debe tener espacios innecesarios al inicio, al final o entre palabras.',
+    })
+    .transform(val => val.trim().replace(/\s+/g, ' '))
+    .pipe(z.string()
+      .min(1, 'El campo Nombre Completo es obligatorio.')
+      .min(NOMBRE_MIN_LENGTH, `El nombre debe tener al menos ${NOMBRE_MIN_LENGTH} caracteres.`)
+      .max(NOMBRE_MAX_LENGTH, `El nombre no puede tener más de ${NOMBRE_MAX_LENGTH} caracteres.`)
+      .regex(CARACTERES_ACETADOS_NOMBRE_COMPLETO, 'El campo Nombre solo permite letras, espacios y acentos.')
+    ),
 
   email: z.string()
     .min(1, 'El campo Email es obligatorio.')
     .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).'),
-
   ci: z.string()
-    .min(4, 'El campo CI requiere un mínimo de 4 caracteres.')
-    .max(15, 'El campo CI tiene un límite máximo de 15 caracteres.')
-    .regex(/^[a-zA-Z0-9\s-]+$/, 'El campo CI solo permite letras, números, espacios y guiones.'),
+    .min(1, 'El campo CI es obligatorio.')
+    .min(CI_MIN_LENGTH, `El CI debe tener al menos ${CI_MIN_LENGTH} caracteres.`)
+    .max(CI_MAX_LENGTH, `El campo CI tiene un límite máximo de ${CI_MAX_LENGTH} caracteres.`)
+    .regex(CARACTERES_ACETADOS_CI, 'El CI solo permite letras, números, espacios y guiones.'),
 
   codigo_encargado: z.string()
-    .min(4, 'El código de acceso debe tener al menos 4 caracteres.')
-    .max(10, 'El campo Código de acceso tiene un límite máximo de 10 caracteres.'),
+    .min(1, 'El campo Código de acceso es obligatorio.')
+    .min(CODIGO_MIN_LENGTH, `El código debe tener al menos ${CODIGO_MIN_LENGTH} caracteres.`)
+    .max(CODIGO_MAX_LENGTH, `El campo Código de acceso tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
+    .regex(CARACTERES_ACETADOS_CODIGO, 'El código solo permite letras y números.'),
 });
 
 export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
@@ -79,16 +60,11 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
       mostrarModal('success', '¡Registro Exitoso!', 'El nuevo responsable ha sido registrado correctamente.');
       reset();
     },
-    onError: (error: AxiosError<ApiErrorResponse>) => {
-      const errorMessage = error.response?.data?.error || "Ocurrió un error inesperado.";
 
-      if (errorMessage.includes("Ya existe un responsable asignado para esta área")) {
-        mostrarModal('error', 'Área ya Asignada', errorMessage);
-      } else if (errorMessage.toLowerCase().includes("duplicate")) {
-        mostrarModal('error', 'Registro Duplicado', 'El CI, correo o código de encargado ya existe en el sistema.');
-      } else {
-        mostrarModal('error', 'Error del Servidor', errorMessage);
-      }
+    onError: (error: AxiosError<ApiErrorResponse>) => {
+      const errorMessage = error.response?.data?.error || "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
+      mostrarModal('error', '¡Ups! Algo Salió Mal', errorMessage);
+      
       console.error(error);
     },
   });
@@ -103,7 +79,7 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
         apellido: apellido,
         ci: data.ci,
         email: data.email,
-        fecha_nac: '1990-01-01',
+        fecha_nac: DEFECTO_FECHA_NAC,
         genero: 'M',
         telefono: generarTelefonoRandom(),
       },
