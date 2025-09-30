@@ -64,10 +64,10 @@ export function PaginaAreas() {
                                             table.getRowModel().rows.map(row => (
                                                 <tr 
                                                     key={row.id} 
-                                                    onClick={() => setAreaSeleccionada(row.original)} // <-- Hacemos la fila clickeable
+                                                    onClick={() => setAreaSeleccionada(row.original)}
                                                     className={`cursor-pointer transition-colors ${
                                                         areaSeleccionada?.id_area === row.original.id_area
-                                                            ? 'bg-principal-100' // Estilo para la fila seleccionada
+                                                            ? 'bg-principal-100'
                                                             : 'even:bg-neutro-100 hover:bg-principal-50'
                                                     }`}
                                                 >
@@ -81,7 +81,8 @@ export function PaginaAreas() {
                                 </table>
                             </div>
                         </div>
-                        <div className="flex justify-end mt-6">
+                        {/* --- 👇 ¡AQUÍ ESTÁ EL CAMBIO! Se redujo el margen de mt-6 a mt-4 --- */}
+                        <div className="flex justify-end mt-4">
                             <button onClick={abrirModalCrear} disabled={isLoading} className="inline-flex items-center gap-2 px-6 py-2.5 font-semibold rounded-lg bg-principal-500 text-white hover:bg-principal-600 transition-colors disabled:opacity-50">
                                 <IconoPlus />
                                 Nueva Área

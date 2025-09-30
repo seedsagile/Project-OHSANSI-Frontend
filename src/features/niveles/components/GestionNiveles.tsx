@@ -1,4 +1,3 @@
-// src/features/niveles/componentes/GestionNiveles.tsx
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { IconoPlus } from '../../areas/components/IconoPlus';
@@ -31,12 +30,19 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
 
     return (
         <>
+            <div className="mb-4 p-3 bg-neutro-100 rounded-lg text-center">
+                <span className="font-semibold text-neutro-700">Área Seleccionada: </span>
+                <span className="font-bold text-principal-600">
+                    {areaSeleccionada ? areaSeleccionada.nombre : 'Ninguna'}
+                </span>
+            </div>
+
             <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
                 Lista de Niveles
             </h2>
             
             <div className="rounded-lg border border-neutro-200 overflow-hidden">
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-[20.5rem] overflow-y-auto">
                     <table className="w-full text-left">
                         <thead className="bg-principal-500 sticky top-0 z-10">
                             {table.getHeaderGroups().map(headerGroup => (
@@ -69,11 +75,12 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
                     </table>
                 </div>
             </div>
-
-            <div className="flex justify-end mt-6">
+            
+            {/* --- 👇 ¡AQUÍ ESTÁ EL CAMBIO! Se redujo el margen de mt-6 a mt-4 --- */}
+            <div className="flex justify-end mt-4">
                 <button
                     onClick={abrirModalCrear}
-                    disabled={!areaSeleccionada || isLoading} // El botón se deshabilita si no hay un área seleccionada
+                    disabled={!areaSeleccionada || isLoading}
                     className="inline-flex items-center gap-2 px-6 py-2.5 font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <IconoPlus />

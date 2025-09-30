@@ -1,3 +1,4 @@
+// src/features/niveles/services/nivelesService.ts
 import apiClient from '../../../api/ApiPhp';
 import type { Nivel, CrearNivelData } from '../types';
 import { AxiosError } from 'axios';
@@ -7,14 +8,14 @@ type ApiErrorResponse = {
 };
 
 export const nivelesService = {
-    async obtenerNivelesPorArea(id_area: number): Promise<Nivel[]> {
-        const response = await apiClient.get<Nivel[]>(`/area/${id_area}/niveles`);
+    async obtenerNiveles(): Promise<Nivel[]> {
+        const response = await apiClient.get<Nivel[]>('/niveles');
         return response.data;
     },
 
     async crearNivel(data: CrearNivelData): Promise<Nivel> {
         try {
-            const response = await apiClient.post<Nivel>('/nivel', data);
+            const response = await apiClient.post<Nivel>('/niveles', data);
             return response.data;
         } catch (error) {
             if (error instanceof AxiosError) {
