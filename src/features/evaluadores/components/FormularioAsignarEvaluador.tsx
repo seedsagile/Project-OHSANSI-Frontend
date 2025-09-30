@@ -10,88 +10,165 @@ type Props = {
 };
 
 export function FormularioAsignarEvaluador({ register, errors }: Props) {
-  // Función para permitir solo letras, espacios y acentos (Nombre y Apellido)
-  const handleNameInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const char = e.key;
-    const isValidChar = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/.test(char);
-    const isControlKey = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(char);
+  // Función para limpiar y validar nombre/apellido en tiempo real
+  const handleNameInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const cursorPosition = input.selectionStart;
+    const originalValue = input.value;
     
-    if (!isValidChar && !isControlKey) {
-      e.preventDefault();
+    // Eliminar TODOS los caracteres que no sean letras, espacios o acentos
+    const cleanedValue = originalValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    
+    if (originalValue !== cleanedValue) {
+      input.value = cleanedValue;
+      // Mantener la posición del cursor
+      if (cursorPosition) {
+        input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+      }
+      
+      // Disparar evento para react-hook-form
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
   // Prevenir pegar contenido inválido en nombre/apellido
   const handleNamePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const isValid = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(pastedText);
+    const cleanedText = pastedText.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
     
-    if (!isValid) {
-      e.preventDefault();
+    if (cleanedText) {
+      const input = e.currentTarget;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentValue = input.value;
+      const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+      
+      input.value = newValue.substring(0, 20);
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
-  // Función para permitir solo números (CI)
-  const handleCIInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const char = e.key;
-    const isNumber = /^[0-9]$/.test(char);
-    const isControlKey = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(char);
+  // Función para limpiar y validar CI en tiempo real
+  const handleCIInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const cursorPosition = input.selectionStart;
+    const originalValue = input.value;
     
-    if (!isNumber && !isControlKey) {
-      e.preventDefault();
+    // Eliminar TODOS los caracteres que no sean números
+    const cleanedValue = originalValue.replace(/[^0-9]/g, '');
+    
+    if (originalValue !== cleanedValue) {
+      input.value = cleanedValue;
+      if (cursorPosition) {
+        input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+      }
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
   // Prevenir pegar contenido inválido en CI
   const handleCIPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const isValid = /^[0-9]*$/.test(pastedText);
+    const cleanedText = pastedText.replace(/[^0-9]/g, '');
     
-    if (!isValid) {
-      e.preventDefault();
+    if (cleanedText) {
+      const input = e.currentTarget;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentValue = input.value;
+      const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+      
+      input.value = newValue.substring(0, 15);
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
-  // Función para email - permite solo caracteres válidos para email
-  const handleEmailInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const char = e.key;
-    // Permite: letras, números, @, punto, guión bajo, guión, más
-    const isValidChar = /^[a-zA-Z0-9@._\-+]$/.test(char);
-    const isControlKey = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(char);
+  // Función para limpiar y validar email en tiempo real
+  const handleEmailInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const cursorPosition = input.selectionStart;
+    const originalValue = input.value;
     
-    if (!isValidChar && !isControlKey) {
-      e.preventDefault();
+    // Solo permitir: letras, números, @ y punto
+    const cleanedValue = originalValue.replace(/[^a-zA-Z0-9@.]/g, '');
+    
+    if (originalValue !== cleanedValue) {
+      input.value = cleanedValue;
+      if (cursorPosition) {
+        input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+      }
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
   // Prevenir pegar contenido inválido en email
   const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const isValid = /^[a-zA-Z@.]*$/.test(pastedText);
+    const cleanedText = pastedText.replace(/[^a-zA-Z0-9@.]/g, '');
     
-    if (!isValid) {
-      e.preventDefault();
+    if (cleanedText) {
+      const input = e.currentTarget;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentValue = input.value;
+      const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+      
+      input.value = newValue.substring(0, 50);
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
-  // Función para permitir solo letras y números (Código evaluador)
-  const handleCodeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const char = e.key;
-    const isValidChar = /^[a-zA-Z0-9]$/.test(char);
-    const isControlKey = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(char);
+  // Función para limpiar y validar código en tiempo real
+  const handleCodeInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const cursorPosition = input.selectionStart;
+    const originalValue = input.value;
     
-    if (!isValidChar && !isControlKey) {
-      e.preventDefault();
+    // Solo permitir letras y números
+    const cleanedValue = originalValue.replace(/[^a-zA-Z0-9]/g, '');
+    
+    if (originalValue !== cleanedValue) {
+      input.value = cleanedValue;
+      if (cursorPosition) {
+        input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+      }
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
   // Prevenir pegar contenido inválido en código
   const handleCodePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const isValid = /^[a-zA-Z0-9]*$/.test(pastedText);
+    const cleanedText = pastedText.replace(/[^a-zA-Z0-9]/g, '');
     
-    if (!isValid) {
-      e.preventDefault();
+    if (cleanedText) {
+      const input = e.currentTarget;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentValue = input.value;
+      const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+      
+      input.value = newValue.substring(0, 10);
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
@@ -110,7 +187,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             id="nombre"
             placeholder="Ingrese el nombre"
             maxLength={20}
-            onKeyDown={handleNameInput}
+            onInput={handleNameInput}
             onPaste={handleNamePaste}
             {...register('nombre')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombre ? 'border-acento-500' : 'border-neutro-300'}`}
@@ -127,7 +204,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             id="apellido"
             placeholder="Ingrese el apellido"
             maxLength={20}
-            onKeyDown={handleNameInput}
+            onInput={handleNameInput}
             onPaste={handleNamePaste}
             {...register('apellido')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.apellido ? 'border-acento-500' : 'border-neutro-300'}`}
@@ -145,7 +222,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           id="ci"
           placeholder="Ej: 1234567"
           maxLength={15}
-          onKeyDown={handleCIInput}
+          onInput={handleCIInput}
           onPaste={handleCIPaste}
           {...register('ci')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.ci ? 'border-acento-500' : 'border-neutro-300'}`}
@@ -162,7 +239,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           id="email"
           placeholder="usuario@uno.com"
           maxLength={50}
-          onKeyDown={handleEmailInput}
+          onInput={handleEmailInput}
           onPaste={handleEmailPaste}
           {...register('email')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
@@ -212,7 +289,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           id="codigo_evaluador"
           placeholder="Ej: E123MAT"
           maxLength={10}
-          onKeyDown={handleCodeInput}
+          onInput={handleCodeInput}
           onPaste={handleCodePaste}
           {...register('codigo_evaluador')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_evaluador ? 'border-acento-500' : 'border-neutro-300'}`}
