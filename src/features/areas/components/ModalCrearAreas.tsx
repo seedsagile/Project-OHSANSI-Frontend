@@ -1,4 +1,3 @@
-// src/features/areas/components/ModalCrearAreas.tsx
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +10,6 @@ type ModalCrearAreaProps = {
     onClose: () => void;
     onGuardar: (data: CrearAreaFormData) => void;
     loading?: boolean;
-    // La prop 'areasExistentes' ha sido eliminada
 };
 
 export const ModalCrearArea = ({ 
@@ -20,7 +18,6 @@ export const ModalCrearArea = ({
     onGuardar, 
     loading = false,
 }: ModalCrearAreaProps) => {
-    // ... el resto del código del modal no necesita cambios
     const { register, handleSubmit, formState: { errors }, reset } = useForm<CrearAreaFormData>({
         resolver: zodResolver(crearAreaEsquema),
         mode: 'onBlur',

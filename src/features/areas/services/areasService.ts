@@ -1,5 +1,4 @@
-// src/features/areas/services/areasService.ts
-import apiClient from '../../../api/ApiPhp'; // Asegúrate de que la ruta sea correcta
+import apiClient from '../../../api/ApiPhp';
 import type { Area, CrearAreaData } from '../types';
 import { AxiosError } from 'axios';
 

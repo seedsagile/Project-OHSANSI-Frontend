@@ -1,4 +1,3 @@
-// src/features/areas/routes/PaginaAreas.tsx
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { IconoPlus } from '../components/IconoPlus';
@@ -38,7 +37,6 @@ export function PaginaAreas() {
                 </header>
                 
                 <div className="grid grid-cols-2 gap-8">
-                    {/* ... (el resto del JSX de la tabla y la columna de niveles no cambia) ... */}
                     <div>
                         <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
                             Lista de Áreas
@@ -100,11 +98,10 @@ export function PaginaAreas() {
             <ModalCrearArea
                 isOpen={modalCrearAbierto}
                 onClose={cerrarModalCrear}
-                onGuardar={handleGuardarArea} // Se pasa la nueva función del hook
+                onGuardar={handleGuardarArea}
                 loading={isCreating}
             />
 
-            {/* Renderizamos el nuevo modal de confirmación */}
             <ModalConfirmacion
                 isOpen={confirmationModal.isOpen}
                 onClose={cerrarModalConfirmacion}

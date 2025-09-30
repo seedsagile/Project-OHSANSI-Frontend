@@ -1,11 +1,9 @@
-// src/features/areas/hooks/useGestionAreas.ts
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { areasService } from '../services/areasService';
 import type { Area, CrearAreaData } from '../types';
 import toast from 'react-hot-toast';
 
-// Estado para el modal de confirmación
 type ConfirmationModalState = {
     isOpen: boolean;
     title: string;
@@ -21,7 +19,6 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-// Función de utilidad para normalizar y comparar nombres
 const normalizarNombre = (nombre: string) => 
     nombre.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -46,19 +43,16 @@ export function useGestionAreas() {
             toast.error(error.message);
         },
         onSettled: () => {
-            setConfirmationModal(initialConfirmationState); // Cierra el modal de confirmación
+            setConfirmationModal(initialConfirmationState);
         }
     });
 
-    // Nueva función que se llama al guardar desde el formulario
     const handleGuardarArea = (data: CrearAreaData) => {
         const nombreNormalizado = normalizarNombre(data.nombre);
         
-        // 1. Verificación de duplicados en el cliente
         const esDuplicado = areas.some(area => normalizarNombre(area.nombre) === nombreNormalizado);
 
         if (esDuplicado) {
-            // 2. Si es duplicado, muestra modal de información
             setConfirmationModal({
                 isOpen: true,
                 title: 'Nombre Duplicado',
@@ -68,7 +62,6 @@ export function useGestionAreas() {
             return;
         }
 
-        // 3. Si no es duplicado, muestra modal de confirmación
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -91,6 +84,6 @@ export function useGestionAreas() {
         abrirModalCrear,
         cerrarModalCrear,
         cerrarModalConfirmacion,
-        handleGuardarArea, // Exponemos la nueva función
+        handleGuardarArea,
     };
 }

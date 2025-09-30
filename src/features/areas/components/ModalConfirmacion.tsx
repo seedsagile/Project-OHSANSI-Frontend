@@ -1,4 +1,3 @@
-// src/features/areas/components/ModalConfirmacion.tsx
 import { type ReactNode } from 'react';
 import { AlertTriangle, Info, X } from 'lucide-react';
 
