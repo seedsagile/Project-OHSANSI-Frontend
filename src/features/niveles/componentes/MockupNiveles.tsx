@@ -23,13 +23,13 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     }
   }, [areaSeleccionada]);
 
-  // Función para cargar niveles desde backend
+  // ✅ Función para cargar niveles desde backend
   const cargarNiveles = async (idArea: number) => {
     try {
       setLoading(true);
       const todosNiveles = await getNiveles();
-      // Filtramos solo los niveles de esta área
-      const nivelesFiltrados = todosNiveles.filter((n) => n.orden === idArea);
+      // Filtramos solo los niveles que pertenecen a esa área
+      const nivelesFiltrados = todosNiveles.filter((n) => n.id_area === idArea);
       setNiveles(nivelesFiltrados);
     } catch (error) {
       console.error("Error al cargar niveles:", error);
@@ -38,17 +38,17 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     }
   };
 
-  // Crear un nuevo nivel
-  const handleCrearNivel = async (data: {
-    nombre: string;
-    descripcion?: string;
-    orden: number;
-  }) => {
+  // ✅ Crear un nuevo nivel
+  const handleCrearNivel = async (data: { nombre: string }) => {
     if (!areaSeleccionada) return;
 
     try {
       setLoading(true);
-      await createNivel(data);
+
+      await createNivel({
+        nombre: data.nombre,
+        id_area: areaSeleccionada.id_area, // le pasamos el id del área seleccionada
+      });
 
       // Recargar niveles del área seleccionada desde backend
       await cargarNiveles(areaSeleccionada.id_area);
@@ -66,12 +66,14 @@ export const MockupNiveles = ({ areaSeleccionada }: MockupNivelesProps) => {
     <>
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="mb-6">
-          <div className="bg-gray-300 text-center py-2 px-4 rounded mb-4">
-            <span className="font-semibold">
+          <div className=" text-center py-2 px-4 rounded mb-4">
+            <span className="flex justify-center items-center font-semibold ">
               Área:{" "}
-              {areaSeleccionada
-                ? areaSeleccionada.nombre
-                : "Ninguna seleccionada"}
+              <div className="bg-gray-300 p-1 ml-2">
+                {areaSeleccionada
+                  ? ` ${areaSeleccionada.nombre}`
+                  : "Ninguna seleccionada"}
+              </div>
             </span>
           </div>
 

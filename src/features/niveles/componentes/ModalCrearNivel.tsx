@@ -1,16 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { z } from "zod";
 
 type ModalCrearNivelProps = {
   isOpen: boolean;
   onClose: () => void;
   onGuardar: (data: {
     nombre: string;
-    descripcion?: string;
+    descripcion: null;
     orden: number;
   }) => void;
   idArea: number | null;
   loading?: boolean;
 };
+
+// 📌 Schema de validación con Zod
+const nombreSchema = z
+  .string()
+  .min(1, "El campo Nombre del nivel es obligatorio.")
+  .max(50, "El campo Nombre del nivel tiene un límite máximo de 50 caracteres.")
+  .regex(
+    /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
+    "El campo Nombre del nivel solo permite letras y espacios."
+  );
 
 export const ModalCrearNivel = ({
   isOpen,
@@ -20,44 +31,27 @@ export const ModalCrearNivel = ({
   loading = false,
 }: ModalCrearNivelProps) => {
   const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
   const [errores, setErrores] = useState<string[]>([]);
-  const [submitted, setSubmitted] = useState(false);
 
-  const validarNombre = (value: string) => {
-    const msgs: string[] = [];
-    if (!value.trim()) msgs.push("El campo Nombre del nivel es obligatorio.");
-    if (/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/.test(value))
-      msgs.push(
-        "El campo Nombre del nivel no permite caracteres numéricos o especiales."
-      );
-    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/.test(value))
-      msgs.push("El campo Nombre del nivel solo permite letras y espacios.");
-    if (value.length > 50)
-      msgs.push(
-        "El campo Nombre del nivel tiene un límite máximo de 50 caracteres."
-      );
-    return msgs;
-  };
-
-  // Validación en tiempo real
-  const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setNombre(value);
-    if (!submitted) {
-      // Solo mostrar errores de formato en tiempo real, no obligatorio
-      const msgs = validarNombre(value).filter(
-        (msg) => msg !== "El campo Nombre del nivel es obligatorio."
-      );
-      setErrores(msgs);
+  // ✅ Validación automática en tiempo real
+  useEffect(() => {
+    if (nombre === "") {
+      setErrores([]);
+      return;
     }
-  };
+
+    const result = nombreSchema.safeParse(nombre);
+    if (!result.success) {
+      setErrores(result.error.errors.map((err) => err.message));
+    } else {
+      setErrores([]);
+    }
+  }, [nombre]);
 
   const handleGuardar = () => {
-    setSubmitted(true);
-    const msgs = validarNombre(nombre);
-    if (msgs.length > 0) {
-      setErrores(msgs);
+    const result = nombreSchema.safeParse(nombre);
+    if (!result.success) {
+      setErrores(result.error.errors.map((err) => err.message));
       return;
     }
 
@@ -68,22 +62,17 @@ export const ModalCrearNivel = ({
 
     onGuardar({
       nombre: nombre.trim(),
-      descripcion: descripcion.trim() || undefined,
+      descripcion: null, // siempre null
       orden: idArea,
     });
 
-    // limpiar
     setNombre("");
-    setDescripcion("");
     setErrores([]);
-    setSubmitted(false);
   };
 
   const handleCancelar = () => {
     setNombre("");
-    setDescripcion("");
     setErrores([]);
-    setSubmitted(false);
     onClose();
   };
 
@@ -96,22 +85,23 @@ export const ModalCrearNivel = ({
 
         {/* Nombre */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nombre del Nivel:
-          </label>
-          <input
-            type="text"
-            value={nombre}
-            onChange={handleNombreChange}
-            placeholder="Ingrese el nombre del nivel"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errores.length > 0
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
-            autoFocus
-            disabled={loading}
-          />
+          <div className="flex gap-2">
+            <label className="flex items-center text-sm font-medium text-gray-700 ">
+              Nombre del Nivel:
+            </label>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className={`w-[250px] px-3 items-center border rounded-md focus:outline-none focus:ring-2 ${
+                errores.length > 0
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
+              autoFocus
+              disabled={loading}
+            />
+          </div>
           {errores.length > 0 && (
             <ul className="text-red-500 text-sm mt-1 list-disc list-inside">
               {errores.map((err, i) => (
@@ -121,34 +111,19 @@ export const ModalCrearNivel = ({
           )}
         </div>
 
-        {/* Descripción */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Descripción:
-          </label>
-          <textarea
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Ingrese una descripción (opcional)"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            rows={3}
-            disabled={loading}
-          />
-        </div>
-
         {/* Botones */}
         <div className="flex gap-4 justify-center">
           <button
             onClick={handleCancelar}
             disabled={loading}
-            className="font-semibold py-2.5 px-6 rounded-lg bg-gray-700 text-white hover:bg-gray-800 transition-colors"
+            className="font-semibold py-2.5 px-6 rounded-lg bg-gray-200 text-black hover:bg-blue-600 hover:text-white transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleGuardar}
             disabled={loading}
-            className="font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            className="font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-700 transition-colors"
           >
             {loading ? "Guardando..." : "Guardar"}
           </button>
