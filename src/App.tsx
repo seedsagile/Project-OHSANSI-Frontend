@@ -3,8 +3,8 @@ import {
     RouterProvider,
     Navigate,
 } from "react-router-dom";
-import { PaginaImportarCompetidores } from "./features/inscritos/rutas/PaginaImportarCompetidores";
 import { RootLayout } from "./components/layout/RootLayout";
+import { PaginaImportarCompetidores } from "./features/inscritos/rutas/PaginaImportarCompetidores";
 
 const Dashboard = () => (
     <div className="p-8">
@@ -18,23 +18,22 @@ const router = createBrowserRouter([
         path: "/",
         element: <RootLayout />,
         children: [
-        {
-            index: true,
-            element: <Navigate to="/dashboard" replace />,
-        },
-        {
-            path: "dashboard",
-            element: <Dashboard />,
-        },
-        {
-            path: "competidores",
-            element: <PaginaImportarCompetidores />,
-        },
-        {
-            path: "responsables",
-            element: "#",
-        },
-        
+            {
+                index: true,
+                element: <Navigate to="/dashboard" replace />,
+            },
+            {
+                path: "dashboard",
+                element: <Dashboard />,
+            },
+            {
+                path: "competidores",
+                element: <PaginaImportarCompetidores />,
+            },
+            {
+                path: "responsables",
+                element: "<PaginaAsignarResponsable />",
+            },
         ],
     },
 ]);
