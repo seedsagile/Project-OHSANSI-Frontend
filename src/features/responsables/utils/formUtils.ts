@@ -1,20 +1,18 @@
 import React from 'react';
 import type { FieldValues, UseFormSetValue, FieldPath, PathValue } from 'react-hook-form';
+const LISTA_NEGRA = [';', ':', '+', '~', '*', '´', '¨', '?','{', '}', '[', ']', "'", '"', '`', 'Dead' ];
 
 export const restringirCaracteres = (event: React.KeyboardEvent<HTMLInputElement>, pattern: RegExp) => {
     if (
-        event.key === 'Backspace' ||
-        event.key === 'Delete' ||
-        event.key === 'Tab' ||
-        event.key === 'Enter' ||
-        event.key === 'ArrowLeft' ||
-        event.key === 'ArrowRight' ||
+        event.key.length > 1 || 
+        event.ctrlKey || 
         event.metaKey
+
     ) {
         return;
     }
 
-    if (!pattern.test(event.key)) {
+    if (LISTA_NEGRA.includes(event.key) ||!pattern.test(event.key)) {
         event.preventDefault();
     }
 };
