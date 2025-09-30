@@ -114,7 +114,7 @@ export const ModalCrearArea = ({
                             type="text"
                             value={nombre}
                             onChange={(e) => handleNombreChange(e.target.value)}
-                            //placeholder="Ingrese el nombre del área"
+                            placeholder="Ingrese el nombre del área"
                             className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                                 errores.nombre 
                                     ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
