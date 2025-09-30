@@ -76,7 +76,6 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
                 </div>
             </div>
             
-            {/* --- 👇 ¡AQUÍ ESTÁ EL CAMBIO! Se redujo el margen de mt-6 a mt-4 --- */}
             <div className="flex justify-end mt-4">
                 <button
                     onClick={abrirModalCrear}

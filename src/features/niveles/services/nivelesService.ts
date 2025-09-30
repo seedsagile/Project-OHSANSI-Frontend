@@ -1,4 +1,3 @@
-// src/features/niveles/services/nivelesService.ts
 import apiClient from '../../../api/ApiPhp';
 import type { Nivel, CrearNivelData } from '../types';
 import { AxiosError } from 'axios';

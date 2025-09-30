@@ -1,4 +1,3 @@
-// src/features/areas/routes/PaginaAreas.tsx
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { IconoPlus } from '../components/IconoPlus';
@@ -40,7 +39,6 @@ export function PaginaAreas() {
                 </header>
                 
                 <div className="grid grid-cols-2 gap-8">
-                    {/* Columna izquierda: Áreas */}
                     <div>
                         <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
                             Lista de Áreas
@@ -81,7 +79,6 @@ export function PaginaAreas() {
                                 </table>
                             </div>
                         </div>
-                        {/* --- 👇 ¡AQUÍ ESTÁ EL CAMBIO! Se redujo el margen de mt-6 a mt-4 --- */}
                         <div className="flex justify-end mt-4">
                             <button onClick={abrirModalCrear} disabled={isLoading} className="inline-flex items-center gap-2 px-6 py-2.5 font-semibold rounded-lg bg-principal-500 text-white hover:bg-principal-600 transition-colors disabled:opacity-50">
                                 <IconoPlus />
@@ -90,7 +87,6 @@ export function PaginaAreas() {
                         </div>
                     </div>
                     
-                    {/* Columna derecha: Gestión de Niveles */}
                     <div>
                         <GestionNiveles areaSeleccionada={areaSeleccionada} />
                     </div>

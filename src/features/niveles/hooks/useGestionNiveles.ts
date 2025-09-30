@@ -1,4 +1,3 @@
-// src/features/niveles/hooks/useGestionNiveles.ts
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
