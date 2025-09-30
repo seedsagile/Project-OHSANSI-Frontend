@@ -4,7 +4,8 @@ import {
     Navigate,
 } from "react-router-dom";
 import { RootLayout } from "./components/layout/RootLayout";
-import { PaginaImportarCompetidores } from "./features/inscritos/rutas/PaginaImportarCompetidores";
+import { PaginaImportarCompetidores } from "./features/inscritos/routes/PaginaImportarCompetidores";
+import { PaginaAsignarResponsable } from "./features/responsables/routes/PaginaAsignarResponsable";
 
 const Dashboard = () => (
     <div className="p-8">
@@ -32,7 +33,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "responsables",
-                element: "<PaginaAsignarResponsable />",
+                element: <PaginaAsignarResponsable />,
             },
         ],
     },

@@ -6,7 +6,7 @@ import { AxiosError } from 'axios';
 import type { ApiErrorResponse, CompetidorCSV, InscripcionPayload, CompetidorIndividualPayload } from '../types/indexInscritos';
 import { importarCompetidoresAPI } from '../services/ApiInscripcion';
 import type { FileRejection } from 'react-dropzone';
-import { separarNombreCompleto } from '../../responsables/hooks/useAsignarResponsable';
+import { separarNombreCompleto } from '../../responsables/utils/responsableUtils';
 
 type ApiResponse = { message: string; };
 const normalizarEncabezado = (header: string): string => header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
