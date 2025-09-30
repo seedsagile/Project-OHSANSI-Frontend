@@ -58,14 +58,14 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
         
         // Solo error de CI
         if (validationErrors.ci && area_ci && nivel_ci) {
-          const mensaje = `El CI ya está registrado, por tanto el evaluador ya se encuentra registrado en el área "${area_ci}" - Nivel "${nivel_ci}".`;
+          const mensaje = `El evaluador ya se encuentra registrado en el área "${area_ci}" - Nivel "${nivel_ci}".`;
           mostrarModal('error', 'CI Repetido', mensaje);
           return;
         }
         
         // Solo error de email
         if (validationErrors.email && area_email && nivel_email) {
-          const mensaje = `El correo ya está registrado, por tanto el evaluador ya se encuentra registrado en el área "${area_email}" - Nivel "${nivel_email}".`;
+          const mensaje = `El  evaluador ya se encuentra registrado en el área "${area_email}" - Nivel "${nivel_email}".`;
           mostrarModal('error', 'Email Repetido', mensaje);
           return;
         }
