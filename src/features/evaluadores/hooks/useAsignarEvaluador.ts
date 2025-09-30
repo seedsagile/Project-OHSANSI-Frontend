@@ -6,7 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { evaluadorService } from '../services/ApiEvaluador';
 import { schemaEvaluador } from '../validations/evaluatorValidation';
-import type { FormularioDataEvaluador, PayloadEvaluador } from '../tipos/IndexEvaluador';
+import type { FormularioDataEvaluador, PayloadEvaluador, ErrorConData } from '../tipos/IndexEvaluador';
 
 export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
   const {
@@ -24,39 +24,59 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
     onSuccess: (data) => {
       console.log('=== ÉXITO EN EL HOOK ===');
       console.log('Respuesta completa recibida:', data);
-      // Criterio 20 y 24: Mensaje de confirmación y limpiar campos
-      mostrarModal('success', '¡Registro Exitoso!', 'El evaluador ha sido registrado correctamente y asociado al área correspondiente.');
+      
+      // Mensaje con área y nivel
+      const mensaje = `El evaluador "${data.evaluador.nombre} ${data.evaluador.apellido}" ha sido registrado correctamente en el área "${data.area}" - Nivel "${data.nivel}".`;
+      
+      mostrarModal('success', '¡Registro Exitoso!', mensaje);
       reset();
     },
-    onError: (error: Error) => {
+    onError: (error: ErrorConData) => {
       console.log('=== ERROR EN EL HOOK ===');
       console.log('Error completo:', error);
       console.log('Mensaje de error:', error.message);
       
       const errorMessage = error.message || "Ocurrió un error inesperado.";
       
-      // Criterio 8: Error por email duplicado
-      if (errorMessage.includes("email") && errorMessage.includes("ya")) {
-        mostrarModal('error', 'Email ya Registrado', 'El correo electrónico ya está registrado en el sistema.');
+      // Verificar si es un error de duplicación con datos de área y nivel
+      if (error.errorData?.errors) {
+        const { errors: validationErrors, area_ci, nivel_ci, area_email, nivel_email } = error.errorData;
+        
+        // Si hay errores tanto de CI como de email
+        if (validationErrors.ci && validationErrors.email && area_ci && nivel_ci && area_email && nivel_email) {
+          // Verificar si el área y nivel son los mismos para ambos
+          if (area_ci === area_email && nivel_ci === nivel_email) {
+            const mensaje = `El evaluador ya se encuentra registrado en el área "${area_ci}" - Nivel "${nivel_ci}".`;
+            mostrarModal('error', 'CI y Email Repetidos', mensaje);
+          } else {
+            // Diferentes áreas/niveles para CI y email (caso raro pero posible)
+            const mensaje = `• El CI ya está registrado en el área "${area_ci}" - Nivel "${nivel_ci}".\n• El email ya está registrado en el área "${area_email}" - Nivel "${nivel_email}".`;
+            mostrarModal('error', 'CI y Email Repetidos', mensaje);
+          }
+          return;
+        }
+        
+        // Solo error de CI
+        if (validationErrors.ci && area_ci && nivel_ci) {
+          const mensaje = `El CI ya está registrado, por tanto el evaluador ya se encuentra registrado en el área "${area_ci}" - Nivel "${nivel_ci}".`;
+          mostrarModal('error', 'CI Repetido', mensaje);
+          return;
+        }
+        
+        // Solo error de email
+        if (validationErrors.email && area_email && nivel_email) {
+          const mensaje = `El correo ya está registrado, por tanto el evaluador ya se encuentra registrado en el área "${area_email}" - Nivel "${nivel_email}".`;
+          mostrarModal('error', 'Email Repetido', mensaje);
+          return;
+        }
       }
-      // Criterio 14: Error por CI duplicado  
-      else if (errorMessage.includes("ci") && errorMessage.includes("ya")) {
-        mostrarModal('error', 'CI ya Registrado', 'El carnet de identidad ya está registrado en el sistema.');
-      }
-      // Criterio 13: Error por formato inválido de CI
-      else if (errorMessage.includes("CI") && errorMessage.includes("formato")) {
-        mostrarModal('error', 'Formato de CI Inválido', 'El CI contiene caracteres especiales. Solo se permiten números.');
-      }
-      // Criterio 19: Error por formato inválido de código
-      else if (errorMessage.includes("Código") && errorMessage.includes("formato")) {
-        mostrarModal('error', 'Formato de Código Inválido', 'El Código de acceso contiene caracteres especiales. Solo se permiten letras y números.');
-      }
-      // Criterio 21: Errores de validación general
-      else if (errorMessage.includes("Errores de validación")) {
+      
+      // Otros errores
+      if (errorMessage.includes("formato")) {
+        mostrarModal('error', 'Formato Inválido', errorMessage);
+      } else if (errorMessage.includes("Errores de validación")) {
         mostrarModal('error', 'Datos Inválidos', errorMessage);
-      }
-      // Error general del servidor
-      else {
+      } else {
         mostrarModal('error', 'Error del Servidor', errorMessage);
       }
     },
@@ -77,7 +97,6 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
     };
     
     console.log('Payload creado para enviar:', payload);
-    // Criterio 21: Registro con datos válidos
     mutate(payload);
   };
 

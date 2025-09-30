@@ -1,6 +1,6 @@
 // src/evaluadores/components/ModalFeedback.tsx
 
-import React from 'react';
+//import React from 'react';
 import type { ReactNode } from 'react';
 
 const SuccessIcon = () => (
@@ -39,11 +39,8 @@ export function ModalFeedback({ isOpen, onClose, type, title, children }: Props)
   };
 
   return (
-    // Sin fondo negro - solo overlay transparente para centrar
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      {/* Modal con sombra fuerte para destacar */}
       <div className="bg-blanco rounded-xl shadow-2xl border border-neutro-200 w-full max-w-md p-8 text-center relative">
-        {/* Botón X para cerrar */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-neutro-400 hover:text-neutro-600 transition-colors"
@@ -56,7 +53,7 @@ export function ModalFeedback({ isOpen, onClose, type, title, children }: Props)
         
         {icons[type]}
         <h2 className="text-3xl font-bold text-negro mt-4">{title}</h2>
-        <div className="text-neutro-500 mt-2 text-lg">
+        <div className="text-neutro-600 mt-3 text-base leading-relaxed whitespace-pre-line text-left px-2">
           {children}
         </div>
         <button

@@ -21,6 +21,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
+  // Prevenir pegar contenido inválido en nombre/apellido
+  const handleNamePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    const isValid = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(pastedText);
+    
+    if (!isValid) {
+      e.preventDefault();
+    }
+  };
+
   // Función para permitir solo números (CI)
   const handleCIInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const char = e.key;
@@ -32,14 +42,34 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
+  // Prevenir pegar contenido inválido en CI
+  const handleCIPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    const isValid = /^[0-9]*$/.test(pastedText);
+    
+    if (!isValid) {
+      e.preventDefault();
+    }
+  };
+
   // Función para email - permite solo caracteres válidos para email
   const handleEmailInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const char = e.key;
-    // Permite: letras, números, punto, guión bajo, porcentaje, más, guión, arroba
-    const isValidChar = /^[a-zA-Z0-9.@]$/.test(char);
+    // Permite: letras, números, @, punto, guión bajo, guión, más
+    const isValidChar = /^[a-zA-Z0-9@._\-+]$/.test(char);
     const isControlKey = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(char);
     
     if (!isValidChar && !isControlKey) {
+      e.preventDefault();
+    }
+  };
+
+  // Prevenir pegar contenido inválido en email
+  const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    const isValid = /^[a-zA-Z@.]*$/.test(pastedText);
+    
+    if (!isValid) {
       e.preventDefault();
     }
   };
@@ -51,6 +81,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const isControlKey = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(char);
     
     if (!isValidChar && !isControlKey) {
+      e.preventDefault();
+    }
+  };
+
+  // Prevenir pegar contenido inválido en código
+  const handleCodePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    const isValid = /^[a-zA-Z0-9]*$/.test(pastedText);
+    
+    if (!isValid) {
       e.preventDefault();
     }
   };
@@ -69,7 +109,9 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             type="text"
             id="nombre"
             placeholder="Ingrese el nombre"
+            maxLength={20}
             onKeyDown={handleNameInput}
+            onPaste={handleNamePaste}
             {...register('nombre')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombre ? 'border-acento-500' : 'border-neutro-300'}`}
           />
@@ -84,7 +126,9 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             type="text"
             id="apellido"
             placeholder="Ingrese el apellido"
+            maxLength={20}
             onKeyDown={handleNameInput}
+            onPaste={handleNamePaste}
             {...register('apellido')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.apellido ? 'border-acento-500' : 'border-neutro-300'}`}
           />
@@ -100,7 +144,9 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           type="text"
           id="ci"
           placeholder="Ej: 1234567"
+          maxLength={15}
           onKeyDown={handleCIInput}
+          onPaste={handleCIPaste}
           {...register('ci')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.ci ? 'border-acento-500' : 'border-neutro-300'}`}
         />
@@ -115,7 +161,9 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           type="email"
           id="email"
           placeholder="usuario@uno.com"
+          maxLength={50}
           onKeyDown={handleEmailInput}
+          onPaste={handleEmailPaste}
           {...register('email')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
         />
@@ -132,6 +180,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             type="password"
             id="password"
             placeholder="Contraseña segura"
+            maxLength={32}
             {...register('password')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.password ? 'border-acento-500' : 'border-neutro-300'}`}
           />
@@ -146,6 +195,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             type="password"
             id="password_confirmation"
             placeholder="Repita la contraseña"
+            maxLength={32}
             {...register('password_confirmation')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.password_confirmation ? 'border-acento-500' : 'border-neutro-300'}`}
           />
@@ -161,13 +211,15 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           type="text"
           id="codigo_evaluador"
           placeholder="Ej: E123MAT"
+          maxLength={10}
           onKeyDown={handleCodeInput}
+          onPaste={handleCodePaste}
           {...register('codigo_evaluador')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_evaluador ? 'border-acento-500' : 'border-neutro-300'}`}
         />
         {errors.codigo_evaluador && <p className="text-acento-600 text-sm mt-1">{errors.codigo_evaluador.message}</p>}
         <p className="text-sm text-neutro-500 mt-1">
-          Este código es proporcionado por la institución .
+          Este código es proporcionado por la institución.
         </p>
       </div>
     </div>

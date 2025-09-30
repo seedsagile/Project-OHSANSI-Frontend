@@ -1,6 +1,6 @@
 // src/evaluadores/services/ApiEvaluador.ts
 
-import type { PayloadEvaluador, EvaluadorResponse } from '../tipos/IndexEvaluador';
+import type { PayloadEvaluador, EvaluadorResponse, ErrorValidacionResponse } from '../tipos/IndexEvaluador';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -28,9 +28,9 @@ export const evaluadorService = {
             console.log('6. Respuesta RAW del servidor:', responseText);
 
             if (!response.ok) {
-                let errorData = null;
+                let errorData: ErrorValidacionResponse | null = null;
                 try {
-                    errorData = JSON.parse(responseText);
+                    errorData = JSON.parse(responseText) as ErrorValidacionResponse;
                     console.log('7. Error parseado como JSON:', errorData);
                 } catch (parseError) {
                     console.log('7. Error NO es JSON válido:', parseError);
@@ -38,13 +38,33 @@ export const evaluadorService = {
 
                 let mensaje = 'Error al crear el evaluador';
                 
-                if (response.status === 422) {
-                    if (errorData?.errors) {
-                        const erroresArray = Object.entries(errorData.errors).map(([campo, errores]) => {
-                            return `${campo}: ${Array.isArray(errores) ? errores.join(', ') : errores}`;
-                        });
-                        mensaje = `Errores de validación: ${erroresArray.join('; ')}`;
-                    } else if (errorData?.message) {
+                if (response.status === 422 && errorData) {
+                    if (errorData.errors) {
+                        // Construir mensaje personalizado para errores de duplicación
+                        const mensajes: string[] = [];
+                        
+                        if (errorData.errors.ci && errorData.area_ci && errorData.nivel_ci) {
+                            mensajes.push(`El CI ya está registrado en el área "${errorData.area_ci}" - Nivel "${errorData.nivel_ci}"`);
+                        }
+                        
+                        if (errorData.errors.email && errorData.area_email && errorData.nivel_email) {
+                            mensajes.push(`El email ya está registrado en el área "${errorData.area_email}" - Nivel "${errorData.nivel_email}"`);
+                        }
+                        
+                        if (mensajes.length > 0) {
+                            mensaje = mensajes.join('. ');
+                            // Adjuntar los datos completos del error para uso en el hook
+                            const error = new Error(mensaje);
+                            (error as Error & { errorData?: ErrorValidacionResponse }).errorData = errorData;
+                            throw error;
+                        } else {
+                            // Otros errores de validación
+                            const erroresArray = Object.entries(errorData.errors).map(([campo, errores]) => {
+                                return `${campo}: ${Array.isArray(errores) ? errores.join(', ') : String(errores)}`;
+                            });
+                            mensaje = `Errores de validación: ${erroresArray.join('; ')}`;
+                        }
+                    } else if (errorData.message) {
                         mensaje = errorData.message;
                     }
                 } else if (response.status === 409) {
@@ -59,9 +79,9 @@ export const evaluadorService = {
                 throw new Error(mensaje);
             }
 
-            let jsonResponse;
+            let jsonResponse: EvaluadorResponse;
             try {
-                jsonResponse = JSON.parse(responseText);
+                jsonResponse = JSON.parse(responseText) as EvaluadorResponse;
                 console.log('9. Respuesta exitosa parseada:', jsonResponse);
             } catch (parseError) {
                 console.log('9. Error al parsear respuesta exitosa:', parseError);

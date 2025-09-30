@@ -50,4 +50,25 @@ export type EvaluadorResponse = {
       updated_at: string;
     };
   };
+  area: string;
+  nivel: string;
+};
+
+// Tipo para errores de validación con área y nivel
+export type ErrorValidacionResponse = {
+  errors?: {
+    ci?: string[];
+    email?: string[];
+    [key: string]: string[] | undefined;
+  };
+  message?: string;
+  area_email: string | null;
+  nivel_email: string | null;
+  area_ci: string | null;
+  nivel_ci: string | null;
+};
+
+// Tipo para el error extendido con errorData
+export type ErrorConData = Error & {
+  errorData?: ErrorValidacionResponse;
 };
