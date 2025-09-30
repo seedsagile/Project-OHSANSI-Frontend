@@ -1,4 +1,3 @@
-//ESTES SON MIS TIPOS DE AREA DEBE SER REEMPLAZADO POR LO DEL VIVEL
 export type Nivel = {
     id_nivel: number;
     nombre: string;
