@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { AxiosError } from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 import { asignarResponsableAPI } from '../services/ApiResposableArea';
 import type { FormularioData, PayloadResponsable } from '../types/IndexResponsable';
@@ -16,9 +17,6 @@ type ApiErrorResponse = {
 
 const schemaResponsable = z.object({
   nombreCompleto: z.string()
-    .refine(val => val.trim().replace(/\s+/g, ' ') === val, {
-      message: 'El nombre no debe tener espacios innecesarios al inicio, al final o entre palabras.',
-    })
     .transform(val => val.trim().replace(/\s+/g, ' '))
     .pipe(z.string()
       .min(1, 'El campo Nombre Completo es obligatorio.')
@@ -28,27 +26,38 @@ const schemaResponsable = z.object({
     ),
 
   email: z.string()
-    .min(1, 'El campo Email es obligatorio.')
-    .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).'),
+    .transform(val => val.trim().replace(/\s+/g, ' '))
+    .pipe(z.string()
+      .min(1, 'El campo Email es obligatorio.')
+      .email('El campo Email debe tener un formato válido (ej. usuario@dominio.com).')
+  ),
   ci: z.string()
-    .min(1, 'El campo CI es obligatorio.')
-    .min(CI_MIN_LENGTH, `El CI debe tener al menos ${CI_MIN_LENGTH} caracteres.`)
-    .max(CI_MAX_LENGTH, `El campo CI tiene un límite máximo de ${CI_MAX_LENGTH} caracteres.`)
-    .regex(CARACTERES_ACETADOS_CI, 'El CI solo permite letras, números, espacios y guiones.'),
+    .transform(val => val.trim().replace(/\s+/g, ' '))
+    .pipe(z.string()
+      .min(1, 'El campo CI es obligatorio.')
+      .min(CI_MIN_LENGTH, `El CI debe tener al menos ${CI_MIN_LENGTH} caracteres.`)
+      .max(CI_MAX_LENGTH, `El campo CI tiene un límite máximo de ${CI_MAX_LENGTH} caracteres.`)
+      .regex(CARACTERES_ACETADOS_CI, 'El CI solo permite letras, números, espacios y guiones.')
+    ),
 
   codigo_encargado: z.string()
-    .min(1, 'El campo Código de acceso es obligatorio.')
-    .min(CODIGO_MIN_LENGTH, `El código debe tener al menos ${CODIGO_MIN_LENGTH} caracteres.`)
-    .max(CODIGO_MAX_LENGTH, `El campo Código de acceso tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
-    .regex(CARACTERES_ACETADOS_CODIGO, 'El código solo permite letras y números.'),
+    .transform(val => val.trim().replace(/\s+/g, ' '))
+    .pipe(z.string()
+      .min(1, 'El campo Código de acceso es obligatorio.')
+      .min(CODIGO_MIN_LENGTH, `El código debe tener al menos ${CODIGO_MIN_LENGTH} caracteres.`)
+      .max(CODIGO_MAX_LENGTH, `El campo Código de acceso tiene un límite máximo de ${CODIGO_MAX_LENGTH} caracteres.`)
+      .regex(CARACTERES_ACETADOS_CODIGO, 'El código solo permite letras y números.')
+    ),
 });
 
 export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<FormularioData>({
     resolver: zodResolver(schemaResponsable),
     mode: 'onBlur',
@@ -59,6 +68,7 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
     onSuccess: () => {
       mostrarModal('success', '¡Registro Exitoso!', 'El nuevo responsable ha sido registrado correctamente.');
       reset();
+      navigate('/dashboard');
     },
 
     onError: (error: AxiosError<ApiErrorResponse>) => {
@@ -88,10 +98,17 @@ export function useAsignarResponsable({ mostrarModal }: { mostrarModal: (tipo: '
     mutate(payload);
   };
 
+  const handleCancel = () => {
+    reset();
+    navigate('/dashboard');
+  };
+
   return {
     register,
     handleSubmit: handleSubmit(onSubmit),
     errors,
     isSubmitting: isPending,
+    handleCancel,
+    setValue,
   };
 }

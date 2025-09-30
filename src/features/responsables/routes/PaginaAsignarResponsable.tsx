@@ -4,7 +4,6 @@ import { useAsignarResponsable } from '../hooks/useAsignarResponsable';
 import { Spinner } from '../components/Spinner';
 import { ModalFeedback } from '../components/ModalFeedback';
 
-// Define el tipo para el estado que controlará el modal
 type ModalState = {
   isOpen: boolean;
   type: 'success' | 'error';
@@ -32,7 +31,9 @@ export function PaginaAsignarResponsable() {
     register, 
     handleSubmit,
     errors, 
-    isSubmitting 
+    isSubmitting,
+    handleCancel,
+    setValue, 
   } = useAsignarResponsable({ mostrarModal });
 
   return (
@@ -50,12 +51,14 @@ export function PaginaAsignarResponsable() {
             <FormularioAsignarResponsable
               register={register}
               errors={errors}
+              setValue={setValue}
             />
           </form>
 
           <footer className="flex justify-end items-center gap-4 mt-12">
             <button
               type="button"
+              onClick={handleCancel}
               className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
