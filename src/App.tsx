@@ -35,6 +35,26 @@ const router = createBrowserRouter([
                 path: "responsables",
                 element: <PaginaAsignarResponsable />,
             },
+            {
+                path: "evaluadores",
+                element: <Dashboard />, // <== pones qui tu ruta
+            },
+            {
+                path: "areasNives",
+                element: <Dashboard />, // <== pones qui tu ruta
+            },
+            {
+                path: "parametrosCalificaciones",
+                element: <Dashboard />, // <== pones qui tu ruta
+            },
+            {
+                path: "calificaciones",
+                element: <Dashboard />, // <== pones qui tu ruta
+            },
+            {
+                path: "reportes",
+                element: <Dashboard />, // <== pones qui tu ruta
+            }
         ],
     },
 ]);
