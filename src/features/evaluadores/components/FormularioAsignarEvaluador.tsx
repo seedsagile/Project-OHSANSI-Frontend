@@ -10,23 +10,21 @@ type Props = {
 };
 
 export function FormularioAsignarEvaluador({ register, errors }: Props) {
-  // Función para limpiar y validar nombre/apellido en tiempo real
+  // Función para limpiar y validar nombre/apellido en tiempo real (SOLO previene caracteres inválidos)
   const handleNameInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
-    // Eliminar TODOS los caracteres que no sean letras, espacios o acentos
+    // Eliminar caracteres que no sean letras, espacios o acentos
     const cleanedValue = originalValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
     
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
-      // Mantener la posición del cursor
       if (cursorPosition) {
         input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
       }
       
-      // Disparar evento para react-hook-form
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -58,7 +56,6 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
-    // Eliminar TODOS los caracteres que no sean números
     const cleanedValue = originalValue.replace(/[^0-9]/g, '');
     
     if (originalValue !== cleanedValue) {
@@ -98,8 +95,8 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
-    // Solo permitir: letras, números, @ y punto
-    const cleanedValue = originalValue.replace(/[^a-zA-Z0-9@.]/g, '');
+    // Solo permitir: letras, números, @ punto, guión bajo, guión y más
+    const cleanedValue = originalValue.replace(/[^a-zA-Z0-9@._\-+]/g, '');
     
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
@@ -116,7 +113,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
   const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const cleanedText = pastedText.replace(/[^a-zA-Z0-9@.]/g, '');
+    const cleanedText = pastedText.replace(/[^a-zA-Z0-9@._\-+]/g, '');
     
     if (cleanedText) {
       const input = e.currentTarget;
@@ -138,7 +135,6 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
-    // Solo permitir letras y números
     const cleanedValue = originalValue.replace(/[^a-zA-Z0-9]/g, '');
     
     if (originalValue !== cleanedValue) {
