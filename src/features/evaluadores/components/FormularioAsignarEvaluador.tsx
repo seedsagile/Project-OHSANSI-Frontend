@@ -95,8 +95,8 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
-    // Solo permitir: letras, números, @ punto, guión bajo, guión y más
-    const cleanedValue = originalValue.replace(/[^a-zA-Z0-9@._\-+]/g, '');
+    // Solo permitir: letras, @, punto, guión bajo y guión (SIN números)
+    const cleanedValue = originalValue.replace(/[^a-zA-Z@.\-_]/g, '');
     
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
@@ -113,7 +113,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
   const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
-    const cleanedText = pastedText.replace(/[^a-zA-Z0-9@._\-+]/g, '');
+    const cleanedText = pastedText.replace(/[^a-zA-Z@.\-_]/g, '');
     
     if (cleanedText) {
       const input = e.currentTarget;

@@ -32,7 +32,7 @@ export const schemaEvaluador = z.object({
     .pipe(
       z.string()
         .email('El campo Email debe tener un formato válido (ej. usuario@uno.com).')
-        .regex(/^[a-zA-Z0-9@._\-+]+$/, 'El campo Email solo permite letras, números, @, punto, guión bajo, guión y más.')
+        .regex(/^[a-zA-Z@.\-_]+$/, 'El campo Email solo permite letras, @, punto, guión y guión bajo.')
     ),
 
   // Validaciones para CI
