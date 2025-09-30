@@ -1,12 +1,13 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, type User } from '../../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: Array<User['role']>;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
@@ -17,7 +18,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated || user?.role !== 'evaluator') {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && (!user?.role || !allowedRoles.includes(user.role))) {
     return <Navigate to="/login" replace />;
   }
 

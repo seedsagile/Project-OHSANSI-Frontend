@@ -4,7 +4,7 @@ import type { LoginCredentials, User } from '../types/auth';
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
-    const response = await fetch(`http://localhost:8000/api/v1/evaluadores/login`, {
+    const response = await fetch(`http://localhost:8000/api/v1/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -12,26 +12,25 @@ class AuthService {
       body: JSON.stringify(credentials),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error en el login');
-    }
-
     const data = await response.json();
 
+    if (!response.ok) {
+      throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
+    }
+    const userData = data.data; 
     const user: User = {
-      id: String(data.usuario.id_usuario),
-      email: credentials.email, 
-      name: data.usuario.nombre,
-      role: data.usuario.rol === 'evaluador' ? 'evaluator' : data.usuario.rol, 
-      area: data.codigo_evaluador?.descripcion
+      id: String(userData.id_usuario),
+      email: userData.persona.email,
+      name: userData.nombre,
+      role: userData.rol,
+      area: userData.codigo_evaluador?.descripcion
     };
 
-    return { user, token: data.token };
+    return { user, token: data.access_token };
   }
 
   async getCurrentUser(token: string): Promise<User> {
-    const response = await fetch(`http://localhost:8000/api/v1/evaluadores/login`, {
+    const response = await fetch(`http://localhost:8000/api/v1/login`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -43,12 +42,13 @@ class AuthService {
 
     const data = await response.json();
 
+    const userData = data.data;
     const user: User = {
-      id: String(data.usuario.id_usuario),
-      email: '',
-      name: data.usuario.nombre,
-      role: data.usuario.rol === 'evaluador' ? 'evaluator' : data.usuario.rol,
-      area: data.codigo_evaluador?.descripcion
+      id: String(userData.id_usuario),
+      email: userData.persona.email,
+      name: userData.nombre,
+      role: userData.rol,
+      area: userData.codigo_evaluador?.descripcion
     };
 
     return user;

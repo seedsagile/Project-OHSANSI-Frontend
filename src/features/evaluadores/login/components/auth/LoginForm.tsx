@@ -3,8 +3,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
 export const LoginForm: React.FC = () => {
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
   const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,10 +17,13 @@ export const LoginForm: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     try {
       await login(credentials);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error en el login');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,7 +36,7 @@ export const LoginForm: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-8 bg-white rounded-lg shadow space-y-6">
-      <h2 className="text-2xl font-bold text-neutro-800 text-center">Oh! SanSi - Evaluador</h2>
+      <h2 className="text-2xl font-bold text-neutro-800 text-center">Oh! SanSi - Acceso</h2>
       <p className="text-center text-neutro-600 mb-4">Acceso exclusivo para evaluadores</p>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (

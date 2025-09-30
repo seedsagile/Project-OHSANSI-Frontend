@@ -2,7 +2,7 @@ export interface User {
     id: string;
     email: string;
     name: string;
-    role: 'evaluator' | 'admin' | 'responsible';
+    role: 'evaluador' | 'privilegiado' | 'responsable' | 'encargado' | 'administrador';
     area?: string;
 }
 

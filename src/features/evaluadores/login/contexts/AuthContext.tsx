@@ -13,7 +13,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useLocalStorage<User | null>(USER_KEY, null);
   const [token, setToken] = useLocalStorage<string | null>(TOKEN_KEY, null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Iniciar en true para la validación inicial
 
   useEffect(() => {
     if (token && !user) {
@@ -23,7 +23,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const validateToken = async () => {
     try {
-      setLoading(true);
       const currentUser = await authService.getCurrentUser(token!);
       setUser(currentUser);
     } catch (error) {
@@ -38,16 +37,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const { user: userData, token: newToken } = await authService.login(credentials);
-      
-      // Verificar que sea evaluador
-      if (userData.role !== 'evaluator') {
-        throw new Error('Acceso permitido solo para evaluadores');
-      }
-
       setUser(userData);
       setToken(newToken);
     } catch (error) {
-      console.error('Error en login:', error);
       throw error;
     } finally {
       setLoading(false);
