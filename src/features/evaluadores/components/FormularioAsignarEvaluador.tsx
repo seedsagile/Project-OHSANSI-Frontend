@@ -10,7 +10,7 @@ type Props = {
 };
 
 export function FormularioAsignarEvaluador({ register, errors }: Props) {
-  // Función para limpiar y validar nombre/apellido en tiempo real (SOLO previene caracteres inválidos)
+  // Función para limpiar y validar nombre/apellido en tiempo real
   const handleNameInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
@@ -50,12 +50,13 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
-  // Función para limpiar y validar CI en tiempo real
+  // Función para limpiar y validar CI en tiempo real (SIN ESPACIOS)
   const handleCIInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
+    // Eliminar TODO excepto números (sin espacios)
     const cleanedValue = originalValue.replace(/[^0-9]/g, '');
     
     if (originalValue !== cleanedValue) {
@@ -69,7 +70,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
-  // Prevenir pegar contenido inválido en CI
+  // Prevenir pegar contenido inválido en CI (SIN ESPACIOS)
   const handleCIPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
@@ -89,13 +90,13 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
-  // Función para limpiar y validar email en tiempo real
+  // Función para limpiar y validar email en tiempo real (SIN ESPACIOS)
   const handleEmailInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
-    // Solo permitir: letras, @, punto, guión bajo y guión (SIN números)
+    // Solo permitir: letras, @, punto, guión bajo y guión (SIN espacios, SIN números)
     const cleanedValue = originalValue.replace(/[^a-zA-Z@.\-_]/g, '');
     
     if (originalValue !== cleanedValue) {
@@ -109,7 +110,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
-  // Prevenir pegar contenido inválido en email
+  // Prevenir pegar contenido inválido en email (SIN ESPACIOS)
   const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
@@ -129,12 +130,13 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
-  // Función para limpiar y validar código en tiempo real
+  // Función para limpiar y validar código en tiempo real (SIN ESPACIOS)
   const handleCodeInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
     
+    // Solo letras y números, sin espacios
     const cleanedValue = originalValue.replace(/[^a-zA-Z0-9]/g, '');
     
     if (originalValue !== cleanedValue) {
@@ -148,7 +150,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
   };
 
-  // Prevenir pegar contenido inválido en código
+  // Prevenir pegar contenido inválido en código (SIN ESPACIOS)
   const handleCodePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
@@ -162,6 +164,46 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
       const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
       
       input.value = newValue.substring(0, 10);
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
+    }
+  };
+
+  // Función para limpiar y validar contraseña en tiempo real (SIN ESPACIOS)
+  const handlePasswordInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const cursorPosition = input.selectionStart;
+    const originalValue = input.value;
+    
+    // Eliminar TODOS los espacios
+    const cleanedValue = originalValue.replace(/\s/g, '');
+    
+    if (originalValue !== cleanedValue) {
+      input.value = cleanedValue;
+      if (cursorPosition) {
+        input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+      }
+      
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
+    }
+  };
+
+  // Prevenir pegar espacios en contraseña
+  const handlePasswordPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const cleanedText = pastedText.replace(/\s/g, '');
+    
+    if (cleanedText) {
+      const input = e.currentTarget;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentValue = input.value;
+      const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+      
+      input.value = newValue.substring(0, 32);
       
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
@@ -254,6 +296,8 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             id="password"
             placeholder="Contraseña segura"
             maxLength={32}
+            onInput={handlePasswordInput}
+            onPaste={handlePasswordPaste}
             {...register('password')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.password ? 'border-acento-500' : 'border-neutro-300'}`}
           />
@@ -269,6 +313,8 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             id="password_confirmation"
             placeholder="Repita la contraseña"
             maxLength={32}
+            onInput={handlePasswordInput}
+            onPaste={handlePasswordPaste}
             {...register('password_confirmation')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.password_confirmation ? 'border-acento-500' : 'border-neutro-300'}`}
           />
