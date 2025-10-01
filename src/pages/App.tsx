@@ -12,6 +12,7 @@ import { AuthInitializer } from "../auth/login/components/auth/AuthInitializer";
 import { LoginForm } from "../auth/login/components/auth/LoginForm";
 import { ProtectedRoute } from "../auth/login/components/auth/ProtectedRoute";
 import { useAuth } from "../auth/login/hooks/useAuth";
+import { PaginaAsignarEvaluador } from "../features/evaluadores/routes/PaginaAsignarEvaluador";
 
 const Dashboard = () => (
     <div className="p-8">
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
             { path: "competidores", element: <PaginaImportarCompetidores /> },
             { path: "responsables", element: <PaginaAsignarResponsable /> },
             { path: "areasNives", element: <PaginaAreas /> },
+            { path: "evaluadores", element: <PaginaAsignarEvaluador /> },
         ],
     },
 ]);
