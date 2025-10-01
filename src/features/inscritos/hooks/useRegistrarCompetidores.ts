@@ -8,7 +8,17 @@ import { importarCompetidoresAPI } from '../services/ApiInscripcion';
 import type { FileRejection } from 'react-dropzone';
 import { separarNombreCompleto } from '../../responsables/utils/responsableUtils';
 
-type ApiResponse = { message: string; };
+// --- NUEVO: Definición del estado del modal ---
+export type ModalState = {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+};
+
+const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
+
+// ... (El resto de las constantes y esquemas permanecen igual) ...
 const normalizarEncabezado = (header: string): string => header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 const ENCABEZADOS_REQUERIDOS = ['nombre', 'ci', 'telftutor', 'colegio', 'departamento', 'nivel', 'area', 'tipodeinscripcion'];
 const filaSchema = z.object({
@@ -26,6 +36,7 @@ const DEFAULT_GENERO = null;
 const DEFAULT_GRADO_ESCOLAR = 'No especificado';
 
 const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error: string | null } => {
+    // ... (La lógica de esta función no cambia)
     if (textoCsv.charCodeAt(0) === 0xFEFF) {
         textoCsv = textoCsv.substring(1);
     }
@@ -100,27 +111,35 @@ const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error:
     return { datos: datosValidados, error: null };
 };
 
-export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (msg: string) => void; onError: (msg: string) => void; }) {
+export function useImportarCompetidores() {
     const [datos, setDatos] = useState<CompetidorCSV[]>([]);
     const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
     const [esArchivoValido, setEsArchivoValido] = useState(false);
+    // --- NUEVO: Estado para el modal ---
+    const [modalState, setModalState] = useState<ModalState>(initialModalState);
 
     const { mutate, isPending } = useMutation({
         mutationFn: (payload: InscripcionPayload) => importarCompetidoresAPI(payload),
-        onSuccess: (response: ApiResponse) => {
-            onSuccess(response.message || 'Lista de competidores registrada con éxito.');
+        onSuccess: (response: { message: string }) => {
+            setModalState({
+                isOpen: true,
+                type: 'success',
+                title: '¡Éxito!',
+                message: response.message || 'Lista de competidores registrada correctamente.',
+            });
             reset();
         },
         onError: (error: AxiosError<ApiErrorResponse>) => {
+            let message = 'Error al registrar. Por favor, intente de nuevo.';
             if (error.response?.data?.errors) {
                 const errors = error.response.data.errors;
                 const firstErrorKey = Object.keys(errors)[0];
                 const firstErrorMessage = errors[firstErrorKey][0];
-                onError(`Error de validación del servidor: ${firstErrorMessage}`);
-            } else {
-                const errorMessage = error.response?.data?.message || 'Error al registrar. Por favor, intente de nuevo.';
-                onError(errorMessage);
+                message = `Error de validación: ${firstErrorMessage}`;
+            } else if (error.response?.data?.message) {
+                message = error.response.data.message;
             }
+            setModalState({ isOpen: true, type: 'error', title: 'Error de Registro', message });
         },
     });
 
@@ -132,22 +151,20 @@ export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (ms
 
     const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
         reset();
-        if (fileRejections.length > 0) { onError('Formato no válido. Solo se permiten archivos .csv.'); return; }
+        if (fileRejections.length > 0) {
+            setModalState({ isOpen: true, type: 'error', title: 'Archivo no válido', message: 'Formato no válido. Solo se permiten archivos .csv.' });
+            return;
+        }
         const file = acceptedFiles[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (e) => {
             const text = e.target?.result as string;
-            if (!text) {
-                onError('No se pudo leer el contenido del archivo.');
-                return;
-            }
-
             const { datos: datosValidados, error } = procesarYValidarCSV(text);
 
             if (error) {
-                onError(error);
+                setModalState({ isOpen: true, type: 'error', title: 'Error en el Archivo', message: error });
                 return;
             }
 
@@ -155,13 +172,16 @@ export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (ms
             setNombreArchivo(file.name);
             setEsArchivoValido(true);
         };
-        reader.onerror = () => { onError('Ocurrió un error crítico al leer el archivo.'); };
+        reader.onerror = () => {
+            setModalState({ isOpen: true, type: 'error', title: 'Error de Lectura', message: 'Ocurrió un error crítico al leer el archivo.' });
+        };
         reader.readAsText(file, 'UTF-8');
-    }, [reset, onError]);
+    }, [reset]);
 
     const handleSave = () => {
+        // ... (La lógica de esta función no cambia)
         if (!esArchivoValido || datos.length === 0) {
-            onError('Se debe seleccionar un archivo CSV válido antes de continuar.');
+            setModalState({ isOpen: true, type: 'error', title: 'Acción no permitida', message: 'Se debe seleccionar un archivo CSV válido antes de continuar.' });
             return;
         }
 
@@ -195,13 +215,17 @@ export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (ms
         mutate(payload);
     };
 
+    const closeModal = () => setModalState(initialModalState);
+
     return {
         datos,
         nombreArchivo,
         esArchivoValido,
         isSubmitting: isPending,
+        modalState, // <-- Exportamos el estado del modal
         onDrop,
         handleSave,
         handleCancel: reset,
+        closeModal, // <-- Exportamos la función para cerrar el modal
     };
 }

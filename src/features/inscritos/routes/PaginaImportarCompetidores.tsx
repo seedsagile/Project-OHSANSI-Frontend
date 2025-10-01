@@ -1,27 +1,59 @@
 import { useMemo } from 'react';
 import { useDropzone, type DropzoneRootProps, type DropzoneInputProps } from 'react-dropzone';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-import toast from 'react-hot-toast';
 
 import type { CompetidorCSV } from '../types/indexInscritos';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
 import { IconoUsuario } from '../components/IconoUsuario';
+import { ModalInformativo } from '../components/ModalInformativo'; 
+import { UploadCloud, FileText, X, Save } from 'lucide-react';
 
-interface BotonProps { onClick: () => void; disabled?: boolean; }
-interface DropzoneAreaProps { getRootProps: <T extends DropzoneRootProps>(props?: T) => T; getInputProps: <T extends DropzoneInputProps>(props?: T) => T; isDragActive: boolean; nombreArchivo: string | null; }
-interface TablaResultadosProps { data: CompetidorCSV[]; columns: ColumnDef<CompetidorCSV>[]; }
-interface AccionesFooterProps { onCancel: () => void; onSave: () => void; esGuardable: boolean; isSubmitting: boolean; }
+// --- Componente Dropzone sin cambios ---
+const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo, open }: { 
+    getRootProps: <T extends DropzoneRootProps>(props?: T) => T; 
+    getInputProps: <T extends DropzoneInputProps>(props?: T) => T; 
+    isDragActive: boolean; 
+    nombreArchivo: string | null;
+    open: () => void;
+}) => {
+    const baseClasses = 'flex-grow border-2 border-dashed rounded-lg flex items-center justify-center p-4 text-neutro-500 transition-colors duration-300 cursor-pointer';
+    const activeClasses = 'border-principal-500 bg-principal-50';
+    const idleClasses = 'border-neutro-300 hover:border-principal-400';
 
-const BotonCargar = ({ onClick }: BotonProps) => ( <button onClick={onClick} className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500/10 text-principal-600 hover:bg-principal-500/20 transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 14 12 9 7 14"/><line x1="12" y1="9" x2="12" y2="21"/></svg> <span>Cargar CSV</span> </button> );
-const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo }: DropzoneAreaProps) => ( <div {...getRootProps({ className: 'flex-grow border-2 border-dashed border-neutro-300 rounded-lg flex items-center justify-center p-4 text-neutro-400' })}> <input {...getInputProps()} /> {isDragActive ? <p className="text-principal-500 font-semibold">Suelta el archivo aquí...</p> : <p>{nombreArchivo || 'o arrastra un archivo aquí'}</p>} </div> );
+    return (
+        <div className="flex flex-col md:flex-row items-stretch gap-6">
+            <button 
+                type="button" 
+                onClick={open} 
+                className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500/10 text-principal-600 hover:bg-principal-500/20 transition-colors"
+            >
+                <UploadCloud size={20} />
+                <span>Cargar CSV</span>
+            </button>
+            <div {...getRootProps({ className: `${baseClasses} ${isDragActive ? activeClasses : idleClasses}` })}>
+                <input {...getInputProps()} />
+                {nombreArchivo ? (
+                    <div className="flex items-center gap-2 text-exito-600">
+                        <FileText size={20} />
+                        <span className="font-semibold">{nombreArchivo}</span>
+                    </div>
+                ) : (
+                    <p>{isDragActive ? 'Suelta el archivo aquí...' : 'o arrastra un archivo aquí'}</p>
+                )}
+            </div>
+        </div>
+    );
+};
 
-const TablaResultados = ({ data, columns }: TablaResultadosProps) => {
+// --- MEJORA: Tabla de Resultados con scroll vertical y horizontal ---
+const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: ColumnDef<CompetidorCSV>[]; }) => {
     const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
 
     return (
-        <div className="rounded-lg border border-neutro-200 overflow-hidden">
-            <div className="max-h-96 overflow-y-auto">
-                <table className="w-full text-left">
+        <div className="rounded-lg border border-neutro-200 overflow-hidden bg-blanco">
+            {/* Contenedor con altura máxima y ambos scrolls */}
+            <div className="overflow-auto max-h-96">
+                <table className="w-full text-left min-w-[1000px]">
                     <thead className="bg-principal-500 sticky top-0 z-10">
                         {table.getHeaderGroups().map(headerGroup => (
                             <tr key={headerGroup.id}>
@@ -38,7 +70,7 @@ const TablaResultados = ({ data, columns }: TablaResultadosProps) => {
                             <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">Aún no se han cargado datos.</td></tr>
                         ) : (
                             table.getRowModel().rows.map(row => (
-                                <tr key={row.id} className="even:bg-neutro-100 hover:bg-principal-100 transition-colors">
+                                <tr key={row.id} className="even:bg-neutro-50 hover:bg-principal-50 transition-colors">
                                     {row.getVisibleCells().map(cell => (
                                         <td key={cell.id} className="p-4 text-neutro-700 text-center">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                                     ))}
@@ -52,8 +84,7 @@ const TablaResultados = ({ data, columns }: TablaResultadosProps) => {
     );
 };
 
-const AccionesFooter = ({ onCancel, onSave, esGuardable, isSubmitting }: AccionesFooterProps) => ( <footer className="flex justify-end items-center gap-4 mt-12"> <button onClick={onCancel} className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> <span>Cancelar</span> </button> <button onClick={onSave} disabled={!esGuardable || isSubmitting} className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]"> {isSubmitting ? ( <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blanco"></div> ) : ( <> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Guardar</span> </> )} </button> </footer> );
-
+// --- Componente Principal sin cambios ---
 export function PaginaImportarCompetidores() {
     
     const {
@@ -61,13 +92,12 @@ export function PaginaImportarCompetidores() {
         nombreArchivo,
         esArchivoValido,
         isSubmitting,
+        modalState,
         onDrop,
         handleSave,
         handleCancel,
-    } = useImportarCompetidores({
-        onSuccess: (msg) => toast.success(msg),
-        onError: (msg) => toast.error(msg, { duration: 5000 }),
-    });
+        closeModal,
+    } = useImportarCompetidores();
 
     const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
         onDrop,
@@ -87,34 +117,56 @@ export function PaginaImportarCompetidores() {
     ], []);
 
     return (
-        <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-            <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-8">
-                <header className="flex justify-between items-center mb-10">
-                    <div className="w-8"></div>
-                    <h1 className="text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
-                    <div className="text-neutro-500"><IconoUsuario /></div>
-                </header>
-
-                <section className="flex items-center gap-6 mb-8">
-                    <BotonCargar onClick={open} />
+        <>
+            <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex items-center justify-center">
+                <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     
-                    <DropzoneArea
-                        getRootProps={getRootProps}
-                        getInputProps={getInputProps}
-                        isDragActive={isDragActive}
-                        nombreArchivo={nombreArchivo}
-                    />
-                </section>
+                    <header className="flex justify-between items-center mb-10">
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
+                        <div className="text-neutro-500">
+                            <IconoUsuario />
+                        </div>
+                    </header>
 
-                <TablaResultados data={datos} columns={columns} />
+                    <section className="mb-8">
+                        <DropzoneArea
+                            getRootProps={getRootProps}
+                            getInputProps={getInputProps}
+                            isDragActive={isDragActive}
+                            nombreArchivo={nombreArchivo}
+                            open={open}
+                        />
+                    </section>
 
-                <AccionesFooter 
-                    onCancel={handleCancel}
-                    onSave={handleSave}
-                    esGuardable={esArchivoValido}
-                    isSubmitting={isSubmitting}
-                />
-            </main>
-        </div>
+                    <TablaResultados data={datos} columns={columns} />
+
+                    <footer className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-12">
+                        <button onClick={handleCancel} className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
+                            <X className="h-5 w-5" />
+                            <span>Cancelar</span>
+                        </button>
+                        <button onClick={handleSave} disabled={!esArchivoValido || isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]">
+                            {isSubmitting ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blanco"></div>
+                            ) : (
+                                <>
+                                    <Save className="h-5 w-5" />
+                                    <span>Guardar</span>
+                                </>
+                            )}
+                        </button>
+                    </footer>
+                </main>
+            </div>
+
+            <ModalInformativo
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                title={modalState.title}
+                type={modalState.type}
+            >
+                {modalState.message}
+            </ModalInformativo>
+        </>
     );
 }
