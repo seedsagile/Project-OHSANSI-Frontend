@@ -1,7 +1,5 @@
-// src/features/areas/hooks/useGestionAreas.ts
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// ... (el resto de las importaciones se mantienen igual)
 import { areasService } from '../services/areasService';
 import type { Area, CrearAreaData } from '../types';
 import toast from 'react-hot-toast';
@@ -28,23 +26,25 @@ export function useGestionAreas() {
     const queryClient = useQueryClient();
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
-    const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined); // <-- NUEVO ESTADO
+    const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined);
+    const [nombreAreaCreando, setNombreAreaCreando] = useState<string>('');
 
     const { data: areas = [], isLoading } = useQuery({
         queryKey: ['areas'],
         queryFn: areasService.obtenerAreas,
     });
     
-    // ... (la mutación 'crearArea' y la función 'handleGuardarArea' no cambian) ...
     const { mutate, isPending: isCreating } = useMutation<Area, Error, CrearAreaData>({
         mutationFn: areasService.crearArea,
-        onSuccess: (nuevaArea) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['areas'] });
-            toast.success(`Área "${nuevaArea.nombre}" creada exitosamente`);
+            toast.success(`Área "${nombreAreaCreando}" creada exitosamente`);
             cerrarModalCrear();
+            setNombreAreaCreando('');
         },
         onError: (error) => {
             toast.error(error.message);
+            setNombreAreaCreando('');
         },
         onSettled: () => {
             setConfirmationModal(initialConfirmationState);
@@ -65,6 +65,7 @@ export function useGestionAreas() {
             return;
         }
 
+        setNombreAreaCreando(data.nombre);
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -75,7 +76,10 @@ export function useGestionAreas() {
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
-    const cerrarModalCrear = () => setModalCrearAbierto(false);
+    const cerrarModalCrear = () => {
+        setModalCrearAbierto(false);
+        setNombreAreaCreando('');
+    };
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
 
     return {
@@ -84,8 +88,8 @@ export function useGestionAreas() {
         isCreating,
         modalCrearAbierto,
         confirmationModal,
-        areaSeleccionada, // <-- EXPORTAMOS EL ESTADO
-        setAreaSeleccionada, // <-- EXPORTAMOS LA FUNCIÓN PARA ACTUALIZARLO
+        areaSeleccionada,
+        setAreaSeleccionada,
         abrirModalCrear,
         cerrarModalCrear,
         cerrarModalConfirmacion,
