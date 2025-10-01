@@ -80,6 +80,7 @@ const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: Co
     );
 };
 
+
 export function PaginaImportarCompetidores() {
     
     const {
@@ -116,7 +117,7 @@ export function PaginaImportarCompetidores() {
             <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex items-center justify-center">
                 <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     
-                    <header className="flex justify-between items-center justify-center text-center mb-10">
+                    <header className="flex items-center justify-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
                     </header>
 
@@ -133,10 +134,16 @@ export function PaginaImportarCompetidores() {
                     <TablaResultados data={datos} columns={columns} />
 
                     <footer className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-12">
-                        <button onClick={handleCancel} className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors">
+                        {/* --- MEJORA APLICADA AQUÍ --- */}
+                        <button 
+                            onClick={handleCancel}
+                            disabled={datos.length === 0 && !nombreArchivo}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             <X className="h-5 w-5" />
                             <span>Cancelar</span>
                         </button>
+                        
                         <button onClick={handleSave} disabled={!esArchivoValido || isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]">
                             {isSubmitting ? (
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blanco"></div>
@@ -151,7 +158,6 @@ export function PaginaImportarCompetidores() {
                 </main>
             </div>
 
-            {/* --- MEJORA: Renderizamos el modal de confirmación con el estado del hook --- */}
             <ModalConfirmacion
                 isOpen={modalState.isOpen}
                 onClose={closeModal}

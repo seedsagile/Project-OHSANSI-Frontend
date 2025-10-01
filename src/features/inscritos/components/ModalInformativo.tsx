@@ -36,13 +36,17 @@ export function ModalInformativo({ isOpen, onClose, title, children, type }: Pro
             aria-modal="true"
         >
             <div 
-                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center animate-fade-in-up"
+                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {iconMap[type]}
                 <h2 className="text-2xl font-bold text-neutro-800 mt-4">{title}</h2>
-                <div className="text-neutro-600 mt-2 text-md whitespace-pre-line max-h-60 overflow-y-auto">
-                    {children}
+                
+                {/* --- MEJORA CON SCROLL HORIZONTAL Y VERTICAL --- */}
+                <div className="text-neutro-600 mt-2 text-sm text-left max-h-60 overflow-auto border border-neutro-200 bg-neutro-50 p-2 rounded-md">
+                    <pre className="whitespace-pre-wrap break-words font-sans">
+                        {children}
+                    </pre>
                 </div>
 
                 <div className="mt-8 flex justify-center">

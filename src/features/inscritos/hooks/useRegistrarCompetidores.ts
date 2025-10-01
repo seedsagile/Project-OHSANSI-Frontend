@@ -18,35 +18,75 @@ export type ModalState = {
 
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
 
-// ... (constantes y esquemas de validación sin cambios) ...
+const toTitleCase = (str: string) => 
+    str.toLowerCase().replace(/\s+/g, ' ').trim().split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+
 const normalizarEncabezado = (header: string): string => header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
 const ENCABEZADOS_REQUERIDOS = ['nombre', 'ci', 'telftutor', 'colegio', 'departamento', 'nivel', 'area', 'tipodeinscripcion'];
+const DEPARTAMENTOS_VALIDOS = [
+    'COCHABAMBA', 'LA PAZ', 'SANTA CRUZ', 'ORURO', 'POTOSI', 
+    'TARIJA', 'CHUQUISACA', 'BENI', 'PANDO'
+] as const;
+
 const filaSchema = z.object({
-    nombre: z.string().min(1, 'El nombre no puede estar vacío.'),
-    ci: z.string().min(1, 'El CI no puede estar vacío.'),
-    telftutor: z.string().min(1, 'El teléfono del tutor no puede estar vacío.'),
-    colegio: z.string().min(1, 'El colegio no puede estar vacío.'),
-    departamento: z.string().min(1, 'El departamento no puede estar vacío.'),
-    nivel: z.string().min(1, 'El nivel no puede estar vacío.'),
-    area: z.string().min(1, 'El área no puede estar vacía.'),
-    tipodeinscripcion: z.string().min(1, 'El tipo de inscripción no puede estar vacío.'),
+    nombre: z.string()
+        .min(1, 'El nombre no puede estar vacío.')
+        .regex(/^[a-zA-Z\s\u00C0-\u017F]+$/, 'El nombre solo debe contener letras y espacios.')
+        .transform(toTitleCase),
+    
+    ci: z.string()
+        .min(1, 'El CI no puede estar vacío.')
+        .regex(/^[0-9]+[a-zA-Z-]*$/, 'El formato del CI no es válido (solo números y un guion o letra al final).'),
+    
+    telftutor: z.string()
+        .min(1, 'El teléfono del tutor no puede estar vacío.')
+        .regex(/^[0-9+\s()-]+$/, 'El formato del teléfono no es válido.'),
+
+    colegio: z.string().min(1, 'El colegio no puede estar vacío.').transform(toTitleCase),
+    
+    departamento: z.string().transform(val => val.trim().toUpperCase().replace('Í', 'I')).pipe(
+        z.enum(DEPARTAMENTOS_VALIDOS, {
+            message: 'El departamento no es válido.'
+        })
+    ),
+
+    nivel: z.string().min(1, 'El nivel no puede estar vacío.').transform(toTitleCase),
+    area: z.string().min(1, 'El área no puede estar vacía.').transform(toTitleCase),
+    
+    tipodeinscripcion: z.string().transform(val => val.trim().toUpperCase()).pipe(
+        z.enum(['INDIVIDUAL', 'GRUPAL'], {
+            message: "El tipo de inscripción solo puede ser 'Individual' o 'Grupal'."
+        })
+    ),
 });
+
 const DEFAULT_FECHA_NAC = '2000-01-01';
 const DEFAULT_GENERO = null;
 const DEFAULT_GRADO_ESCOLAR = 'No especificado';
 
 const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error: string | null } => {
-
     if (textoCsv.charCodeAt(0) === 0xFEFF) {
         textoCsv = textoCsv.substring(1);
     }
     
     const lines = textoCsv.trim().split(/\r\n|\n/);
+    if (lines.length <= 1 && lines[0].trim() === '') {
+        return { datos: [], error: 'El archivo CSV está vacío.' };
+    }
+
     const headerLine = lines.shift() || '';
     const dataString = lines.join('\n');
 
     const headersRaw = headerLine.split(';').map(h => h.trim()).filter(Boolean);
     const headersSanitizados = headersRaw.map(normalizarEncabezado);
+    
+    const cabecerasUnicas = new Set(headersSanitizados);
+    if (cabecerasUnicas.size !== headersSanitizados.length) {
+        return { datos: [], error: 'El archivo contiene columnas con nombres duplicados. Por favor, revise las cabeceras.' };
+    }
     
     const encabezadosRequeridosSet = new Set(ENCABEZADOS_REQUERIDOS);
     const encabezadosEncontradosSet = new Set(headersSanitizados);
@@ -55,27 +95,26 @@ const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error:
     const encabezadosNoReconocidos = headersRaw.filter(h => !encabezadosRequeridosSet.has(normalizarEncabezado(h)));
 
     if (encabezadosFaltantes.length > 0) {
-        let mensajeError = "Formato de Encabezados Incorrecto.\nRevisa los encabezados de las columnas en la primera fila.\n\n";
-        if (encabezadosNoReconocidos.length > 0) {
-            mensajeError += `Columnas no reconocidas: ${encabezadosNoReconocidos.join(', ')}\n`;
-        }
-        mensajeError += `Columnas obligatorias faltantes: ${encabezadosFaltantes.join(', ')}\n\n`;
-        mensajeError += `Recordatorio: La primera fila debe contener exactamente estos encabezados:\n${ENCABEZADOS_REQUERIDOS.join(';')}`;
+        const mensajeError = `El archivo no es válido.\n\nFaltan las siguientes columnas obligatorias:\n- ${encabezadosFaltantes.join('\n- ')}`;
         return { datos: [], error: mensajeError };
     }
     
     if (encabezadosNoReconocidos.length > 0) {
-        let mensajeError = "Columnas Adicionales Detectadas.\nEl archivo no se cargó porque contiene columnas no permitidas.\n\n";
-        mensajeError += `Por favor, elimine las siguientes columnas y vuelva a intentarlo: ${encabezadosNoReconocidos.join(', ')}\n\n`;
-        mensajeError += `Recordatorio: El archivo solo debe contener estas columnas:\n${ENCABEZADOS_REQUERIDOS.join(';')}`;
+        const mensajeError = `El archivo contiene columnas no permitidas.\n\nPor favor, elimine las siguientes columnas e intente de nuevo:\n- ${encabezadosNoReconocidos.join('\n- ')}`;
         return { datos: [], error: mensajeError };
     }
 
-    const parseResult = Papa.parse<string[]>(dataString, { header: false, skipEmptyLines: false, delimiter: ";", transform: (value) => value.trim() });
-    const datosComoObjetos = parseResult.data.map((rowArray: string[]) => {
+    const parseResult = Papa.parse<string[]>(dataString, { 
+        header: false, 
+        skipEmptyLines: false, 
+        delimiter: ";", 
+        transform: (value) => value.trim() 
+    });
+
+    const datosComoObjetos = parseResult.data.map((rowArray) => {
         const rowObject: { [key: string]: string } = {};
         headersSanitizados.forEach((header, index) => { rowObject[header] = rowArray[index] || ''; });
-        return rowObject as CompetidorCSV;
+        return rowObject;
     });
 
     const datosValidados = [];
@@ -92,23 +131,24 @@ const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error:
         const validationResult = filaSchema.safeParse(fila);
         if (!validationResult.success) {
             const firstError = validationResult.error.issues[0];
-            const mensaje = `Error en la fila ${numeroDeFila}: El campo '${firstError.path.join(', ')}' no puede estar vacío.`;
-            return { datos: [], error: `Datos Incompletos en el Archivo.\n\n${mensaje}` };
+            const mensaje = `Error en la fila ${numeroDeFila}: ${firstError.message} (Campo: '${firstError.path.join(', ')}').`;
+            return { datos: [], error: `Datos inválidos en el archivo.\n\n${mensaje}` };
         }
 
-        if (ciSet.has(fila.ci)) {
-            return { datos: [], error: `El archivo contiene filas duplicadas. El CI "${fila.ci}" está repetido en la fila ${numeroDeFila}.` };
+        if (ciSet.has(validationResult.data.ci)) {
+            return { datos: [], error: `El archivo contiene CIs duplicados. El CI "${validationResult.data.ci}" está repetido.` };
         }
-        ciSet.add(fila.ci);
-        datosValidados.push(fila);
+        ciSet.add(validationResult.data.ci);
+        datosValidados.push(validationResult.data as CompetidorCSV);
     }
     
     if (datosValidados.length === 0) {
-        return { datos: [], error: 'El archivo CSV está vacío o no contiene datos válidos.' };
+        return { datos: [], error: 'El archivo CSV no contiene filas con datos válidos.' };
     }
 
     return { datos: datosValidados, error: null };
 };
+
 
 export function useImportarCompetidores() {
     const [datos, setDatos] = useState<CompetidorCSV[]>([]);
@@ -190,7 +230,7 @@ export function useImportarCompetidores() {
             onConfirm: () => {
                 const competidoresIndividuales: CompetidorIndividualPayload[] = datos.map(fila => {
                     const { nombre, apellido } = separarNombreCompleto(fila.nombre);
-                    const esGrupal = fila.tipodeinscripcion.toLowerCase() === 'grupal';
+                    const esGrupal = fila.tipodeinscripcion.toUpperCase() === 'GRUPAL';
                     return {
                         persona: {
                             nombre, apellido, ci: fila.ci, telefono: fila.telftutor,
