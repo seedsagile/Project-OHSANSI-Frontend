@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { crearAreaEsquema, type CrearAreaFormData } from '../utils/esquemas';
-//import { restringirCaracteres } from '../../responsables/utils/formUtils';
 
 type ModalCrearAreaProps = {
     isOpen: boolean;
@@ -18,7 +17,7 @@ export const ModalCrearArea = ({
     onGuardar, 
     loading = false,
 }: ModalCrearAreaProps) => {
-    const { register, handleSubmit, formState: { errors }, reset, clearErrors } = useForm<CrearAreaFormData>({
+    const { register, handleSubmit, formState: { errors }, reset, clearErrors, setValue } = useForm<CrearAreaFormData>({
         resolver: zodResolver(crearAreaEsquema),
         mode: 'onSubmit',
     });
@@ -29,6 +28,23 @@ export const ModalCrearArea = ({
             clearErrors();
         }
     }, [isOpen, reset, clearErrors]);
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        // Obtener el valor actual del input directamente del DOM
+        const input = document.getElementById('nombre') as HTMLInputElement;
+        const valorActual = input?.value || '';
+        
+        // Si solo contiene espacios o está vacío, limpiar y mostrar error
+        if (valorActual.trim() === '') {
+            setValue('nombre', '', { shouldValidate: true });
+            return;
+        }
+        
+        // Si pasa la validación, continuar con el submit normal
+        handleSubmit(onGuardar)(e);
+    };
 
     const handleCancelar = () => {
         reset({ nombre: '' });
@@ -46,7 +62,7 @@ export const ModalCrearArea = ({
             >
                 <h2 className="text-xl font-semibold text-center mb-6">Crear Área</h2>
                 
-                <form onSubmit={handleSubmit(onGuardar)}>
+                <form onSubmit={handleFormSubmit}>
                     <div className="mb-4">
                         <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-2">
                             Nombre del Área: <span className="text-red-500">*</span>

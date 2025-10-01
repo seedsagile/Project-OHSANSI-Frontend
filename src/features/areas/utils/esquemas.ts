@@ -27,11 +27,17 @@ const toTitleCase = (str: string): string => {
 
 export const crearAreaEsquema = z.object({
   nombre: z.string()
-      .refine(val => val.trim().length > 0, {
-        //message: 'No se permiten espacios vacíos. Por favor, introduzca un nombre válido.',
-        message:'El campo Nombre del Área es obligatorio.',
+      .transform(val => {
+        // Si el valor solo contiene espacios, devolver string vacío para forzar limpieza
+        if (val.trim().length === 0) {
+          return '';
+        }
+        return val;
       })
-      .refine(val => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(val.trim()), {
+      .refine(val => val.length > 0, {
+        message: 'El campo Nombre del Área es obligatorio.',
+      })
+      .refine(val => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(val), {
         message: 'El campo Nombre del Área solo permite letras, espacios y acentos.',
       })
       .transform(val => {
