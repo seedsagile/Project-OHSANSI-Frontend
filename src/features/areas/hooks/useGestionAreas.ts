@@ -1,7 +1,5 @@
-// src/features/areas/hooks/useGestionAreas.ts
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// ... (el resto de las importaciones se mantienen igual)
 import { areasService } from '../services/areasService';
 import type { Area, CrearAreaData } from '../types';
 import toast from 'react-hot-toast';
@@ -21,30 +19,61 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-const normalizarNombre = (nombre: string) => 
-    nombre.trim().toLowerCase().replace(/\s+/g, ' ');
+// Normaliza y genera variaciones para comparación
+const normalizarYGenerarVariaciones = (nombre: string): string[] => {
+    const normalizado = nombre.trim().toLowerCase().replace(/\s+/g, ' ');
+    const variaciones = [normalizado];
+    
+    // Agregar singular/plural
+    if (normalizado.endsWith('s')) {
+        variaciones.push(normalizado.slice(0, -1)); // Quitar 's' para singular
+    } else {
+        variaciones.push(normalizado + 's'); // Agregar 's' para plural
+    }
+    
+    // Agregar variaciones con 'es' (ej: "nivel" -> "niveles")
+    if (normalizado.endsWith('es')) {
+        variaciones.push(normalizado.slice(0, -2)); // "niveles" -> "nivel"
+    } else if (!normalizado.endsWith('s')) {
+        variaciones.push(normalizado + 'es'); // "nivel" -> "niveles"
+    }
+    
+    return [...new Set(variaciones)]; // Eliminar duplicados
+};
+
+const existeNombreSimilar = (nombreNuevo: string, areasExistentes: Area[]): boolean => {
+    const variacionesNuevas = normalizarYGenerarVariaciones(nombreNuevo);
+    
+    return areasExistentes.some(area => {
+        const variacionesExistentes = normalizarYGenerarVariaciones(area.nombre);
+        // Verificar si alguna variación del nuevo nombre coincide con alguna del existente
+        return variacionesNuevas.some(vn => variacionesExistentes.includes(vn));
+    });
+};
 
 export function useGestionAreas() {
     const queryClient = useQueryClient();
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
-    const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined); // <-- NUEVO ESTADO
+    const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined);
+    const [nombreAreaCreando, setNombreAreaCreando] = useState<string>('');
 
     const { data: areas = [], isLoading } = useQuery({
         queryKey: ['areas'],
         queryFn: areasService.obtenerAreas,
     });
     
-    // ... (la mutación 'crearArea' y la función 'handleGuardarArea' no cambian) ...
     const { mutate, isPending: isCreating } = useMutation<Area, Error, CrearAreaData>({
         mutationFn: areasService.crearArea,
-        onSuccess: (nuevaArea) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['areas'] });
-            toast.success(`Área "${nuevaArea.nombre}" creada exitosamente`);
+            toast.success(`Área "${nombreAreaCreando}" creada exitosamente`);
             cerrarModalCrear();
+            setNombreAreaCreando('');
         },
         onError: (error) => {
             toast.error(error.message);
+            setNombreAreaCreando('');
         },
         onSettled: () => {
             setConfirmationModal(initialConfirmationState);
@@ -52,19 +81,19 @@ export function useGestionAreas() {
     });
 
     const handleGuardarArea = (data: CrearAreaData) => {
-        const nombreNormalizado = normalizarNombre(data.nombre);
-        const esDuplicado = areas.some(area => normalizarNombre(area.nombre) === nombreNormalizado);
+        const esDuplicado = existeNombreSimilar(data.nombre, areas);
 
         if (esDuplicado) {
             setConfirmationModal({
                 isOpen: true,
                 title: 'Nombre Duplicado',
-                message: `Ya existe un área con el nombre "${data.nombre}". Por favor, ingrese un nombre diferente.`,
+                message: `Ya existe un área con un nombre similar a "${data.nombre}". Por favor, ingrese un nombre diferente.`,
                 type: 'info',
             });
             return;
         }
 
+        setNombreAreaCreando(data.nombre);
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -75,7 +104,10 @@ export function useGestionAreas() {
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
-    const cerrarModalCrear = () => setModalCrearAbierto(false);
+    const cerrarModalCrear = () => {
+        setModalCrearAbierto(false);
+        setNombreAreaCreando('');
+    };
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
 
     return {
@@ -84,8 +116,8 @@ export function useGestionAreas() {
         isCreating,
         modalCrearAbierto,
         confirmationModal,
-        areaSeleccionada, // <-- EXPORTAMOS EL ESTADO
-        setAreaSeleccionada, // <-- EXPORTAMOS LA FUNCIÓN PARA ACTUALIZARLO
+        areaSeleccionada,
+        setAreaSeleccionada,
         abrirModalCrear,
         cerrarModalCrear,
         cerrarModalConfirmacion,

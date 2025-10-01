@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { crearAreaEsquema, type CrearAreaFormData } from '../utils/esquemas';
-import { restringirCaracteres } from '../../responsables/utils/formUtils';
+//import { restringirCaracteres } from '../../responsables/utils/formUtils';
 
 type ModalCrearAreaProps = {
     isOpen: boolean;
@@ -18,19 +18,21 @@ export const ModalCrearArea = ({
     onGuardar, 
     loading = false,
 }: ModalCrearAreaProps) => {
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<CrearAreaFormData>({
+    const { register, handleSubmit, formState: { errors }, reset, clearErrors } = useForm<CrearAreaFormData>({
         resolver: zodResolver(crearAreaEsquema),
-        mode: 'onBlur',
+        mode: 'onSubmit',
     });
 
     useEffect(() => {
         if (isOpen) {
             reset({ nombre: '' });
+            clearErrors();
         }
-    }, [isOpen, reset]);
+    }, [isOpen, reset, clearErrors]);
 
     const handleCancelar = () => {
         reset({ nombre: '' });
+        clearErrors();
         onClose();
     };
 
@@ -61,7 +63,18 @@ export const ModalCrearArea = ({
                             autoFocus
                             disabled={loading}
                             maxLength={30}
-                            onKeyDown={(e) => restringirCaracteres(e, /^[a-zA-Z\s\u00C0-\u017F]+$/)} 
+                            onKeyPress={(e) => {
+                                const char = e.key;
+                                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(char)) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            onPaste={(e) => {
+                                e.preventDefault();
+                                const texto = e.clipboardData.getData('text');
+                                const textoLimpio = texto.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                                document.execCommand('insertText', false, textoLimpio);
+                            }}
                             {...register('nombre')}
                         />
                         <div className="h-6 mt-1">
@@ -74,26 +87,26 @@ export const ModalCrearArea = ({
                         </div>
                     </div>
 
-                    <div className="flex gap-4 justify-center mt-6">
+                    <div className="flex gap-4 justify-center mt-8">
                         <button
                             type="button"
                             onClick={handleCancelar}
                             disabled={loading}
                             className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors'
                         >
-                            <X size={20} />
+                            <X className="w-5 h-5" />
                             <span>Cancelar</span>
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 w-32 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
                         >
                             {loading ? (
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                             ) : (
                                 <>
-                                    <Save size={20} />
+                                    <Save className="w-5 h-5" />
                                     <span>Guardar</span>
                                 </>
                             )}
@@ -103,4 +116,4 @@ export const ModalCrearArea = ({
             </div>
         </div>
     );
-};
+}

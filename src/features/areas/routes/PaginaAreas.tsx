@@ -34,7 +34,7 @@ export function PaginaAreas() {
             <main className="bg-blanco w-full max-w-7xl rounded-xl shadow-sombra-3 p-8">
                 <header className="text-center mb-10">
                     <h1 className="text-4xl font-extrabold text-negro tracking-tighter">
-                        Gestión de Áreas y Niveles
+                        Áreas y Niveles
                     </h1>
                 </header>
                 
