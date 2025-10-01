@@ -4,7 +4,6 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 
 import type { CompetidorCSV } from '../types/indexInscritos';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
-import { IconoUsuario } from '../components/IconoUsuario';
 import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion'; 
 import { UploadCloud, FileText, X, Save } from 'lucide-react';
 
@@ -117,7 +116,7 @@ export function PaginaImportarCompetidores() {
             <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex items-center justify-center">
                 <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     
-                    <header className="flex justify-between items-center mb-10">
+                    <header className="flex justify-between items-center justify-center text-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
                     </header>
 
