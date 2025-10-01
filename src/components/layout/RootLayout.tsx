@@ -10,32 +10,23 @@ const HamburgerIcon = () => (
     </svg>
 );
 
-
 export function RootLayout() {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="relative min-h-screen lg:flex">
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="relative min-h-screen">
+            <Sidebar isOpen={isSidebarOpen} setOpen={setSidebarOpen} />
             
-            <main className="flex-1 overflow-y-auto lg:ml-72">
+            <main className="flex-1 overflow-y-auto">
                 <button
                     onClick={() => setSidebarOpen(true)}
-                    className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600"
+                    className="fixed top-4 left-4 z-40 p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600"
                     aria-label="Abrir menú"
                 >
                     <HamburgerIcon />
                 </button>
                 <Outlet />
             </main>
-
-            {isSidebarOpen && (
-                <div 
-                    className="lg:hidden fixed inset-0 bg-black/50 z-20"
-                    onClick={() => setSidebarOpen(false)}
-                    aria-hidden="true"
-                />
-            )}
         </div>
     );
 }

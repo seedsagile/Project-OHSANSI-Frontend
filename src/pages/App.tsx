@@ -10,8 +10,8 @@ import { PaginaAreas } from "../features/areas/routes/PaginaAreas";
 
 const Dashboard = () => (
     <div className="p-8">
-        <h1 className="text-4xl font-bold text-neutro-800">Dashboard</h1>
-        <p className="mt-2 text-neutro-600">Bienvenido al panel de administración de la Olimpiada Oh! SanSi.</p>
+        <h1 className="text-4xl font-bold text-neutro-800 justify-center text-center">Dashboard</h1>
+        <p className="mt-2 text-neutro-600 text-center">Bienvenido al panel de administración de la Olimpiada Oh! SanSi.</p>
     </div>
 );
 
