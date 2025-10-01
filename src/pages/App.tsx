@@ -8,60 +8,55 @@ import { PaginaImportarCompetidores } from "../features/inscritos/routes/PaginaI
 import { PaginaAsignarResponsable } from "../features/responsables/routes/PaginaAsignarResponsable";
 import { PaginaAreas } from "../features/areas/routes/PaginaAreas";
 
+import { AuthInitializer } from "../auth/login/components/auth/AuthInitializer";
+import { LoginForm } from "../auth/login/components/auth/LoginForm";
+import { ProtectedRoute } from "../auth/login/components/auth/ProtectedRoute";
+import { useAuth } from "../auth/login/hooks/useAuth";
+
 const Dashboard = () => (
     <div className="p-8">
         <h1 className="text-4xl font-bold text-neutro-800 justify-center text-center">Dashboard</h1>
-        <p className="mt-2 text-neutro-600 text-center">Bienvenido al panel de administración de la Olimpiada Oh! SanSi.</p>
+        <p className="mt-2 text-neutro-600 text-center">Bienvenido al panel de administración.</p>
     </div>
 );
 
+const LoginRoute = () => {
+    const { isAuthenticated, loading } = useAuth();
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+    }
+    return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />;
+};
+
 const router = createBrowserRouter([
     {
+        path: "/login",
+        element: <LoginRoute />,
+    },
+    {
         path: "/",
-        element: <RootLayout />,
+        element: (
+            <ProtectedRoute>
+                <RootLayout />
+            </ProtectedRoute>
+        ),
         children: [
-            {
-                index: true,
-                element: <Navigate to="/dashboard" replace />,
-            },
-            {
-                path: "dashboard",
-                element: <Dashboard />,
-            },
-            {
-                path: "competidores",
-                element: <PaginaImportarCompetidores />,
-            },
-            {
-                path: "responsables",
-                element: <PaginaAsignarResponsable />,
-            },
-            {
-                path: "evaluadores",
-                element: <Dashboard />, // <== pones qui tu ruta
-            },
-            {
-                path: "areasNives",
-                element: <PaginaAreas />, // <== pones qui tu ruta
-            },
-            {
-                path: "parametrosCalificaciones",
-                element: <Dashboard />, // <== pones qui tu ruta
-            },
-            {
-                path: "calificaciones",
-                element: <PaginaAsignarResponsable />, // <== pones qui tu ruta
-            },
-            {
-                path: "reportes",
-                element: <Dashboard />, // <== pones qui tu ruta
-            }
+            { index: true, element: <Navigate to="/dashboard" replace /> },
+            { path: "dashboard", element: <Dashboard /> },
+            { path: "competidores", element: <PaginaImportarCompetidores /> },
+            { path: "responsables", element: <PaginaAsignarResponsable /> },
+            { path: "areasNives", element: <PaginaAreas /> },
         ],
     },
 ]);
 
 function App() {
-    return <RouterProvider router={router} />;
+    return (
+        <>
+            <AuthInitializer />
+            <RouterProvider router={router} />
+        </>
+    );
 }
 
 export default App;

@@ -1,54 +1,51 @@
-
+import apiClient from '../../../api/ApiPhp';
 import type { LoginCredentials, User } from '../types/auth';
-//import { API_BASE_URL } from '../utils/constants';
+
+interface LoginApiResponse {
+  access_token: string;
+  data: {
+    id_usuario: number;
+    nombre: string;
+    rol: User['role'];
+    persona: {
+      email: string;
+    };
+    codigo_evaluador?: {
+      descripcion: string;
+    };
+  };
+}
 
 class AuthService {
+
   async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
-    const response = await fetch(`http://localhost:8000/api/v1/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
+    
+    const response = await apiClient.post<LoginApiResponse>('/v1/login', credentials);
+    
+    const { data, access_token } = response.data;
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    const userData = data.data; 
     const user: User = {
-      id: String(userData.id_usuario),
-      email: userData.persona.email,
-      name: userData.nombre,
-      role: userData.rol,
-      area: userData.codigo_evaluador?.descripcion
+      id: String(data.id_usuario),
+      email: data.persona.email,
+      name: data.nombre,
+      role: data.rol,
+      area: data.codigo_evaluador?.descripcion,
     };
 
-    return { user, token: data.access_token };
+    return { user, token: access_token };
   }
 
-  async getCurrentUser(token: string): Promise<User> {
-    const response = await fetch(`http://localhost:8000/api/v1/login`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+  async getCurrentUser(): Promise<User> {
+    const response = await apiClient.get<LoginApiResponse>('/v1/login');
 
-    if (!response.ok) {
-      throw new Error('Error obteniendo usuario actual');
-    }
-
-    const data = await response.json();
-
-    const userData = data.data;
+    const { data } = response.data;
+    
     const user: User = {
-      id: String(userData.id_usuario),
-      email: userData.persona.email,
-      name: userData.nombre,
-      role: userData.rol,
-      area: userData.codigo_evaluador?.descripcion
+      id: String(data.id_usuario),
+      email: data.persona.email,
+      name: data.nombre,
+      role: data.rol,
+      area: data.codigo_evaluador?.descripcion,
     };
 
     return user;
