@@ -30,22 +30,23 @@ export function PaginaAreas() {
     const table = useReactTable({ data: areas, columns, getCoreRowModel: getCoreRowModel() });
 
     return (
-        <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-            <main className="bg-blanco w-full max-w-7xl rounded-xl shadow-sombra-3 p-8">
+        <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 md:p-8 font-display">
+            <main className="bg-blanco w-full max-w-7xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                 <header className="text-center mb-10">
-                    <h1 className="text-4xl font-extrabold text-negro tracking-tighter">
+                    {/* --- MODIFICACIÓN: Título más pequeño en móviles --- */}
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
                         Áreas y Niveles
                     </h1>
                 </header>
                 
-                <div className="grid grid-cols-2 gap-8">
-                    {/* Columna de Áreas */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                    
                     <div className="flex flex-col">
                         <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
                             Lista de Áreas
                         </h2>
                         
-                        <div className="rounded-lg border border-neutro-200 overflow-hidden flex-grow relative">
+                        <div className="rounded-lg border border-neutro-200 overflow-hidden flex-grow relative h-96 lg:h-auto">
                             <div className="absolute inset-0 overflow-y-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-principal-500 sticky top-0 z-10">
