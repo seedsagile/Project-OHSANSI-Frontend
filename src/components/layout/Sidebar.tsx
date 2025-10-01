@@ -75,7 +75,6 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
                 </div>
 
                 <nav className="flex-grow flex flex-col gap-2 overflow-y-auto lg:overflow-y-visible">
-                    {/* ... (Tus NavLinks no cambian) ... */}
                     <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider">Principal</p>
                     <NavLink to="/dashboard" icon={<DashboardIcon />} label="Dashboard" onClick={() => setOpen(false)} />
                     <NavLink to="/competidores" icon={<UsersIcon />} label="Competidores" onClick={() => setOpen(false)} />
