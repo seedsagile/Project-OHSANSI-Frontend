@@ -2,14 +2,13 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
 import type { Nivel, CrearNivelData } from '../types';
-import toast from 'react-hot-toast';
 
 type ConfirmationModalState = {
     isOpen: boolean;
     title: string;
     message: string;
     onConfirm?: () => void;
-    type: 'confirmation' | 'info' | 'error';
+    type: 'confirmation' | 'info' | 'error' | 'success';
 };
 
 const initialConfirmationState: ConfirmationModalState = {
@@ -26,6 +25,7 @@ export function useGestionNiveles(id_area_seleccionada?: number) {
     const queryClient = useQueryClient();
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
+    const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
 
     const { data: todosLosNiveles = [], isLoading } = useQuery({
         queryKey: ['niveles'],
@@ -42,15 +42,24 @@ export function useGestionNiveles(id_area_seleccionada?: number) {
             if (!id_area_seleccionada) throw new Error("No hay un área seleccionada.");
             return nivelesService.crearNivel({ ...data, id_area: id_area_seleccionada });
         },
-        onSuccess: (nuevoNivel) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['niveles'] });
-            toast.success(`Nivel "${nuevoNivel.nombre}" creado exitosamente.`);
             cerrarModalCrear();
+            setConfirmationModal({
+                isOpen: true,
+                title: '¡Registro Exitoso!',
+                message: `El nivel "${nombreNivelCreando}" fue creado exitosamente.`,
+                type: 'success',
+            });
         },
-        onError: (error) => toast.error(error.message),
-        onSettled: () => {
-            setConfirmationModal(initialConfirmationState);
-        }
+        onError: (error) => {
+            setConfirmationModal({
+                isOpen: true,
+                title: 'Error al Crear',
+                message: error.message,
+                type: 'error',
+            });
+        },
     });
 
     const handleGuardarNivel = (data: Omit<CrearNivelData, 'id_area'>) => {
@@ -67,7 +76,8 @@ export function useGestionNiveles(id_area_seleccionada?: number) {
             });
             return;
         }
-
+        
+        setNombreNivelCreando(data.nombre);
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -78,7 +88,10 @@ export function useGestionNiveles(id_area_seleccionada?: number) {
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
-    const cerrarModalCrear = () => setModalCrearAbierto(false);
+    const cerrarModalCrear = () => {
+        setModalCrearAbierto(false);
+        setNombreNivelCreando(''); // Limpiar el estado al cerrar
+    };
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
 
     return {

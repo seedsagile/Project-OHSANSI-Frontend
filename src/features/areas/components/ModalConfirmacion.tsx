@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
-import { AlertTriangle, Info, X } from 'lucide-react';
-
-type ModalType = 'confirmation' | 'error' | 'info';
+import { AlertTriangle, Info, X, CheckCircle } from 'lucide-react';
+type ModalType = 'confirmation' | 'error' | 'info' | 'success';
 
 type Props = {
     isOpen: boolean;
@@ -17,12 +16,14 @@ const iconMap: Record<ModalType, ReactNode> = {
     confirmation: <AlertTriangle className="h-16 w-16 text-yellow-500 mx-auto" />,
     error: <X className="h-16 w-16 text-red-500 mx-auto" />,
     info: <Info className="h-16 w-16 text-blue-500 mx-auto" />,
+    success: <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />,
 };
 
 const buttonStyles: Record<ModalType, string> = {
     confirmation: 'bg-principal-500 hover:bg-principal-600',
     error: 'bg-acento-500 hover:bg-acento-600',
     info: 'bg-principal-500 hover:bg-principal-600',
+    success: 'bg-green-500 hover:bg-green-600',
 };
 
 export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children, type, loading = false }: Props) {
@@ -56,9 +57,12 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
                     <button
                         onClick={type === 'confirmation' ? onConfirm : onClose}
                         disabled={loading}
-                        className={`font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-32 ${buttonStyles[type]}`}
+                        className={`font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonStyles[type]}`}
                     >
-                        {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div> : (type === 'confirmation' ? 'Confirmar' : 'Entendido')}
+                        {loading 
+                            ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div> 
+                            : (type === 'confirmation' ? 'Confirmar' : 'Entendido')
+                        }
                     </button>
                 </div>
             </div>
