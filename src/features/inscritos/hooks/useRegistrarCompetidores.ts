@@ -26,7 +26,6 @@ const DEFAULT_GENERO = null;
 const DEFAULT_GRADO_ESCOLAR = 'No especificado';
 
 const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error: string | null } => {
-
     if (textoCsv.charCodeAt(0) === 0xFEFF) {
         textoCsv = textoCsv.substring(1);
     }
@@ -35,39 +34,70 @@ const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error:
     const headerLine = lines.shift() || '';
     const dataString = lines.join('\n');
 
-    const headersRaw = headerLine.split(';');
-    const headersSanitizados = headersRaw.map(h => normalizarEncabezado(h)).filter(Boolean);
-    const encabezadosFaltantes = ENCABEZADOS_REQUERIDOS.filter(h => !headersSanitizados.includes(h));
+    const headersRaw = headerLine.split(';').map(h => h.trim()).filter(Boolean);
+    const headersSanitizados = headersRaw.map(normalizarEncabezado);
+    
+    const encabezadosRequeridosSet = new Set(ENCABEZADOS_REQUERIDOS);
+    const encabezadosEncontradosSet = new Set(headersSanitizados);
+
+    const encabezadosFaltantes = ENCABEZADOS_REQUERIDOS.filter(h => !encabezadosEncontradosSet.has(h));
+    const encabezadosNoReconocidos = headersRaw.filter(h => !encabezadosRequeridosSet.has(normalizarEncabezado(h)));
+
     if (encabezadosFaltantes.length > 0) {
-        return { datos: [], error: `El archivo no es válido. Faltan las siguientes columnas: ${encabezadosFaltantes.join(', ')}` };
+        let mensajeError = "Formato de Encabezados Incorrecto.\nRevisa los encabezados de las columnas en la primera fila.\n\n";
+        if (encabezadosNoReconocidos.length > 0) {
+            mensajeError += `Columnas no reconocidas: ${encabezadosNoReconocidos.join(', ')}\n`;
+        }
+        mensajeError += `Columnas obligatorias faltantes: ${encabezadosFaltantes.join(', ')}\n\n`;
+        mensajeError += `Recordatorio: La primera fila debe contener exactamente estos encabezados:\n${ENCABEZADOS_REQUERIDOS.join(';')}`;
+        return { datos: [], error: mensajeError };
+    }
+    
+    if (encabezadosNoReconocidos.length > 0) {
+        let mensajeError = "Columnas Adicionales Detectadas.\nEl archivo no se cargó porque contiene columnas no permitidas.\n\n";
+        mensajeError += `Por favor, elimine las siguientes columnas y vuelva a intentarlo: ${encabezadosNoReconocidos.join(', ')}\n\n`;
+        mensajeError += `Recordatorio: El archivo solo debe contener estas columnas:\n${ENCABEZADOS_REQUERIDOS.join(';')}`;
+        return { datos: [], error: mensajeError };
     }
 
-    const parseResult = Papa.parse<string[]>(dataString, { header: false, skipEmptyLines: true, delimiter: ";", transform: (value) => value.trim() });
+    const parseResult = Papa.parse<string[]>(dataString, { header: false, skipEmptyLines: false, delimiter: ";", transform: (value) => value.trim() });
     const datosComoObjetos = parseResult.data.map((rowArray: string[]) => {
         const rowObject: { [key: string]: string } = {};
-        headersSanitizados.forEach((header, index) => { rowObject[header] = rowArray[index]; });
+        headersSanitizados.forEach((header, index) => { rowObject[header] = rowArray[index] || ''; });
         return rowObject as CompetidorCSV;
     });
-    
-    const datosFiltrados = datosComoObjetos.filter((fila: CompetidorCSV) => fila.nombre && fila.nombre.trim() !== '');
-    if (datosFiltrados.length === 0) {
-        return { datos: [], error: 'El archivo CSV está vacío o no contiene datos válidos.' };
-    }
-    
+
+    const datosValidados = [];
     const ciSet = new Set<string>();
-    for (const fila of datosFiltrados) {
+
+    for (let i = 0; i < datosComoObjetos.length; i++) {
+        const fila = datosComoObjetos[i];
+        const numeroDeFila = i + 2; // +1 por el índice base 0, +1 por la fila de encabezado
+
+        // Ignorar filas completamente vacías
+        if (Object.values(fila).every(val => val === '')) {
+            continue;
+        }
+
         const validationResult = filaSchema.safeParse(fila);
         if (!validationResult.success) {
             const firstError = validationResult.error.issues[0];
-            return { datos: [], error: `Error en los datos del archivo: ${firstError.message} (Columna: ${firstError.path.join(', ')})` };
+            const mensaje = `Error en la fila ${numeroDeFila}: El campo '${firstError.path.join(', ')}' no puede estar vacío.`;
+            return { datos: [], error: `Datos Incompletos en el Archivo.\n\n${mensaje}` };
         }
+
         if (ciSet.has(fila.ci)) {
-            return { datos: [], error: `El archivo contiene filas duplicadas. El CI "${fila.ci}" está repetido.` };
+            return { datos: [], error: `El archivo contiene filas duplicadas. El CI "${fila.ci}" está repetido en la fila ${numeroDeFila}.` };
         }
         ciSet.add(fila.ci);
+        datosValidados.push(fila);
+    }
+    
+    if (datosValidados.length === 0) {
+        return { datos: [], error: 'El archivo CSV está vacío o no contiene datos válidos.' };
     }
 
-    return { datos: datosFiltrados, error: null };
+    return { datos: datosValidados, error: null };
 };
 
 export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (msg: string) => void; onError: (msg: string) => void; }) {
@@ -162,7 +192,6 @@ export function useImportarCompetidores({ onSuccess, onError }: { onSuccess: (ms
         });
 
         const payload: InscripcionPayload = { competidores: competidoresIndividuales };
-        console.log("Payload final a enviar a la API:", payload);
         mutate(payload);
     };
 
