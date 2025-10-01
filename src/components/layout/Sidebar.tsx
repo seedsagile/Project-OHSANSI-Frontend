@@ -90,17 +90,16 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
                     <NavLink to="/reportes" icon={<FileTextIcon />} label="Generar Reportes" onClick={() => setOpen(false)} />
                 </nav>
 
-                <div className="border-t border-principal-600 pt-4 mt-4">
+                <footer className="flex-shrink-0 border-t border-principal-600 pt-4 mt-4">
                     <div className="flex items-center gap-3 px-3">
-                        <div className="h-10 w-10 rounded-full bg-principal-600 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-principal-600 flex items-center justify-center flex-shrink-0">
                             <IconoUsuario />
                         </div>
                         <div>
-                            <p className="font-semibold text-blanco">{user?.name || 'Usuario'}</p>
+                            <p className="font-semibold text-blanco truncate">{user?.name || 'Usuario'}</p>
                             <p className="text-sm text-principal-200 capitalize">{user?.role || 'Rol'}</p>
                         </div>
                     </div>
-
                     <button 
                         onClick={logout}
                         className="w-full flex items-center gap-3 px-3 py-2.5 mt-4 rounded-lg font-medium text-principal-100 hover:bg-acento-500/20 hover:text-acento-300 transition-colors"
@@ -108,7 +107,7 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
                         <LogoutIcon />
                         <span>Cerrar Sesión</span>
                     </button>
-                </div>
+                </footer>
             </aside>
         </>
     );
