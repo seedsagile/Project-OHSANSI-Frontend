@@ -68,12 +68,28 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
                     </div>
 
                     <div className="flex gap-4 justify-center mt-8">
-                        <button type="button" onClick={handleCancelar} disabled={loading} className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors'>
-                            <X size={20} />
+                        <button
+                            type="button"
+                            onClick={handleCancelar}
+                            disabled={loading}
+                            className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors'
+                        >
+                            <X className="w-5 h-5" />
                             <span>Cancelar</span>
                         </button>
-                        <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 w-32 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50">
-                            {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div> : <><Save size={20} /><span>Guardar</span></>}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
+                        >
+                            {loading ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            ) : (
+                                <>
+                                    <Save className="w-5 h-5" />
+                                    <span>Guardar</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
