@@ -1,7 +1,7 @@
 import { FormularioAsignarResponsable } from '../components/FormularioAsignarResponsable';
 import { useAsignarResponsable } from '../hooks/useAsignarResponsable';
 import { Spinner } from '../components/Spinner';
-import { ModalConfirmacion } from '../../areas/components/ModalConfirmacion';
+import { ModalConfirmacion } from '../components/ModalConfirmacion';
 
 export function PaginaAsignarResponsable() {
   const { 

@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react';
-import { AlertTriangle, Info, X } from 'lucide-react';
+// 1. Importa los íconos X y Check que usaremos en los botones
+import { AlertTriangle, Info, X, CheckCircle, Check } from 'lucide-react';
 
-type ModalType = 'confirmation' | 'error' | 'info';
+type ModalType = 'confirmation' | 'info' | 'success' | 'error';
 
 type Props = {
     isOpen: boolean;
@@ -17,12 +18,14 @@ const iconMap: Record<ModalType, ReactNode> = {
     confirmation: <AlertTriangle className="h-16 w-16 text-yellow-500 mx-auto" />,
     error: <X className="h-16 w-16 text-red-500 mx-auto" />,
     info: <Info className="h-16 w-16 text-blue-500 mx-auto" />,
+    success: <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />,
 };
 
 const buttonStyles: Record<ModalType, string> = {
     confirmation: 'bg-principal-500 hover:bg-principal-600',
     error: 'bg-acento-500 hover:bg-acento-600',
     info: 'bg-principal-500 hover:bg-principal-600',
+    success: 'bg-green-500 hover:bg-green-600',
 };
 
 export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children, type, loading = false }: Props) {
@@ -48,17 +51,31 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
                         <button
                             onClick={onClose}
                             disabled={loading}
-                            className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+                            // 2. Añade flexbox para alinear el ícono y el texto
+                            className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
                         >
-                            Cancelar
+                            {/* 3. Agrega el ícono de X con un tamaño adecuado */}
+                            <X className="h-5 w-5" />
+                            <span>Cancelar</span>
                         </button>
                     )}
                     <button
                         onClick={type === 'confirmation' ? onConfirm : onClose}
                         disabled={loading}
-                        className={`font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-32 ${buttonStyles[type]}`}
+                        // 4. Añade flexbox también a este botón
+                        className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonStyles[type]}`}
                     >
-                        {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div> : (type === 'confirmation' ? 'Confirmar' : 'Entendido')}
+                        {loading ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                        ) : type === 'confirmation' ? (
+                            // 5. Agrega el ícono de Check solo para el tipo 'confirmation'
+                            <>
+                                <Check className="h-5 w-5" />
+                                <span>Confirmar</span>
+                            </>
+                        ) : (
+                            <span>Entendido</span>
+                        )}
                     </button>
                 </div>
             </div>
