@@ -1,8 +1,9 @@
 import { type ReactNode, useEffect } from 'react';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { DashboardIcon, UsersIcon, ClipboardIcon, FileTextIcon, LogoutIcon } from '../icons';
+import { useAuth } from '../../auth/login/hooks/useAuth';
+import { IconoUsuario } from '../../features/inscritos/components/IconoUsuario';
 
-// El componente NavLink no cambia
 const NavLink = ({ to, icon, label, onClick }: { to: string; icon: ReactNode; label: string, onClick: () => void }) => {
     return (
         <RouterNavLink
@@ -22,7 +23,6 @@ const NavLink = ({ to, icon, label, onClick }: { to: string; icon: ReactNode; la
     );
 };
 
-
 interface SidebarProps {
     isOpen: boolean;
     setOpen: (isOpen: boolean) => void;
@@ -30,20 +30,19 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, setOpen }: SidebarProps) {
     const location = useLocation();
+    // 2. Llama al hook para obtener el usuario y la función de logout
+    const { user, logout } = useAuth();
 
-    // Cierra el sidebar cuando la ruta cambia
     useEffect(() => {
         setOpen(false);
     }, [location.pathname, setOpen]);
 
     return (
         <>
-            {/* Overlay para cerrar el menú al hacer clic fuera (reemplaza el anterior) */}
             <div 
                 className={`fixed inset-0 bg-black/50 z-20 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setOpen(false)}
             />
-
             <aside 
                 className={`
                     fixed top-0 left-0 w-72 h-screen bg-principal-700 text-blanco flex flex-col p-4 shadow-lg
@@ -68,45 +67,44 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
                         className="lg:hidden absolute top-4 right-4 p-2 text-principal-200 hover:text-blanco"
                         aria-label="Cerrar menú"
                     >
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
                     </button>
                 </div>
 
-                {/* --- MODIFICACIÓN PRINCIPAL: Scroll responsivo --- */}
                 <nav className="flex-grow flex flex-col gap-2 overflow-y-auto lg:overflow-y-visible">
+                    {/* ... (Tus NavLinks no cambian) ... */}
                     <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider">Principal</p>
                     <NavLink to="/dashboard" icon={<DashboardIcon />} label="Dashboard" onClick={() => setOpen(false)} />
                     <NavLink to="/competidores" icon={<UsersIcon />} label="Competidores" onClick={() => setOpen(false)} />
-
                     <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Gestión</p>
                     <NavLink to="/responsables" icon={<UsersIcon />} label="Responsables de Area" onClick={() => setOpen(false)} />
                     <NavLink to="/evaluadores" icon={<UsersIcon />} label="Evaluadores" onClick={() => setOpen(false)} />
                     <NavLink to="/areasNives" icon={<UsersIcon />} label="Areas y Niveles" onClick={() => setOpen(false)} />
-                    
                     <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Evaluación</p>
                     <NavLink to="/calificaciones" icon={<ClipboardIcon />} label="Calificaciones" onClick={() => setOpen(false)} />
                     <NavLink to="/parametrosCalificaciones" icon={<ClipboardIcon />} label="Parametros de Calificacion" onClick={() => setOpen(false)} />
-                    
                     <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Reportes</p>
                     <NavLink to="/reportes" icon={<FileTextIcon />} label="Generar Reportes" onClick={() => setOpen(false)} />
                 </nav>
 
                 <div className="border-t border-principal-600 pt-4 mt-4">
                     <div className="flex items-center gap-3 px-3">
-                        <img 
-                            src="https://i.pravatar.cc/40?u=willian"
-                            alt="Avatar de usuario"
-                            className="h-10 w-10 rounded-full"
-                        />
+                        <div className="h-10 w-10 rounded-full bg-principal-600 flex items-center justify-center">
+                            <IconoUsuario />
+                        </div>
                         <div>
-                            <p className="font-semibold text-blanco">Usuario</p>
-                            <p className="text-sm text-principal-200">Rol</p>
+                            <p className="font-semibold text-blanco">{user?.name || 'Usuario'}</p>
+                            <p className="text-sm text-principal-200 capitalize">{user?.role || 'Rol'}</p>
                         </div>
                     </div>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 mt-4 rounded-lg font-medium text-principal-100 hover:bg-acento-500/20 hover:text-acento-300 transition-colors">
+
+                    <button 
+                        onClick={logout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 mt-4 rounded-lg font-medium text-principal-100 hover:bg-acento-500/20 hover:text-acento-300 transition-colors"
+                    >
                         <LogoutIcon />
                         <span>Cerrar Sesión</span>
                     </button>
