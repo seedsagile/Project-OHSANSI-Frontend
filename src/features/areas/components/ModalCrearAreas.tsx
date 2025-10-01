@@ -65,8 +65,7 @@ export const ModalCrearArea = ({
                             maxLength={30}
                             onKeyPress={(e) => {
                                 const char = e.key;
-                                const isValid = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(char);
-                                if (!isValid) {
+                                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(char)) {
                                     e.preventDefault();
                                 }
                             }}
@@ -74,14 +73,7 @@ export const ModalCrearArea = ({
                                 e.preventDefault();
                                 const texto = e.clipboardData.getData('text');
                                 const textoLimpio = texto.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-                                const input = e.target as HTMLInputElement;
-                                const inicio = input.selectionStart || 0;
-                                const fin = input.selectionEnd || 0;
-                                const valorActual = input.value;
-                                const nuevoValor = valorActual.substring(0, inicio) + textoLimpio + valorActual.substring(fin);
-                                input.value = nuevoValor;
-                                input.setSelectionRange(inicio + textoLimpio.length, inicio + textoLimpio.length);
-                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                                document.execCommand('insertText', false, textoLimpio);
                             }}
                             {...register('nombre')}
                         />

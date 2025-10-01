@@ -19,8 +19,37 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-const normalizarNombre = (nombre: string) => 
-    nombre.trim().toLowerCase().replace(/\s+/g, ' ');
+// Normaliza y genera variaciones para comparación
+const normalizarYGenerarVariaciones = (nombre: string): string[] => {
+    const normalizado = nombre.trim().toLowerCase().replace(/\s+/g, ' ');
+    const variaciones = [normalizado];
+    
+    // Agregar singular/plural
+    if (normalizado.endsWith('s')) {
+        variaciones.push(normalizado.slice(0, -1)); // Quitar 's' para singular
+    } else {
+        variaciones.push(normalizado + 's'); // Agregar 's' para plural
+    }
+    
+    // Agregar variaciones con 'es' (ej: "nivel" -> "niveles")
+    if (normalizado.endsWith('es')) {
+        variaciones.push(normalizado.slice(0, -2)); // "niveles" -> "nivel"
+    } else if (!normalizado.endsWith('s')) {
+        variaciones.push(normalizado + 'es'); // "nivel" -> "niveles"
+    }
+    
+    return [...new Set(variaciones)]; // Eliminar duplicados
+};
+
+const existeNombreSimilar = (nombreNuevo: string, areasExistentes: Area[]): boolean => {
+    const variacionesNuevas = normalizarYGenerarVariaciones(nombreNuevo);
+    
+    return areasExistentes.some(area => {
+        const variacionesExistentes = normalizarYGenerarVariaciones(area.nombre);
+        // Verificar si alguna variación del nuevo nombre coincide con alguna del existente
+        return variacionesNuevas.some(vn => variacionesExistentes.includes(vn));
+    });
+};
 
 export function useGestionAreas() {
     const queryClient = useQueryClient();
@@ -52,14 +81,13 @@ export function useGestionAreas() {
     });
 
     const handleGuardarArea = (data: CrearAreaData) => {
-        const nombreNormalizado = normalizarNombre(data.nombre);
-        const esDuplicado = areas.some(area => normalizarNombre(area.nombre) === nombreNormalizado);
+        const esDuplicado = existeNombreSimilar(data.nombre, areas);
 
         if (esDuplicado) {
             setConfirmationModal({
                 isOpen: true,
                 title: 'Nombre Duplicado',
-                message: `Ya existe un área con el nombre "${data.nombre}". Por favor, ingrese un nombre diferente.`,
+                message: `Ya existe un área con un nombre similar a "${data.nombre}". Por favor, ingrese un nombre diferente.`,
                 type: 'info',
             });
             return;
