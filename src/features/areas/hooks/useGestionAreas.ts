@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { areasService } from '../services/areasService';
 import type { Area, CrearAreaData } from '../types';
-import toast from 'react-hot-toast';
 
 type ConfirmationModalState = {
     isOpen: boolean;
     title: string;
     message: string;
     onConfirm?: () => void;
-    type: 'confirmation' | 'info' | 'error';
+    type: 'confirmation' | 'info' | 'error' | 'success';
 };
 
 const initialConfirmationState: ConfirmationModalState = {
@@ -19,37 +18,30 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-// Normaliza y genera variaciones para comparación
 const normalizarYGenerarVariaciones = (nombre: string): string[] => {
     const normalizado = nombre.trim().toLowerCase().replace(/\s+/g, ' ');
     const variaciones = [normalizado];
-    
-    // Agregar singular/plural
     if (normalizado.endsWith('s')) {
-        variaciones.push(normalizado.slice(0, -1)); // Quitar 's' para singular
+        variaciones.push(normalizado.slice(0, -1));
     } else {
-        variaciones.push(normalizado + 's'); // Agregar 's' para plural
+        variaciones.push(normalizado + 's');
     }
-    
-    // Agregar variaciones con 'es' (ej: "nivel" -> "niveles")
     if (normalizado.endsWith('es')) {
-        variaciones.push(normalizado.slice(0, -2)); // "niveles" -> "nivel"
+        variaciones.push(normalizado.slice(0, -2));
     } else if (!normalizado.endsWith('s')) {
-        variaciones.push(normalizado + 'es'); // "nivel" -> "niveles"
+        variaciones.push(normalizado + 'es');
     }
-    
-    return [...new Set(variaciones)]; // Eliminar duplicados
+    return [...new Set(variaciones)];
 };
 
 const existeNombreSimilar = (nombreNuevo: string, areasExistentes: Area[]): boolean => {
     const variacionesNuevas = normalizarYGenerarVariaciones(nombreNuevo);
-    
     return areasExistentes.some(area => {
         const variacionesExistentes = normalizarYGenerarVariaciones(area.nombre);
-        // Verificar si alguna variación del nuevo nombre coincide con alguna del existente
         return variacionesNuevas.some(vn => variacionesExistentes.includes(vn));
     });
 };
+
 
 export function useGestionAreas() {
     const queryClient = useQueryClient();
@@ -67,17 +59,22 @@ export function useGestionAreas() {
         mutationFn: areasService.crearArea,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['areas'] });
-            toast.success(`Área "${nombreAreaCreando}" creada exitosamente`);
             cerrarModalCrear();
-            setNombreAreaCreando('');
+            setConfirmationModal({
+                isOpen: true,
+                type: 'success',
+                title: '¡Registro Exitoso!',
+                message: `El área "${nombreAreaCreando}" fue creada exitosamente.`
+            });
         },
         onError: (error) => {
-            toast.error(error.message);
-            setNombreAreaCreando('');
+            setConfirmationModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Error al Crear',
+                message: error.message,
+            });
         },
-        onSettled: () => {
-            setConfirmationModal(initialConfirmationState);
-        }
     });
 
     const handleGuardarArea = (data: CrearAreaData) => {
