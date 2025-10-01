@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { AlertTriangle, Info, X } from 'lucide-react';
 
-type ModalType = 'confirmation' | 'error' | 'info';
+type ModalType = 'confirmation' | 'info' | 'success' | 'error';
 
 type Props = {
     isOpen: boolean;

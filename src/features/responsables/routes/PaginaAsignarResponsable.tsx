@@ -1,41 +1,22 @@
-import { useState } from 'react';
 import { FormularioAsignarResponsable } from '../components/FormularioAsignarResponsable';
 import { useAsignarResponsable } from '../hooks/useAsignarResponsable';
 import { Spinner } from '../components/Spinner';
-import { ModalFeedback } from '../components/ModalFeedback';
-
-type ModalState = {
-  isOpen: boolean;
-  type: 'success' | 'error';
-  title: string;
-  message: string;
-}
+import { ModalConfirmacion } from '../../areas/components/ModalConfirmacion';
 
 export function PaginaAsignarResponsable() {
-  const [modalState, setModalState] = useState<ModalState>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: ''
-  });
-
-  const mostrarModal = (type: 'success' | 'error', title: string, message: string) => {
-    setModalState({ isOpen: true, type, title, message });
-  };
-  
-  const cerrarModal = () => {
-    setModalState(prevState => ({ ...prevState, isOpen: false }));
-  };
-  
   const { 
     register, 
     handleSubmit,
     errors, 
     isSubmitting,
     handleCancel,
-    setValue, 
-  } = useAsignarResponsable({ mostrarModal });
-
+    setValue,
+    modalState,
+    closeModal,
+  } = useAsignarResponsable();
+  const modalType = (modalState.type === 'success' || modalState.type === 'confirmation') 
+    ? modalState.type 
+    : 'error';
   return (
     <>
       <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
@@ -88,14 +69,17 @@ export function PaginaAsignarResponsable() {
         </main>
       </div>
 
-      <ModalFeedback
+      {/* Renderizamos el modal genérico con el estado del hook */}
+      <ModalConfirmacion
         isOpen={modalState.isOpen}
-        onClose={cerrarModal}
-        type={modalState.type}
+        onClose={closeModal}
+        onConfirm={modalState.onConfirm}
         title={modalState.title}
+        type={modalType}
+        loading={isSubmitting}
       >
-        <p>{modalState.message}</p>
-      </ModalFeedback>
+        {modalState.message}
+      </ModalConfirmacion>
     </>
   );
 }
