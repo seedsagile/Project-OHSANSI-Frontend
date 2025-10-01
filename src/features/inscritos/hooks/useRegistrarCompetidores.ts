@@ -8,17 +8,17 @@ import { importarCompetidoresAPI } from '../services/ApiInscripcion';
 import type { FileRejection } from 'react-dropzone';
 import { separarNombreCompleto } from '../../responsables/utils/responsableUtils';
 
-// --- NUEVO: Definición del estado del modal ---
 export type ModalState = {
     isOpen: boolean;
     title: string;
     message: string;
-    type: 'success' | 'error' | 'info';
+    type: 'success' | 'error' | 'info' | 'confirmation';
+    onConfirm?: () => void;
 };
 
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
 
-// ... (El resto de las constantes y esquemas permanecen igual) ...
+// ... (constantes y esquemas de validación sin cambios) ...
 const normalizarEncabezado = (header: string): string => header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 const ENCABEZADOS_REQUERIDOS = ['nombre', 'ci', 'telftutor', 'colegio', 'departamento', 'nivel', 'area', 'tipodeinscripcion'];
 const filaSchema = z.object({
@@ -36,7 +36,7 @@ const DEFAULT_GENERO = null;
 const DEFAULT_GRADO_ESCOLAR = 'No especificado';
 
 const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error: string | null } => {
-    // ... (La lógica de esta función no cambia)
+
     if (textoCsv.charCodeAt(0) === 0xFEFF) {
         textoCsv = textoCsv.substring(1);
     }
@@ -83,9 +83,8 @@ const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], error:
 
     for (let i = 0; i < datosComoObjetos.length; i++) {
         const fila = datosComoObjetos[i];
-        const numeroDeFila = i + 2; // +1 por el índice base 0, +1 por la fila de encabezado
+        const numeroDeFila = i + 2;
 
-        // Ignorar filas completamente vacías
         if (Object.values(fila).every(val => val === '')) {
             continue;
         }
@@ -115,7 +114,6 @@ export function useImportarCompetidores() {
     const [datos, setDatos] = useState<CompetidorCSV[]>([]);
     const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
     const [esArchivoValido, setEsArchivoValido] = useState(false);
-    // --- NUEVO: Estado para el modal ---
     const [modalState, setModalState] = useState<ModalState>(initialModalState);
 
     const { mutate, isPending } = useMutation({
@@ -179,40 +177,47 @@ export function useImportarCompetidores() {
     }, [reset]);
 
     const handleSave = () => {
-        // ... (La lógica de esta función no cambia)
         if (!esArchivoValido || datos.length === 0) {
             setModalState({ isOpen: true, type: 'error', title: 'Acción no permitida', message: 'Se debe seleccionar un archivo CSV válido antes de continuar.' });
             return;
         }
 
-        const competidoresIndividuales: CompetidorIndividualPayload[] = datos.map(fila => {
-            const { nombre, apellido } = separarNombreCompleto(fila.nombre);
-            const esGrupal = fila.tipodeinscripcion.toLowerCase() === 'grupal';
-            return {
-                persona: {
-                    nombre, apellido, ci: fila.ci, telefono: fila.telftutor,
-                    fecha_nac: DEFAULT_FECHA_NAC, genero: DEFAULT_GENERO,
-                    email: `${normalizarEncabezado(nombre)}.${fila.ci}@example.com`
-                },
-                competidor: {
-                    grado_escolar: DEFAULT_GRADO_ESCOLAR, departamento: fila.departamento,
-                    contacto_tutor: fila.telftutor, contacto_emergencia: fila.telftutor
-                },
-                institucion: {
-                    nombre: fila.colegio, tipo: 'No especificado', departamento: fila.departamento,
-                    direccion: 'No especificada', telefono: null
-                },
-                grupo: {
-                    nombre: esGrupal ? `Grupo de ${fila.area}` : `Individual ${fila.ci}`,
-                    descripcion: 'Inscripción desde archivo CSV', max_integrantes: esGrupal ? 5 : 1
-                },
-                area: { nombre: fila.area },
-                nivel: { nombre: fila.nivel }
-            };
-        });
+        setModalState({
+            isOpen: true,
+            type: 'confirmation',
+            title: 'Confirmar Registro',
+            message: `¿Está seguro de que desea registrar a ${datos.length} competidores? Esta acción no se puede deshacer.`,
+            onConfirm: () => {
+                const competidoresIndividuales: CompetidorIndividualPayload[] = datos.map(fila => {
+                    const { nombre, apellido } = separarNombreCompleto(fila.nombre);
+                    const esGrupal = fila.tipodeinscripcion.toLowerCase() === 'grupal';
+                    return {
+                        persona: {
+                            nombre, apellido, ci: fila.ci, telefono: fila.telftutor,
+                            fecha_nac: DEFAULT_FECHA_NAC, genero: DEFAULT_GENERO,
+                            email: `${normalizarEncabezado(nombre)}.${fila.ci}@example.com`
+                        },
+                        competidor: {
+                            grado_escolar: DEFAULT_GRADO_ESCOLAR, departamento: fila.departamento,
+                            contacto_tutor: fila.telftutor, contacto_emergencia: fila.telftutor
+                        },
+                        institucion: {
+                            nombre: fila.colegio, tipo: 'No especificado', departamento: fila.departamento,
+                            direccion: 'No especificada', telefono: null
+                        },
+                        grupo: {
+                            nombre: esGrupal ? `Grupo de ${fila.area}` : `Individual ${fila.ci}`,
+                            descripcion: 'Inscripción desde archivo CSV', max_integrantes: esGrupal ? 5 : 1
+                        },
+                        area: { nombre: fila.area },
+                        nivel: { nombre: fila.nivel }
+                    };
+                });
 
-        const payload: InscripcionPayload = { competidores: competidoresIndividuales };
-        mutate(payload);
+                const payload: InscripcionPayload = { competidores: competidoresIndividuales };
+                mutate(payload);
+            }
+        });
     };
 
     const closeModal = () => setModalState(initialModalState);
@@ -222,10 +227,10 @@ export function useImportarCompetidores() {
         nombreArchivo,
         esArchivoValido,
         isSubmitting: isPending,
-        modalState, // <-- Exportamos el estado del modal
+        modalState,
         onDrop,
         handleSave,
         handleCancel: reset,
-        closeModal, // <-- Exportamos la función para cerrar el modal
+        closeModal,
     };
 }

@@ -5,10 +5,9 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 import type { CompetidorCSV } from '../types/indexInscritos';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
 import { IconoUsuario } from '../components/IconoUsuario';
-import { ModalInformativo } from '../components/ModalInformativo'; 
+import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion'; 
 import { UploadCloud, FileText, X, Save } from 'lucide-react';
 
-// --- Componente Dropzone sin cambios ---
 const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo, open }: { 
     getRootProps: <T extends DropzoneRootProps>(props?: T) => T; 
     getInputProps: <T extends DropzoneInputProps>(props?: T) => T; 
@@ -45,13 +44,11 @@ const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo
     );
 };
 
-// --- MEJORA: Tabla de Resultados con scroll vertical y horizontal ---
 const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: ColumnDef<CompetidorCSV>[]; }) => {
     const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
 
     return (
         <div className="rounded-lg border border-neutro-200 overflow-hidden bg-blanco">
-            {/* Contenedor con altura máxima y ambos scrolls */}
             <div className="overflow-auto max-h-96">
                 <table className="w-full text-left min-w-[1000px]">
                     <thead className="bg-principal-500 sticky top-0 z-10">
@@ -84,7 +81,6 @@ const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: Co
     );
 };
 
-// --- Componente Principal sin cambios ---
 export function PaginaImportarCompetidores() {
     
     const {
@@ -123,9 +119,6 @@ export function PaginaImportarCompetidores() {
                     
                     <header className="flex justify-between items-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
-                        <div className="text-neutro-500">
-                            <IconoUsuario />
-                        </div>
                     </header>
 
                     <section className="mb-8">
@@ -159,14 +152,17 @@ export function PaginaImportarCompetidores() {
                 </main>
             </div>
 
-            <ModalInformativo
+            {/* --- MEJORA: Renderizamos el modal de confirmación con el estado del hook --- */}
+            <ModalConfirmacion
                 isOpen={modalState.isOpen}
                 onClose={closeModal}
+                onConfirm={modalState.onConfirm}
                 title={modalState.title}
                 type={modalState.type}
+                loading={isSubmitting}
             >
                 {modalState.message}
-            </ModalInformativo>
+            </ModalConfirmacion>
         </>
     );
 }
