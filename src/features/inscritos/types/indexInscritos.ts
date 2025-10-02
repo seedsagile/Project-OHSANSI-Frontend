@@ -7,6 +7,7 @@ export type CompetidorCSV = {
     nivel: string;
     area: string;
     tipodeinscripcion: string;
+    [key: string]: string;
 };
 
 export type PersonaPayload = {

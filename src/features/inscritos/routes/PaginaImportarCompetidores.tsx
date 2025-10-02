@@ -1,12 +1,13 @@
-import { useMemo } from 'react';
 import { useDropzone, type DropzoneRootProps, type DropzoneInputProps } from 'react-dropzone';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 
 import type { CompetidorCSV } from '../types/indexInscritos';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
+import { IconoUsuario } from '../components/IconoUsuario';
 import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion'; 
 import { UploadCloud, FileText, X, Save } from 'lucide-react';
 
+// --- Componente Dropzone sin cambios ---
 const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo, open }: { 
     getRootProps: <T extends DropzoneRootProps>(props?: T) => T; 
     getInputProps: <T extends DropzoneInputProps>(props?: T) => T; 
@@ -43,18 +44,21 @@ const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo
     );
 };
 
+// --- MEJORA: Tabla con Scroll Horizontal y Vertical ---
 const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: ColumnDef<CompetidorCSV>[]; }) => {
     const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
 
     return (
-        <div className="rounded-lg border border-neutro-200 overflow-hidden bg-blanco">
+        <div className="rounded-lg border border-neutro-200 bg-blanco overflow-hidden">
+            {/* Este contenedor ahora maneja ambos scrolls */}
             <div className="overflow-auto max-h-96">
-                <table className="w-full text-left min-w-[1000px]">
+                {/* Se elimina 'w-full' y 'min-w-[1000px]' para que la tabla tenga un ancho natural */}
+                <table className="text-left table-auto">
                     <thead className="bg-principal-500 sticky top-0 z-10">
                         {table.getHeaderGroups().map(headerGroup => (
                             <tr key={headerGroup.id}>
                                 {headerGroup.headers.map(header => (
-                                    <th key={header.id} className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">
+                                    <th key={header.id} className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center whitespace-nowrap">
                                         {flexRender(header.column.columnDef.header, header.getContext())}
                                     </th>
                                 ))}
@@ -68,7 +72,9 @@ const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: Co
                             table.getRowModel().rows.map(row => (
                                 <tr key={row.id} className="even:bg-neutro-50 hover:bg-principal-50 transition-colors">
                                     {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id} className="p-4 text-neutro-700 text-center">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                                        <td key={cell.id} className="p-4 text-neutro-700 text-center whitespace-nowrap">
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </td>
                                     ))}
                                 </tr>
                             ))
@@ -80,7 +86,7 @@ const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: Co
     );
 };
 
-
+// --- (Componente principal PaginaImportarCompetidores sin cambios lógicos) ---
 export function PaginaImportarCompetidores() {
     
     const {
@@ -93,6 +99,7 @@ export function PaginaImportarCompetidores() {
         handleSave,
         handleCancel,
         closeModal,
+        columnasDinamicas,
     } = useImportarCompetidores();
 
     const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -101,24 +108,16 @@ export function PaginaImportarCompetidores() {
         accept: { 'text/csv': ['.csv'] }
     });
 
-    const columns = useMemo<ColumnDef<CompetidorCSV>[]>(() => [
-        { accessorKey: 'nombre', header: 'Nombre' },
-        { accessorKey: 'ci', header: 'CI' },
-        { accessorKey: 'telftutor', header: 'Telf. Tutor' },
-        { accessorKey: 'colegio', header: 'Colegio' },
-        { accessorKey: 'departamento', header: 'Departamento' },
-        { accessorKey: 'area', header: 'Área' },
-        { accessorKey: 'nivel', header: 'Nivel' },
-        { accessorKey: 'tipodeinscripcion', header: 'Tipo de Inscripción' },
-    ], []);
-
     return (
         <>
             <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex items-center justify-center">
                 <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     
-                    <header className="flex items-center justify-center mb-10">
+                    <header className="flex justify-between items-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
+                        <div className="text-neutro-500">
+                            <IconoUsuario />
+                        </div>
                     </header>
 
                     <section className="mb-8">
@@ -131,10 +130,9 @@ export function PaginaImportarCompetidores() {
                         />
                     </section>
 
-                    <TablaResultados data={datos} columns={columns} />
+                    <TablaResultados data={datos} columns={columnasDinamicas} />
 
                     <footer className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-12">
-                        {/* --- MEJORA APLICADA AQUÍ --- */}
                         <button 
                             onClick={handleCancel}
                             disabled={datos.length === 0 && !nombreArchivo}
