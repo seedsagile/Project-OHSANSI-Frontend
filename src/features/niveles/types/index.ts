@@ -11,5 +11,4 @@ export type Nivel = {
 export type CrearNivelData = {
     nombre: string;
     descripcion?: string;
-    id_area: number;
 };

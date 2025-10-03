@@ -1,20 +1,20 @@
-// src/features/niveles/componentes/ModalCrearNivel.tsx
+// src/features/niveles/components/ModalCrearNivel.tsx
+
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { crearNivelEsquema, type CrearNivelFormData } from '../utils/esquemas';
-import {restringirCaracteres } from '../../responsables/utils/formUtils';
+import { restringirCaracteres } from '../../responsables/utils/formUtils';
 
 type ModalCrearNivelProps = {
     isOpen: boolean;
     onClose: () => void;
     onGuardar: (data: CrearNivelFormData) => void;
     loading?: boolean;
-    nombreArea?: string;
 };
 
-export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, nombreArea }: ModalCrearNivelProps) => {
+export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }: ModalCrearNivelProps) => {
     const { register, handleSubmit, formState: { errors }, reset } = useForm<CrearNivelFormData>({
         resolver: zodResolver(crearNivelEsquema),
         mode: 'onBlur',
@@ -39,8 +39,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
                 className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-xl font-semibold text-center mb-2">Crear Nivel</h2>
-                <p className="text-center text-neutro-500 mb-6">para el área: <span className="font-bold text-principal-500">{nombreArea}</span></p>
+                <h2 className="text-xl font-semibold text-center mb-6">Crear Nuevo Nivel</h2>
                 
                 <form onSubmit={handleSubmit(onGuardar)}>
                     <div className="mb-4">

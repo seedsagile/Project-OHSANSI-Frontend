@@ -81,7 +81,8 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
                     <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Gestión</p>
                     <NavLink to="/responsables" icon={<UsersIcon />} label="Responsables de Area" onClick={() => setOpen(false)} />
                     <NavLink to="/evaluadores" icon={<UsersIcon />} label="Evaluadores" onClick={() => setOpen(false)} />
-                    <NavLink to="/areasNives" icon={<UsersIcon />} label="Areas y Niveles" onClick={() => setOpen(false)} />
+                    <NavLink to="/areas" icon={<UsersIcon />} label="Areas" onClick={() => setOpen(false)} />
+                    <NavLink to="/niveles" icon={<UsersIcon />} label="Niveles" onClick={() => setOpen(false)} />
                     <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Evaluación</p>
                     <NavLink to="/calificaciones" icon={<ClipboardIcon />} label="Calificaciones" onClick={() => setOpen(false)} />
                     <NavLink to="/parametrosCalificaciones" icon={<ClipboardIcon />} label="Parametros de Calificacion" onClick={() => setOpen(false)} />
