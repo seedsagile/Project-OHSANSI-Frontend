@@ -1,111 +1,30 @@
-import { useDropzone, type DropzoneRootProps, type DropzoneInputProps } from 'react-dropzone';
-import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-
-import type { CompetidorCSV } from '../types/indexInscritos';
+import { useDropzone } from 'react-dropzone';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
 import { IconoUsuario } from '../components/IconoUsuario';
-import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion'; 
-import { UploadCloud, FileText, X, Save } from 'lucide-react';
+import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion';
+import { Save, X } from 'lucide-react';
 
-// --- Componente Dropzone sin cambios ---
-const DropzoneArea = ({ getRootProps, getInputProps, isDragActive, nombreArchivo, open }: { 
-    getRootProps: <T extends DropzoneRootProps>(props?: T) => T; 
-    getInputProps: <T extends DropzoneInputProps>(props?: T) => T; 
-    isDragActive: boolean; 
-    nombreArchivo: string | null;
-    open: () => void;
-}) => {
-    const baseClasses = 'flex-grow border-2 border-dashed rounded-lg flex items-center justify-center p-4 text-neutro-500 transition-colors duration-300 cursor-pointer';
-    const activeClasses = 'border-principal-500 bg-principal-50';
-    const idleClasses = 'border-neutro-300 hover:border-principal-400';
+import { DropzoneArea } from '../components/DropzoneArea';
+import { TablaResultados } from '../components/TablaResultados';
+import { Alert } from '../../../components/ui/Alert';
 
-    return (
-        <div className="flex flex-col md:flex-row items-stretch gap-6">
-            <button 
-                type="button" 
-                onClick={open} 
-                className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500/10 text-principal-600 hover:bg-principal-500/20 transition-colors"
-            >
-                <UploadCloud size={20} />
-                <span>Cargar CSV</span>
-            </button>
-            <div {...getRootProps({ className: `${baseClasses} ${isDragActive ? activeClasses : idleClasses}` })}>
-                <input {...getInputProps()} />
-                {nombreArchivo ? (
-                    <div className="flex items-center gap-2 text-exito-600">
-                        <FileText size={20} />
-                        <span className="font-semibold">{nombreArchivo}</span>
-                    </div>
-                ) : (
-                    <p>{isDragActive ? 'Suelta el archivo aquí...' : 'o arrastra un archivo aquí'}</p>
-                )}
-            </div>
-        </div>
-    );
-};
-
-// --- MEJORA: Tabla con Scroll Horizontal y Vertical ---
-const TablaResultados = ({ data, columns }: { data: CompetidorCSV[]; columns: ColumnDef<CompetidorCSV>[]; }) => {
-    const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
-
-    return (
-        <div className="rounded-lg border border-neutro-200 bg-blanco overflow-hidden">
-            {/* Este contenedor ahora maneja ambos scrolls */}
-            <div className="overflow-auto max-h-96">
-                {/* Se elimina 'w-full' y 'min-w-[1000px]' para que la tabla tenga un ancho natural */}
-                <table className="text-left table-auto">
-                    <thead className="bg-principal-500 sticky top-0 z-10">
-                        {table.getHeaderGroups().map(headerGroup => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map(header => (
-                                    <th key={header.id} className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center whitespace-nowrap">
-                                        {flexRender(header.column.columnDef.header, header.getContext())}
-                                    </th>
-                                ))}
-                            </tr>
-                        ))}
-                    </thead>
-                    <tbody className="divide-y divide-neutro-200">
-                        {table.getRowModel().rows.length === 0 ? (
-                            <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">Aún no se han cargado datos.</td></tr>
-                        ) : (
-                            table.getRowModel().rows.map(row => (
-                                <tr key={row.id} className="even:bg-neutro-50 hover:bg-principal-50 transition-colors">
-                                    {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id} className="p-4 text-neutro-700 text-center whitespace-nowrap">
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
-
-// --- (Componente principal PaginaImportarCompetidores sin cambios lógicos) ---
 export function PaginaImportarCompetidores() {
-    
     const {
-        datos,
-        nombreArchivo,
-        esArchivoValido,
+        datos, 
+        nombreArchivo, 
+        esArchivoValido, 
+        isParsing, 
         isSubmitting,
-        modalState,
-        onDrop,
-        handleSave,
-        handleCancel,
-        closeModal,
+        modalState, 
+        onDrop, 
+        handleSave, 
+        handleCancel, 
+        closeModal, 
         columnasDinamicas,
     } = useImportarCompetidores();
 
     const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-        onDrop,
-        noClick: true,
-        accept: { 'text/csv': ['.csv'] }
+        onDrop, noClick: true, accept: { 'text/csv': ['.csv'] }
     });
 
     return (
@@ -125,10 +44,18 @@ export function PaginaImportarCompetidores() {
                             getRootProps={getRootProps}
                             getInputProps={getInputProps}
                             isDragActive={isDragActive}
+                            isParsing={isParsing}
                             nombreArchivo={nombreArchivo}
                             open={open}
                         />
                     </section>
+                    
+                    {datos.length > 0 && !esArchivoValido && (
+                        <Alert 
+                            type="error" 
+                            message="Se encontraron errores en el archivo. Las filas inválidas están marcadas en rojo. Pase el mouse sobre ellas para ver los detalles." 
+                        />
+                    )}
 
                     <TablaResultados data={datos} columns={columnasDinamicas} />
 
@@ -139,16 +66,16 @@ export function PaginaImportarCompetidores() {
                             className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <X className="h-5 w-5" />
-                            <span>Cancelar</span>
+                            <span>Limpiar</span>
                         </button>
                         
                         <button onClick={handleSave} disabled={!esArchivoValido || isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]">
                             {isSubmitting ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blanco"></div>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                             ) : (
                                 <>
                                     <Save className="h-5 w-5" />
-                                    <span>Guardar</span>
+                                    <span>Guardar Válidos</span>
                                 </>
                             )}
                         </button>
@@ -156,12 +83,9 @@ export function PaginaImportarCompetidores() {
                 </main>
             </div>
 
-            <ModalConfirmacion
-                isOpen={modalState.isOpen}
-                onClose={closeModal}
-                onConfirm={modalState.onConfirm}
-                title={modalState.title}
-                type={modalState.type}
+            <ModalConfirmacion 
+                {...modalState} 
+                onClose={closeModal} 
                 loading={isSubmitting}
             >
                 {modalState.message}

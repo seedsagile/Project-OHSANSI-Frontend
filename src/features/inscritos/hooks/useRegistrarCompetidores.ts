@@ -1,14 +1,15 @@
 import { useState, useCallback } from 'react';
-import Papa from 'papaparse';
 import { useMutation } from '@tanstack/react-query';
-import { z } from 'zod';
 import { AxiosError } from 'axios';
-// --- MEJORA: Importamos el tipo ColumnDef para eliminar 'any' ---
 import type { ColumnDef } from '@tanstack/react-table';
-import type { ApiErrorResponse, CompetidorCSV, InscripcionPayload, CompetidorIndividualPayload } from '../types/indexInscritos';
+import type { ApiErrorResponse, CompetidorCSV, InscripcionPayload, FilaProcesada } from '../types/indexInscritos';
 import { importarCompetidoresAPI } from '../services/ApiInscripcion';
 import type { FileRejection } from 'react-dropzone';
-import { separarNombreCompleto } from '../../responsables/utils/responsableUtils';
+import { procesarYValidarCSV } from '../utils/csvProcessor';
+import { mapCSVRenglonToPayload } from '../utils/apiMapper';
+
+// Importamos las utilidades directamente para usarlas en el hook
+import { headerMapping, normalizarEncabezado } from '../utils/csvProcessor';
 
 export type ModalState = {
     isOpen: boolean;
@@ -20,167 +21,38 @@ export type ModalState = {
 
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
 
-// --- (Validaciones y constantes sin cambios) ---
-const toTitleCase = (str: string) =>
-    str.toLowerCase().replace(/\s+/g, ' ').trim().split(' ').map(word =>
-        word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-
-const normalizarEncabezado = (header: string): string => header.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-
-const ENCABEZADOS_REQUERIDOS = ['nombre', 'ci', 'telftutor', 'colegio', 'departamento', 'nivel', 'area', 'tipodeinscripcion'];
-const DEPARTAMENTOS_VALIDOS = [
-    'COCHABAMBA', 'LA PAZ', 'SANTA CRUZ', 'ORURO', 'POTOSI',
-    'TARIJA', 'CHUQUISACA', 'BENI', 'PANDO'
-] as const;
-
-const filaSchema = z.object({
-    nombre: z.string()
-        .min(1, 'El nombre no puede estar vacío.')
-        .regex(/^[a-zA-Z\s\u00C0-\u017F]+$/, 'El nombre solo debe contener letras y espacios.')
-        .transform(toTitleCase),
-
-    ci: z.string()
-        .min(1, 'El CI no puede estar vacío.')
-        .regex(/^[0-9]+[a-zA-Z-]*$/, 'El formato del CI no es válido (solo números y un guion o letra al final).'),
-
-    telftutor: z.string()
-        .min(1, 'El teléfono del tutor no puede estar vacío.')
-        .regex(/^[0-9+\s()-]+$/, 'El formato del teléfono no es válido.'),
-
-    colegio: z.string().min(1, 'El colegio no puede estar vacío.').transform(toTitleCase),
-
-    departamento: z.string().transform(val => val.trim().toUpperCase().replace('Í', 'I')).pipe(
-        z.enum(DEPARTAMENTOS_VALIDOS, {
-            message: 'El departamento no es válido.'
-        })
-    ),
-
-    nivel: z.string().min(1, 'El nivel no puede estar vacío.').transform(toTitleCase),
-    area: z.string().min(1, 'El área no puede estar vacía.').transform(toTitleCase),
-
-    tipodeinscripcion: z.string().transform(val => val.trim().toUpperCase()).pipe(
-        z.enum(['INDIVIDUAL', 'GRUPAL'], {
-            message: "El tipo de inscripción solo puede ser 'Individual' o 'Grupal'."
-        })
-    ),
-});
-
-const DEFAULT_FECHA_NAC = '2000-01-01';
-const DEFAULT_GENERO = null;
-const DEFAULT_GRADO_ESCOLAR = 'No especificado';
-
-const procesarYValidarCSV = (textoCsv: string): { datos: CompetidorCSV[], headers: string[], error: string | null } => {
-    // ... (Lógica de procesamiento sin cambios)
-    if (textoCsv.charCodeAt(0) === 0xFEFF) {
-        textoCsv = textoCsv.substring(1);
-    }
-
-    const lines = textoCsv.trim().split(/\r\n|\n/);
-    if (lines.length <= 1 && lines[0].trim() === '') {
-        return { datos: [], headers: [], error: 'El archivo CSV está vacío.' };
-    }
-
-    const headerLine = lines.shift() || '';
-    const dataString = lines.join('\n');
-
-    const headersRaw = headerLine.split(';').map(h => h.trim()).filter(Boolean);
-    const headersSanitizados = headersRaw.map(normalizarEncabezado);
-
-    const cabecerasUnicas = new Set(headersSanitizados);
-    if (cabecerasUnicas.size !== headersSanitizados.length) {
-        return { datos: [], headers: [], error: 'El archivo contiene columnas con nombres duplicados. Por favor, revise las cabeceras.' };
-    }
-
-    const encabezadosEncontradosSet = new Set(headersSanitizados);
-    const encabezadosFaltantes = ENCABEZADOS_REQUERIDOS.filter(h => !encabezadosEncontradosSet.has(h));
-
-    if (encabezadosFaltantes.length > 0) {
-        const mensajeError = `El archivo no es válido.\n\nFaltan las siguientes columnas obligatorias:\n- ${encabezadosFaltantes.join('\n- ')}`;
-        return { datos: [], headers: [], error: mensajeError };
-    }
-
-    const parseResult = Papa.parse<string[]>(dataString, {
-        header: false,
-        skipEmptyLines: true,
-        delimiter: ";",
-        transform: (value) => value.trim()
-    });
-
-    const datosComoObjetos = parseResult.data.map((rowArray) => {
-        const rowObject: { [key: string]: string } = {};
-        headersSanitizados.forEach((header, index) => {
-            rowObject[header] = rowArray[index] || '';
-        });
-        return rowObject;
-    });
-
-    const datosValidados = [];
-    const ciSet = new Set<string>();
-
-    for (let i = 0; i < datosComoObjetos.length; i++) {
-        const fila = datosComoObjetos[i];
-        const numeroDeFila = i + 2;
-
-        const validationResult = filaSchema.safeParse(fila);
-        if (!validationResult.success) {
-            const firstError = validationResult.error.issues[0];
-            const mensaje = `Error en la fila ${numeroDeFila}: ${firstError.message} (Campo: '${firstError.path.join(', ')}').`;
-            return { datos: [], headers: [], error: `Datos inválidos en el archivo.\n\n${mensaje}` };
-        }
-
-        if (ciSet.has(validationResult.data.ci)) {
-            return { datos: [], headers: [], error: `El archivo contiene CIs duplicados. El CI "${validationResult.data.ci}" está repetido.` };
-        }
-        ciSet.add(validationResult.data.ci);
-        datosValidados.push(validationResult.data as CompetidorCSV);
-    }
-
-    if (datosValidados.length === 0) {
-        return { datos: [], headers: [], error: 'El archivo CSV no contiene filas con datos válidos.' };
-    }
-
-    return { datos: datosValidados, headers: headersRaw, error: null };
-};
-
-
 export function useImportarCompetidores() {
-    const [datos, setDatos] = useState<CompetidorCSV[]>([]);
+    const [filas, setFilas] = useState<FilaProcesada[]>([]);
+    const [isParsing, setIsParsing] = useState(false);
     const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
-    const [esArchivoValido, setEsArchivoValido] = useState(false);
     const [modalState, setModalState] = useState<ModalState>(initialModalState);
-    // --- CORRECCIÓN: Se reemplaza 'any[]' con el tipo específico 'ColumnDef<CompetidorCSV>[]' ---
-    const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<CompetidorCSV>[]>([]);
+    const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]);
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: (payload: InscripcionPayload) => importarCompetidoresAPI(payload),
-        onSuccess: (response: { message: string }) => {
+    const { mutate, isPending } = useMutation<{ message: string }, AxiosError<ApiErrorResponse>, InscripcionPayload>({
+        mutationFn: importarCompetidoresAPI,
+        onSuccess: (data) => {
             setModalState({
                 isOpen: true,
                 type: 'success',
-                title: '¡Éxito!',
-                message: response.message || 'Lista de competidores registrada correctamente.',
+                title: '¡Registro Exitoso!',
+                message: data.message || 'Los competidores han sido registrados correctamente.',
             });
             reset();
         },
-        onError: (error: AxiosError<ApiErrorResponse>) => {
-            let message = 'Error al registrar. Por favor, intente de nuevo.';
-            if (error.response?.data?.errors) {
-                const errors = error.response.data.errors;
-                const firstErrorKey = Object.keys(errors)[0];
-                const firstErrorMessage = errors[firstErrorKey][0];
-                message = `Error de validación: ${firstErrorMessage}`;
-            } else if (error.response?.data?.message) {
-                message = error.response.data.message;
-            }
-            setModalState({ isOpen: true, type: 'error', title: 'Error de Registro', message });
+        onError: (error) => {
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || "Ocurrió un error inesperado.";
+            setModalState({
+                isOpen: true,
+                type: 'error',
+                title: '¡Ups! Algo Salió Mal',
+                message: errorMessage,
+            });
         },
     });
 
     const reset = useCallback(() => {
-        setDatos([]);
+        setFilas([]);
         setNombreArchivo(null);
-        setEsArchivoValido(false);
         setColumnasDinamicas([]);
     }, []);
 
@@ -193,35 +65,53 @@ export function useImportarCompetidores() {
         const file = acceptedFiles[0];
         if (!file) return;
 
+        setIsParsing(true);
         const reader = new FileReader();
         reader.onload = (e) => {
             const text = e.target?.result as string;
-            const { datos: datosValidados, headers: cabecerasDetectadas, error } = procesarYValidarCSV(text);
+            const { filasProcesadas, headers: cabecerasDetectadas, errorGlobal } = procesarYValidarCSV(text);
 
-            if (error) {
-                setModalState({ isOpen: true, type: 'error', title: 'Error en el Archivo', message: error });
+            if (errorGlobal) {
+                setModalState({ isOpen: true, type: 'error', title: 'Error en el Archivo', message: errorGlobal });
+                setIsParsing(false);
                 return;
             }
 
-            const nuevasColumnas: ColumnDef<CompetidorCSV>[] = cabecerasDetectadas.map(header => ({
-                accessorKey: normalizarEncabezado(header),
-                header: header,
-            }));
+            // --- LÓGICA DE CREACIÓN DE COLUMNAS CORREGIDA Y SIMPLIFICADA ---
+            const nuevasColumnas: ColumnDef<FilaProcesada>[] = cabecerasDetectadas.map(header => {
+                const normalizedHeader = normalizarEncabezado(header);
+                const key = headerMapping[normalizedHeader]; // Búsqueda directa y correcta
+
+                return {
+                    // La propiedad `header` es lo que se mostrará en la cabecera.
+                    header: header,
+                    // `accessorKey` le dice a la tabla cómo obtener el dato de la fila.
+                    accessorKey: `datos.${key}`,
+                };
+            }).filter(col => col.accessorKey && !col.accessorKey.endsWith('undefined'));
             
             setColumnasDinamicas(nuevasColumnas);
-            setDatos(datosValidados);
+            setFilas(filasProcesadas);
             setNombreArchivo(file.name);
-            setEsArchivoValido(true);
+            setIsParsing(false);
         };
         reader.onerror = () => {
-            setModalState({ isOpen: true, type: 'error', title: 'Error de Lectura', message: 'Ocurrió un error crítico al leer el archivo.' });
+            setModalState({ isOpen: true, type: 'error', title: 'Error de Lectura', message: 'Ocurrió un error al leer el archivo.' });
+            setIsParsing(false);
         };
         reader.readAsText(file, 'UTF-8');
     }, [reset]);
+    
+    const esArchivoValido = filas.length > 0 && filas.every(f => f.esValida);
 
     const handleSave = () => {
-        if (!esArchivoValido || datos.length === 0) {
-            setModalState({ isOpen: true, type: 'error', title: 'Acción no permitida', message: 'Se debe seleccionar un archivo CSV válido antes de continuar.' });
+        const filasValidas = filas.filter(f => f.esValida);
+        if (filas.length === 0 || filasValidas.length === 0) {
+             setModalState({ isOpen: true, type: 'info', title: 'Sin datos', message: 'No hay filas válidas para guardar.' });
+            return;
+        }
+        if (filasValidas.length !== filas.length) {
+            setModalState({ isOpen: true, type: 'error', title: 'Datos Inválidos', message: 'No se puede guardar porque hay filas con errores.' });
             return;
         }
 
@@ -229,34 +119,9 @@ export function useImportarCompetidores() {
             isOpen: true,
             type: 'confirmation',
             title: 'Confirmar Registro',
-            message: `¿Está seguro de que desea registrar a ${datos.length} competidores? Esta acción no se puede deshacer.`,
+            message: `¿Está seguro de que desea registrar a ${filasValidas.length} competidores?`,
             onConfirm: () => {
-                const competidoresIndividuales: CompetidorIndividualPayload[] = datos.map(fila => {
-                    const { nombre, apellido } = separarNombreCompleto(fila.nombre);
-                    const esGrupal = fila.tipodeinscripcion.toUpperCase() === 'GRUPAL';
-                    return {
-                        persona: {
-                            nombre, apellido, ci: fila.ci, telefono: fila.telftutor,
-                            fecha_nac: DEFAULT_FECHA_NAC, genero: DEFAULT_GENERO,
-                            email: `${normalizarEncabezado(nombre)}.${fila.ci}@example.com`
-                        },
-                        competidor: {
-                            grado_escolar: DEFAULT_GRADO_ESCOLAR, departamento: fila.departamento,
-                            contacto_tutor: fila.telftutor, contacto_emergencia: fila.telftutor
-                        },
-                        institucion: {
-                            nombre: fila.colegio, tipo: 'No especificado', departamento: fila.departamento,
-                            direccion: 'No especificada', telefono: null
-                        },
-                        grupo: {
-                            nombre: esGrupal ? `Grupo de ${fila.area}` : `Individual ${fila.ci}`,
-                            descripcion: 'Inscripción desde archivo CSV', max_integrantes: esGrupal ? 5 : 1
-                        },
-                        area: { nombre: fila.area },
-                        nivel: { nombre: fila.nivel }
-                    };
-                });
-
+                const competidoresIndividuales = filasValidas.map(fila => mapCSVRenglonToPayload(fila.datos as CompetidorCSV));
                 const payload: InscripcionPayload = { competidores: competidoresIndividuales };
                 mutate(payload);
             }
@@ -266,9 +131,10 @@ export function useImportarCompetidores() {
     const closeModal = () => setModalState(initialModalState);
 
     return {
-        datos,
+        datos: filas,
         nombreArchivo,
         esArchivoValido,
+        isParsing,
         isSubmitting: isPending,
         modalState,
         onDrop,

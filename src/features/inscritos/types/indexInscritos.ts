@@ -1,15 +1,42 @@
 export type CompetidorCSV = {
-    nombre: string;
+    nombres: string;
+    apellidos: string;
     ci: string;
-    telftutor: string;
-    colegio: string;
+    email: string;
     departamento: string;
-    nivel: string;
+    celular_tutor: string;
+    colegio_institucion: string;
     area: string;
-    tipodeinscripcion: string;
-    [key: string]: string;
+    nivel: string;
+
+    // ---- Columnas Opcionales (según .docx) ----
+    // El `?` indica que pueden o no estar en el archivo CSV.
+    fecha_nacimiento?: string;
+    genero?: string;
+    celular_estudiante?: string;
+    grado_escolar?: string;
+    celular_emergencia?: string;
+    tipo_colegio?: string;
+    departamento_colegio?: string;
+    direccion_colegio?: string;
+    telefono_colegio?: string;
+    grupo?: string;
+    descripcion_del_grupo?: string;
+    capacidad_del_grupo?: string;
 };
 
+// --- TIPOS QUE SE MANTIENEN IGUAL (YA ERAN CORRECTOS) ---
+
+// Representa una fila después de ser procesada, incluyendo su estado de validación.
+export type FilaProcesada = {
+    // Usamos Partial<> porque la fila puede tener errores antes de la validación completa
+    datos: Partial<CompetidorCSV>; 
+    esValida: boolean;
+    errores?: { [key: string]: string };
+    numeroDeFila: number;
+};
+
+// Payloads para la API (no necesitan cambios)
 export type PersonaPayload = {
     nombre: string;
     apellido: string;
@@ -54,7 +81,6 @@ export type InscripcionPayload = {
     competidores: CompetidorIndividualPayload[];
 };
 
-// Para manejar los errores de validación del backend
 export type ApiErrorResponse = {
     message?: string;
     error?: string;
