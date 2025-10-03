@@ -23,7 +23,7 @@ export function PaginaNiveles() {
 
     const columns = useMemo<ColumnDef<Nivel>[]>(() => [
         { id: 'nro', header: 'NRO', cell: info => info.row.index + 1 },
-        { accessorKey: 'nombre', header: 'NOMBRE DEL NIVEL' },
+        { accessorKey: 'nombre', header: 'NIVEL' },
     ], []);
 
     const table = useReactTable({ data: niveles, columns, getCoreRowModel: getCoreRowModel() });
@@ -54,7 +54,6 @@ export function PaginaNiveles() {
                                     <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">No hay niveles registrados.</td></tr>
                                 ) : (
                                     table.getRowModel().rows.map(row => (
-                                        // --- CORRECCIÓN APLICADA AQUÍ ---
                                         <tr key={row.id} className="even:bg-neutro-100 hover:bg-principal-50 transition-colors">
                                             {row.getVisibleCells().map(cell => (
                                                 <td key={cell.id} className="p-4 text-neutro-700 text-center">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
