@@ -22,7 +22,7 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
         cerrarModalCrear,
         cerrarModalConfirmacion,
         handleGuardarNivel,
-    } = useGestionNiveles(areaSeleccionada?.id_area);
+    } = useGestionNiveles();
 
     const columns = useMemo<ColumnDef<Nivel>[]>(() => [
         { id: 'nro', header: 'NRO', cell: info => info.row.index + 1 },
@@ -95,7 +95,6 @@ export function GestionNiveles({ areaSeleccionada }: Props) {
                 onClose={cerrarModalCrear}
                 onGuardar={handleGuardarNivel}
                 loading={isCreating}
-                nombreArea={areaSeleccionada?.nombre}
             />
 
             <ModalConfirmacion
