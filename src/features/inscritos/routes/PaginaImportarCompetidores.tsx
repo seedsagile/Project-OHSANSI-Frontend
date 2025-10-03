@@ -1,6 +1,5 @@
 import { useDropzone } from 'react-dropzone';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
-import { IconoUsuario } from '../components/IconoUsuario';
 import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion';
 import { Save, X } from 'lucide-react';
 
@@ -34,9 +33,6 @@ export function PaginaImportarCompetidores() {
                     
                     <header className="flex justify-between items-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
-                        <div className="text-neutro-500">
-                            <IconoUsuario />
-                        </div>
                     </header>
 
                     <section className="mb-8">
