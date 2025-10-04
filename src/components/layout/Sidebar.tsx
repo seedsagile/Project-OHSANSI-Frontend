@@ -2,7 +2,7 @@ import { type ReactNode, useEffect } from 'react';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { DashboardIcon, UsersIcon, ClipboardIcon, FileTextIcon, LogoutIcon } from '../icons';
 import { useAuth } from '../../auth/login/hooks/useAuth';
-import { IconoUsuario } from '../../features/inscritos/components/IconoUsuario';
+import { IconoUsuario } from '../ui/IconoUsuario';
 
 const NavLink = ({ to, icon, label, onClick }: { to: string; icon: ReactNode; label: string, onClick: () => void }) => {
     return (
