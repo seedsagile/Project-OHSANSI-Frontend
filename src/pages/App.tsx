@@ -6,6 +6,8 @@ import {
 import { RootLayout } from "../components/layout/RootLayout";
 import { PaginaImportarCompetidores } from "../features/inscritos/routes/PaginaImportarCompetidores";
 import { PaginaAsignarResponsable } from "../features/responsables/routes/PaginaAsignarResponsable";
+import { PaginaAreas } from "../features/areas/rutas/PaginaAreas";
+//import { PaginaAsignarEvaluador } from "../features/evaluadores/routes/PaginaAsignarEvaluador";
 
 const Dashboard = () => (
     <div className="p-8">
@@ -37,11 +39,11 @@ const router = createBrowserRouter([
             },
             {
                 path: "evaluadores",
-                element: <Dashboard />, // <== pones qui tu ruta
+                element: <PaginaAreas />, // <== pones qui tu ruta
             },
             {
                 path: "areasNives",
-                element: <Dashboard />, // <== pones qui tu ruta
+                element: <PaginaAreas />, // <== pones qui tu ruta
             },
             {
                 path: "parametrosCalificaciones",
@@ -49,7 +51,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "calificaciones",
-                element: <Dashboard />, // <== pones qui tu ruta
+                element: <PaginaAsignarResponsable />, // <== pones qui tu ruta
             },
             {
                 path: "reportes",
