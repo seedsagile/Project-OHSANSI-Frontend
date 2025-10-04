@@ -45,7 +45,7 @@ export function Sidebar() {
                 <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Gestión</p>
                 <NavLink to="/responsables" icon={<UsersIcon />} label="Responsables de Area" />
                 <NavLink to="/evaluadores" icon={<UsersIcon />} label="Evaluadores" />
-                <NavLink to="/areasNives" icon={<UsersIcon />} label="Areas y Niveles" />
+                <NavLink to="/areasNives" icon={<UsersIcon />} label="Areas" />
                 
                 <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">Evaluación</p>
                 <NavLink to="/calificaciones" icon={<ClipboardIcon />} label="Calificaciones" />
