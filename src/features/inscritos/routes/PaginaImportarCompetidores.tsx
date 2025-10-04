@@ -71,7 +71,7 @@ export function PaginaImportarCompetidores() {
                             ) : (
                                 <>
                                     <Save className="h-5 w-5" />
-                                    <span>Guardar Válidos</span>
+                                    <span>Guardar</span>
                                 </>
                             )}
                         </button>

@@ -14,6 +14,7 @@ import { ProtectedRoute } from "../auth/login/components/auth/ProtectedRoute";
 import { useAuth } from "../auth/login/hooks/useAuth";
 import { PaginaAsignarEvaluador } from "../features/evaluadores/routes/PaginaAsignarEvaluador";
 import { PaginaNiveles } from "../features/niveles/routes/PaginaNiveles";
+import { PaginaAsignarNiveles } from "../features/asignaciones/routes/PaginaAsignarNiveles";
 
 const Dashboard = () => (
     <div className="p-8">
@@ -50,6 +51,7 @@ const router = createBrowserRouter([
             { path: "evaluadores", element: <PaginaAsignarEvaluador /> },
             { path: "areas", element: <PaginaAreas /> },
             { path: "niveles", element: <PaginaNiveles /> },
+            { path: "asignarNiveles", element: <PaginaAsignarNiveles /> },
         ],
     },
 ]);

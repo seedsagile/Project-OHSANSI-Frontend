@@ -1,5 +1,3 @@
-// src/features/niveles/routes/PaginaNiveles.tsx
-
 import { useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { IconoPlus } from '../../areas/components/IconoPlus';
