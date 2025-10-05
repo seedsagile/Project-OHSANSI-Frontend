@@ -1,3 +1,4 @@
+//src/features/utils/esquemas.ts
 /*import { z } from 'zod';
 
 export const crearAreaEsquema = z.object({

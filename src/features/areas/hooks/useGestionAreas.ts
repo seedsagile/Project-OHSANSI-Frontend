@@ -1,3 +1,4 @@
+//src/features/hooks/useGestionAreas.ts
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { areasService } from '../services/areasService';

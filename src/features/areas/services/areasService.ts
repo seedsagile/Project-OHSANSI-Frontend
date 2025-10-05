@@ -1,3 +1,4 @@
+//src/features/services/areaService.ts
 import apiClient from '../../../api/ApiPhp';
 import type { Area, CrearAreaData } from '../types';
 import { AxiosError } from 'axios';
