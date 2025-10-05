@@ -61,15 +61,30 @@ const eliminarAcentosInnecesarios = (str: string): string => {
   }).join(' ');
 };
 
-// Función para eliminar caracteres duplicados
+// Función para eliminar caracteres duplicados (excepto casos legítimos en español)
 const eliminarCaracteresDuplicados = (str: string): string => {
   return str.split('').filter((char, index, arr) => {
+    if (index === 0) return true;
+    
+    const anterior = arr[index - 1];
+    
     // Si es un espacio, permitir solo si el anterior no es espacio
     if (char === ' ') {
-      return index === 0 || arr[index - 1] !== ' ';
+      return anterior !== ' ';
     }
+    
+    // Casos especiales: permitir letras dobles legítimas en español
+    const letrasDoblesPermitidas = ['l', 'r', 'o', 'c', 'n'];//, 'e'
+    if (letrasDoblesPermitidas.includes(char.toLowerCase()) && char === anterior) {
+      // Verificar que no sea triple (ej: "lll" no es válido)
+      if (index >= 2 && arr[index - 2] === char) {
+        return false; // Bloquear el tercero
+      }
+      return true; // Permitir el doble
+    }
+    
     // Para otros caracteres, permitir solo si el anterior es diferente
-    return index === 0 || arr[index - 1] !== char;
+    return anterior !== char;
   }).join('');
 };
 
