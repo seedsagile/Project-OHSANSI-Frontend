@@ -114,9 +114,9 @@ export const ContrasenaSchema = z
   });
 
 // Áreas
-export const AreasSchema = z
-  .array(z.string())
-  .nonempty({ message: "Debe seleccionar al menos un área." });
+export const AreasSchema = z.array(z.number()).nonempty({
+  message: "Debe seleccionar al menos un área para el responsable.",
+});
 
 // =======================
 // SCHEMA GLOBAL

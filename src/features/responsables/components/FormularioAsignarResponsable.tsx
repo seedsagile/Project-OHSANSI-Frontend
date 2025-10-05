@@ -1,27 +1,41 @@
 import { useEffect, useState } from "react";
-import { areasService } from "../../areas/services/areasService"; // ajusta la ruta según tu estructura
-import type { Area } from "../../areas/types/index";
-import { asignarResponsableAPI } from "../services/ApiResposableArea"; // tu service
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { AxiosError } from "axios";
+import { areasService } from "../../areas/services/areasService";
+import { asignarResponsableAPI } from "../services/ApiResposableArea";
+
+import type { Area } from "../../areas/types";
 import type { AreaInterface } from "../interface/AreaInterface";
+import { ResponsableAreaSchema } from "../utils/AreaValidaciones";
+import { type ResponsableForm } from "../utils/AreaValidaciones";
 
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mensaje de éxito
+  // Mensaje de éxito / error
   const [mensaje, setMensaje] = useState<string | null>(null);
 
-  // Campos del formulario
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [email, setEmail] = useState("");
-  const [ci, setCi] = useState("");
-  const [generatedPassword, setGeneratedPassword] = useState("");
+  // Estados adicionales
+  // const [generatedPassword, setGeneratedPassword] = useState("");
   const [passwordGenerated, setPasswordGenerated] = useState(false);
-
-  // Áreas seleccionadas (IDs)
   const [selectedAreas, setSelectedAreas] = useState<number[]>([]);
 
+  // Configuración del formulario con react-hook-form + zod
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    trigger,
+    reset,
+    formState: { errors },
+  } = useForm<ResponsableForm>({
+    resolver: zodResolver(ResponsableAreaSchema),
+    mode: "onChange", // validaciones en tiempo real
+  });
+
+  // Cargar áreas
   useEffect(() => {
     const fetchAreas = async () => {
       try {
@@ -36,11 +50,13 @@ export const FormularioAsignarResponsable = () => {
     fetchAreas();
   }, []);
 
+  // Generar contraseña
   const generatePassword = (length = 8) => {
     const lower = "abcdefghijklmnopqrstuvwxyz";
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const numbers = "0123456789";
-    const all = lower + upper + numbers;
+    const special = "@$!%*?&.";
+    const all = lower + upper + numbers + special;
 
     const randChar = (set: string) =>
       set.charAt(Math.floor(Math.random() * set.length));
@@ -49,8 +65,9 @@ export const FormularioAsignarResponsable = () => {
     pwd += randChar(lower);
     pwd += randChar(upper);
     pwd += randChar(numbers);
+    pwd += randChar(special);
 
-    for (let i = 3; i < length; i++) {
+    for (let i = 4; i < length; i++) {
       pwd += randChar(all);
     }
 
@@ -62,51 +79,59 @@ export const FormularioAsignarResponsable = () => {
 
   const handleGenerarClick = () => {
     if (passwordGenerated) return;
-    const pwd = generatePassword(8);
-    setGeneratedPassword(pwd);
+    const pwd = generatePassword(10);
+    // setGeneratedPassword(pwd);
     setPasswordGenerated(true);
+    setValue("contrasena", pwd);
+    trigger("contrasena");
   };
 
+  // Toggle de áreas
   const handleAreaToggle = (id: number) => {
-    if (selectedAreas.includes(id)) {
-      setSelectedAreas(selectedAreas.filter((areaId) => areaId !== id));
-    } else {
-      setSelectedAreas([...selectedAreas, id]);
-    }
+    const updated = selectedAreas.includes(id)
+      ? selectedAreas.filter((a) => a !== id)
+      : [...selectedAreas, id];
+    setSelectedAreas(updated);
+    setValue("areas", updated);
+    trigger("areas");
   };
 
+  // Limpiar formulario
   const limpiarFormulario = () => {
-    setNombre("");
-    setApellido("");
-    setEmail("");
-    setCi("");
-    setGeneratedPassword("");
+    reset();
+    // setGeneratedPassword("");
     setPasswordGenerated(false);
     setSelectedAreas([]);
+    setMensaje(null);
   };
 
-  const handleGuardar = async () => {
+  // Guardar responsable
+  const onSubmit = async (data: ResponsableForm) => {
     const payload: AreaInterface = {
-      nombre,
-      apellido,
-      email,
-      ci,
-      password: generatedPassword,
-      areas: selectedAreas,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      email: data.correo,
+      ci: data.carnet,
+      password: data.contrasena,
+      areas: data.areas,
     };
 
     try {
       const response = await asignarResponsableAPI(payload);
       console.log("Responsable creado:", response);
 
-      // Limpiar formulario después de guardar
       limpiarFormulario();
-
-      // Mostrar mensaje de éxito
-      setMensaje("¡Registro Exitoso!");
+      setMensaje(`¡Registro Exitoso!`);
       setTimeout(() => setMensaje(null), 3000);
-    } catch (error) {
-      console.error("Error al guardar responsable:", error);
+    } catch (error: unknown) {
+      const err = error as AxiosError;
+      if (err.response?.status === 409) {
+        setMensaje(
+          "¡Ups! Algo salió mal - Ya existe un responsable registrado con este correo o CI."
+        );
+      } else {
+        console.error("Error al guardar responsable:", error);
+      }
     }
   };
 
@@ -123,7 +148,7 @@ export const FormularioAsignarResponsable = () => {
           </h1>
         </header>
 
-        {/* Mensaje de éxito */}
+        {/* Mensaje */}
         {mensaje && (
           <div className="mb-6 text-center text-green-600 font-semibold">
             {mensaje}
@@ -131,35 +156,46 @@ export const FormularioAsignarResponsable = () => {
         )}
 
         <form
-          action=""
+          onSubmit={handleSubmit(onSubmit)}
           className="space-y-8"
-          onSubmit={(e) => e.preventDefault()}
+          noValidate
         >
           {/* Nombre y Apellido */}
           <div className="flex gap-8">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
-                Nombre del responsable de area
+                Nombre del responsable de área
               </label>
               <input
                 type="text"
                 placeholder="Ej: Pepito"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                {...register("nombre")}
+                onBlur={() => trigger("nombre")}
                 className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
               />
+              {errors.nombre && (
+                <span className="text-red-500 text-sm">
+                  {errors.nombre.message}
+                </span>
+              )}
             </div>
+
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
-                Apellido del responsable de area
+                Apellido del responsable de área
               </label>
               <input
                 type="text"
                 placeholder="Ej: Perez"
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                {...register("apellido")}
+                onBlur={() => trigger("apellido")}
                 className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
               />
+              {errors.apellido && (
+                <span className="text-red-500 text-sm">
+                  {errors.apellido.message}
+                </span>
+              )}
             </div>
           </div>
 
@@ -171,12 +207,17 @@ export const FormularioAsignarResponsable = () => {
                   Correo Electrónico
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   placeholder="ejemplo@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...register("correo")}
+                  onBlur={() => trigger("correo")}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
                 />
+                {errors.correo && (
+                  <span className="text-red-500 text-sm">
+                    {errors.correo.message}
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -186,10 +227,15 @@ export const FormularioAsignarResponsable = () => {
                 <input
                   type="text"
                   placeholder="Ej: 1234567 o 1234567-18"
-                  value={ci}
-                  onChange={(e) => setCi(e.target.value)}
+                  {...register("carnet")}
+                  onBlur={() => trigger("carnet")}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
                 />
+                {errors.carnet && (
+                  <span className="text-red-500 text-sm">
+                    {errors.carnet.message}
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -210,15 +256,23 @@ export const FormularioAsignarResponsable = () => {
                     ? "Contraseña generada"
                     : "Generar contraseña"}
                 </button>
+                {errors.contrasena && (
+                  <span className="text-red-500 text-sm">
+                    {errors.contrasena.message}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Selección de Áreas */}
+            {/* Áreas */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">Area</label>
+              <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white transition-colors text-center">
+                Asignar Area
+              </div>
               <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 max-h-[137px] overflow-y-auto text-sm">
                 {loading ? (
-                  <p className="text-neutro-500 italic">Cargando areas...</p>
+                  <p className="text-neutro-500 italic">Cargando áreas...</p>
                 ) : areas.length > 0 ? (
                   <ul className="space-y-1">
                     {areas.map((area, index) => (
@@ -241,14 +295,19 @@ export const FormularioAsignarResponsable = () => {
                   </ul>
                 ) : (
                   <p className="text-neutro-500 italic">
-                    No hay areas registradas
+                    No hay áreas registradas
                   </p>
                 )}
               </div>
+              {errors.areas && (
+                <span className="text-red-500 text-sm">
+                  {errors.areas.message}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Footer con botones */}
+          {/* Footer */}
           <footer className="flex justify-end items-center gap-4 mt-12">
             <button
               type="button"
@@ -259,8 +318,7 @@ export const FormularioAsignarResponsable = () => {
             </button>
 
             <button
-              type="button"
-              onClick={handleGuardar}
+              type="submit"
               className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors"
             >
               Guardar
