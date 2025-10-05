@@ -41,7 +41,8 @@ const normalizarParaComparar = (nombre: string): string => {
         // Colapsa múltiples espacios en uno solo
         .replace(/\s+/g, ' ')
         // Elimina plurales simples al final de la palabra (s o es)
-        .replace(/e?s$/, '');
+        .replace(/e?s$/, '')
+        .replace(/\s+/g, ' '); // Asegura que no queden espacios extra
 };
 
 
