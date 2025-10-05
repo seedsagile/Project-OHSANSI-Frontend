@@ -30,22 +30,18 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
         onClose();
     };
     
-    // Función para limpiar la entrada del usuario en tiempo real
     const handleInputValidation = (e: React.FormEvent<HTMLInputElement>) => {
         const input = e.currentTarget;
         const selectionStart = input.selectionStart;
         const originalValue = input.value;
         
-        // Reemplaza cualquier caracter que no sea una letra, espacio o acento
         const sanitizedValue = originalValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
 
         if (originalValue !== sanitizedValue) {
             const diff = originalValue.length - sanitizedValue.length;
             input.value = sanitizedValue;
-            // Dispara el evento 'input' para que react-hook-form se actualice
             const event = new Event('input', { bubbles: true });
             input.dispatchEvent(event);
-            // Restaura la posición del cursor correctamente
             if (selectionStart) {
                 input.setSelectionRange(selectionStart - diff, selectionStart - diff);
             }
@@ -79,7 +75,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                         <input
                             id="nombreNivel"
                             type="text"
-                            placeholder="Ej: Secundaria, Bachillerato, etc."
+                            placeholder="Ej: Primero de secundaria, Segundo de secundaria, etc."
                             maxLength={30}
                             onInput={handleInputValidation}
                             onPaste={handlePaste}

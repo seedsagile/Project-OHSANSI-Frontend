@@ -1,5 +1,3 @@
-// src/features/niveles/hooks/useGestionNiveles.ts
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
@@ -20,37 +18,25 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-/**
- * Normaliza un string para realizar comparaciones robustas, ignorando mayúsculas,
- * acentos, espacios extra, y plurales simples.
- * Ejemplos:
- * - "Matemáticas"  -> "matematica"
- * - " Cómputación" -> "computacion"
- * - "Niveles"      -> "nivel"
- */
+// --- FUNCIÓN DE NORMALIZACIÓN CORREGIDA ---
 const normalizarParaComparar = (nombre: string): string => {
     if (!nombre) return '';
-
-    return nombre
+    let s = nombre
         .trim()
         .toLowerCase()
-        // Descompone los caracteres acentuados en su versión base + diacrítico
         .normalize('NFD')
-        // Elimina los diacríticos (acentos, diéresis, etc.)
-        .replace(/[\u0300-\u036f]/g, '')
-        // Colapsa múltiples espacios en uno solo
-        .replace(/\s+/g, ' ')
-        // Elimina plurales simples al final de la palabra (s o es)
-        .replace(/e?s$/, '')
-        .replace(/\s+/g, ' '); // Asegura que no queden espacios extra
+        .replace(/[\u0300-\u036f]/g, '');
+    
+    // Se aplica la misma lógica de duplicados para una comparación precisa
+    s = s.replace(/([^lrcn\s])\1+/g, '$1'); 
+    
+    return s.replace(/\s+/g, ' ');
 };
-
 
 export function useGestionNiveles() {
     const queryClient = useQueryClient();
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
-    const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
 
     const { data: niveles = [], isLoading } = useQuery({
         queryKey: ['niveles'],
@@ -59,13 +45,13 @@ export function useGestionNiveles() {
 
     const { mutate, isPending: isCreating } = useMutation<Nivel, Error, CrearNivelData>({
         mutationFn: (data) => nivelesService.crearNivel(data),
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['niveles'] });
             cerrarModalCrear();
             setConfirmationModal({
                 isOpen: true,
                 title: '¡Registro Exitoso!',
-                message: `El nivel "${nombreNivelCreando}" fue creado exitosamente.`,
+                message: `El nivel "${data.nombre}" ha sido registrado correctamente.`,
                 type: 'success',
             });
         },
@@ -82,7 +68,6 @@ export function useGestionNiveles() {
     const handleGuardarNivel = (data: CrearNivelData) => {
         const nombreNormalizado = normalizarParaComparar(data.nombre);
         
-        // Buscamos si existe un nivel que, al ser normalizado, sea idéntico.
         const duplicado = niveles.find(
             nivel => normalizarParaComparar(nivel.nombre) === nombreNormalizado
         );
@@ -91,13 +76,12 @@ export function useGestionNiveles() {
             setConfirmationModal({
                 isOpen: true,
                 title: 'Nombre Duplicado',
-                message: `El nombre "${data.nombre}" es muy similar a "${duplicado.nombre}", que ya está registrado. Por favor, ingrese un nombre diferente.`,
-                type: 'info',
+                message: "El nombre del nivel ya se encuentra registrado.",
+                type: 'error',
             });
             return;
         }
         
-        setNombreNivelCreando(data.nombre);
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -110,7 +94,6 @@ export function useGestionNiveles() {
     const abrirModalCrear = () => setModalCrearAbierto(true);
     const cerrarModalCrear = () => {
         setModalCrearAbierto(false);
-        setNombreNivelCreando('');
     };
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
 
