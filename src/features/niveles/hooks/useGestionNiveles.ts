@@ -1,3 +1,5 @@
+// src/features/niveles/hooks/useGestionNiveles.ts
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
@@ -18,8 +20,30 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-const normalizarNombre = (nombre: string) => 
-    nombre.trim().toLowerCase().replace(/\s+/g, ' ');
+/**
+ * Normaliza un string para realizar comparaciones robustas, ignorando mayúsculas,
+ * acentos, espacios extra, y plurales simples.
+ * Ejemplos:
+ * - "Matemáticas"  -> "matematica"
+ * - " Cómputación" -> "computacion"
+ * - "Niveles"      -> "nivel"
+ */
+const normalizarParaComparar = (nombre: string): string => {
+    if (!nombre) return '';
+
+    return nombre
+        .trim()
+        .toLowerCase()
+        // Descompone los caracteres acentuados en su versión base + diacrítico
+        .normalize('NFD')
+        // Elimina los diacríticos (acentos, diéresis, etc.)
+        .replace(/[\u0300-\u036f]/g, '')
+        // Colapsa múltiples espacios en uno solo
+        .replace(/\s+/g, ' ')
+        // Elimina plurales simples al final de la palabra (s o es)
+        .replace(/e?s$/, '');
+};
+
 
 export function useGestionNiveles() {
     const queryClient = useQueryClient();
@@ -55,14 +79,18 @@ export function useGestionNiveles() {
     });
 
     const handleGuardarNivel = (data: CrearNivelData) => {
-        const nombreNormalizado = normalizarNombre(data.nombre);
-        const esDuplicado = niveles.some(nivel => normalizarNombre(nivel.nombre) === nombreNormalizado);
+        const nombreNormalizado = normalizarParaComparar(data.nombre);
+        
+        // Buscamos si existe un nivel que, al ser normalizado, sea idéntico.
+        const duplicado = niveles.find(
+            nivel => normalizarParaComparar(nivel.nombre) === nombreNormalizado
+        );
 
-        if (esDuplicado) {
+        if (duplicado) {
             setConfirmationModal({
                 isOpen: true,
                 title: 'Nombre Duplicado',
-                message: `Ya existe un nivel con el nombre "${data.nombre}".`,
+                message: `El nombre "${data.nombre}" es muy similar a "${duplicado.nombre}", que ya está registrado. Por favor, ingrese un nombre diferente.`,
                 type: 'info',
             });
             return;
