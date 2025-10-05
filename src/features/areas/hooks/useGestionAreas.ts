@@ -21,12 +21,23 @@ const initialConfirmationState: ConfirmationModalState = {
 
 // Normaliza nombres para comparación (elimina acentos, convierte a minúsculas, elimina espacios extras)
 const normalizarParaComparacion = (nombre: string): string => {
-    return nombre
+    const normalizado = nombre
         .trim()
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
         .replace(/\s+/g, ' '); // Normalizar espacios
+    
+    // Eliminar terminaciones de plural para comparar singular/plural
+    if (normalizado.endsWith('es') && normalizado.length > 3) {
+        // "niveles" -> "nivel", "sociales" -> "social"
+        return normalizado.slice(0, -2);
+    } else if (normalizado.endsWith('s') && normalizado.length > 2) {
+        // "fisicas" -> "fisica", "ciencias" -> "ciencia"
+        return normalizado.slice(0, -1);
+    }
+    
+    return normalizado;
 };
 
 // Verifica si existe un área con nombre similar o duplicado
@@ -44,7 +55,6 @@ export function useGestionAreas() {
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
     const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined);
-    //const [nombreAreaCreando, setNombreAreaCreando] = useState<string>('');
 
     const { data: areas = [], isLoading } = useQuery({
         queryKey: ['areas'],
@@ -64,12 +74,10 @@ export function useGestionAreas() {
                 type: 'success',
             });
             
-            //setNombreAreaCreando('');
-            
-            // Validación 17: Cerrar modal después de 2 segundos
+            // Validación 17 y 18: Cerrar modales después del éxito
             setTimeout(() => {
-                cerrarModalCrear();
                 setConfirmationModal(initialConfirmationState);
+                setModalCrearAbierto(false);
             }, 2000);
         },
         onError: (error) => {
@@ -84,7 +92,6 @@ export function useGestionAreas() {
             } else {
                 toast.error(error.message);
             }
-            //setNombreAreaCreando('');
         },
     });
 
@@ -103,7 +110,6 @@ export function useGestionAreas() {
         }
 
         // Mostrar modal de confirmación antes de guardar
-       // setNombreAreaCreando(data.nombre);
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -118,7 +124,6 @@ export function useGestionAreas() {
     // Validación 16: Al presionar Cancelar, el formulario se cierra sin guardar
     const cerrarModalCrear = () => {
         setModalCrearAbierto(false);
-        //setNombreAreaCreando('');
     };
     
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
