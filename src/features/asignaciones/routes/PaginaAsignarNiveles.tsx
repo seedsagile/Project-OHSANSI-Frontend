@@ -1,5 +1,3 @@
-// src/features/asignaciones/routes/PaginaAsignarNiveles.tsx
-
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
 import { Save, LoaderCircle, X } from 'lucide-react';
 import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion';
