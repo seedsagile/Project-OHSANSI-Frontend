@@ -134,7 +134,7 @@ export const ModalCrearArea = ({
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || !!errorTiempoReal}
+                            disabled={loading}
                             className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (
