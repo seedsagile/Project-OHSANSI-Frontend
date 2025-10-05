@@ -36,52 +36,55 @@ export function PaginaAsignarNiveles() {
                             Asignar Niveles a un Area
                         </h1>
                     </header>
-
-                    <div className="mb-6">
-                        {/* --- CORRECCIÓN 1: Conectar Label con Select --- */}
+                    
+                    <div className="mb-6 relative">
                         <label htmlFor="area-selector" className="sr-only">Seleccionar Area</label>
                         <select
                             id="area-selector"
                             value={areaSeleccionadaId ?? ''}
                             onChange={(e) => setAreaSeleccionadaId(Number(e.target.value) || undefined)}
-                            className="w-full p-3 border border-gray-300 rounded-lg bg-principal-500 text-white font-semibold focus:ring-2 focus:ring-principal-300 focus:border-principal-500 transition-colors"
+                            className="w-full p-3 pl-4 pr-10 border border-transparent rounded-lg bg-principal-500 text-white font-semibold focus:ring-2 focus:ring-principal-300 focus:border-principal-500 transition-colors appearance-none cursor-pointer"
                             disabled={isLoading}
                         >
-                            <option value="" className="bg-white text-black">-- Seleccionar Area --</option>
+                            <option value="" className="bg-white text-black">Seleccionar Area</option>
                             {todasLasAreas.map(area => (
                                 <option key={area.id_area} value={area.id_area} className="bg-white text-black">
                                     {area.nombre}
                                 </option>
                             ))}
                         </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
+                            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
                     </div>
 
                     <h2 className="text-xl font-semibold text-gray-800 text-center mb-4">
                         Lista de Niveles
                     </h2>
 
-                    <div className={`border rounded-lg overflow-hidden transition-opacity ${!areaSeleccionadaId ? 'opacity-50 bg-neutro-100' : ''}`}>
+                    <div className={`rounded-lg border border-neutro-200 overflow-hidden transition-opacity ${!areaSeleccionadaId ? 'opacity-50' : ''}`}>
                         <div className="overflow-y-auto h-72">
-                            <table className="w-full text-sm text-left text-gray-500">
-                                <thead className="text-xs text-white tracking-wider text-center whitespace-nowrap uppercase bg-principal-500 sticky top-0">
+                            <table className="w-full text-left">
+                                <thead className="bg-principal-500 sticky top-0 z-10">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 w-1/6 text-center">NRO</th>
-                                        <th scope="col" className="px-6 py-3">NIVEL</th>
-                                        <th scope="col" className="px-6 py-3 w-1/6 text-center">TIENE</th>
+                                        <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">NRO</th>
+                                        <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">NIVEL</th>
+                                        <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">TIENE</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-neutro-200">
                                     {isLoading && areaSeleccionadaId ? (
                                         <tr><td colSpan={3} className="text-center p-10"><div className="flex justify-center items-center text-principal-500"><LoaderCircle className="animate-spin h-8 w-8" /></div></td></tr>
                                     ) : !areaSeleccionadaId ? (
-                                        <tr><td colSpan={3} className="text-center p-10 text-neutro-500">Seleccione un área para ver los niveles.</td></tr>
+                                        <tr><td colSpan={3} className="text-center p-10 text-neutro-400">Seleccione un área para ver los niveles.</td></tr>
                                     ) : (
                                         todosLosNiveles.map((nivel: Nivel, index: number) => (
-                                            <tr key={nivel.id_nivel} className="bg-white border-b hover:bg-principal-50">
-                                                <td className="px-6 py-4 font-bold text-gray-900 text-center">{index + 1}</td>
-                                                <td className="px-6 py-4 font-medium text-gray-900">{nivel.nombre}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    {/* --- CORRECCIÓN 2: Añadir aria-label al checkbox --- */}
+                                            <tr key={nivel.id_nivel} className="even:bg-neutro-100 hover:bg-principal-50 transition-colors">
+                                                <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
+                                                <td className="p-4 text-neutro-700 text-left">{nivel.nombre}</td>
+                                                <td className="p-4 text-neutro-700 text-center">
                                                     <input
                                                         type="checkbox"
                                                         aria-label={`Asignar el nivel: ${nivel.nombre}`}
