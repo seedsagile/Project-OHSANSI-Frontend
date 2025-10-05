@@ -1,88 +1,174 @@
-import type { FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form';
-import type { FormularioData } from '../types/IndexResponsable';
-import { handlePaste, restringirCaracteres } from '../utils/formUtils';
-import { NOMBRE_MAX_LENGTH, CARACTERES_ACETADOS_NOMBRE_COMPLETO, CARACTERES_ACETADOS_EMAIL, CI_MAX_LENGTH, CARACTERES_ACETADOS_CI, CODIGO_MAX_LENGTH, CARACTERES_ACETADOS_CODIGO } from '../utils/resposableVarGlobalesUtils';
+import React, { useEffect, useState } from "react";
+import { areasService } from "../../areas/services/areasService"; // ajusta la ruta según tu estructura
+import type { Area } from "../../areas/types/index";
 
-type Props = {
-  register: UseFormRegister<FormularioData>;
-  errors: FieldErrors<FormularioData>;
-  setValue: UseFormSetValue<FormularioData>;
-};
+export const FormularioAsignarResponsable = () => {
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export function FormularioAsignarResponsable({ register, errors, setValue }: Props) {
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const data = await areasService.obtenerAreas();
+        setAreas(data);
+      } catch (error) {
+        console.error("Error cargando áreas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAreas();
+  }, []);
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-neutro-800">Datos del Responsable</h2>
-      
-      <div>
-        <label htmlFor="nombreCompleto" className="block text-md font-medium text-neutro-600 mb-1">
-          Nombre completo del responsable
-        </label>
-        <input
-          type="text"
-          id="nombreCompleto"
-          placeholder="Ingrese el nombre y apellidos"
-          maxLength={NOMBRE_MAX_LENGTH}
-          onPaste={(e) => handlePaste(e, setValue, 'nombreCompleto', CARACTERES_ACETADOS_NOMBRE_COMPLETO)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_NOMBRE_COMPLETO)}         
-          {...register('nombreCompleto')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombreCompleto ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.nombreCompleto && <p className="text-acento-600 text-sm mt-1">{errors.nombreCompleto.message}</p>}
-      </div>
+    <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
+      <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-8">
+        <header className="flex justify-center items-center mb-10">
+          <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center">
+            Registrar Responsable de Area
+          </h1>
+        </header>
 
-      <div>
-        <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
-          Correo electrónico institucional
-        </label>
-        <input
-          type="email"
-          id="email"
-          placeholder="ejemplo@institucion.edu"
-          onPaste={(e) => handlePaste(e, setValue, 'email', CARACTERES_ACETADOS_EMAIL)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_EMAIL)}
-          {...register('email')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.email && <p className="text-acento-600 text-sm mt-1">{errors.email.message}</p>}
-      </div>
+        <form action="" className="space-y-8">
+          <div className="flex gap-8">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-negro">
+                Nombre del responsable de area
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Pepito"
+                className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-negro">
+                Apellido del responsable de area
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Perez"
+                className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+              />
+            </div>
+          </div>
 
-      <div>
-        <label htmlFor="ci" className="block text-md font-medium text-neutro-600 mb-1">
-          Carnet de Identidad
-        </label>
-        <input
-          type="text"
-          id="ci"
-          placeholder="Ej: 1234567 o 1234567-1B"
-          maxLength={CI_MAX_LENGTH}
-          onPaste={(e) => handlePaste(e, setValue, 'ci', CARACTERES_ACETADOS_CI)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CI)}
-          {...register('ci')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.ci ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.ci && <p className="text-acento-600 text-sm mt-1">{errors.ci.message}</p>}
-      </div>
-      
-      <div>
-        <label htmlFor="codigo_encargado" className="block text-md font-medium text-neutro-600 mb-1">
-          Código de Acceso de Responsable
-        </label>
-        <input
-          type="text"
-          id="codigo_encargado"
-          placeholder="Ingrese el código único. Ej: MAT01"
-          maxLength={CODIGO_MAX_LENGTH}
-          onPaste={(e) => handlePaste(e, setValue, 'codigo_encargado', CARACTERES_ACETADOS_CODIGO)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CODIGO)}
-          {...register('codigo_encargado')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_encargado ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.codigo_encargado && <p className="text-acento-600 text-sm mt-1">{errors.codigo_encargado.message}</p>}
-        <p className="text-sm text-neutro-500 mt-1">
-          Este código es proporcionado por la institución y valida el rol del usuario.
-        </p>
-      </div>
+          <div className="flex gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-negro">
+                  Correo Electrónico
+                </label>
+                <input
+                  type="text"
+                  placeholder="ejemplo@ejemplo.com"
+                  className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-negro">
+                  Carnet de identidad
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 1234567 o 1234567-18"
+                  className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-negro">
+                  Contraseña
+                </label>
+                <button
+                  type="button"
+                  className="w-[400px] border rounded-md p-2 text-white border-neutro-400 bg-[#0076FF] hover:bg-principal-600 transition-colors"
+                >
+                  Generar contraseña
+                </button>
+              </div>
+            </div>
+
+            {/* Campo Área */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-negro">Area</label>
+              <div className="relative flex flex-col gap-2">
+                <button
+                  type="button"
+                  className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white transition-colors"
+                >
+                  Asignar Área
+                </button>
+                <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 max-h-[137px] overflow-y-auto text-sm">
+                  {loading ? (
+                    <p className="text-neutro-500 italic">Cargando areas...</p>
+                  ) : areas.length > 0 ? (
+                    <ul className="space-y-1">
+                      {areas.map((area, index) => (
+                        <li
+                          key={area.id_area} // 👈 usa la propiedad correcta del tipo Area
+                          className={`cursor-pointer rounded-md px-2 py-1 hover:bg-neutro-200 transition-colors ${
+                            index % 2 === 0 ? "bg-[#E5E7EB]" : "bg-[#F3F4F6]"
+                          }`}
+                        >
+                          {area.nombre}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-neutro-500 italic">
+                      No hay areas registradas
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <footer className="flex justify-end items-center gap-4 mt-12">
+          <button
+            type="button"
+            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            <span>Cancelar</span>
+          </button>
+
+          <button className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            <span>Guardar</span>
+          </button>
+        </footer>
+      </main>
     </div>
   );
-}
+};
