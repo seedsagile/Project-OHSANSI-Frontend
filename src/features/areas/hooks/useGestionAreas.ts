@@ -1,4 +1,3 @@
-//src/features/hooks/useGestionAreas.ts
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { areasService } from '../services/areasService';
@@ -10,7 +9,7 @@ type ConfirmationModalState = {
     title: string;
     message: string;
     onConfirm?: () => void;
-    type: 'confirmation' | 'info' | 'error';
+    type: 'confirmation' | 'info' | 'error' | 'success';
 };
 
 const initialConfirmationState: ConfirmationModalState = {
@@ -20,35 +19,23 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-// Normaliza y genera variaciones para comparación
-const normalizarYGenerarVariaciones = (nombre: string): string[] => {
-    const normalizado = nombre.trim().toLowerCase().replace(/\s+/g, ' ');
-    const variaciones = [normalizado];
-    
-    // Agregar singular/plural
-    if (normalizado.endsWith('s')) {
-        variaciones.push(normalizado.slice(0, -1)); // Quitar 's' para singular
-    } else {
-        variaciones.push(normalizado + 's'); // Agregar 's' para plural
-    }
-    
-    // Agregar variaciones con 'es' (ej: "nivel" -> "niveles")
-    if (normalizado.endsWith('es')) {
-        variaciones.push(normalizado.slice(0, -2)); // "niveles" -> "nivel"
-    } else if (!normalizado.endsWith('s')) {
-        variaciones.push(normalizado + 'es'); // "nivel" -> "niveles"
-    }
-    
-    return [...new Set(variaciones)]; // Eliminar duplicados
+// Normaliza nombres para comparación (elimina acentos, convierte a minúsculas, elimina espacios extras)
+const normalizarParaComparacion = (nombre: string): string => {
+    return nombre
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+        .replace(/\s+/g, ' '); // Normalizar espacios
 };
 
-const existeNombreSimilar = (nombreNuevo: string, areasExistentes: Area[]): boolean => {
-    const variacionesNuevas = normalizarYGenerarVariaciones(nombreNuevo);
+// Verifica si existe un área con nombre similar o duplicado
+const existeNombreDuplicado = (nombreNuevo: string, areasExistentes: Area[]): boolean => {
+    const nombreNormalizado = normalizarParaComparacion(nombreNuevo);
     
     return areasExistentes.some(area => {
-        const variacionesExistentes = normalizarYGenerarVariaciones(area.nombre);
-        // Verificar si alguna variación del nuevo nombre coincide con alguna del existente
-        return variacionesNuevas.some(vn => variacionesExistentes.includes(vn));
+        const areaNormalizada = normalizarParaComparacion(area.nombre);
+        return areaNormalizada === nombreNormalizado;
     });
 };
 
@@ -57,7 +44,7 @@ export function useGestionAreas() {
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
     const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined);
-    const [nombreAreaCreando, setNombreAreaCreando] = useState<string>('');
+    //const [nombreAreaCreando, setNombreAreaCreando] = useState<string>('');
 
     const { data: areas = [], isLoading } = useQuery({
         queryKey: ['areas'],
@@ -66,35 +53,57 @@ export function useGestionAreas() {
     
     const { mutate, isPending: isCreating } = useMutation<Area, Error, CrearAreaData>({
         mutationFn: areasService.crearArea,
-        onSuccess: () => {
+        onSuccess: (nuevaArea) => {
             queryClient.invalidateQueries({ queryKey: ['areas'] });
-            toast.success(`Área "${nombreAreaCreando}" creada exitosamente`);
-            cerrarModalCrear();
-            setNombreAreaCreando('');
+            
+            // Validación 14: Mensaje de confirmación exitoso
+            setConfirmationModal({
+                isOpen: true,
+                title: '¡Registro Exitoso!',
+                message: `El área "${nuevaArea.nombre}" ha sido registrado correctamente.`,
+                type: 'success',
+            });
+            
+            //setNombreAreaCreando('');
+            
+            // Validación 17: Cerrar modal después de 2 segundos
+            setTimeout(() => {
+                cerrarModalCrear();
+                setConfirmationModal(initialConfirmationState);
+            }, 2000);
         },
         onError: (error) => {
-            toast.error(error.message);
-            setNombreAreaCreando('');
+            // Validación 15: Error si el nombre ya existe
+            if (error.message.toLowerCase().includes('existe')) {
+                setConfirmationModal({
+                    isOpen: true,
+                    title: 'Error de Duplicado',
+                    message: 'El nombre del Área se encuentra registrado.',
+                    type: 'error',
+                });
+            } else {
+                toast.error(error.message);
+            }
+            //setNombreAreaCreando('');
         },
-        onSettled: () => {
-            setConfirmationModal(initialConfirmationState);
-        }
     });
 
     const handleGuardarArea = (data: CrearAreaData) => {
-        const esDuplicado = existeNombreSimilar(data.nombre, areas);
+        // Validación 15: Verificar si ya existe un área con el mismo nombre
+        const esDuplicado = existeNombreDuplicado(data.nombre, areas);
 
         if (esDuplicado) {
             setConfirmationModal({
                 isOpen: true,
-                title: 'Nombre Duplicado',
-                message: `Ya existe un área con un nombre similar a "${data.nombre}". Por favor, ingrese un nombre diferente.`,
-                type: 'info',
+                title: 'Error de Duplicado',
+                message: 'El nombre del Área se encuentra registrado.',
+                type: 'error',
             });
             return;
         }
 
-        setNombreAreaCreando(data.nombre);
+        // Mostrar modal de confirmación antes de guardar
+       // setNombreAreaCreando(data.nombre);
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
@@ -105,10 +114,13 @@ export function useGestionAreas() {
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
+    
+    // Validación 16: Al presionar Cancelar, el formulario se cierra sin guardar
     const cerrarModalCrear = () => {
         setModalCrearAbierto(false);
-        setNombreAreaCreando('');
+        //setNombreAreaCreando('');
     };
+    
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
 
     return {
