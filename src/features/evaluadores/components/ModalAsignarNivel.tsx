@@ -1,15 +1,5 @@
 import { useState, useEffect } from "react";
-
-// ==================== TIPOS ====================
-export interface Area {
-  id_area: number;
-  nombre: string;
-}
-
-export interface Nivel {
-  id_nivel: number;
-  nombre: string;
-}
+import type { Area, Nivel } from "../tipos/IndexEvaluador";
 
 interface ModalAsignarNivelProps {
   isOpen: boolean;
@@ -20,7 +10,6 @@ interface ModalAsignarNivelProps {
   onConfirmar: (niveles: Nivel[]) => void;
 }
 
-// ==================== COMPONENTE MODAL DE NIVELES ====================
 export const ModalAsignarNivel = ({
   isOpen,
   onClose,
@@ -31,7 +20,6 @@ export const ModalAsignarNivel = ({
 }: ModalAsignarNivelProps) => {
   const [selectedNiveles, setSelectedNiveles] = useState<number[]>([]);
 
-  // Cargar niveles preseleccionados cuando se abre el modal
   useEffect(() => {
     if (isOpen && nivelesPreseleccionados.length > 0) {
       setSelectedNiveles(nivelesPreseleccionados);
@@ -54,7 +42,6 @@ export const ModalAsignarNivel = ({
   };
 
   const handleConfirmarNiveles = () => {
-    // Permitir confirmar incluso sin niveles seleccionados para poder deseleccionar
     const nivelesSeleccionados = niveles.filter((n) =>
       selectedNiveles.includes(n.id_nivel)
     );
@@ -79,7 +66,6 @@ export const ModalAsignarNivel = ({
           </button>
         </div>
 
-        {/* Tabla de niveles con el mismo formato que la tabla de áreas */}
         <div className="w-full border rounded-md p-2 border-neutro-400 bg-neutro-50 h-[180px] overflow-y-auto text-sm mb-6">
           {niveles.length > 0 ? (
             <ul className="space-y-1">

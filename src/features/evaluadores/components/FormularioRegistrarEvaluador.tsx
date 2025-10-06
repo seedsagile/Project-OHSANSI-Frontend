@@ -1,18 +1,29 @@
 import { useEffect, useState } from "react";
 import { ModalAsignarNivel } from "./ModalAsignarNivel";
-import type { Area, Nivel } from "./ModalAsignarNivel";
-
-// ==================== TIPOS ADICIONALES ====================
-interface AreaConNiveles {
-  area: Area;
-  niveles: Nivel[];
-}
+import { 
+  evaluadoresService, 
+  areasService, 
+  nivelesService 
+} from "../services/evaluadoresService";
+import type { 
+  Area, 
+  Nivel, 
+  AreaConNiveles,
+  CreateEvaluadorPayload 
+} from "../tipos/IndexEvaluador";
 
 // ==================== COMPONENTE FORMULARIO ====================
 export const FormularioRegistrarEvaluador = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [niveles, setNiveles] = useState<Nivel[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Estados para los campos del formulario
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [email, setEmail] = useState("");
+  const [ci, setCi] = useState("");
+  const [guardando, setGuardando] = useState(false);
 
   // Estado para la contraseña generada
   const [generatedPassword, setGeneratedPassword] = useState<string>("");
@@ -29,30 +40,17 @@ export const FormularioRegistrarEvaluador = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // TODO: Reemplazar con llamadas reales a tus servicios
-        // import { areasService } from "../../areas/services/areasService";
-        // const areasData = await areasService.obtenerAreas();
-        // import { nivelesService } from "../../niveles/services/nivelesService";
-        // const nivelesData = await nivelesService.obtenerNiveles();
-
-        // Datos simulados para desarrollo
-        const areasData: Area[] = [
-          { id_area: 1, nombre: "ROBOTICA" },
-          { id_area: 2, nombre: "PROGRAMACION" },
-          { id_area: 3, nombre: "BIOLOGIA" },
-          { id_area: 4, nombre: "Matematica" },
-        ];
-
-        const nivelesData: Nivel[] = [
-          { id_nivel: 1, nombre: "PROGRAMACION" },
-          { id_nivel: 2, nombre: "BIOLOGIA" },
-          { id_nivel: 3, nombre: "Matematica" },
-        ];
+        // Cargar áreas y niveles desde la API
+        const [areasData, nivelesData] = await Promise.all([
+          areasService.obtenerAreas(),
+          nivelesService.obtenerNiveles(),
+        ]);
 
         setAreas(areasData);
         setNiveles(nivelesData);
       } catch (error) {
         console.error("Error cargando datos:", error);
+        alert("Error al cargar áreas y niveles");
       } finally {
         setLoading(false);
       }
@@ -93,18 +91,17 @@ export const FormularioRegistrarEvaluador = () => {
   };
 
   const handleSeleccionarArea = (area: Area) => {
-    // Verificar si el área ya está asignada
-    const areaExistente = areasAsignadas.find(a => a.area.id_area === area.id_area);
-    
+    const areaExistente = areasAsignadas.find(
+      (a) => a.area.id_area === area.id_area
+    );
+
     if (areaExistente) {
-      // Si ya existe, cargar los niveles preseleccionados para editar
-      const nivelesIds = areaExistente.niveles.map(n => n.id_nivel);
+      const nivelesIds = areaExistente.niveles.map((n) => n.id_nivel);
       setNivelesPreseleccionados(nivelesIds);
     } else {
-      // Si es nueva, no hay niveles preseleccionados
       setNivelesPreseleccionados([]);
     }
-    
+
     setAreaSeleccionada(area);
     setShowModalNiveles(true);
   };
@@ -118,21 +115,18 @@ export const FormularioRegistrarEvaluador = () => {
   const handleConfirmarNiveles = (niveles: Nivel[]) => {
     if (!areaSeleccionada) return;
 
-    // Si no hay niveles seleccionados, eliminar el área
     if (niveles.length === 0) {
-      setAreasAsignadas((prev) => 
+      setAreasAsignadas((prev) =>
         prev.filter((a) => a.area.id_area !== areaSeleccionada.id_area)
       );
       return;
     }
 
-    // Verificar si el área ya existe
     const indiceExistente = areasAsignadas.findIndex(
-      a => a.area.id_area === areaSeleccionada.id_area
+      (a) => a.area.id_area === areaSeleccionada.id_area
     );
 
     if (indiceExistente !== -1) {
-      // Si existe, actualizar los niveles
       const nuevasAsignaciones = [...areasAsignadas];
       nuevasAsignaciones[indiceExistente] = {
         area: areaSeleccionada,
@@ -140,7 +134,6 @@ export const FormularioRegistrarEvaluador = () => {
       };
       setAreasAsignadas(nuevasAsignaciones);
     } else {
-      // Si no existe, agregar nueva asignación
       const nuevaAsignacion: AreaConNiveles = {
         area: areaSeleccionada,
         niveles: niveles,
@@ -149,24 +142,62 @@ export const FormularioRegistrarEvaluador = () => {
     }
   };
 
-  const handleEliminarAsignacion = (areaId: number) => {
-    setAreasAsignadas((prev) => prev.filter((a) => a.area.id_area !== areaId));
-  };
+  const handleGuardar = async () => {
+    // Validaciones
+    if (!nombre.trim() || !apellido.trim() || !email.trim() || !ci.trim()) {
+      alert("Por favor complete todos los campos");
+      return;
+    }
 
-  const handleGuardar = () => {
-    const payload = {
-      // nombre: ...,
-      // apellido: ...,
-      // correo: ...,
-      // carnet: ...,
+    if (!passwordGenerated || !generatedPassword) {
+      alert("Por favor genere una contraseña");
+      return;
+    }
+
+    if (areasAsignadas.length === 0) {
+      alert("Por favor asigne al menos un área con niveles");
+      return;
+    }
+
+    // Preparar payload
+    const todasLasAreas = areasAsignadas.map((a) => a.area.id_area);
+    const todosLosNiveles = areasAsignadas.flatMap((a) =>
+      a.niveles.map((n) => n.id_nivel)
+    );
+
+    const payload: CreateEvaluadorPayload = {
+      nombre: nombre.trim(),
+      apellido: apellido.trim(),
+      ci: ci.trim(),
+      email: email.trim(),
       password: generatedPassword,
-      areasAsignadas: areasAsignadas,
+      areas: todasLasAreas,
+      niveles: todosLosNiveles,
     };
 
-    console.log("Payload a enviar:", payload);
-    // TODO: Llamar al servicio para guardar
-    // import { evaluadoresService } from "../services/evaluadoresService";
-    // await evaluadoresService.crearEvaluador(payload);
+    try {
+      setGuardando(true);
+      console.log("Enviando payload:", payload);
+
+      const response = await evaluadoresService.crearEvaluador(payload);
+
+      console.log("Evaluador creado exitosamente:", response);
+      alert("Evaluador registrado exitosamente");
+
+      // Limpiar formulario
+      setNombre("");
+      setApellido("");
+      setEmail("");
+      setCi("");
+      setGeneratedPassword("");
+      setPasswordGenerated(false);
+      setAreasAsignadas([]);
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("Error al registrar el evaluador. Por favor intente nuevamente.");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   return (
@@ -187,6 +218,8 @@ export const FormularioRegistrarEvaluador = () => {
               <input
                 type="text"
                 placeholder="Ej: Pepito"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
                 className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
               />
             </div>
@@ -197,6 +230,8 @@ export const FormularioRegistrarEvaluador = () => {
               <input
                 type="text"
                 placeholder="Ej: Perez"
+                value={apellido}
+                onChange={(e) => setApellido(e.target.value)}
                 className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
               />
             </div>
@@ -209,8 +244,10 @@ export const FormularioRegistrarEvaluador = () => {
                   Correo Electrónico
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   placeholder="ejemplo@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
                 />
               </div>
@@ -222,6 +259,8 @@ export const FormularioRegistrarEvaluador = () => {
                 <input
                   type="text"
                   placeholder="Ej: 1234567 o 1234567-18"
+                  value={ci}
+                  onChange={(e) => setCi(e.target.value)}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
                 />
               </div>
@@ -244,10 +283,24 @@ export const FormularioRegistrarEvaluador = () => {
                     ? "Contraseña generada"
                     : "Generar contraseña"}
                 </button>
+                {passwordGenerated && generatedPassword && (
+                  <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 flex items-center justify-between">
+                    <span className="text-sm font-mono">{generatedPassword}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedPassword);
+                        alert("Contraseña copiada al portapapeles");
+                      }}
+                      className="text-xs bg-principal-400 text-white px-3 py-1 rounded hover:bg-principal-600 transition-colors"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Tabla de Áreas */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">Area</label>
               <div className="relative flex flex-col gap-2">
@@ -257,8 +310,7 @@ export const FormularioRegistrarEvaluador = () => {
                 >
                   Asignar Area
                 </button>
-                
-                {/* Tabla de áreas disponibles */}
+
                 <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 h-[180px] overflow-y-auto text-sm">
                   {loading ? (
                     <p className="text-neutro-500 italic">Cargando areas...</p>
@@ -322,6 +374,7 @@ export const FormularioRegistrarEvaluador = () => {
             <button
               type="button"
               onClick={handleGuardar}
+              disabled={guardando}
               className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
             >
               <svg
@@ -339,13 +392,12 @@ export const FormularioRegistrarEvaluador = () => {
                 <polyline points="17 21 17 13 7 13 7 21" />
                 <polyline points="7 3 7 8 15 8" />
               </svg>
-              <span>Guardar</span>
+              <span>{guardando ? "Guardando..." : "Guardar"}</span>
             </button>
           </footer>
         </div>
       </main>
 
-      {/* Modal de Niveles */}
       {areaSeleccionada && (
         <ModalAsignarNivel
           isOpen={showModalNiveles}

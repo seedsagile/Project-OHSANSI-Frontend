@@ -1,5 +1,5 @@
 // src/evaluadores/tipos/IndexEvaluador.ts
-
+/*
 // Tipo para los datos que vienen del formulario
 export type FormularioDataEvaluador = {
   nombre: string;
@@ -71,4 +71,47 @@ export type ErrorValidacionResponse = {
 // Tipo para el error extendido con errorData
 export type ErrorConData = Error & {
   errorData?: ErrorValidacionResponse;
-};
+};*/
+
+
+// src/features/evaluadores/types/indexEvaluador.ts
+
+// ==================== TIPOS DE ÁREA ====================
+export interface Area {
+  id_area: number;
+  nombre: string;
+}
+
+// ==================== TIPOS DE NIVEL ====================
+export interface Nivel {
+  id_nivel: number;
+  nombre: string;
+}
+
+// ==================== TIPOS DE EVALUADOR ====================
+export interface AreaConNiveles {
+  area: Area;
+  niveles: Nivel[];
+}
+
+export interface CreateEvaluadorPayload {
+  nombre: string;
+  apellido: string;
+  ci: string;
+  email: string;
+  password: string;
+  areas: number[];
+  niveles: number[];
+}
+
+export interface EvaluadorResponse {
+  id?: number;
+  nombre: string;
+  apellido: string;
+  ci: string;
+  email: string;
+  areas: number[];
+  niveles: number[];
+  created_at?: string;
+  updated_at?: string;
+}
