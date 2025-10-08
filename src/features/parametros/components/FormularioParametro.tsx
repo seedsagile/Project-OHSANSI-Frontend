@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { crearParametroAPI } from "../service/service";
-import type { ParametroClasificacion } from "../interface/interface";
-import { z, ZodError } from "zod";
 import {
   NOTA_MIN_MIN_LENGTH,
   NOTA_MIN_MAX_LENGTH,
@@ -15,130 +16,75 @@ import {
   MENSAJE_CANT_COMPET_CARACTERES_ESPECIALES,
 } from "../util/validaciones";
 
+// Schema Zod
+const ParametroSchema = z.object({
+  nota_minima_clasificacion: z
+    .string()
+    .refine((val) => NOTA_MIN_REGEX_NUMERIC.test(val), {
+      message: MENSAJE_NOTA_MIN_CARACTERES_ESPECIALES,
+    })
+    .refine((val) => val.replace(".", "").length >= NOTA_MIN_MIN_LENGTH, {
+      message: MENSAJE_NOTA_MIN_CORTA,
+    })
+    .refine((val) => val.replace(".", "").length <= NOTA_MIN_MAX_LENGTH, {
+      message: `El campo Nota Mínima permite un máximo de ${NOTA_MIN_MAX_LENGTH} caracteres numéricos`,
+    }),
+  cantidad_maxima_de_clasificados: z
+    .string()
+    .refine((val) => CANT_COMPET_MAX_REGEX_NUMERIC.test(val), {
+      message: MENSAJE_CANT_COMPET_CARACTERES_ESPECIALES,
+    })
+    .refine((val) => val.length >= CANT_COMPET_MAX_MIN_LENGTH, {
+      message: MENSAJE_CANT_COMPET_CORTA,
+    })
+    .refine((val) => val.length <= CANT_COMPET_MAX_MAX_LENGTH, {
+      message: `El campo Cantidad máxima de competidores permite un máximo de ${CANT_COMPET_MAX_MAX_LENGTH} caracteres`,
+    }),
+});
+
+// Tipo inferido automáticamente
+type ParametroForm = z.infer<typeof ParametroSchema>;
+
 export const FormularioParametro = () => {
-  const [formData, setFormData] = useState({
-    nota_minima_clasificacion: "",
-    cantidad_maxima_de_clasificados: "",
-  });
-
-  const [errores, setErrores] = useState<{
-    nota_minima_clasificacion?: string;
-    cantidad_maxima_de_clasificados?: string;
-  }>({});
-
   const [mensaje, setMensaje] = useState<string | null>(null);
 
-  // Zod schema con longitud máxima
-  const schema = z.object({
-    nota_minima_clasificacion: z
-      .string()
-      .refine((val) => NOTA_MIN_REGEX_NUMERIC.test(val), {
-        message: MENSAJE_NOTA_MIN_CARACTERES_ESPECIALES,
-      })
-      .refine((val) => val.replace(".", "").length >= NOTA_MIN_MIN_LENGTH, {
-        message: MENSAJE_NOTA_MIN_CORTA,
-      })
-      .refine(
-        (val) => val.replace(".", "").length <= NOTA_MIN_MAX_LENGTH, // máximo 3 caracteres
-        {
-          message: `El campo Nota Mínima permite un máximo de ${NOTA_MIN_MAX_LENGTH} caracteres numéricos`,
-        }
-      ),
-    cantidad_maxima_de_clasificados: z
-      .string()
-      .refine((val) => CANT_COMPET_MAX_REGEX_NUMERIC.test(val), {
-        message: MENSAJE_CANT_COMPET_CARACTERES_ESPECIALES,
-      })
-      .refine((val) => val.length >= CANT_COMPET_MAX_MIN_LENGTH, {
-        message: MENSAJE_CANT_COMPET_CORTA,
-      })
-      .refine(
-        (val) => val.length <= CANT_COMPET_MAX_MAX_LENGTH, // máximo 4 caracteres
-        {
-          message: `El campo Cantidad máxima de competidores permite un máximo de ${CANT_COMPET_MAX_MAX_LENGTH} caracteres`,
-        }
-      ),
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    trigger,
+  } = useForm<ParametroForm>({
+    resolver: zodResolver(ParametroSchema),
+    mode: "onBlur",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    const key =
-      id === "nota-minima"
-        ? "nota_minima_clasificacion"
-        : "cantidad_maxima_de_clasificados";
-
-    // Permitir solo números y punto decimal en nota mínima, solo números en cantidad
-    const regex =
-      key === "nota_minima_clasificacion" ? /^[0-9]*\.?[0-9]*$/ : /^[0-9]*$/;
-    if (!regex.test(value)) return;
-
-    // Limitar la longitud máxima en el input para evitar escribir más caracteres
-    const maxLength =
-      key === "nota_minima_clasificacion"
-        ? NOTA_MIN_MAX_LENGTH
-        : CANT_COMPET_MAX_MAX_LENGTH;
-    if (value.replace(".", "").length > maxLength) return;
-
-    setFormData((prev) => ({ ...prev, [key]: value }));
-
-    // Validación en tiempo real
+  const onSubmit = async (data: ParametroForm) => {
     try {
-      schema.pick({ [key]: true }).parse({ [key]: value });
-      setErrores((prev) => ({ ...prev, [key]: "" }));
-    } catch (err) {
-      if (err instanceof ZodError) {
-        const fieldError = err.errors.find((e) => e.path[0] === key);
-        setErrores((prev) => ({ ...prev, [key]: fieldError?.message }));
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      schema.parse(formData);
-
-      const payload: ParametroClasificacion = {
-        nota_minima_clasificacion: Number(formData.nota_minima_clasificacion),
+      const payload = {
+        nota_minima_clasificacion: Number(data.nota_minima_clasificacion),
         cantidad_maxima_de_clasificados: Number(
-          formData.cantidad_maxima_de_clasificados
+          data.cantidad_maxima_de_clasificados
         ),
       };
 
       await crearParametroAPI(payload);
 
       setMensaje(
-        `✅ Registro exitoso - Nota: ${formData.nota_minima_clasificacion}, Cantidad máxima: ${formData.cantidad_maxima_de_clasificados}`
+        `✅ Registro exitoso - Nota: ${data.nota_minima_clasificacion}, Cantidad máxima: ${data.cantidad_maxima_de_clasificados}`
       );
 
-      setFormData({
-        nota_minima_clasificacion: "",
-        cantidad_maxima_de_clasificados: "",
-      });
-      setErrores({});
+      reset();
       setTimeout(() => setMensaje(null), 3000);
     } catch (err) {
-      if (err instanceof ZodError) {
-        const nuevosErrores: any = {};
-        err.errors.forEach((e) => {
-          nuevosErrores[e.path[0]] = e.message;
-        });
-        setErrores(nuevosErrores);
-      } else {
-        console.error(err);
-        setMensaje("❌ Error al guardar los datos");
-        setTimeout(() => setMensaje(null), 3000);
-      }
+      console.error(err);
+      setMensaje("❌ Error al guardar los datos");
+      setTimeout(() => setMensaje(null), 3000);
     }
   };
 
   const handleCancel = () => {
-    setFormData({
-      nota_minima_clasificacion: "",
-      cantidad_maxima_de_clasificados: "",
-    });
-    setErrores({});
+    reset();
   };
 
   return (
@@ -156,7 +102,8 @@ export const FormularioParametro = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* Nota mínima */}
           <div className="flex flex-col gap-2">
             <label
               htmlFor="nota-minima"
@@ -166,18 +113,46 @@ export const FormularioParametro = () => {
             </label>
             <input
               id="nota-minima"
-              value={formData.nota_minima_clasificacion}
-              onChange={handleChange}
-              placeholder="51"
+              type="text"
+              {...register("nota_minima_clasificacion")}
+              onBlur={() => trigger("nota_minima_clasificacion")}
+              placeholder="51 o 9.5"
+              inputMode="decimal"
+              maxLength={4}
+              onKeyDown={(e) => {
+                const allowedKeys = [
+                  "Backspace",
+                  "ArrowLeft",
+                  "ArrowRight",
+                  "Delete",
+                  "Tab",
+                ];
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  e.key !== "." &&
+                  !allowedKeys.includes(e.key)
+                ) {
+                  e.preventDefault();
+                }
+                if (e.key === "." && e.currentTarget.value.includes(".")) {
+                  e.preventDefault();
+                }
+                const valueWithoutDot = e.currentTarget.value.replace(".", "");
+                if (/[0-9]/.test(e.key) && valueWithoutDot.length >= 3) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => e.preventDefault()}
               className="w-full border border-neutro-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-400 transition-all"
             />
-            {errores.nota_minima_clasificacion && (
-              <span className="text-rojo-500 text-sm">
-                {errores.nota_minima_clasificacion}
+            {errors.nota_minima_clasificacion && (
+              <span className="text-red-500 text-sm">
+                {errors.nota_minima_clasificacion.message}
               </span>
             )}
           </div>
 
+          {/* Cantidad máxima de competidores */}
           <div className="flex flex-col gap-2">
             <label
               htmlFor="max-competidores"
@@ -187,14 +162,33 @@ export const FormularioParametro = () => {
             </label>
             <input
               id="max-competidores"
-              value={formData.cantidad_maxima_de_clasificados}
-              onChange={handleChange}
+              type="text"
+              {...register("cantidad_maxima_de_clasificados")}
+              onBlur={() => trigger("cantidad_maxima_de_clasificados")}
               placeholder="100"
+              inputMode="numeric"
+              maxLength={4}
+              onKeyDown={(e) => {
+                const allowedKeys = [
+                  "Backspace",
+                  "ArrowLeft",
+                  "ArrowRight",
+                  "Delete",
+                  "Tab",
+                ];
+                if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                  e.preventDefault();
+                }
+                if (/[0-9]/.test(e.key) && e.currentTarget.value.length >= 4) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => e.preventDefault()}
               className="w-full border border-neutro-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-400 transition-all"
             />
-            {errores.cantidad_maxima_de_clasificados && (
-              <span className="text-rojo-500 text-sm">
-                {errores.cantidad_maxima_de_clasificados}
+            {errors.cantidad_maxima_de_clasificados && (
+              <span className="text-red-500 text-sm">
+                {errors.cantidad_maxima_de_clasificados.message}
               </span>
             )}
           </div>
@@ -205,14 +199,43 @@ export const FormularioParametro = () => {
               className="flex items-center gap-2 font-medium py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 hover:shadow transition-all"
               onClick={handleCancel}
             >
-              Cancelar
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              <span>Cancelar</span>
             </button>
 
             <button
               type="submit"
               className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 hover:shadow transition-all disabled:bg-principal-300 disabled:cursor-not-allowed"
             >
-              Guardar
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              <span>Guardar</span>
             </button>
           </footer>
         </form>
