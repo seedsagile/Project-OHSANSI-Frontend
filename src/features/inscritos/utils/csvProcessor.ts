@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { z } from 'zod'; // Asegúrate de importar z
+import { z } from 'zod';
 import type { CompetidorCSV, FilaProcesada } from '../types/indexInscritos';
 import { DEPARTAMENTOS_VALIDOS } from '../constants';
 import levenshtein from 'fast-levenshtein';
@@ -66,8 +66,13 @@ export const procesarYValidarCSV = (
         ci: z.string().trim().min(1, 'CI es obligatorio.')
             .regex(/^[0-9]+(-[A-Za-z0-9]{1,2})?$/, 'El formato del CI no es válido. Ej: 1234567 o 1234567-1A'),
         email: z.string().trim().min(1, 'Email es obligatorio.').email('Formato de email inválido.'),
-        departamento: z.string().transform(val => val.trim().toUpperCase()).pipe(z.enum(DEPARTAMENTOS_VALIDOS, { message: 'Departamento no es válido.' })),
         
+        departamento: z.string().trim().min(1, 'Departamento es obligatorio.')
+            .refine(val => DEPARTAMENTOS_VALIDOS.some(d => d.toLowerCase() === val.toLowerCase()), {
+                message: 'El departamento no es válido.'
+            })
+            .transform(toTitleCase),
+
         area: z.string().trim().min(1, 'Área es obligatoria.')
             .superRefine((val, ctx) => {
                 if (!areasValidas.includes(val)) {

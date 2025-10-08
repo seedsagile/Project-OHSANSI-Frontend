@@ -36,7 +36,7 @@ export function PaginaImportarCompetidores() {
                 <main className="bg-blanco w-full max-w-7xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     
                     <header className="flex justify-center items-center mb-10">
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores por Lote</h1>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
                     </header>
 
                     <section className="mb-8">
