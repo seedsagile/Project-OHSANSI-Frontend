@@ -1,5 +1,3 @@
-// src/features/inscritos/utils/apiMapper.ts
-
 import type { CompetidorCSV, CompetidorIndividualPayload } from '../types/indexInscritos';
 import { DEFAULT_FECHA_NAC, DEFAULT_GRADO_ESCOLAR } from '../constants';
 

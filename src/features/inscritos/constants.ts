@@ -1,8 +1,6 @@
-// src/features/inscritos/constants.ts
-
 export const DEPARTAMENTOS_VALIDOS = [
-    'COCHABAMBA', 'LA PAZ', 'SANTA CRUZ', 'ORURO', 'POTOSI',
-    'TARIJA', 'CHUQUISACA', 'BENI', 'PANDO'
+    'Cochabamba', 'Santa Cruz', 'La Paz', 'Oruro', 'Potosi',
+    'Tarija', 'Chuquisaca', 'Beni', 'Pando'
 ] as const;
 
 export const DEFAULT_FECHA_NAC = '2000-01-01';
