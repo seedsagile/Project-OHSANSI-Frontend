@@ -18,39 +18,52 @@ import type {
 // ==================== SCHEMA DE VALIDACIÓN ====================
 const schemaEvaluador = z.object({
   nombre: z.string()
-    .min(1, 'El campo Nombre es obligatorio.')
-    .transform((val) => val.trim().replace(/\s+/g, ' '))
+    .min(1, 'El campo Nombre del evaluador es obligatorio.')
+    .transform((val) => val.trim())
+    .refine((val) => val.length > 0, {
+      message: 'El campo Nombre del evaluador es obligatorio.'
+    })
     .pipe(
       z.string()
-        .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
-        .max(20, 'El campo Nombre tiene un límite máximo de 20 caracteres.')
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre solo permite letras, espacios y acentos.')
+        .min(3, 'El campo Nombre del evaluador requiere un mínimo de 3 caracteres.')
+        .max(20, 'El campo Nombre del evaluador tiene un límite máximo de 20 caracteres.')
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre del evaluador solo permite letras, espacios y acentos.')
     ),
   apellido: z.string()
     .min(1, 'El campo Apellido es obligatorio.')
-    .transform((val) => val.trim().replace(/\s+/g, ' '))
+    .transform((val) => val.trim())
+    .refine((val) => val.length > 0, {
+      message: 'El campo Apellido es obligatorio.'
+    })
     .pipe(
       z.string()
-        .min(2, 'El campo Apellido requiere un mínimo de 2 caracteres.')
-        .max(20, 'El campo Apellido tiene un límite máximo de 20 caracteres.')
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido solo permite letras, espacios y acentos.')
+        .min(3, 'El campo Apellido del evaluador requiere un mínimo de 3 caracteres.')
+        .max(20, 'El campo Apellido del evaluador tiene un límite máximo de 20 caracteres.')
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido del evaluador solo permite letras, espacios y acentos.')
     ),
   email: z.string()
-    .min(1, 'El campo Email es obligatorio.')
+    .min(1, 'El campo Correo electrónico es obligatorio.')
     .transform((val) => val.trim())
+    .refine((val) => val.length > 0, {
+      message: 'El campo Correo Electrónico es obligatorio.'
+    })
     .pipe(
       z.string()
-        .email('El campo Email debe tener un formato válido (ej. usuario@uno.com).')
-        .regex(/^[a-zA-Z0-9@.\-_]+$/, 'El campo Email solo permite letras, números, @, punto, guión y guión bajo.')
+        .min(6, 'El campo Correo electrónico requiere un mínimo de 6 caracteres.')
+        .max(50, 'El campo Correo electrónico tiene un límite máximo de 50 caracteres.')
+        .email('El correo electrónico no es válido.')
     ),
   ci: z.string()
-    .min(1, 'El campo CI es obligatorio.')
-    .transform((val) => val.trim())
+    .min(1, 'El campo Carnet de identidad es obligatorio.')
+    .transform((val) => val.trim().replace(/\s+/g, ''))
+    .refine((val) => val.length > 0, {
+      message: 'El campo Carnet de identidad es obligatorio.'
+    })
     .pipe(
       z.string()
-        .min(7, 'El campo CI requiere un mínimo de 7 caracteres.')
-        .max(15, 'El campo CI tiene un límite máximo de 15 caracteres.')
-        .regex(/^[0-9\-]+$/, 'El campo CI solo permite números y guiones.')
+        .min(6, 'El campo Carnet de identidad requiere un mínimo de 6 caracteres.')
+        .max(15, 'El campo Carnet de identidad tiene un límite máximo de 15 caracteres.')
+        .regex(/^[a-zA-Z0-9]+$/, 'El campo Carnet de identidad solo acepta números y letras.')
     ),
 });
 
@@ -62,27 +75,22 @@ export const FormularioRegistrarEvaluador = () => {
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  // Estado para la contraseña generada
   const [generatedPassword, setGeneratedPassword] = useState<string>("");
   const [passwordGenerated, setPasswordGenerated] = useState<boolean>(false);
 
-  // Estado para el modal de niveles
   const [showModalNiveles, setShowModalNiveles] = useState(false);
   const [areaSeleccionada, setAreaSeleccionada] = useState<Area | null>(null);
   const [nivelesDisponibles, setNivelesDisponibles] = useState<Nivel[]>([]);
   const [loadingNiveles, setLoadingNiveles] = useState(false);
   const [nivelesPreseleccionados, setNivelesPreseleccionados] = useState<number[]>([]);
 
-  // Estado para áreas y niveles asignados
   const [areasAsignadas, setAreasAsignadas] = useState<AreaConNiveles[]>([]);
 
-  // React Hook Form con validaciones Zod
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-    getValues,
   } = useForm<FormData>({
     resolver: zodResolver(schemaEvaluador),
     mode: "onChange",
@@ -136,7 +144,6 @@ export const FormularioRegistrarEvaluador = () => {
   };
 
   const handleSeleccionarArea = async (area: Area) => {
-    // Verificar si el área ya tiene niveles asignados
     const areaExistente = areasAsignadas.find(
       (a) => a.area.id_area === area.id_area
     );
@@ -151,7 +158,6 @@ export const FormularioRegistrarEvaluador = () => {
     setAreaSeleccionada(area);
     setShowModalNiveles(true);
     
-    // Cargar niveles de esta área desde la API
     setLoadingNiveles(true);
     try {
       const niveles = await nivelesService.obtenerNivelesPorArea(area.id_area);
@@ -176,10 +182,10 @@ export const FormularioRegistrarEvaluador = () => {
     if (!areaSeleccionada) return;
 
     if (niveles.length === 0) {
-      // Si no hay niveles seleccionados, eliminar el área
       setAreasAsignadas((prev) =>
         prev.filter((a) => a.area.id_area !== areaSeleccionada.id_area)
       );
+      handleCerrarModalNiveles();
       return;
     }
 
@@ -188,7 +194,6 @@ export const FormularioRegistrarEvaluador = () => {
     );
 
     if (indiceExistente !== -1) {
-      // Actualizar área existente
       const nuevasAsignaciones = [...areasAsignadas];
       nuevasAsignaciones[indiceExistente] = {
         area: areaSeleccionada,
@@ -196,29 +201,30 @@ export const FormularioRegistrarEvaluador = () => {
       };
       setAreasAsignadas(nuevasAsignaciones);
     } else {
-      // Agregar nueva área
       const nuevaAsignacion: AreaConNiveles = {
         area: areaSeleccionada,
         niveles: niveles,
       };
       setAreasAsignadas((prev) => [...prev, nuevaAsignacion]);
     }
+    
+    handleCerrarModalNiveles();
   };
 
   const onSubmit = async (data: FormData) => {
     // Validar contraseña generada
     if (!passwordGenerated || !generatedPassword) {
-      alert("Por favor genere una contraseña");
+      alert("Por favor genere una contraseña antes de guardar");
       return;
     }
 
     // Validar áreas asignadas
     if (areasAsignadas.length === 0) {
-      alert("Por favor asigne al menos un área con niveles");
+      alert("Por favor asigne al menos un área con niveles antes de guardar");
       return;
     }
 
-    // Preparar payload en el formato correcto para la API
+    // Preparar payload en el formato que espera el backend
     const payload: CreateEvaluadorPayload = {
       nombre: data.nombre,
       apellido: data.apellido,
@@ -233,12 +239,20 @@ export const FormularioRegistrarEvaluador = () => {
 
     try {
       setGuardando(true);
-      console.log("Enviando payload:", payload);
+      
+      console.log("═══════════════════════════════════════════════════════");
+      console.log("📤 ENVIANDO AL BACKEND:");
+      console.log(JSON.stringify(payload, null, 2));
+      console.log("═══════════════════════════════════════════════════════");
 
       const response = await evaluadoresService.crearEvaluador(payload);
 
-      console.log("Evaluador creado exitosamente:", response);
-      alert("Evaluador registrado exitosamente");
+      console.log("═══════════════════════════════════════════════════════");
+      console.log("✅ RESPUESTA DEL BACKEND:");
+      console.log(JSON.stringify(response, null, 2));
+      console.log("═══════════════════════════════════════════════════════");
+
+      alert(`✅ Evaluador registrado exitosamente!\n\nNombre: ${data.nombre} ${data.apellido}\nÁreas asignadas: ${areasAsignadas.length}`);
 
       // Limpiar formulario
       reset();
@@ -246,7 +260,7 @@ export const FormularioRegistrarEvaluador = () => {
       setPasswordGenerated(false);
       setAreasAsignadas([]);
     } catch (error: any) {
-      console.error("Error al guardar:", error);
+      console.error("❌ Error al guardar:", error);
       alert(error.message || "Error al registrar el evaluador. Por favor intente nuevamente.");
     } finally {
       setGuardando(false);
@@ -254,46 +268,48 @@ export const FormularioRegistrarEvaluador = () => {
   };
 
   return (
-    <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-      <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-8">
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+      <main className="bg-white w-full max-w-4xl rounded-xl shadow-lg p-8">
         <header className="flex justify-center items-center mb-10">
-          <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center">
-            Registrar Evaluador de Area/Nivel
+          <h1 className="text-4xl font-extrabold text-black tracking-tight text-center">
+            Registrar Evaluador de Área/Nivel
           </h1>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          <div className="flex gap-8">
+          {/* FILA 1: NOMBRE Y APELLIDO */}
+          <div className="grid grid-cols-2 gap-8">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-negro">
+              <label className="text-sm font-semibold text-black">
                 Nombre del evaluador
               </label>
               <input
                 type="text"
                 placeholder="Ej: Pepito"
                 {...register("nombre")}
-                className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                className={`border rounded-md p-2 focus:outline-none focus:ring-2 ${
                   errors.nombre 
                     ? "border-red-500 focus:ring-red-500" 
-                    : "border-neutro-400 focus:ring-principal-400"
+                    : "border-gray-300 focus:ring-blue-500"
                 }`}
               />
               {errors.nombre && (
                 <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>
               )}
             </div>
+            
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-negro">
+              <label className="text-sm font-semibold text-black">
                 Apellido del evaluador
               </label>
               <input
                 type="text"
                 placeholder="Ej: Perez"
                 {...register("apellido")}
-                className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                className={`border rounded-md p-2 focus:outline-none focus:ring-2 ${
                   errors.apellido 
                     ? "border-red-500 focus:ring-red-500" 
-                    : "border-neutro-400 focus:ring-principal-400"
+                    : "border-gray-300 focus:ring-blue-500"
                 }`}
               />
               {errors.apellido && (
@@ -302,20 +318,22 @@ export const FormularioRegistrarEvaluador = () => {
             </div>
           </div>
 
-          <div className="flex gap-8">
+          {/* FILA 2: EMAIL, CI, PASSWORD Y ÁREAS */}
+          <div className="grid grid-cols-2 gap-8">
+            {/* COLUMNA IZQUIERDA */}
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-negro">
+                <label className="text-sm font-semibold text-black">
                   Correo Electrónico
                 </label>
                 <input
                   type="email"
                   placeholder="ejemplo@ejemplo.com"
                   {...register("email")}
-                  className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                  className={`border rounded-md p-2 focus:outline-none focus:ring-2 ${
                     errors.email 
                       ? "border-red-500 focus:ring-red-500" 
-                      : "border-neutro-400 focus:ring-principal-400"
+                      : "border-gray-300 focus:ring-blue-500"
                   }`}
                 />
                 {errors.email && (
@@ -324,17 +342,17 @@ export const FormularioRegistrarEvaluador = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-negro">
+                <label className="text-sm font-semibold text-black">
                   Carnet de identidad
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: 1234567 o 1234567-1A"
+                  placeholder="Ej: 1234567"
                   {...register("ci")}
-                  className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                  className={`border rounded-md p-2 focus:outline-none focus:ring-2 ${
                     errors.ci 
                       ? "border-red-500 focus:ring-red-500" 
-                      : "border-neutro-400 focus:ring-principal-400"
+                      : "border-gray-300 focus:ring-blue-500"
                   }`}
                 />
                 {errors.ci && (
@@ -343,25 +361,25 @@ export const FormularioRegistrarEvaluador = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-negro">
+                <label className="text-sm font-semibold text-black">
                   Contraseña
                 </label>
                 <button
                   type="button"
                   onClick={handleGenerarClick}
                   disabled={passwordGenerated}
-                  className={`w-[400px] border rounded-md p-2 border-neutro-400 transition-colors ${
+                  className={`border rounded-md p-2 transition-colors ${
                     passwordGenerated
-                      ? "bg-neutro-300 text-black cursor-not-allowed"
-                      : "bg-[#0076FF] text-white hover:bg-principal-600"
+                      ? "bg-gray-300 text-black cursor-not-allowed"
+                      : "bg-[#0076FF] text-white hover:bg-blue-600"
                   }`}
                 >
                   {passwordGenerated
-                    ? "Contraseña generada"
+                    ? "✓ Contraseña generada"
                     : "Generar contraseña"}
                 </button>
                 {passwordGenerated && generatedPassword && (
-                  <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 flex items-center justify-between">
+                  <div className="border rounded-md p-2 border-gray-300 bg-gray-50 flex items-center justify-between">
                     <span className="text-sm font-mono">{generatedPassword}</span>
                     <button
                       type="button"
@@ -369,7 +387,7 @@ export const FormularioRegistrarEvaluador = () => {
                         navigator.clipboard.writeText(generatedPassword);
                         alert("Contraseña copiada al portapapeles");
                       }}
-                      className="text-xs bg-principal-400 text-white px-3 py-1 rounded hover:bg-principal-600 transition-colors"
+                      className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
                     >
                       Copiar
                     </button>
@@ -378,77 +396,80 @@ export const FormularioRegistrarEvaluador = () => {
               </div>
             </div>
 
+            {/* COLUMNA DERECHA: ÁREAS */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-negro">Area</label>
-              <div className="relative flex flex-col gap-2">
-                <button
-                  type="button"
-                  className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white transition-colors hover:bg-principal-600"
-                >
-                  Asignar Area
-                </button>
+              <label className="text-sm font-semibold text-black">
+                Áreas y Niveles
+              </label>
+              
+              <button
+                type="button"
+                className="border rounded-md p-2 bg-[#0076FF] text-white transition-colors hover:bg-blue-600"
+              >
+                Seleccionar Áreas
+              </button>
 
-                <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 h-[180px] overflow-y-auto text-sm">
-                  {loading ? (
-                    <p className="text-neutro-500 italic">Cargando areas...</p>
-                  ) : areas.length > 0 ? (
-                    <ul className="space-y-1">
-                      {areas.map((area, index) => {
-                        const yaAsignada = areasAsignadas.some(
-                          (a) => a.area.id_area === area.id_area
-                        );
-                        return (
-                          <li
-                            key={area.id_area}
-                            onClick={() => handleSeleccionarArea(area)}
-                            className={`flex justify-between items-center rounded-md px-2 py-2 transition-colors cursor-pointer hover:bg-neutro-200 ${
-                              index % 2 === 0 ? "bg-[#E5E7EB]" : "bg-[#F3F4F6]"
-                            }`}
-                          >
-                            <span>{area.nombre}</span>
-                            <input
-                              type="checkbox"
-                              checked={yaAsignada}
-                              readOnly
-                              className="ml-2"
-                            />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-neutro-500 italic">
-                      No hay areas registradas
-                    </p>
-                  )}
-                </div>
-
-                {/* Mostrar áreas asignadas con sus niveles */}
-                {areasAsignadas.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold text-negro mb-2">
-                      Áreas asignadas:
-                    </p>
-                    <div className="space-y-2">
-                      {areasAsignadas.map((ac) => (
-                        <div
-                          key={ac.area.id_area}
-                          className="bg-blue-50 border border-blue-200 rounded-md p-2"
+              <div className="border rounded-md p-2 border-gray-300 bg-gray-50 h-[220px] overflow-y-auto text-sm">
+                {loading ? (
+                  <p className="text-gray-500 italic">Cargando áreas...</p>
+                ) : areas.length > 0 ? (
+                  <ul className="space-y-1">
+                    {areas.map((area, index) => {
+                      const yaAsignada = areasAsignadas.some(
+                        (a) => a.area.id_area === area.id_area
+                      );
+                      return (
+                        <li
+                          key={area.id_area}
+                          onClick={() => handleSeleccionarArea(area)}
+                          className={`flex justify-between items-center rounded-md px-2 py-2 transition-colors cursor-pointer hover:bg-gray-200 ${
+                            index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                          }`}
                         >
-                          <p className="font-semibold text-sm">{ac.area.nombre}</p>
-                          <p className="text-xs text-gray-600">
-                            Niveles: {ac.niveles.map((n) => n.nombre).join(", ")}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                          <span>{area.nombre}</span>
+                          <input
+                            type="checkbox"
+                            checked={yaAsignada}
+                            readOnly
+                            className="ml-2"
+                          />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 italic">
+                    No hay áreas registradas
+                  </p>
                 )}
               </div>
+
+              {/* ÁREAS ASIGNADAS */}
+              {areasAsignadas.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-semibold text-black mb-2">
+                    Áreas asignadas: ({areasAsignadas.length})
+                  </p>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {areasAsignadas.map((ac) => (
+                      <div
+                        key={ac.area.id_area}
+                        className="bg-blue-50 border border-blue-200 rounded-md p-2"
+                      >
+                        <p className="font-semibold text-sm">{ac.area.nombre}</p>
+                        <p className="text-xs text-gray-600">
+                          Niveles: {ac.niveles.map((n) => n.nombre).join(", ")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <footer className="flex justify-end items-center gap-4 mt-12">
+          {/* BOTONES */}
+          <footer className="flex justify-end items-center gap-4 mt-12 pt-6 border-t">
             <button
               type="button"
               onClick={() => {
@@ -457,7 +478,7 @@ export const FormularioRegistrarEvaluador = () => {
                 setPasswordGenerated(false);
                 setAreasAsignadas([]);
               }}
-              className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+              className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -479,24 +500,36 @@ export const FormularioRegistrarEvaluador = () => {
             <button
               type="submit"
               disabled={guardando}
-              className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 min-w-[180px] font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-white hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              <span>{guardando ? "Guardando..." : "Guardar"}</span>
+              {guardando ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  <span>Guardar</span>
+                </>
+              )}
             </button>
           </footer>
         </form>
