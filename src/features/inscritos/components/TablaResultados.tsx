@@ -67,7 +67,7 @@ export function TablaResultados({ data, columns, invalidHeaders }: TablaResultad
                             </thead>
                             <tbody className="divide-y divide-neutro-200">
                                 {table.getRowModel().rows.length === 0 ? (
-                                    <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">El archivo no contiene filas de datos para mostrar.</td></tr>
+                                    <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">El archivo no contiene datos para mostrar.</td></tr>
                                 ) : (
                                     table.getRowModel().rows.map(row => (
                                         <tr
