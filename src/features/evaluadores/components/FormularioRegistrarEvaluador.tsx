@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { ModalAsignarNivel } from "./ModalAsignarNivel";
 import { 
   evaluadoresService, 
@@ -12,17 +15,51 @@ import type {
   CreateEvaluadorPayload 
 } from "../tipos/IndexEvaluador";
 
+// ==================== SCHEMA DE VALIDACIÓN ====================
+const schemaEvaluador = z.object({
+  nombre: z.string()
+    .min(1, 'El campo Nombre es obligatorio.')
+    .transform((val) => val.trim().replace(/\s+/g, ' '))
+    .pipe(
+      z.string()
+        .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
+        .max(20, 'El campo Nombre tiene un límite máximo de 20 caracteres.')
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre solo permite letras, espacios y acentos.')
+    ),
+  apellido: z.string()
+    .min(1, 'El campo Apellido es obligatorio.')
+    .transform((val) => val.trim().replace(/\s+/g, ' '))
+    .pipe(
+      z.string()
+        .min(2, 'El campo Apellido requiere un mínimo de 2 caracteres.')
+        .max(20, 'El campo Apellido tiene un límite máximo de 20 caracteres.')
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido solo permite letras, espacios y acentos.')
+    ),
+  email: z.string()
+    .min(1, 'El campo Email es obligatorio.')
+    .transform((val) => val.trim())
+    .pipe(
+      z.string()
+        .email('El campo Email debe tener un formato válido (ej. usuario@uno.com).')
+        .regex(/^[a-zA-Z0-9@.\-_]+$/, 'El campo Email solo permite letras, números, @, punto, guión y guión bajo.')
+    ),
+  ci: z.string()
+    .min(1, 'El campo CI es obligatorio.')
+    .transform((val) => val.trim())
+    .pipe(
+      z.string()
+        .min(7, 'El campo CI requiere un mínimo de 7 caracteres.')
+        .max(15, 'El campo CI tiene un límite máximo de 15 caracteres.')
+        .regex(/^[0-9\-]+$/, 'El campo CI solo permite números y guiones.')
+    ),
+});
+
+type FormData = z.infer<typeof schemaEvaluador>;
+
 // ==================== COMPONENTE FORMULARIO ====================
 export const FormularioRegistrarEvaluador = () => {
   const [areas, setAreas] = useState<Area[]>([]);
-  const [niveles, setNiveles] = useState<Nivel[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Estados para los campos del formulario
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [email, setEmail] = useState("");
-  const [ci, setCi] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   // Estado para la contraseña generada
@@ -32,25 +69,33 @@ export const FormularioRegistrarEvaluador = () => {
   // Estado para el modal de niveles
   const [showModalNiveles, setShowModalNiveles] = useState(false);
   const [areaSeleccionada, setAreaSeleccionada] = useState<Area | null>(null);
+  const [nivelesDisponibles, setNivelesDisponibles] = useState<Nivel[]>([]);
+  const [loadingNiveles, setLoadingNiveles] = useState(false);
   const [nivelesPreseleccionados, setNivelesPreseleccionados] = useState<number[]>([]);
 
   // Estado para áreas y niveles asignados
   const [areasAsignadas, setAreasAsignadas] = useState<AreaConNiveles[]>([]);
 
+  // React Hook Form con validaciones Zod
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    getValues,
+  } = useForm<FormData>({
+    resolver: zodResolver(schemaEvaluador),
+    mode: "onChange",
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Cargar áreas y niveles desde la API
-        const [areasData, nivelesData] = await Promise.all([
-          areasService.obtenerAreas(),
-          nivelesService.obtenerNiveles(),
-        ]);
-
+        const areasData = await areasService.obtenerAreas();
         setAreas(areasData);
-        setNiveles(nivelesData);
       } catch (error) {
-        console.error("Error cargando datos:", error);
-        alert("Error al cargar áreas y niveles");
+        console.error("Error cargando áreas:", error);
+        alert("Error al cargar las áreas");
       } finally {
         setLoading(false);
       }
@@ -90,7 +135,8 @@ export const FormularioRegistrarEvaluador = () => {
     setPasswordGenerated(true);
   };
 
-  const handleSeleccionarArea = (area: Area) => {
+  const handleSeleccionarArea = async (area: Area) => {
+    // Verificar si el área ya tiene niveles asignados
     const areaExistente = areasAsignadas.find(
       (a) => a.area.id_area === area.id_area
     );
@@ -104,18 +150,33 @@ export const FormularioRegistrarEvaluador = () => {
 
     setAreaSeleccionada(area);
     setShowModalNiveles(true);
+    
+    // Cargar niveles de esta área desde la API
+    setLoadingNiveles(true);
+    try {
+      const niveles = await nivelesService.obtenerNivelesPorArea(area.id_area);
+      setNivelesDisponibles(niveles);
+    } catch (error) {
+      console.error("Error al cargar niveles:", error);
+      alert("Error al cargar los niveles del área");
+      setNivelesDisponibles([]);
+    } finally {
+      setLoadingNiveles(false);
+    }
   };
 
   const handleCerrarModalNiveles = () => {
     setShowModalNiveles(false);
     setAreaSeleccionada(null);
     setNivelesPreseleccionados([]);
+    setNivelesDisponibles([]);
   };
 
   const handleConfirmarNiveles = (niveles: Nivel[]) => {
     if (!areaSeleccionada) return;
 
     if (niveles.length === 0) {
+      // Si no hay niveles seleccionados, eliminar el área
       setAreasAsignadas((prev) =>
         prev.filter((a) => a.area.id_area !== areaSeleccionada.id_area)
       );
@@ -127,6 +188,7 @@ export const FormularioRegistrarEvaluador = () => {
     );
 
     if (indiceExistente !== -1) {
+      // Actualizar área existente
       const nuevasAsignaciones = [...areasAsignadas];
       nuevasAsignaciones[indiceExistente] = {
         area: areaSeleccionada,
@@ -134,6 +196,7 @@ export const FormularioRegistrarEvaluador = () => {
       };
       setAreasAsignadas(nuevasAsignaciones);
     } else {
+      // Agregar nueva área
       const nuevaAsignacion: AreaConNiveles = {
         area: areaSeleccionada,
         niveles: niveles,
@@ -142,37 +205,30 @@ export const FormularioRegistrarEvaluador = () => {
     }
   };
 
-  const handleGuardar = async () => {
-    // Validaciones
-    if (!nombre.trim() || !apellido.trim() || !email.trim() || !ci.trim()) {
-      alert("Por favor complete todos los campos");
-      return;
-    }
-
+  const onSubmit = async (data: FormData) => {
+    // Validar contraseña generada
     if (!passwordGenerated || !generatedPassword) {
       alert("Por favor genere una contraseña");
       return;
     }
 
+    // Validar áreas asignadas
     if (areasAsignadas.length === 0) {
       alert("Por favor asigne al menos un área con niveles");
       return;
     }
 
-    // Preparar payload
-    const todasLasAreas = areasAsignadas.map((a) => a.area.id_area);
-    const todosLosNiveles = areasAsignadas.flatMap((a) =>
-      a.niveles.map((n) => n.id_nivel)
-    );
-
+    // Preparar payload en el formato correcto para la API
     const payload: CreateEvaluadorPayload = {
-      nombre: nombre.trim(),
-      apellido: apellido.trim(),
-      ci: ci.trim(),
-      email: email.trim(),
+      nombre: data.nombre,
+      apellido: data.apellido,
+      ci: data.ci,
+      email: data.email,
       password: generatedPassword,
-      areas: todasLasAreas,
-      niveles: todosLosNiveles,
+      areas_niveles: areasAsignadas.map((ac) => ({
+        area: ac.area.id_area,
+        niveles: ac.niveles.map((n) => n.id_nivel),
+      })),
     };
 
     try {
@@ -185,16 +241,13 @@ export const FormularioRegistrarEvaluador = () => {
       alert("Evaluador registrado exitosamente");
 
       // Limpiar formulario
-      setNombre("");
-      setApellido("");
-      setEmail("");
-      setCi("");
+      reset();
       setGeneratedPassword("");
       setPasswordGenerated(false);
       setAreasAsignadas([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al guardar:", error);
-      alert("Error al registrar el evaluador. Por favor intente nuevamente.");
+      alert(error.message || "Error al registrar el evaluador. Por favor intente nuevamente.");
     } finally {
       setGuardando(false);
     }
@@ -209,7 +262,7 @@ export const FormularioRegistrarEvaluador = () => {
           </h1>
         </header>
 
-        <div className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           <div className="flex gap-8">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
@@ -218,10 +271,16 @@ export const FormularioRegistrarEvaluador = () => {
               <input
                 type="text"
                 placeholder="Ej: Pepito"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                {...register("nombre")}
+                className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                  errors.nombre 
+                    ? "border-red-500 focus:ring-red-500" 
+                    : "border-neutro-400 focus:ring-principal-400"
+                }`}
               />
+              {errors.nombre && (
+                <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
@@ -230,10 +289,16 @@ export const FormularioRegistrarEvaluador = () => {
               <input
                 type="text"
                 placeholder="Ej: Perez"
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
-                className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                {...register("apellido")}
+                className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                  errors.apellido 
+                    ? "border-red-500 focus:ring-red-500" 
+                    : "border-neutro-400 focus:ring-principal-400"
+                }`}
               />
+              {errors.apellido && (
+                <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>
+              )}
             </div>
           </div>
 
@@ -246,10 +311,16 @@ export const FormularioRegistrarEvaluador = () => {
                 <input
                   type="email"
                   placeholder="ejemplo@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                  {...register("email")}
+                  className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                    errors.email 
+                      ? "border-red-500 focus:ring-red-500" 
+                      : "border-neutro-400 focus:ring-principal-400"
+                  }`}
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -258,11 +329,17 @@ export const FormularioRegistrarEvaluador = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: 1234567 o 1234567-18"
-                  value={ci}
-                  onChange={(e) => setCi(e.target.value)}
-                  className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                  placeholder="Ej: 1234567 o 1234567-1A"
+                  {...register("ci")}
+                  className={`w-[400px] border rounded-md p-2 focus:outline-none focus:ring-2 ${
+                    errors.ci 
+                      ? "border-red-500 focus:ring-red-500" 
+                      : "border-neutro-400 focus:ring-principal-400"
+                  }`}
                 />
+                {errors.ci && (
+                  <p className="text-red-500 text-xs mt-1">{errors.ci.message}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -345,6 +422,28 @@ export const FormularioRegistrarEvaluador = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Mostrar áreas asignadas con sus niveles */}
+                {areasAsignadas.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-semibold text-negro mb-2">
+                      Áreas asignadas:
+                    </p>
+                    <div className="space-y-2">
+                      {areasAsignadas.map((ac) => (
+                        <div
+                          key={ac.area.id_area}
+                          className="bg-blue-50 border border-blue-200 rounded-md p-2"
+                        >
+                          <p className="font-semibold text-sm">{ac.area.nombre}</p>
+                          <p className="text-xs text-gray-600">
+                            Niveles: {ac.niveles.map((n) => n.nombre).join(", ")}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -352,6 +451,12 @@ export const FormularioRegistrarEvaluador = () => {
           <footer className="flex justify-end items-center gap-4 mt-12">
             <button
               type="button"
+              onClick={() => {
+                reset();
+                setGeneratedPassword("");
+                setPasswordGenerated(false);
+                setAreasAsignadas([]);
+              }}
               className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
             >
               <svg
@@ -372,8 +477,7 @@ export const FormularioRegistrarEvaluador = () => {
             </button>
 
             <button
-              type="button"
-              onClick={handleGuardar}
+              type="submit"
               disabled={guardando}
               className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
             >
@@ -395,7 +499,7 @@ export const FormularioRegistrarEvaluador = () => {
               <span>{guardando ? "Guardando..." : "Guardar"}</span>
             </button>
           </footer>
-        </div>
+        </form>
       </main>
 
       {areaSeleccionada && (
@@ -403,7 +507,7 @@ export const FormularioRegistrarEvaluador = () => {
           isOpen={showModalNiveles}
           onClose={handleCerrarModalNiveles}
           area={areaSeleccionada}
-          niveles={niveles}
+          niveles={nivelesDisponibles}
           nivelesPreseleccionados={nivelesPreseleccionados}
           onConfirmar={handleConfirmarNiveles}
         />

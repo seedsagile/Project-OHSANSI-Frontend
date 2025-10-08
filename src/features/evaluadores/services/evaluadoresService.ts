@@ -39,37 +39,46 @@ export const areasService = {
 // ==================== SERVICIO DE NIVELES ====================
 export const nivelesService = {
   /**
-   * Obtener todos los niveles
+   * Obtener niveles por área ID
    */
-  async obtenerNiveles(): Promise<Nivel[]> {
+  async obtenerNivelesPorArea(idArea: number): Promise<Nivel[]> {
     try {
-      // Por ahora devuelve datos de ejemplo hasta que tengas el endpoint
-      // Reemplaza esto cuando tengas la API de niveles
-      const nivelesData: Nivel[] = [
-        { id_nivel: 1, nombre: "Tercero secundaria" },
-        { id_nivel: 2, nombre: "Cuarto secundaria" },
-        { id_nivel: 3, nombre: "Quinto secundaria" },
-      ];
-      
-      return Promise.resolve(nivelesData);
-      
-      /* Cuando tengas el endpoint de niveles, reemplaza con:
-      const response = await fetch("http://127.0.0.1:8000/api/nivel", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/area-niveles/detalle/${idArea}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Error al obtener los niveles");
+        throw new Error("Error al obtener los niveles del área");
       }
 
-      const data = await response.json();
-      return data;
-      */
+      const responseData = await response.json();
+      
+      // Extraer los niveles del response
+      if (responseData.success && responseData.data) {
+        // Mapear para evitar duplicados y extraer solo la info del nivel
+        const nivelesUnicos = responseData.data.reduce((acc: Nivel[], item: any) => {
+          const nivelExiste = acc.find(n => n.id_nivel === item.nivel.id_nivel);
+          if (!nivelExiste && item.nivel) {
+            acc.push({
+              id_nivel: item.nivel.id_nivel,
+              nombre: item.nivel.nombre
+            });
+          }
+          return acc;
+        }, []);
+        
+        return nivelesUnicos;
+      }
+      
+      return [];
     } catch (error) {
-      console.error("Error en obtenerNiveles:", error);
+      console.error("Error en obtenerNivelesPorArea:", error);
       throw error;
     }
   },
@@ -78,12 +87,14 @@ export const nivelesService = {
 // ==================== SERVICIO DE EVALUADORES ====================
 export const evaluadoresService = {
   /**
-   * Crear un nuevo evaluador
+   * Crear un nuevo evaluador con múltiples áreas y niveles
    */
   async crearEvaluador(
     payload: CreateEvaluadorPayload
   ): Promise<EvaluadorResponse> {
     try {
+      console.log("🔵 Servicio - Payload recibido:", JSON.stringify(payload, null, 2));
+      
       const response = await fetch(`${API_BASE_URL}/evaluadores`, {
         method: "POST",
         headers: {
@@ -92,116 +103,20 @@ export const evaluadoresService = {
         body: JSON.stringify(payload),
       });
 
+      console.log("🔵 Servicio - Status de respuesta:", response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("🔴 Servicio - Error del backend:", errorData);
         throw new Error(errorData.message || "Error al crear el evaluador");
       }
 
       const data = await response.json();
+      console.log("🟢 Servicio - Respuesta exitosa:", JSON.stringify(data, null, 2));
       return data;
     } catch (error) {
-      console.error("Error en crearEvaluador:", error);
+      console.error("🔴 Servicio - Error en crearEvaluador:", error);
       throw error;
     }
-  },
-
-  /**
-   * Obtener todos los evaluadores
-   */
-  async obtenerEvaluadores(): Promise<EvaluadorResponse[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/evaluadores`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al obtener los evaluadores");
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error en obtenerEvaluadores:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener un evaluador por ID
-   */
-  async obtenerEvaluadorPorId(id: number): Promise<EvaluadorResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/evaluadores/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al obtener el evaluador");
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error en obtenerEvaluadorPorId:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar un evaluador
-   */
-  async actualizarEvaluador(
-    id: number,
-    payload: Partial<CreateEvaluadorPayload>
-  ): Promise<EvaluadorResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/evaluadores/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Error al actualizar el evaluador"
-        );
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error en actualizarEvaluador:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar un evaluador
-   */
-  async eliminarEvaluador(id: number): Promise<void> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/evaluadores/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el evaluador");
-      }
-    } catch (error) {
-      console.error("Error en eliminarEvaluador:", error);
-      throw error;
-    }
-  },
-};
+  }
+}
