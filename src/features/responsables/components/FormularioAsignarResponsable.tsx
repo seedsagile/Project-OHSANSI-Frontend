@@ -9,20 +9,17 @@ import type { Area } from "../../areas/types";
 import type { AreaInterface } from "../interface/AreaInterface";
 import { ResponsableAreaSchema } from "../utils/AreaValidaciones";
 import { type ResponsableForm } from "../utils/AreaValidaciones";
+import { Link } from "react-router-dom";
 
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mensaje de éxito / error
   const [mensaje, setMensaje] = useState<string | null>(null);
 
-  // Estados adicionales
-  // const [generatedPassword, setGeneratedPassword] = useState("");
   const [passwordGenerated, setPasswordGenerated] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState<number[]>([]);
 
-  // Configuración del formulario con react-hook-form + zod
   const {
     register,
     handleSubmit,
@@ -35,7 +32,6 @@ export const FormularioAsignarResponsable = () => {
     mode: "onChange", // validaciones en tiempo real
   });
 
-  // Cargar áreas
   useEffect(() => {
     const fetchAreas = async () => {
       try {
@@ -50,7 +46,6 @@ export const FormularioAsignarResponsable = () => {
     fetchAreas();
   }, []);
 
-  // Generar contraseña
   const generatePassword = (length = 8) => {
     const lower = "abcdefghijklmnopqrstuvwxyz";
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -105,7 +100,6 @@ export const FormularioAsignarResponsable = () => {
     setMensaje(null);
   };
 
-  // Guardar responsable
   const onSubmit = async (data: ResponsableForm) => {
     const payload: AreaInterface = {
       nombre: data.nombre,
@@ -160,7 +154,6 @@ export const FormularioAsignarResponsable = () => {
           className="space-y-8"
           noValidate
         >
-          {/* Nombre y Apellido */}
           <div className="flex gap-8">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
@@ -199,7 +192,6 @@ export const FormularioAsignarResponsable = () => {
             </div>
           </div>
 
-          {/* Correo, CI y Contraseña */}
           <div className="flex gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -264,7 +256,6 @@ export const FormularioAsignarResponsable = () => {
               </div>
             </div>
 
-            {/* Áreas */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">Area</label>
               <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white transition-colors text-center">
@@ -307,15 +298,15 @@ export const FormularioAsignarResponsable = () => {
             </div>
           </div>
 
-          {/* Footer */}
           <footer className="flex justify-end items-center gap-4 mt-12">
-            <button
+            <Link
               type="button"
               onClick={handleCancelar}
               className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+              to="/dashboard"
             >
               Cancelar
-            </button>
+            </Link>
 
             <button
               type="submit"
