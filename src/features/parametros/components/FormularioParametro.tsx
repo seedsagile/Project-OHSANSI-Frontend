@@ -15,6 +15,7 @@ import {
   MENSAJE_CANT_COMPET_CORTA,
   MENSAJE_CANT_COMPET_CARACTERES_ESPECIALES,
 } from "../util/validaciones";
+import { Link } from "react-router-dom";
 
 // Schema Zod
 const ParametroSchema = z.object({
@@ -194,10 +195,11 @@ export const FormularioParametro = () => {
           </div>
 
           <footer className="flex justify-end items-center gap-6 mt-14">
-            <button
+            <Link
               type="button"
               className="flex items-center gap-2 font-medium py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 hover:shadow transition-all"
               onClick={handleCancel}
+              to="/dashboard"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -214,7 +216,7 @@ export const FormularioParametro = () => {
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
               <span>Cancelar</span>
-            </button>
+            </Link>
 
             <button
               type="submit"
