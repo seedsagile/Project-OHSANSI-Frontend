@@ -13,3 +13,14 @@ export const getAreaNivelesAPI = async (id_area: number) => {
   const response = await apiClient.get(`/area-niveles/${id_area}`);
   return response.data;
 };
+
+// Obtener competidores de un responsable específico
+
+export const getCompetidoresPorResponsableAPI = async (
+  id_responsable: number
+) => {
+  const response = await apiClient.get(
+    `/responsables/${id_responsable}/competidores`
+  );
+  return response.data;
+};

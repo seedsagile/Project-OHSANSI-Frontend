@@ -1,23 +1,31 @@
 import React, { useState } from "react";
+import type { Nivel } from "../../niveles/types/index";
 
-interface AccordionNivelProps {
-  niveles: string[];
+interface AreaNiveles {
+  areaNombre: string;
+  niveles: Nivel[];
 }
 
-export const AccordionNivel: React.FC<AccordionNivelProps> = ({ niveles }) => {
+interface AccordionNivelProps {
+  data: AreaNiveles[];
+}
+
+export const AccordionNivel: React.FC<AccordionNivelProps> = ({ data }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedNiveles, setSelectedNiveles] = useState<string[]>([]);
+  const [selectedNiveles, setSelectedNiveles] = useState<number[]>([]);
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  const handleCheckboxChange = (nivel: string) => {
+  const handleCheckboxChange = (nivelId: number) => {
     setSelectedNiveles((prev) =>
-      prev.includes(nivel) ? prev.filter((n) => n !== nivel) : [...prev, nivel]
+      prev.includes(nivelId)
+        ? prev.filter((id) => id !== nivelId)
+        : [...prev, nivelId]
     );
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <button
         type="button"
         onClick={toggleAccordion}
@@ -42,20 +50,31 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({ niveles }) => {
       </button>
 
       {isOpen && (
-        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg shadow-inner p-4 space-y-2">
-          {niveles.map((nivel) => (
-            <label
-              key={nivel}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={selectedNiveles.includes(nivel)}
-                onChange={() => handleCheckboxChange(nivel)}
-                className="accent-principal-500 w-4 h-4"
-              />
-              <span className="text-negro">{nivel}</span>
-            </label>
+        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg shadow-inner p-4 space-y-4 w-full">
+          {data.map(({ areaNombre, niveles }) => (
+            <div key={areaNombre}>
+              <h3 className="font-semibold text-negro mb-2">{areaNombre}</h3>
+              {niveles && niveles.length > 0 ? (
+                niveles.map((nivel) => (
+                  <label
+                    key={nivel.id_nivel}
+                    className="flex justify-between items-center gap-2 cursor-pointer"
+                  >
+                    <span className="text-negro">{nivel.nombre}</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedNiveles.includes(nivel.id_nivel)}
+                      onChange={() => handleCheckboxChange(nivel.id_nivel)}
+                      className="accent-principal-500 w-4 h-4"
+                    />
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gris-500">
+                  No tiene niveles asociados
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}
