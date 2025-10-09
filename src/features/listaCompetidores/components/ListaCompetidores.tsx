@@ -1,24 +1,41 @@
+import React, { useEffect, useState } from "react";
 import { AccordionArea } from "./AccordionArea";
 import { AccordionNivel } from "./AccordionNivel";
+import { getAreasAPI } from "../service/service"; // ajusta la ruta según tu proyecto
+import type { Area } from "../../areas/types/index";
 
 export const ListaCompetidores = () => {
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const data = await getAreasAPI();
+        setAreas(data);
+      } catch (error) {
+        console.error("Error al obtener las áreas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAreas();
+  }, []);
+
   return (
     <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
       <main className="bg-blanco w-full max-w-5xl rounded-xl shadow-sombra-3 p-8">
         <header className="flex flex-col mb-10">
-          {/* Título centrado */}
           <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center mb-8">
             Registrar Responsable de Área
           </h1>
 
           <div className="flex justify-end items-start gap-4 mb-6">
-            {/* Botón Mostrar Todo (solo botón) */}
+            {/* Botón Mostrar Todo */}
             <div className="flex flex-col items-end">
               <button
                 type="button"
-                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg 
-      bg-principal-500 text-blanco font-semibold hover:bg-principal-600 
-      transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -43,7 +60,11 @@ export const ListaCompetidores = () => {
 
             {/* Accordion Área */}
             <div className="flex flex-col items-end">
-              <AccordionArea areas={["Área 1", "Área 2", "Área 3"]} />
+              {loading ? (
+                <span>Cargando áreas...</span>
+              ) : (
+                <AccordionArea areas={areas.map((area) => area.nombre)} />
+              )}
             </div>
 
             {/* Accordion Nivel */}
@@ -65,7 +86,6 @@ export const ListaCompetidores = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Fila de ejemplo */}
                 <tr className="border-b hover:bg-gray-50">
                   <td className="px-6 py-3">---</td>
                   <td className="px-6 py-3">---</td>
