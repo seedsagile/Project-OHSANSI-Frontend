@@ -18,8 +18,9 @@ export const mapCSVRenglonToPayload = (datos: CompetidorCSV): CompetidorIndividu
             grado_escolar: datos.grado_escolar || DEFAULT_GRADO_ESCOLAR,
             departamento: datos.departamento,
             nombre_tutor: datos.nombre_tutor || "",
-            contacto_tutor: datos.celular_tutor,
-            contacto_emergencia: datos.celular_emergencia || datos.celular_tutor,
+            contacto_tutor: datos.celular_tutor || "8785452121",
+            contacto_emergencia: datos.celular_emergencia || datos.celular_tutor || null,
+            
         },
         institucion: {
             nombre: datos.colegio_institucion,
