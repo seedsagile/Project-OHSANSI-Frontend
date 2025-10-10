@@ -50,7 +50,7 @@ const schemaEvaluador = z.object({
     .pipe(
       z.string()
         .min(6, 'El campo Correo electrónico requiere un mínimo de 6 caracteres.')
-        .max(50, 'El campo Correo electrónico tiene un límite máximo de 50 caracteres.')
+        .max(254, 'El campo Correo electrónico tiene un límite máximo de 254 caracteres.')
         .email('El correo electrónico no es válido.')
     ),
   ci: z.string()
