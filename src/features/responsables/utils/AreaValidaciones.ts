@@ -103,7 +103,7 @@ export const CISchema = z
   })
   .regex(REGEX_CI, {
     message:
-      "El campo Carnet de identidad contiene caracteres especiales. Solo se aceptan números y una letra",
+      "El campo Carnet de identidad contiene caracteres especiales. Solo se aceptan números y una letra al final",
   })
   .transform((val) => val.trim());
 

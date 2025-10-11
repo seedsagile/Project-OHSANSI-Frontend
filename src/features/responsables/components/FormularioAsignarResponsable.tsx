@@ -130,6 +130,16 @@ export const FormularioAsignarResponsable = () => {
       );
       return;
     }
+    // Validar si el carnet ya existe
+    // const carnetExiste = responsables.some(
+    //   (resp) => resp.ci.toLowerCase() === data.carnet.toLowerCase()
+    // );
+    // if (carnetExiste) {
+    //   setMensaje(
+    //     "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este carnet de identidad."
+    //   );
+    //   return;
+    // }
 
     const payload: AreaInterface = {
       nombre: data.nombre,
@@ -147,7 +157,9 @@ export const FormularioAsignarResponsable = () => {
       limpiarFormulario();
       setModalType("success");
       setModalTitle("Registro Exitoso");
-      setModalMessage("El responsable de área fue registrado correctamente.");
+      setModalMessage(
+        "El responsable de área fue registrado correctamente y se envio un correo electronico con las credenciales."
+      );
       setModalOpen(true);
       setMensaje("¡Registro exitoso!");
 
@@ -266,7 +278,7 @@ export const FormularioAsignarResponsable = () => {
                 <input
                   type="text"
                   placeholder="Ej: 1234567 o 1234567b"
-                  maxLength={15}
+                  maxLength={9}
                   {...register("carnet")}
                   onBlur={() => trigger("carnet")}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
