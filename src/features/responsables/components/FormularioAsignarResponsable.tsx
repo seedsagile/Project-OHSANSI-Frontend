@@ -30,6 +30,9 @@ export const FormularioAsignarResponsable = () => {
   } = useForm<ResponsableForm>({
     resolver: zodResolver(ResponsableAreaSchema),
     mode: "onChange", // validaciones en tiempo real
+    defaultValues: {
+      areas: [],
+    },
   });
 
   useEffect(() => {
@@ -118,12 +121,18 @@ export const FormularioAsignarResponsable = () => {
       setMensaje(`¡Registro Exitoso!`);
       setTimeout(() => setMensaje(null), 3000);
     } catch (error: unknown) {
-      const err = error as AxiosError;
+      const err = error as AxiosError<{ message?: string }>;
+
       if (err.response?.status === 409) {
-        setMensaje(
-          "¡Ups! Algo salió mal - Ya existe un responsable registrado con este correo o CI."
-        );
+        const backendMessage =
+          err.response.data?.message ||
+          "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este correo electrónico.";
+
+        setMensaje(backendMessage);
       } else {
+        setMensaje(
+          "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este correo electrónico."
+        );
         console.error("Error al guardar responsable:", error);
       }
     }
@@ -144,7 +153,13 @@ export const FormularioAsignarResponsable = () => {
 
         {/* Mensaje */}
         {mensaje && (
-          <div className="mb-6 text-center text-green-600 font-semibold">
+          <div
+            className={`mb-6 text-center font-semibold ${
+              mensaje.includes("¡Registro Exitoso!")
+                ? "text-green-600"
+                : "text-red-600"
+            }`}
+          >
             {mensaje}
           </div>
         )}
@@ -162,6 +177,7 @@ export const FormularioAsignarResponsable = () => {
               <input
                 type="text"
                 placeholder="Ej: Pepito"
+                maxLength={20}
                 {...register("nombre")}
                 onBlur={() => trigger("nombre")}
                 className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
@@ -180,6 +196,7 @@ export const FormularioAsignarResponsable = () => {
               <input
                 type="text"
                 placeholder="Ej: Perez"
+                maxLength={20}
                 {...register("apellido")}
                 onBlur={() => trigger("apellido")}
                 className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
@@ -219,6 +236,7 @@ export const FormularioAsignarResponsable = () => {
                 <input
                   type="text"
                   placeholder="Ej: 1234567 o 1234567-18"
+                  maxLength={15}
                   {...register("carnet")}
                   onBlur={() => trigger("carnet")}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
