@@ -1,5 +1,3 @@
-// src/features/niveles/components/ModalCrearNivel.tsx
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,36 +24,8 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
     }, [isOpen, reset]);
 
     const handleCancelar = () => {
-        reset({ nombre: '' });
         onClose();
     };
-    
-    const handleInputValidation = (e: React.FormEvent<HTMLInputElement>) => {
-        const input = e.currentTarget;
-        const selectionStart = input.selectionStart;
-        const originalValue = input.value;
-        
-        const sanitizedValue = originalValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-
-        if (originalValue !== sanitizedValue) {
-            const diff = originalValue.length - sanitizedValue.length;
-            input.value = sanitizedValue;
-            const event = new Event('input', { bubbles: true });
-            input.dispatchEvent(event);
-            if (selectionStart) {
-                input.setSelectionRange(selectionStart - diff, selectionStart - diff);
-            }
-        }
-    };
-
-    // Prevenir el pegado de caracteres no válidos
-    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-        e.preventDefault();
-        const text = e.clipboardData.getData('text');
-        const sanitizedText = text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-        document.execCommand('insertText', false, sanitizedText);
-    };
-
 
     if (!isOpen) return null;
 
@@ -75,10 +45,8 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                         <input
                             id="nombreNivel"
                             type="text"
-                            placeholder="Ej: Primero de secundaria, Segundo de secundaria, etc."
+                            placeholder="Ej: Primero de Secundaria"
                             maxLength={30}
-                            onInput={handleInputValidation}
-                            onPaste={handlePaste}
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                                 errors.nombre ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                             }`}
@@ -101,7 +69,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                             type="button"
                             onClick={handleCancelar}
                             disabled={loading}
-                            className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors'
+                            className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                         >
                             <X className="w-5 h-5" />
                             <span>Cancelar</span>
@@ -109,7 +77,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
                         >
                             {loading ? (
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

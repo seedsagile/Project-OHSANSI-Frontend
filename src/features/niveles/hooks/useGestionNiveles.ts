@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
 import type { Nivel, CrearNivelData } from '../types';
+import { normalizarTexto } from '../utils/esquemas';
 
 type ConfirmationModalState = {
     isOpen: boolean;
@@ -18,25 +19,13 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-// --- FUNCIÓN DE NORMALIZACIÓN CORREGIDA ---
-const normalizarParaComparar = (nombre: string): string => {
-    if (!nombre) return '';
-    let s = nombre
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-    
-    // Se aplica la misma lógica de duplicados para una comparación precisa
-    s = s.replace(/([^lrcn\s])\1+/g, '$1'); 
-    
-    return s.replace(/\s+/g, ' ');
-};
-
 export function useGestionNiveles() {
     const queryClient = useQueryClient();
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
+    const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
+    
+    const modalTimerRef = useRef<number | undefined>(undefined);
 
     const { data: niveles = [], isLoading } = useQuery({
         queryKey: ['niveles'],
@@ -45,17 +34,23 @@ export function useGestionNiveles() {
 
     const { mutate, isPending: isCreating } = useMutation<Nivel, Error, CrearNivelData>({
         mutationFn: (data) => nivelesService.crearNivel(data),
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['niveles'] });
             cerrarModalCrear();
             setConfirmationModal({
                 isOpen: true,
                 title: '¡Registro Exitoso!',
-                message: `El nivel "${data.nombre}" ha sido registrado correctamente.`,
+                message: `El nivel "${nombreNivelCreando}" ha sido registrado correctamente.`,
                 type: 'success',
             });
+
+            clearTimeout(modalTimerRef.current);
+            modalTimerRef.current = window.setTimeout(() => {
+                cerrarModalConfirmacion();
+            }, 2500);
         },
         onError: (error) => {
+            clearTimeout(modalTimerRef.current);
             setConfirmationModal({
                 isOpen: true,
                 title: 'Error al Crear',
@@ -65,11 +60,17 @@ export function useGestionNiveles() {
         },
     });
 
+    useEffect(() => {
+        return () => {
+            clearTimeout(modalTimerRef.current);
+        };
+    }, []);
+
     const handleGuardarNivel = (data: CrearNivelData) => {
-        const nombreNormalizado = normalizarParaComparar(data.nombre);
+        const nombreNormalizado = normalizarTexto(data.nombre);
         
         const duplicado = niveles.find(
-            nivel => normalizarParaComparar(nivel.nombre) === nombreNormalizado
+            nivel => normalizarTexto(nivel.nombre) === nombreNormalizado
         );
 
         if (duplicado) {
@@ -82,20 +83,26 @@ export function useGestionNiveles() {
             return;
         }
         
+        setNombreNivelCreando(nombreNormalizado);
+        
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
-            message: `¿Está seguro de que desea crear el nivel "${data.nombre}"?`,
+            message: `¿Está seguro de que desea crear el nivel "${nombreNormalizado}"?`,
             type: 'confirmation',
-            onConfirm: () => mutate(data),
+            onConfirm: () => mutate({ nombre: nombreNormalizado }),
         });
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
     const cerrarModalCrear = () => {
         setModalCrearAbierto(false);
+        setNombreNivelCreando('');
     };
-    const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
+    const cerrarModalConfirmacion = () => {
+        setConfirmationModal(initialConfirmationState);
+        clearTimeout(modalTimerRef.current);
+    };
 
     return {
         niveles,
