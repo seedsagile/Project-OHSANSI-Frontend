@@ -64,13 +64,9 @@ export function useAsignarNiveles() {
             if (paraActualizar.length > 0) promises.push(asignacionesService.actualizarNivelesDeArea(areaSeleccionadaId!, paraActualizar));
             return Promise.all(promises);
         },
-        // --- 👇 AQUÍ ESTÁ LA MODIFICACIÓN ---
         onSuccess: () => {
-            // Buscamos el nombre del área actual para incluirlo en el mensaje.
             const areaActual = todasLasAreas.find(area => area.id_area === areaSeleccionadaId);
             const nombreArea = areaActual ? areaActual.nombre : '';
-            
-            // Creamos el mensaje dinámico.
             const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
 
             setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
@@ -80,7 +76,7 @@ export function useAsignarNiveles() {
             clearTimeout(modalTimerRef.current);
             modalTimerRef.current = window.setTimeout(() => {
                 closeModal();
-            }, 2500); // Aumentamos ligeramente a 2.5 segundos para dar tiempo a leer el mensaje.
+            }, 2500);
         },
         onError: (error: AxiosError<ApiErrorResponse>) => {
             clearTimeout(modalTimerRef.current);
@@ -97,9 +93,14 @@ export function useAsignarNiveles() {
 
     const handleGuardar = () => {
         if (!areaSeleccionadaId || !todosLosNiveles) return;
-
+        
         if (nivelesSeleccionados.size === 0) {
-            setModalState({ isOpen: true, type: 'error', title: 'Selección Requerida', message: 'Debe seleccionar al menos un nivel para asignar al área.' });
+            setModalState({ 
+                isOpen: true, 
+                type: 'error', 
+                title: 'Selección Requerida', 
+                message: 'Debe seleccionar al menos un nivel para asignar al área.' 
+            });
             return;
         }
 
@@ -123,6 +124,12 @@ export function useAsignarNiveles() {
 
         if (paraCrear.length === 0 && paraActualizar.length === 0) {
             setModalState({ isOpen: true, type: 'info', title: 'Sin Cambios', message: 'No se ha realizado ninguna modificación.' });
+            
+            clearTimeout(modalTimerRef.current);
+            modalTimerRef.current = window.setTimeout(() => {
+                closeModal();
+            }, 1500);
+            
             return;
         }
 

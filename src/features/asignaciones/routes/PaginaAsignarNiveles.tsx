@@ -73,10 +73,13 @@ export function PaginaAsignarNiveles() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutro-200">
+                                    {/* --- 👇 AQUÍ ESTÁ LA MODIFICACIÓN --- */}
                                     {isLoading && areaSeleccionadaId ? (
                                         <tr><td colSpan={3} className="text-center p-10"><div className="flex justify-center items-center text-principal-500"><LoaderCircle className="animate-spin h-8 w-8" /></div></td></tr>
                                     ) : !areaSeleccionadaId ? (
                                         <tr><td colSpan={3} className="text-center p-10 text-neutro-400">Seleccione un área para ver los niveles.</td></tr>
+                                    ) : todosLosNiveles.length === 0 ? ( // <-- Nueva condición añadida
+                                        <tr><td colSpan={3} className="text-center p-10 text-neutro-500">No hay niveles disponibles.</td></tr>
                                     ) : (
                                         todosLosNiveles.map((nivel: Nivel, index: number) => (
                                             <tr key={nivel.id_nivel} className="even:bg-neutro-100 hover:bg-principal-50 transition-colors">
