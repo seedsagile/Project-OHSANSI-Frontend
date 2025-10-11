@@ -1,66 +1,5 @@
 import { z } from 'zod';
 
-// Función para eliminar acentos innecesarios (mantiene los correctos)
-const eliminarAcentosInnecesarios = (str: string): string => {
-  // Diccionario de palabras con sus acentuaciones correctas
-  const palabrasConAcentoCorrecto: { [key: string]: string } = {
-    // Palabras que SÍ llevan acento
-    'biologia': 'Biología',
-    'matematica': 'Matemática',
-    'matematicas': 'Matemáticas',
-    'quimica': 'Química',
-    'fisica': 'Física',
-    'musica': 'Música',
-    'etica': 'Ética',
-    'informatica': 'Informática',
-    'robotica': 'Robótica',
-    'logica': 'Lógica',
-    'plastica': 'Plástica',
-    'gramatica': 'Gramática',
-    'botanica': 'Botánica',
-    'electronica': 'Electrónica',
-    'mecanica': 'Mecánica',
-    'optica': 'Óptica',
-    'acustica': 'Acústica',
-    'estetica': 'Estética',
-    'retorica': 'Retórica',
-    'aritmetica': 'Aritmética',
-    
-    // Palabras que NO llevan acento
-    'historia': 'Historia',
-    'geografia': 'Geografia',
-    'lengua': 'Lengua',
-    'literatura': 'Literatura',
-    'ciencias': 'Ciencias',
-    'sociales': 'Sociales',
-    'naturales': 'Naturales',
-    'tecnologia': 'Tecnologia',
-    'filosofia': 'Filosofia',
-    'economia': 'Economia',
-    'psicologia': 'Psicologia',
-    'sociologia': 'Sociologia',
-    'astronomia': 'Astronomia',
-    'geologia': 'Geologia',
-    'ecologia': 'Ecologia',
-    'zoologia': 'Zoologia',
-    'anatomia': 'Anatomia',
-    'fisiologia': 'Fisiologia',
-  };
-  
-  return str.split(' ').map(palabra => {
-    // Normalizar la palabra quitando todos los acentos para buscar en el diccionario
-    const palabraSinAcentos = palabra.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
-    // Si la palabra existe en el diccionario, usar la forma correcta
-    if (palabrasConAcentoCorrecto[palabraSinAcentos]) {
-      return palabrasConAcentoCorrecto[palabraSinAcentos];
-    }
-    
-    // Si no está en el diccionario, quitar todos los acentos por seguridad
-    return palabra.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  }).join(' ');
-};
-
 // Función para eliminar caracteres duplicados (excepto casos legítimos en español)
 const eliminarCaracteresDuplicados = (str: string): string => {
   return str.split('').filter((char, index, arr) => {
@@ -74,7 +13,7 @@ const eliminarCaracteresDuplicados = (str: string): string => {
     }
     
     // Casos especiales: permitir letras dobles legítimas en español
-    const letrasDoblesPermitidas = ['l', 'r', 'o', 'c', 'n'];//, 'e'
+    const letrasDoblesPermitidas = ['l', 'r', 'o', 'c', 'n'];
     if (letrasDoblesPermitidas.includes(char.toLowerCase()) && char === anterior) {
       // Verificar que no sea triple (ej: "lll" no es válido)
       if (index >= 2 && arr[index - 2] === char) {
@@ -124,10 +63,8 @@ export const crearAreaEsquema = z.object({
         // Validación 10: Eliminar caracteres duplicados
         limpio = eliminarCaracteresDuplicados(limpio);
         
-        // Validación 9: Eliminar acentos innecesarios
-        limpio = eliminarAcentosInnecesarios(limpio);
-        
         // Validación 8: Convertir a formato título (Primera letra mayúscula)
+        // MANTENEMOS LOS TILDES - No eliminamos acentos
         return toTitleCase(limpio);
       })
 });

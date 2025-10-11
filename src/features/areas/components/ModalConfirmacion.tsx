@@ -32,13 +32,13 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
 
     return (
         <div 
-            className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
             onClick={type === 'success' ? undefined : onClose}
             role="dialog"
             aria-modal="true"
         >
             <div 
-                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center"
+                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center border-2 border-gray-300"
                 onClick={(e) => e.stopPropagation()}
             >
                 {iconMap[type]}

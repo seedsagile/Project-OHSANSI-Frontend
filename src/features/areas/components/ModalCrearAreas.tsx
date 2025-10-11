@@ -17,18 +17,27 @@ export const ModalCrearArea = ({
     onGuardar, 
     loading = false,
 }: ModalCrearAreaProps) => {
-    const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<CrearAreaFormData>({
+    const { 
+        register, 
+        handleSubmit, 
+        formState: { errors }, 
+        reset, 
+        setValue, 
+        watch 
+    } = useForm<CrearAreaFormData>({
         resolver: zodResolver(crearAreaEsquema),
         mode: 'onChange',
     });
 
     const [errorTiempoReal, setErrorTiempoReal] = useState<string>('');
+    const [touched, setTouched] = useState(false);
     const valorNombre = watch('nombre');
 
     useEffect(() => {
         if (isOpen) {
             reset({ nombre: '' });
             setErrorTiempoReal('');
+            setTouched(false);
         }
     }, [isOpen, reset]);
 
@@ -59,6 +68,7 @@ export const ModalCrearArea = ({
         // Validación 2: Si solo contiene espacios
         if (valorActual.trim() === '') {
             setValue('nombre', '', { shouldValidate: true });
+            setTouched(true);
             return;
         }
         
@@ -77,19 +87,49 @@ export const ModalCrearArea = ({
     const handleCancelar = () => {
         reset({ nombre: '' });
         setErrorTiempoReal('');
+        setTouched(false);
         onClose();
+    };
+
+    const handleClickOutside = () => {
+        // Mostrar error inmediatamente si el campo está vacío al hacer clic fuera
+        setTouched(true);
+        if (!valorNombre || valorNombre.trim() === '') {
+            setValue('nombre', '', { shouldValidate: true });
+        }
+    };
+
+    const handleBlur = () => {
+        // Marcar como tocado y validar cuando el usuario sale del campo
+        setTouched(true);
+        if (!valorNombre || valorNombre.trim() === '') {
+            setValue('nombre', '', { shouldValidate: true });
+        }
     };
 
     if (!isOpen) return null;
 
     // Mostrar error de validación en tiempo real o error de react-hook-form
-    const mensajeError = errorTiempoReal || errors.nombre?.message;
+    const mensajeError = errorTiempoReal || (touched && errors.nombre?.message) || errors.nombre?.message;
 
     return (
-        <div className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div 
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            onClick={handleClickOutside}
+        >
             <div 
                 className="bg-white rounded-lg shadow-lg border-2 border-black w-full max-w-md p-6"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    // Si se hace clic en cualquier parte del modal (no en el input)
+                    const target = e.target as HTMLElement;
+                    if (target.tagName !== 'INPUT') {
+                        setTouched(true);
+                        if (!valorNombre || valorNombre.trim() === '') {
+                            setValue('nombre', '', { shouldValidate: true });
+                        }
+                    }
+                }}
             >
                 <h2 className="text-xl font-semibold text-center mb-6">Crear Área</h2>
                 
@@ -110,7 +150,9 @@ export const ModalCrearArea = ({
                             autoFocus
                             disabled={loading}
                             maxLength={30}
-                            {...register('nombre')}
+                            {...register('nombre', {
+                                onBlur: handleBlur
+                            })}
                         />
                         <div className="h-12 mt-1">
                             {mensajeError && (

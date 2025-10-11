@@ -55,6 +55,7 @@ export function useGestionAreas() {
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
     const [areaSeleccionada, setAreaSeleccionada] = useState<Area | undefined>(undefined);
+    const [nombreAreaGuardada, setNombreAreaGuardada] = useState<string>('');
 
     const { data: areas = [], isLoading } = useQuery({
         queryKey: ['areas'],
@@ -66,11 +67,16 @@ export function useGestionAreas() {
         onSuccess: (nuevaArea) => {
             queryClient.invalidateQueries({ queryKey: ['areas'] });
             
+            // Obtener el nombre del área guardada (de la respuesta o del estado temporal)
+            const nombreMostrar = nuevaArea?.nombre || nombreAreaGuardada;
+            
+            console.log('Área guardada:', nuevaArea); // Para debug
+            
             // Validación 14: Mensaje de confirmación exitoso
             setConfirmationModal({
                 isOpen: true,
                 title: '¡Registro Exitoso!',
-                message: `El área "${nuevaArea.nombre}" ha sido registrado correctamente.`,
+                message: `El área "${nombreMostrar}" ha sido registrado correctamente.`,
                 type: 'success',
             });
             
@@ -78,6 +84,7 @@ export function useGestionAreas() {
             setTimeout(() => {
                 setConfirmationModal(initialConfirmationState);
                 setModalCrearAbierto(false);
+                setNombreAreaGuardada('');
             }, 2000);
         },
         onError: (error) => {
@@ -96,6 +103,9 @@ export function useGestionAreas() {
     });
 
     const handleGuardarArea = (data: CrearAreaData) => {
+        // Guardar el nombre antes de enviar (por si la API no lo devuelve)
+        setNombreAreaGuardada(data.nombre);
+        
         // Validación 15: Verificar si ya existe un área con el mismo nombre
         const esDuplicado = existeNombreDuplicado(data.nombre, areas);
 
@@ -109,14 +119,8 @@ export function useGestionAreas() {
             return;
         }
 
-        // Mostrar modal de confirmación antes de guardar
-        setConfirmationModal({
-            isOpen: true,
-            title: 'Confirmar Creación',
-            message: `¿Está seguro de que desea crear el área "${data.nombre}"?`,
-            type: 'confirmation',
-            onConfirm: () => mutate(data),
-        });
+        // GUARDAR DIRECTAMENTE SIN MODAL DE CONFIRMACIÓN
+        mutate(data);
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
