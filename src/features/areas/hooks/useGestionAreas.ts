@@ -19,10 +19,39 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
+// Función para eliminar caracteres duplicados (IGUAL que en esquemas.ts)
+const eliminarCaracteresDuplicados = (str: string): string => {
+  return str.split('').filter((char, index, arr) => {
+    if (index === 0) return true;
+    
+    const anterior = arr[index - 1];
+    
+    // Si es un espacio, permitir solo si el anterior no es espacio
+    if (char === ' ') {
+      return anterior !== ' ';
+    }
+    
+    // Casos especiales: permitir letras dobles legítimas en español
+    const letrasDoblesPermitidas = ['l', 'r', 'o', 'c', 'n'];
+    if (letrasDoblesPermitidas.includes(char.toLowerCase()) && char === anterior) {
+      // Verificar que no sea triple (ej: "lll" no es válido)
+      if (index >= 2 && arr[index - 2] === char) {
+        return false; // Bloquear el tercero
+      }
+      return true; // Permitir el doble
+    }
+    
+    // Para otros caracteres, permitir solo si el anterior es diferente
+    return anterior !== char;
+  }).join('');
+};
+
 // Normaliza nombres para comparación (elimina acentos, convierte a minúsculas, elimina espacios extras)
 const normalizarParaComparacion = (nombre: string): string => {
-    const normalizado = nombre
-        .trim()
+    // Primero eliminar caracteres duplicados
+    const limpio = eliminarCaracteresDuplicados(nombre.trim());
+    
+    const normalizado = limpio
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
