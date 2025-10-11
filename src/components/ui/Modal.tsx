@@ -1,83 +1,111 @@
-import React, { type PropsWithChildren } from 'react';
-import { IconAlert, IconCheck, IconClose, IconInfo, IconWarning } from '../icons';
+import { type ReactNode, useEffect } from 'react';
+import { AlertTriangle, CheckCircle, Info, XCircle, X, Check, LoaderCircle } from 'lucide-react';
 
-type ModalType = 'success' | 'error' | 'warning' | 'info' | 'confirmation';
+export type ModalType = 'success' | 'error' | 'warning' | 'info' | 'confirmation';
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     title: string;
-    type?: ModalType;
-    footer?: React.ReactNode;
+    children: ReactNode;
+    type: ModalType;
+    onConfirm?: () => void;
+    loading?: boolean;
+    confirmText?: string;
+    cancelText?: string;
 }
 
-const modalIcons: Record<ModalType, React.ReactNode> = {
-    success: <IconCheck className="h-10 w-10 text-green-500" />,
-    error: <IconAlert className="h-10 w-10 text-red-500" />,
-    warning: <IconWarning className="h-10 w-10 text-yellow-500" />,
-    info: <IconInfo className="h-10 w-10 text-blue-500" />,
-    confirmation: <IconInfo className="h-10 w-10 text-gray-500" />,
+const typeConfig = {
+    success: { icon: CheckCircle, className: 'text-exito-500', buttonClass: 'bg-exito-500 hover:bg-exito-600' },
+    error: { icon: XCircle, className: 'text-acento-500', buttonClass: 'bg-acento-500 hover:bg-acento-600' },
+    warning: { icon: AlertTriangle, className: 'text-advertencia-500', buttonClass: 'bg-advertencia-500 hover:bg-advertencia-600' },
+    info: { icon: Info, className: 'text-principal-500', buttonClass: 'bg-principal-500 hover:bg-principal-600' },
+    confirmation: { icon: AlertTriangle, className: 'text-advertencia-500', buttonClass: 'bg-principal-500 hover:bg-principal-600' },
 };
 
-export const Modal: React.FC<PropsWithChildren<ModalProps>> = ({
+export function Modal({
     isOpen,
     onClose,
     title,
-    type,
-    footer,
     children,
-}) => {
+    type,
+    onConfirm,
+    loading = false,
+    confirmText = 'Confirmar',
+    cancelText = 'Cancelar',
+}: ModalProps) {
+    
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
 
     if (!isOpen) {
         return null;
     }
 
-    return (
+    const { icon: IconComponent, className, buttonClass } = typeConfig[type];
 
+    const needsActionButtons = type === 'confirmation';
+
+    return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-opacity duration-300"
+            className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
         >
-            {/* Contenedor principal del modal */}
             <div
-                className="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-2xl transition-all duration-300"
+                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Botón para cerrar en la esquina superior derecha */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-3 right-3 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                    aria-label="Cerrar modal"
-                >
-                    <IconClose className="h-6 w-6" />
-                </button>
-
-                <div className="flex flex-col items-center text-center">
-                    {/* Icono: se muestra si se especifica un 'type' */}
-                    {type && modalIcons[type] && (
-                        <div className="mb-4">
-                            {modalIcons[type]}
-                        </div>
-                    )}
-
-                    {/* Título del modal */}
-                    <h3 className="text-xl font-bold text-gray-900" id="modal-title">
-                        {title}
-                    </h3>
-
-                    {/* Contenido principal (hijos): Aquí va el mensaje o el formulario */}
-                    <div className="mt-2 w-full text-base text-gray-600">
-                        {children}
-                    </div>
-                </div>
-
-                {/* Footer: Espacio para los botones de acción */}
-                {footer && (
-                    <div className="mt-6 flex justify-center gap-4">
-                        {footer}
+                <IconComponent className={`h-16 w-16 mx-auto ${className}`} />
+                
+                <h2 id="modal-title" className="text-2xl font-bold text-neutro-800 mt-4">{title}</h2>
+                
+                <div className="text-neutro-600 mt-2 text-md">{children}</div>
+                {needsActionButtons && (
+                    <div className="mt-8 flex justify-center gap-4">
+                        {/* Botón de Cancelar (solo para confirmación) */}
+                        <button
+                            onClick={onClose}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+                        >
+                            <X className="h-5 w-5" />
+                            <span>{cancelText}</span>
+                        </button>
+                        
+                        {/* Botón Principal (solo para confirmación, el "Entendido" se quita explícitamente) */}
+                        <button
+                            onClick={onConfirm}
+                            disabled={loading}
+                            className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonClass}`}
+                        >
+                            {loading ? (
+                                <LoaderCircle className="animate-spin h-5 w-5" />
+                            ) : (
+                                <>
+                                    <Check className="h-5 w-5" />
+                                    <span>{confirmText}</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 )}
             </div>
         </div>
     );
-};
+}

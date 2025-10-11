@@ -1,6 +1,6 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
 import { Save, LoaderCircle, X } from 'lucide-react';
-import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion';
+import { Modal } from '../../../components/ui/Modal';
 import type { Nivel } from '../../niveles/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,12 +31,12 @@ export function PaginaAsignarNiveles() {
                 <main className="bg-blanco w-full max-w-2xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     <header className="text-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-                            Asignar Niveles a un Area
+                            Asignar Niveles a un Área
                         </h1>
                     </header>
                     
                     <div className="mb-6 relative">
-                        <label htmlFor="area-selector" className="sr-only">Seleccionar Area</label>
+                        <label htmlFor="area-selector" className="sr-only">Seleccionar Área</label>
                         <select
                             id="area-selector"
                             value={areaSeleccionadaId ?? ''}
@@ -44,7 +44,7 @@ export function PaginaAsignarNiveles() {
                             className="w-full p-3 pl-4 pr-10 border border-transparent rounded-lg bg-principal-500 text-white font-semibold focus:ring-2 focus:ring-principal-300 focus:border-principal-500 transition-colors appearance-none cursor-pointer"
                             disabled={isLoading}
                         >
-                            <option value="" className="bg-white text-black">Seleccionar Area</option>
+                            <option value="" className="bg-white text-black">Seleccionar Área</option>
                             {todasLasAreas.map(area => (
                                 <option key={area.id_area} value={area.id_area} className="bg-white text-black">
                                     {area.nombre}
@@ -119,14 +119,16 @@ export function PaginaAsignarNiveles() {
                 </main>
             </div>
             
-            <ModalConfirmacion
+            <Modal
                 isOpen={modalState.isOpen}
                 onClose={closeModal}
                 title={modalState.title}
-                type={modalState.type === 'success' ? 'success' : 'error'}
+                type={modalState.type}
+                onConfirm={modalState.onConfirm}
+                loading={isSaving}
             >
                 {modalState.message}
-            </ModalConfirmacion>
+            </Modal>
         </>
     );
 }

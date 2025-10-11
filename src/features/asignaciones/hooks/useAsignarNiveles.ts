@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { areasService } from '../../areas/services/areasService';
@@ -14,8 +14,10 @@ type ModalState = {
     isOpen: boolean;
     title: string;
     message: string;
-    type: 'success' | 'error' | 'info';
+    type: 'success' | 'error' | 'info' | 'confirmation';
+    onConfirm?: () => void;
 };
+
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
 
 export function useAsignarNiveles() {
@@ -23,8 +25,9 @@ export function useAsignarNiveles() {
     const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
     const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Set<number>>(new Set());
     const [modalState, setModalState] = useState<ModalState>(initialModalState);
-
     const [nivelesOriginales, setNivelesOriginales] = useState<Set<number>>(new Set());
+    
+    const modalTimerRef = useRef<number | undefined>(undefined);
 
     const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({ queryKey: ['areas'], queryFn: areasService.obtenerAreas });
     const { data: todosLosNiveles = [], isLoading: isLoadingNiveles } = useQuery({ queryKey: ['niveles'], queryFn: nivelesService.obtenerNiveles });
@@ -47,7 +50,6 @@ export function useAsignarNiveles() {
         if (isFetched && nivelesAsignados) {
             const idsActivos = new Set(nivelesAsignados.filter(a => a.activo).map(a => a.id_nivel));
             setNivelesSeleccionados(idsActivos);
-            // NUEVO: Guardamos el estado original al cargar
             setNivelesOriginales(idsActivos); 
         } else if (!areaSeleccionadaId) {
             setNivelesSeleccionados(new Set());
@@ -62,15 +64,36 @@ export function useAsignarNiveles() {
             if (paraActualizar.length > 0) promises.push(asignacionesService.actualizarNivelesDeArea(areaSeleccionadaId!, paraActualizar));
             return Promise.all(promises);
         },
+        // --- 👇 AQUÍ ESTÁ LA MODIFICACIÓN ---
         onSuccess: () => {
-            setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: 'Los niveles fueron asignados correctamente al área seleccionada.' });
+            // Buscamos el nombre del área actual para incluirlo en el mensaje.
+            const areaActual = todasLasAreas.find(area => area.id_area === areaSeleccionadaId);
+            const nombreArea = areaActual ? areaActual.nombre : '';
+            
+            // Creamos el mensaje dinámico.
+            const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
+
+            setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
+            
             queryClient.invalidateQueries({ queryKey: ['asignaciones', areaSeleccionadaId] });
+
+            clearTimeout(modalTimerRef.current);
+            modalTimerRef.current = window.setTimeout(() => {
+                closeModal();
+            }, 2500); // Aumentamos ligeramente a 2.5 segundos para dar tiempo a leer el mensaje.
         },
         onError: (error: AxiosError<ApiErrorResponse>) => {
+            clearTimeout(modalTimerRef.current);
             const errorMessage = error.response?.data?.message || 'No se pudieron guardar los cambios.';
             setModalState({ isOpen: true, type: 'error', title: 'Error', message: errorMessage });
         },
     });
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(modalTimerRef.current);
+        };
+    }, []);
 
     const handleGuardar = () => {
         if (!areaSeleccionadaId || !todosLosNiveles) return;
@@ -126,7 +149,10 @@ export function useAsignarNiveles() {
         setNivelesSeleccionados(nivelesOriginales);
     };
 
-    const closeModal = () => setModalState(initialModalState);
+    const closeModal = () => {
+        setModalState(initialModalState);
+        clearTimeout(modalTimerRef.current);
+    };
 
     return {
         todasLasAreas: areasOrdenadas,
