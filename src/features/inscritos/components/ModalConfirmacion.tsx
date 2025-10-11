@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-// 1. Importa los íconos X y Check que usaremos en los botones
 import { AlertTriangle, Info, X, CheckCircle, Check } from 'lucide-react';
 
 type ModalType = 'confirmation' | 'info' | 'success' | 'error';
@@ -51,10 +50,8 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
                         <button
                             onClick={onClose}
                             disabled={loading}
-                            // 2. Añade flexbox para alinear el ícono y el texto
                             className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
                         >
-                            {/* 3. Agrega el ícono de X con un tamaño adecuado */}
                             <X className="h-5 w-5" />
                             <span>Cancelar</span>
                         </button>
@@ -62,13 +59,11 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
                     <button
                         onClick={type === 'confirmation' ? onConfirm : onClose}
                         disabled={loading}
-                        // 4. Añade flexbox también a este botón
                         className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonStyles[type]}`}
                     >
                         {loading ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
                         ) : type === 'confirmation' ? (
-                            // 5. Agrega el ícono de Check solo para el tipo 'confirmation'
                             <>
                                 <Check className="h-5 w-5" />
                                 <span>Confirmar</span>
