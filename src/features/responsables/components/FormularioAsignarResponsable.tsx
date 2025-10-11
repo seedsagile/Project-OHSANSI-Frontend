@@ -3,7 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
 import { areasService } from "../../areas/services/areasService";
-import { asignarResponsableAPI } from "../services/ApiResposableArea";
+import {
+  asignarResponsableAPI,
+  obtenerResponsablesAPI,
+} from "../services/ApiResposableArea";
 
 import type { Area } from "../../areas/types";
 import type { AreaInterface } from "../interface/AreaInterface";
@@ -16,6 +19,7 @@ import { Modal, type ModalType } from "../../../components/ui/Modal";
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
+  const [responsables, setResponsables] = useState<AreaInterface[]>([]);
 
   const [mensaje, setMensaje] = useState<string | null>(null);
 
@@ -36,10 +40,8 @@ export const FormularioAsignarResponsable = () => {
     formState: { errors },
   } = useForm<ResponsableForm>({
     resolver: zodResolver(ResponsableAreaSchema),
-    mode: "onChange", // validaciones en tiempo real
-    defaultValues: {
-      areas: [],
-    },
+    mode: "onChange",
+    defaultValues: { areas: [] },
   });
 
   useEffect(() => {
@@ -53,7 +55,18 @@ export const FormularioAsignarResponsable = () => {
         setLoading(false);
       }
     };
+
+    const fetchResponsables = async () => {
+      try {
+        const data = await obtenerResponsablesAPI();
+        setResponsables(data);
+      } catch (error) {
+        console.error("Error cargando responsables:", error);
+      }
+    };
+
     fetchAreas();
+    fetchResponsables();
   }, []);
 
   const generatePassword = (length = 8) => {
@@ -85,13 +98,11 @@ export const FormularioAsignarResponsable = () => {
   const handleGenerarClick = () => {
     if (passwordGenerated) return;
     const pwd = generatePassword(10);
-    // setGeneratedPassword(pwd);
     setPasswordGenerated(true);
     setValue("contrasena", pwd);
     trigger("contrasena");
   };
 
-  // Toggle de áreas
   const handleAreaToggle = (id: number) => {
     const updated = selectedAreas.includes(id)
       ? selectedAreas.filter((a) => a !== id)
@@ -101,16 +112,25 @@ export const FormularioAsignarResponsable = () => {
     trigger("areas");
   };
 
-  // Limpiar formulario
   const limpiarFormulario = () => {
     reset();
-    // setGeneratedPassword("");
     setPasswordGenerated(false);
     setSelectedAreas([]);
     setMensaje(null);
   };
 
   const onSubmit = async (data: ResponsableForm) => {
+    // Validar si el correo ya existe
+    const correoExiste = responsables.some(
+      (resp) => resp.email.toLowerCase() === data.correo.toLowerCase()
+    );
+    if (correoExiste) {
+      setMensaje(
+        "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este correo electrónico."
+      );
+      return;
+    }
+
     const payload: AreaInterface = {
       nombre: data.nombre,
       apellido: data.apellido,
@@ -125,26 +145,28 @@ export const FormularioAsignarResponsable = () => {
       console.log("Responsable creado:", response);
 
       limpiarFormulario();
-      // Abrir modal de éxito
       setModalType("success");
       setModalTitle("Registro Exitoso");
       setModalMessage("El responsable de área fue registrado correctamente.");
       setModalOpen(true);
+      setMensaje("¡Registro exitoso!");
+
+      // Cerrar modal y mensaje después de 3 segundos
+      setTimeout(() => {
+        setModalOpen(false);
+        setMensaje(null);
+      }, 3000);
+
+      // Actualizamos el estado de responsables
+      setResponsables((prev) => [...prev, payload]);
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
+      console.error("Error al guardar responsable:", error);
 
-      if (err.response?.status === 409) {
-        const backendMessage =
-          err.response.data?.message ||
-          "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este correo electrónico.";
-
-        setMensaje(backendMessage);
-      } else {
-        setMensaje(
-          "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este correo electrónico."
-        );
-        console.error("Error al guardar responsable:", error);
-      }
+      setMensaje(
+        err.response?.data?.message ||
+          "¡Ups! Algo salió mal - No se pudo registrar el responsable."
+      );
     }
   };
 
@@ -161,7 +183,6 @@ export const FormularioAsignarResponsable = () => {
           </h1>
         </header>
 
-        {/* Mensaje */}
         {mensaje && (
           <div
             className={`mb-6 text-center font-semibold ${
@@ -181,9 +202,7 @@ export const FormularioAsignarResponsable = () => {
         >
           <div className="flex gap-8">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-negro">
-                Nombre del responsable de área
-              </label>
+              <label className="text-sm font-semibold text-negro">Nombre</label>
               <input
                 type="text"
                 placeholder="Ej: Pepito"
@@ -201,7 +220,7 @@ export const FormularioAsignarResponsable = () => {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
-                Apellido del responsable de área
+                Apellido
               </label>
               <input
                 type="text"
@@ -287,7 +306,7 @@ export const FormularioAsignarResponsable = () => {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">Area</label>
-              <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white transition-colors text-center">
+              <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white text-center">
                 Asignar Area
               </div>
               <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 max-h-[137px] overflow-y-auto text-sm">
@@ -345,6 +364,7 @@ export const FormularioAsignarResponsable = () => {
             </button>
           </footer>
         </form>
+
         <Modal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
