@@ -35,6 +35,10 @@ export const NombreSchema = z
   .max(NOMBRE_MAX_LENGTH, {
     message: `El campo Nombre acepta un máximo de ${NOMBRE_MAX_LENGTH} caracteres.`,
   })
+  .refine((val) => !/\d/.test(val), {
+    message:
+      "El campo Nombre del responsable de área contiene caracteres numéricos. Solo se aceptan letras.",
+  })
   .regex(REGEX_SOLO_LETRAS, {
     message:
       "El campo Nombre del responsable de área contiene caracteres especiales. Solo se aceptan letras",
@@ -60,9 +64,13 @@ export const ApellidoSchema = z
   .max(APELLIDO_MAX_LENGTH, {
     message: `El campo Apellido acepta un máximo de ${APELLIDO_MAX_LENGTH} caracteres.`,
   })
+  .refine((val) => !/\d/.test(val), {
+    message:
+      "El campo Apellido del responsable de área contiene caracteres numéricos. Solo se aceptan letras.",
+  })
   .regex(REGEX_SOLO_LETRAS, {
     message:
-      "El campo Nombre del responsable de área contiene caracteres especiales. Solo se aceptan letras",
+      "El campo Apellido del responsable de área contiene caracteres especiales. Solo se aceptan letras",
   })
   .transform((val) =>
     val
