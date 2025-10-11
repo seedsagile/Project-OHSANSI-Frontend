@@ -11,6 +11,8 @@ import { ResponsableAreaSchema } from "../utils/AreaValidaciones";
 import { type ResponsableForm } from "../utils/AreaValidaciones";
 import { Link } from "react-router-dom";
 
+import { Modal, type ModalType } from "../../../components/ui/Modal";
+
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,11 @@ export const FormularioAsignarResponsable = () => {
 
   const [passwordGenerated, setPasswordGenerated] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState<number[]>([]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>("success"); // success | error
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   const {
     register,
@@ -118,8 +125,11 @@ export const FormularioAsignarResponsable = () => {
       console.log("Responsable creado:", response);
 
       limpiarFormulario();
-      setMensaje(`¡Registro Exitoso!`);
-      setTimeout(() => setMensaje(null), 3000);
+      // Abrir modal de éxito
+      setModalType("success");
+      setModalTitle("Registro Exitoso");
+      setModalMessage("El responsable de área fue registrado correctamente.");
+      setModalOpen(true);
     } catch (error: unknown) {
       const err = error as AxiosError<{ message?: string }>;
 
@@ -334,6 +344,14 @@ export const FormularioAsignarResponsable = () => {
             </button>
           </footer>
         </form>
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          type={modalType}
+          title={modalTitle}
+        >
+          {modalMessage}
+        </Modal>
       </main>
     </div>
   );
