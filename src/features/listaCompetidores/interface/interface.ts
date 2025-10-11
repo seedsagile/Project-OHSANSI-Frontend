@@ -1,12 +1,10 @@
-// src/interface/interface.ts
-
 export interface Persona {
   id_persona: number;
   nombre: string;
   apellido: string;
   ci: string;
-  fecha_nac: string;
-  genero: string;
+  fecha_nac: string; // ISO string (e.g., "2002-01-01T00:00:00.000Z")
+  genero: "M" | "F" | string;
   telefono: string;
   email: string;
   created_at: string | null;
@@ -16,7 +14,7 @@ export interface Persona {
 export interface Institucion {
   id_institucion: number;
   nombre: string;
-  tipo: string;
+  tipo: string; // "Privado" | "Público" | etc.
   departamento: string;
   direccion: string;
   telefono: string | null;
@@ -29,7 +27,7 @@ export interface Area {
   id_area: number;
   nombre: string;
   descripcion: string;
-  activo: number;
+  activo: number; // 1 o 0
   created_at: string | null;
   updated_at: string | null;
 }

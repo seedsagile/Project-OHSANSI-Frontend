@@ -1,28 +1,37 @@
-import React, { useState } from "react";
-import type { Area } from "../../areas/types/index";
+import React, { useState, useEffect } from "react";
+import type { Area } from "../interface/interface";
 
 interface AccordionAreaProps {
   areas: Area[];
-  onChangeSelected?: (selected: Area[]) => void; // nueva prop
+  selectedAreas: Area[];
+  onChangeSelected?: (selected: Area[]) => void;
 }
 
 export const AccordionArea: React.FC<AccordionAreaProps> = ({
   areas,
+  selectedAreas,
   onChangeSelected,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
+  const [localSelectedAreas, setLocalSelectedAreas] = useState<Area[]>([]);
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
+  // Sincronizar estado local con el del padre
+  useEffect(() => {
+    setLocalSelectedAreas(selectedAreas);
+  }, [selectedAreas]);
+
   const handleCheckboxChange = (area: Area) => {
-    const newSelected = selectedAreas.includes(area)
-      ? selectedAreas.filter((a) => a !== area)
-      : [...selectedAreas, area];
+    const isSelected = localSelectedAreas.some(
+      (a) => a.id_area === area.id_area
+    );
+    const newSelected = isSelected
+      ? localSelectedAreas.filter((a) => a.id_area !== area.id_area)
+      : [...localSelectedAreas, area];
 
-    setSelectedAreas(newSelected);
-
-    if (onChangeSelected) onChangeSelected(newSelected);
+    setLocalSelectedAreas(newSelected);
+    onChangeSelected?.(newSelected);
   };
 
   return (
@@ -51,21 +60,32 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
       </button>
 
       {isOpen && (
-        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg shadow-inner p-4 space-y-2">
-          {areas.map((area) => (
-            <label
-              key={area.id_area}
-              className="flex justify-between items-center gap-2 cursor-pointer"
-            >
-              <span className="text-negro">{area.nombre}</span>
-              <input
-                type="checkbox"
-                checked={selectedAreas.includes(area)}
-                onChange={() => handleCheckboxChange(area)}
-                className="accent-principal-500 w-4 h-4"
-              />
-            </label>
-          ))}
+        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg shadow-inner p-4 space-y-4 w-full h-30 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          {areas.length === 0 ? (
+            <p className="text-center text-gray-500">
+              No hay áreas registradas
+            </p>
+          ) : (
+            areas.map((area) => {
+              const isChecked = localSelectedAreas.some(
+                (a) => a.id_area === area.id_area
+              );
+              return (
+                <label
+                  key={area.id_area}
+                  className="flex justify-between items-center gap-2 cursor-pointer"
+                >
+                  <span className="text-negro">{area.nombre}</span>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleCheckboxChange(area)}
+                    className="accent-principal-500 w-4 h-4"
+                  />
+                </label>
+              );
+            })
+          )}
         </div>
       )}
     </div>

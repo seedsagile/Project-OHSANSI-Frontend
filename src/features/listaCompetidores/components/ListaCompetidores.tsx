@@ -2,59 +2,121 @@ import React, { useEffect, useState } from "react";
 import { AccordionArea } from "./AccordionArea";
 import { AccordionNivel } from "./AccordionNivel";
 import {
-  getAreasAPI,
-  getAreaNivelesAPI,
+  getAreasPorResponsableAPI,
   getCompetidoresPorResponsableAPI,
 } from "../service/service";
-import type { Area } from "../../areas/types/index";
-import type { Nivel, Competidor } from "../interface/interface";
+import type { Nivel, Competidor, Area } from "../interface/interface";
 
 export const ListaCompetidores = () => {
   const [areas, setAreas] = useState<Area[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [competidores, setCompetidores] = useState<Competidor[]>([]);
   const [areaNiveles, setAreaNiveles] = useState<
     { areaNombre: string; niveles: Nivel[] }[]
   >([]);
-  const [competidores, setCompetidores] = useState<Competidor[]>([]);
+
+  const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
+  const [selectedNiveles, setSelectedNiveles] = useState<number[]>([]);
+
+  const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingCompetidores, setLoadingCompetidores] = useState(true);
+
+  const responsableId = 2;
 
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        const data = await getAreasAPI();
+        const data = await getAreasPorResponsableAPI(responsableId);
         setAreas(data);
       } catch (error) {
-        console.error("Error al obtener las áreas:", error);
+        console.error("Error al obtener áreas:", error);
       } finally {
-        setLoading(false);
+        setLoadingAreas(false);
       }
     };
     fetchAreas();
   }, []);
 
+  const fetchCompetidores = async () => {
+    try {
+      setLoadingCompetidores(true);
+      const data = await getCompetidoresPorResponsableAPI(responsableId);
+      setCompetidores(data.data);
+    } catch (error) {
+      console.error("Error al obtener competidores:", error);
+      setCompetidores([]); // Si falla, limpiar lista
+    } finally {
+      setLoadingCompetidores(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCompetidores = async () => {
-      try {
-        const data = await getCompetidoresPorResponsableAPI(2); // Cambia 2 por el id del responsable actual
-        setCompetidores(data.data);
-      } catch (error) {
-        console.error("Error al obtener los competidores:", error);
-      } finally {
-        setLoadingCompetidores(false);
-      }
-    };
     fetchCompetidores();
   }, []);
 
-  const handleSelectedAreas = async (selected: Area[]) => {
-    const resultados = await Promise.all(
-      selected.map(async (area) => {
-        const niveles = await getAreaNivelesAPI(area.id_area);
-        return { areaNombre: area.nombre, niveles };
-      })
-    );
-    setAreaNiveles(resultados);
+  const handleSelectedAreas = (selected: Area[]) => {
+    setSelectedAreas(selected);
+
+    if (!selected || selected.length === 0) {
+      setAreaNiveles([]);
+      setSelectedNiveles([]);
+      return;
+    }
+
+    const filtrado = selected.map((area) => {
+      const nivelesUnicos = Array.from(
+        new Map(
+          competidores
+            .filter((c) => c.area.id_area === area.id_area)
+            .map((c) => [c.nivel.id_nivel, c.nivel])
+        ).values()
+      );
+      return { areaNombre: area.nombre, niveles: nivelesUnicos };
+    });
+
+    setAreaNiveles(filtrado);
+    setSelectedNiveles([]);
   };
+
+  const handleSelectedNiveles = (niveles: number[]) => {
+    setSelectedNiveles(niveles);
+  };
+
+  const handleMostrarTodo = () => {
+    setSelectedAreas([]);
+    setSelectedNiveles([]);
+    setAreaNiveles([]);
+    fetchCompetidores();
+  };
+
+  const filteredCompetidores = competidores.filter((c) => {
+    if (
+      selectedAreas.length > 0 &&
+      !selectedAreas.some((a) => a.id_area === c.area.id_area)
+    ) {
+      return false;
+    }
+    if (
+      selectedNiveles.length > 0 &&
+      !selectedNiveles.includes(c.nivel.id_nivel)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  let infoMessage = "";
+  if (!loadingCompetidores && filteredCompetidores.length === 0) {
+    if (selectedAreas.length === 0 && selectedNiveles.length === 0) {
+      infoMessage = "No hay competidores registrados en el área seleccionada";
+    } else if (selectedAreas.length > 0 && selectedNiveles.length === 0) {
+      infoMessage = "No hay competidores registrados en el área seleccionada";
+    } else if (selectedAreas.length > 0 && selectedNiveles.length > 0) {
+      infoMessage =
+        "No hay competidores registrados en el área y nivel seleccionados";
+    } else if (selectedAreas.length === 0 && selectedNiveles.length > 0) {
+      infoMessage = "No hay competidores registrados en el nivel seleccionado";
+    }
+  }
 
   return (
     <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
@@ -65,75 +127,79 @@ export const ListaCompetidores = () => {
           </h1>
 
           <div className="flex justify-end items-start gap-4 mb-6">
-            {/* Botón Mostrar Todo */}
+            {/* Botón mostrar todo */}
             <div className="flex flex-col items-end">
               <button
-                type="button"
-                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
+                onClick={handleMostrarTodo}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
               >
-                <span>Mostrar Todo</span>
+                Mostrar Todo
               </button>
             </div>
 
-            {/* Accordion Área */}
             <div className="flex flex-col items-end">
-              {loading ? (
+              {loadingAreas ? (
                 <span>Cargando áreas...</span>
               ) : (
                 <AccordionArea
                   areas={areas}
+                  selectedAreas={selectedAreas}
                   onChangeSelected={handleSelectedAreas}
                 />
               )}
             </div>
 
-            {/* Accordion Nivel */}
             <div className="flex flex-col items-end">
-              <AccordionNivel data={areaNiveles} />
+              <AccordionNivel
+                data={areaNiveles}
+                selectedNiveles={selectedNiveles}
+                onChangeSelected={handleSelectedNiveles}
+              />
             </div>
           </div>
 
-          {/* Tabla */}
           <div className="w-full overflow-x-auto">
-            <table className="w-full border-collapse rounded-lg overflow-hidden shadow-sm">
-              <thead>
-                <tr className="bg-principal-500 text-blanco text-left">
-                  <th className="px-6 py-3 font-semibold">Nombre</th>
-                  <th className="px-6 py-3 font-semibold">Apellido</th>
-                  <th className="px-6 py-3 font-semibold">Área</th>
-                  <th className="px-6 py-3 font-semibold">Nivel</th>
-                  <th className="px-6 py-3 font-semibold">CI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingCompetidores ? (
+            <div className="max-h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent rounded-lg border border-gray-200">
+              <table className="w-full border-collapse">
+                <thead className="bg-principal-500 text-blanco text-left sticky top-0 z-10">
                   <tr>
-                    <td colSpan={5} className="px-6 py-3 text-center">
-                      Cargando competidores...
-                    </td>
+                    <th className="px-6 py-3 font-semibold">Nombre</th>
+                    <th className="px-6 py-3 font-semibold">Apellido</th>
+                    <th className="px-6 py-3 font-semibold">Área</th>
+                    <th className="px-6 py-3 font-semibold">Nivel</th>
+                    <th className="px-6 py-3 font-semibold">CI</th>
                   </tr>
-                ) : competidores.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-3 text-center">
-                      No hay competidores disponibles
-                    </td>
-                  </tr>
-                ) : (
-                  competidores.map((c) => (
-                    <tr
-                      key={c.id_competidor}
-                      className="border-b hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-3">{c.persona.nombre}</td>
-                      <td className="px-6 py-3">{c.persona.apellido}</td>
-                      <td className="px-6 py-3">{c.area.nombre}</td>
-                      <td className="px-6 py-3">{c.nivel.nombre}</td>
-                      <td className="px-6 py-3">{c.persona.ci}</td>
+                </thead>
+                <tbody>
+                  {loadingCompetidores ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-3 text-center">
+                        Cargando competidores...
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : filteredCompetidores.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-3 text-center">
+                        {infoMessage}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCompetidores.map((c) => (
+                      <tr
+                        key={c.id_competidor}
+                        className="border-b hover:bg-gray-50"
+                      >
+                        <td className="px-6 py-3">{c.persona.nombre}</td>
+                        <td className="px-6 py-3">{c.persona.apellido}</td>
+                        <td className="px-6 py-3">{c.area.nombre}</td>
+                        <td className="px-6 py-3">{c.nivel.nombre}</td>
+                        <td className="px-6 py-3">{c.persona.ci}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </header>
       </main>
