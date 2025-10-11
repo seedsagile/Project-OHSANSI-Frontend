@@ -228,6 +228,7 @@ export const FormularioAsignarResponsable = () => {
                 <input
                   type="email"
                   placeholder="ejemplo@ejemplo.com"
+                  maxLength={30}
                   {...register("correo")}
                   onBlur={() => trigger("correo")}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
@@ -245,7 +246,7 @@ export const FormularioAsignarResponsable = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: 1234567 o 1234567-18"
+                  placeholder="Ej: 1234567 o 1234567b"
                   maxLength={15}
                   {...register("carnet")}
                   onBlur={() => trigger("carnet")}

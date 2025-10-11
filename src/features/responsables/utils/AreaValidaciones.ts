@@ -76,12 +76,15 @@ export const ApellidoSchema = z
 export const CorreoSchema = z
   .string()
   .trim()
+  .min(1, {
+    message: "El campo Correo electrónico es obligatorio.",
+  })
   .min(6, {
     message: "El campo Correo electronico requiere un mínimo de 6 caracteres.",
   })
   .regex(REGEX_CORREO_VALIDO, {
     message:
-      "El campo Correo electrónico institucional debe tener un formato válido (ej. usuario@uno.com).",
+      "El campo Correo electrónico debe tener un formato válido (ej. usuario@uno.com).",
   })
   .transform((val) => val.toLowerCase());
 
