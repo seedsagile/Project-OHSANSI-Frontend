@@ -4,8 +4,7 @@ import { IconoPlus } from '../components/IconoPlus';
 import { ModalCrearArea } from '../components/ModalCrearAreas';
 import { ModalConfirmacion } from '../components/ModalConfirmacion';
 import { useGestionAreas } from '../hooks/useGestionAreas';
-import type { Area } from '../types'; 
-import { GestionNiveles } from '../../niveles/components/GestionNiveles';
+import type { Area } from '../types';
 
 export function PaginaAreas() {
     const {
@@ -88,11 +87,6 @@ export function PaginaAreas() {
                                 Nueva Área
                             </button>
                         </div>
-                    </div>
-                    
-                    {/* Columna de Niveles */}
-                    <div className="flex flex-col">
-                        <GestionNiveles areaSeleccionada={areaSeleccionada} />
                     </div>
                 </div>
             </main>
