@@ -1,3 +1,4 @@
+//src/features/utils/esquemas.ts
 import { z } from 'zod';
 
 // Función para eliminar caracteres duplicados (excepto casos legítimos en español)
