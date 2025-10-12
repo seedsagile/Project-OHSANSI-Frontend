@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { AxiosError } from 'axios';
 import { Button } from '../ui/Button';
+import { useAuthStore } from '../../stores/authStore';
+import { authService } from '../../services/authService';
 
 export const LoginForm: React.FC = () => {
-  const { login } = useAuth();
+  // Se obtienen las acciones directamente del store
+  const { setUser, setToken } = useAuthStore();
+
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -13,15 +17,22 @@ export const LoginForm: React.FC = () => {
     setError('');
 
     if (!credentials.email || !credentials.password) {
-      setError('Por favor completa todos los campos');
+      setError('Por favor, completa todos los campos.');
       return;
     }
 
     setLoading(true);
     try {
-      await login(credentials);
+      // Se llama al servicio y se actualiza el store
+      const { user, token } = await authService.login(credentials);
+      setUser(user);
+      setToken(token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error en el login');
+      if (err instanceof AxiosError && err.response?.status === 401) {
+        setError('Correo o contraseña incorrectos.');
+      } else {
+        setError('Error de conexión. Inténtalo más tarde.');
+      }
     } finally {
       setLoading(false);
     }
@@ -39,11 +50,14 @@ export const LoginForm: React.FC = () => {
       <h2 className="text-2xl font-bold text-neutro-800 text-center">Oh! SanSi - Acceso</h2>
       <p className="text-center text-neutro-600 mb-4">Acceso exclusivo para evaluadores</p>
       <form onSubmit={handleSubmit} className="space-y-4">
+        
+        {/* --- 1. AQUÍ SE USA LA VARIABLE 'error' --- */}
         {error && (
           <div className="bg-acento-100 border border-acento-500 text-acento-700 px-4 py-3 rounded">
             {error}
           </div>
         )}
+
         <div>
           <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
             Correo institucional
@@ -79,7 +93,7 @@ export const LoginForm: React.FC = () => {
           loading={loading}
           className="w-full py-3 px-4 text-sm font-medium rounded-lg text-white bg-principal-600 hover:bg-principal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-principal-500"
         >
-          Iniciar Sesión
+          {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
         </Button>
       </form>
     </div>

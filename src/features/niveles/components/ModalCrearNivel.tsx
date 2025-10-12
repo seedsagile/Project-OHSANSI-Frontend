@@ -1,4 +1,3 @@
-// src/features/niveles/componentes/ModalCrearNivel.tsx
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,10 +9,9 @@ type ModalCrearNivelProps = {
     onClose: () => void;
     onGuardar: (data: CrearNivelFormData) => void;
     loading?: boolean;
-    nombreArea?: string;
 };
 
-export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, nombreArea }: ModalCrearNivelProps) => {
+export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }: ModalCrearNivelProps) => {
     const { register, handleSubmit, formState: { errors }, reset } = useForm<CrearNivelFormData>({
         resolver: zodResolver(crearNivelEsquema),
         mode: 'onBlur',
@@ -26,7 +24,6 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
     }, [isOpen, reset]);
 
     const handleCancelar = () => {
-        reset({ nombre: '' });
         onClose();
     };
 
@@ -38,8 +35,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
                 className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-xl font-semibold text-center mb-2">Crear Nivel</h2>
-                <p className="text-center text-neutro-500 mb-6">para el área: <span className="font-bold text-principal-500">{nombreArea}</span></p>
+                <h2 className="text-xl font-semibold text-center mb-6">Crear Nuevo Nivel</h2>
                 
                 <form onSubmit={handleSubmit(onGuardar)}>
                     <div className="mb-4">
@@ -49,7 +45,8 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
                         <input
                             id="nombreNivel"
                             type="text"
-                            placeholder="Ej: Secundaria, Bachillerato, etc."
+                            placeholder="Ej: Primero de Secundaria"
+                            maxLength={30}
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                                 errors.nombre ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                             }`}
@@ -72,7 +69,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
                             type="button"
                             onClick={handleCancelar}
                             disabled={loading}
-                            className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors'
+                            className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                         >
                             <X className="w-5 h-5" />
                             <span>Cancelar</span>
@@ -80,7 +77,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false, n
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
                         >
                             {loading ? (
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

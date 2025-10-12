@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
-import { AlertTriangle, Info, X, CheckCircle } from 'lucide-react';
-type ModalType = 'confirmation' | 'error' | 'info' | 'success';
+import { AlertTriangle, Info, X, CheckCircle, Check } from 'lucide-react';
+
+type ModalType = 'confirmation' | 'info' | 'success' | 'error';
 
 type Props = {
     isOpen: boolean;
@@ -31,13 +32,13 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
 
     return (
         <div 
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
-            onClick={type === 'success' ? undefined : onClose}
+            className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={onClose}
             role="dialog"
             aria-modal="true"
         >
             <div 
-                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center border-2 border-gray-300"
+                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center"
                 onClick={(e) => e.stopPropagation()}
             >
                 {iconMap[type]}
@@ -49,20 +50,27 @@ export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children,
                         <button
                             onClick={onClose}
                             disabled={loading}
-                            className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+                            className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
                         >
-                            Cancelar
+                            <X className="h-5 w-5" />
+                            <span>Cancelar</span>
                         </button>
                     )}
                     <button
                         onClick={type === 'confirmation' ? onConfirm : onClose}
                         disabled={loading}
-                        className={`font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonStyles[type]}`}
+                        className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonStyles[type]}`}
                     >
-                        {loading 
-                            ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div> 
-                            : (type === 'confirmation' ? 'Confirmar' : 'Entendido')
-                        }
+                        {loading ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                        ) : type === 'confirmation' ? (
+                            <>
+                                <Check className="h-5 w-5" />
+                                <span>Confirmar</span>
+                            </>
+                        ) : (
+                            <span>Entendido</span>
+                        )}
                     </button>
                 </div>
             </div>
