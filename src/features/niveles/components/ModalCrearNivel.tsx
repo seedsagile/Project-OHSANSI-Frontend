@@ -24,13 +24,14 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
     }, [isOpen, reset]);
 
     const handleCancelar = () => {
+        reset({ nombre: '' });
         onClose();
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-negro/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
             <div 
                 className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8"
                 onClick={(e) => e.stopPropagation()}
@@ -50,8 +51,8 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                                 errors.nombre ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                             }`}
-                            autoFocus
                             disabled={loading}
+                            aria-required="true"
                             {...register('nombre')}
                         />
                         <div className="h-6 mt-1">
@@ -70,6 +71,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                             onClick={handleCancelar}
                             disabled={loading}
                             className='flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                            aria-label="Cancelar la creación del nivel"
                         >
                             <X className="w-5 h-5" />
                             <span>Cancelar</span>
@@ -78,6 +80,7 @@ export const ModalCrearNivel = ({ isOpen, onClose, onGuardar, loading = false }:
                             type="submit"
                             disabled={loading}
                             className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
+                            aria-label="Confirmar y guardar el nuevo nivel"
                         >
                             {loading ? (
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

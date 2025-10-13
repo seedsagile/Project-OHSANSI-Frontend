@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
 import type { Nivel, CrearNivelData } from '../types';
-import { normalizarTexto } from '../utils/esquemas';
+import { normalizarParaComparar } from '../utils/esquemas';
 
 type ConfirmationModalState = {
     isOpen: boolean;
@@ -24,7 +24,6 @@ export function useGestionNiveles() {
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
     const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
-    
     const modalTimerRef = useRef<number | undefined>(undefined);
 
     const { data: niveles = [], isLoading } = useQuery({
@@ -32,31 +31,24 @@ export function useGestionNiveles() {
         queryFn: nivelesService.obtenerNiveles,
     });
 
+    const showAutoClosingModal = (title: string, message: string, type: 'success' | 'error' | 'info') => {
+        setConfirmationModal({ isOpen: true, title, message, type });
+        clearTimeout(modalTimerRef.current);
+        modalTimerRef.current = window.setTimeout(() => {
+            cerrarModalConfirmacion();
+        }, 1000);
+    };
+
     const { mutate, isPending: isCreating } = useMutation<Nivel, Error, CrearNivelData>({
         mutationFn: (data) => nivelesService.crearNivel(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['niveles'] });
             cerrarModalCrear();
-            setConfirmationModal({
-                isOpen: true,
-                title: '¡Registro Exitoso!',
-                message: `El nivel "${nombreNivelCreando}" ha sido registrado correctamente.`,
-                type: 'success',
-            });
-
-            clearTimeout(modalTimerRef.current);
-            modalTimerRef.current = window.setTimeout(() => {
-                cerrarModalConfirmacion();
-            }, 2500);
+            // Usamos la nueva función centralizada
+            showAutoClosingModal('¡Registro Exitoso!', `El nivel "${nombreNivelCreando}" ha sido registrado correctamente.`, 'success');
         },
         onError: (error) => {
-            clearTimeout(modalTimerRef.current);
-            setConfirmationModal({
-                isOpen: true,
-                title: 'Error al Crear',
-                message: error.message,
-                type: 'error',
-            });
+            showAutoClosingModal('Error al Crear', error.message, 'error');
         },
     });
 
@@ -67,30 +59,26 @@ export function useGestionNiveles() {
     }, []);
 
     const handleGuardarNivel = (data: CrearNivelData) => {
-        const nombreNormalizado = normalizarTexto(data.nombre);
+        const nombreNormalizadoParaComparar = normalizarParaComparar(data.nombre);
         
         const duplicado = niveles.find(
-            nivel => normalizarTexto(nivel.nombre) === nombreNormalizado
+            nivel => normalizarParaComparar(nivel.nombre) === nombreNormalizadoParaComparar
         );
 
         if (duplicado) {
-            setConfirmationModal({
-                isOpen: true,
-                title: 'Nombre Duplicado',
-                message: "El nombre del nivel ya se encuentra registrado.",
-                type: 'error',
-            });
+
+            showAutoClosingModal('Nombre Duplicado', "Ya existe un nivel con un nombre similar (ignorando acentos o plurales).", 'error');
             return;
         }
         
-        setNombreNivelCreando(nombreNormalizado);
+        setNombreNivelCreando(data.nombre);
         
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
-            message: `¿Está seguro de que desea crear el nivel "${nombreNormalizado}"?`,
+            message: `¿Está seguro de que desea crear el nivel "${data.nombre}"?`,
             type: 'confirmation',
-            onConfirm: () => mutate({ nombre: nombreNormalizado }),
+            onConfirm: () => mutate({ nombre: data.nombre }),
         });
     };
 
