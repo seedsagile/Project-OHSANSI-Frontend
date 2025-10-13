@@ -29,7 +29,6 @@ export function useImportarCompetidores() {
     const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]);
     const [invalidHeaders, setInvalidHeaders] = useState<string[]>([]);
     
-    // Obtener áreas y niveles de la API para la validación
     const { data: areas = [], isLoading: isLoadingAreas } = useQuery({ queryKey: ['areas'], queryFn: areasService.obtenerAreas });
     const { data: niveles = [], isLoading: isLoadingNiveles } = useQuery({ queryKey: ['niveles'], queryFn: nivelesService.obtenerNiveles });
 
@@ -72,36 +71,38 @@ export function useImportarCompetidores() {
         if (!file) return;
 
         setIsParsing(true);
+
         const reader = new FileReader();
         reader.onload = (e) => {
-            const text = e.target?.result as string;
-            
-            const nombresAreas = areas.map(a => a.nombre);
-            const nombresNiveles = niveles.map(n => n.nombre);
+            try {
+                const text = e.target?.result as string;
+                const nombresAreas = areas.map(a => a.nombre);
+                const nombresNiveles = niveles.map(n => n.nombre);
 
-            const { filasProcesadas, headers: cabecerasDetectadas, errorGlobal, invalidHeaders: procesadosInvalidos } = procesarYValidarCSV(text, nombresAreas, nombresNiveles);
-            setInvalidHeaders(procesadosInvalidos ?? []);
+                const { filasProcesadas, headers: cabecerasDetectadas, errorGlobal, invalidHeaders: procesadosInvalidos } = procesarYValidarCSV(text, nombresAreas, nombresNiveles);
+                
+                setInvalidHeaders(procesadosInvalidos ?? []);
 
-            if (errorGlobal) {
-                setModalState({ isOpen: true, type: 'error', title: 'Error en el Archivo', message: errorGlobal });
+                if (errorGlobal) {
+                    setModalState({ isOpen: true, type: 'error', title: 'Error en el Archivo', message: errorGlobal });
+                    setIsParsing(false);
+                    return;
+                }
+
+                const nuevasColumnas: ColumnDef<FilaProcesada>[] = cabecerasDetectadas.map(header => {
+                    const normalizedHeader = normalizarEncabezado(header);
+                    const key = headerMapping[normalizedHeader];
+                    return { header, accessorKey: `datos.${key}` };
+                }).filter(col => col.accessorKey && !col.accessorKey.endsWith('undefined'));
+                
+                setColumnasDinamicas(nuevasColumnas);
+                setFilas(filasProcesadas);
+                setNombreArchivo(file.name);
+            } catch {
+                setModalState({ isOpen: true, type: 'error', title: 'Error Inesperado', message: 'Ocurrió un error al procesar el archivo.' });
+            } finally {
                 setIsParsing(false);
-                return;
             }
-
-            const nuevasColumnas: ColumnDef<FilaProcesada>[] = cabecerasDetectadas.map(header => {
-                const normalizedHeader = normalizarEncabezado(header);
-                const key = headerMapping[normalizedHeader];
-
-                return {
-                    header: header,
-                    accessorKey: `datos.${key}`,
-                };
-            }).filter(col => col.accessorKey && !col.accessorKey.endsWith('undefined'));
-            
-            setColumnasDinamicas(nuevasColumnas);
-            setFilas(filasProcesadas);
-            setNombreArchivo(file.name);
-            setIsParsing(false);
         };
         reader.onerror = () => {
             setModalState({ isOpen: true, type: 'error', title: 'Error de Lectura', message: 'Ocurrió un error al leer el archivo.' });
@@ -111,7 +112,9 @@ export function useImportarCompetidores() {
     }, [reset, areas, niveles]);
     
     const esArchivoValido = filas.length > 0 && invalidHeaders.length === 0 && filas.every(f => f.esValida);
+    const isLoadingData = isLoadingAreas || isLoadingNiveles;
 
+    // --- 👇 LÓGICA DE handleSave RESTAURADA Y COMPLETADA ---
     const handleSave = () => {
         if (invalidHeaders.length > 0) {
             setModalState({ isOpen: true, type: 'error', title: 'Cabeceras no válidas', message: 'El archivo contiene columnas no reconocidas. Por favor, corrija las cabeceras marcadas en rojo antes de guardar.' });
@@ -142,13 +145,13 @@ export function useImportarCompetidores() {
     };
 
     const closeModal = () => setModalState(initialModalState);
-    const isLoadingData = isLoadingAreas || isLoadingNiveles;
 
     return {
         datos: filas,
         nombreArchivo,
         esArchivoValido,
-        isParsing: isParsing || isLoadingData,
+        isParsing,
+        isLoadingData,
         isSubmitting: isPending,
         modalState,
         onDrop,

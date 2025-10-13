@@ -1,7 +1,7 @@
 import { useDropzone } from 'react-dropzone';
-import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores.tsx'; // Asegúrate que la extensión sea .tsx
-import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion';
-import { Save, X } from 'lucide-react';
+import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores.tsx';
+import { Modal } from '../../../components/ui/Modal';
+import { Save, X, LoaderCircle } from 'lucide-react';
 import { DropzoneArea } from '../components/DropzoneArea';
 import { TablaResultados } from '../components/TablaResultados';
 import { Alert } from '../../../components/ui/Alert';
@@ -12,6 +12,7 @@ export function PaginaImportarCompetidores() {
         nombreArchivo,
         esArchivoValido,
         isParsing,
+        isLoadingData,
         isSubmitting,
         modalState,
         onDrop,
@@ -29,6 +30,7 @@ export function PaginaImportarCompetidores() {
     });
 
     const hayErroresDeFila = datos.length > 0 && datos.some(d => !d.esValida);
+    const isPageBusy = isLoadingData || isParsing || isSubmitting;
 
     return (
         <>
@@ -40,7 +42,14 @@ export function PaginaImportarCompetidores() {
                     </header>
 
                     <section className="mb-8">
-                        <DropzoneArea {...{ getRootProps, getInputProps, isDragActive, isParsing, nombreArchivo, open }} />
+                        <DropzoneArea 
+                            getRootProps={getRootProps}
+                            getInputProps={getInputProps}
+                            isDragActive={isDragActive}
+                            isParsing={isParsing}
+                            nombreArchivo={nombreArchivo}
+                            open={isLoadingData ? () => {} : open}
+                        />
                     </section>
                     
                     {invalidHeaders.length > 0 && (
@@ -65,16 +74,23 @@ export function PaginaImportarCompetidores() {
                     <footer className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-12">
                         <button 
                             onClick={handleCancel}
-                            disabled={datos.length === 0 && !nombreArchivo}
+                            disabled={(datos.length === 0 && !nombreArchivo) || isPageBusy}
                             className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <X className="h-5 w-5" />
                             <span>Limpiar</span>
                         </button>
                         
-                        <button onClick={handleSave} disabled={!esArchivoValido || isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[180px]">
+                        <button 
+                            onClick={handleSave} 
+                            disabled={!esArchivoValido || isPageBusy} 
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[180px]"
+                        >
                             {isSubmitting ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                <>
+                                    <LoaderCircle className="animate-spin h-5 w-5" />
+                                    <span>Guardando...</span>
+                                </>
                             ) : (
                                 <>
                                     <Save className="h-5 w-5" />
@@ -86,13 +102,16 @@ export function PaginaImportarCompetidores() {
                 </main>
             </div>
 
-            <ModalConfirmacion 
-                {...modalState} 
-                onClose={closeModal} 
+            <Modal 
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                onConfirm={modalState.onConfirm}
+                title={modalState.title}
+                type={modalState.type}
                 loading={isSubmitting}
             >
                 {modalState.message}
-            </ModalConfirmacion>
+            </Modal>
         </>
     );
 }
