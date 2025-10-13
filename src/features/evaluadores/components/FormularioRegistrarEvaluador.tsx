@@ -211,7 +211,7 @@ export const FormularioRegistrarEvaluador = () => {
 
       const mensaje = `El evaluador "${data.nombre} ${data.apellido}" ha sido registrado correctamente y se envió un correo electrónico con sus credenciales.`;
       
-      setAutoCloseModal(false);
+      setAutoCloseModal(true);
       mostrarModal('success', '¡Registro Exitoso!', mensaje);
 
       // Limpiar formulario
