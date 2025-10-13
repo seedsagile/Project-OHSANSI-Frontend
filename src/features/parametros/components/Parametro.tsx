@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { obtenerAreasAPI, obtenerNivelesPorAreaAPI } from "../service/service";
 import type { Area, Nivel } from "../interface/interface";
+import { Formulario } from "./Formulario"; // Importa tu modal
 
 export const Parametro = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,9 +10,16 @@ export const Parametro = () => {
   const [areaSeleccionada, setAreaSeleccionada] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Nivel seleccionado para abrir modal
+  const [nivelSeleccionado, setNivelSeleccionado] = useState<Nivel | null>(
+    null
+  );
+
+  // Niveles que ya fueron enviados al backend
+  const [nivelesEnviados, setNivelesEnviados] = useState<number[]>([]);
+
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  // 🔹 Obtener todas las áreas
   useEffect(() => {
     const fetchAreas = async () => {
       try {
@@ -25,7 +32,6 @@ export const Parametro = () => {
     fetchAreas();
   }, []);
 
-  // 🔹 Obtener niveles al seleccionar un área
   const handleSelectArea = async (id: number) => {
     setAreaSeleccionada(id);
     setLoading(true);
@@ -39,6 +45,20 @@ export const Parametro = () => {
       setLoading(false);
       setIsOpen(false);
     }
+  };
+
+  const handleFilaClick = (nivel: Nivel) => {
+    if (nivelesEnviados.includes(nivel.id)) return; // ya enviado, no abrir modal
+    setNivelSeleccionado(nivel);
+  };
+
+  const handleCerrarModal = () => {
+    setNivelSeleccionado(null);
+  };
+
+  // Callback para marcar nivel como enviado
+  const marcarNivelEnviado = (idNivel: number) => {
+    setNivelesEnviados((prev) => [...prev, idNivel]);
   };
 
   return (
@@ -157,7 +177,12 @@ export const Parametro = () => {
                     niveles.map((nivel, index) => (
                       <tr
                         key={nivel.id}
-                        className="border-t border-neutro-200 hover:bg-neutro-100 transition"
+                        className={`border-t border-neutro-200 transition ${
+                          nivelesEnviados.includes(nivel.id)
+                            ? "bg-neutro-200 cursor-not-allowed"
+                            : "hover:bg-neutro-100 cursor-pointer"
+                        }`}
+                        onClick={() => handleFilaClick(nivel)}
                       >
                         <td className="py-2 px-4">{index + 1}</td>
                         <td className="py-2 px-4">{nivel.nombre}</td>
@@ -165,6 +190,8 @@ export const Parametro = () => {
                           <input
                             type="checkbox"
                             className="w-5 h-5 accent-principal-500"
+                            checked={nivelesEnviados.includes(nivel.id)}
+                            readOnly
                           />
                         </td>
                       </tr>
@@ -176,52 +203,15 @@ export const Parametro = () => {
           </div>
         </div>
 
-        {/* FOOTER */}
-        <footer className="flex justify-end items-center gap-6 mt-14">
-          <Link
-            type="button"
-            className="flex items-center gap-2 font-medium py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 hover:shadow transition-all"
-            to="/dashboard"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            <span>Cancelar</span>
-          </Link>
-
-          <button
-            type="submit"
-            className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 hover:shadow transition-all disabled:bg-principal-300 disabled:cursor-not-allowed"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-            <span>Guardar</span>
-          </button>
-        </footer>
+        {/* 🔹 Modal */}
+        {nivelSeleccionado && areaSeleccionada && (
+          <Formulario
+            nivel={nivelSeleccionado}
+            idArea={areaSeleccionada}
+            onCerrar={handleCerrarModal}
+            onMarcarEnviado={marcarNivelEnviado} // callback
+          />
+        )}
       </main>
     </div>
   );
