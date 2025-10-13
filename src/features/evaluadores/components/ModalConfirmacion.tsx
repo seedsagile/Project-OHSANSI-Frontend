@@ -70,7 +70,7 @@ export function ModalConfirmacion({
                 <h2 className="text-2xl font-bold text-gray-800 mt-4">{title}</h2>
                 <div className="text-gray-600 mt-2 text-md whitespace-pre-line">{children}</div>
 
-                {/* Botones solo para modales que NO son auto-close success */}
+                 {/* Botones solo para modales que NO son auto-close success */}
                 {!(autoClose && type === 'success') && (
                     <div className="mt-8 flex justify-center gap-4">
                         {type === 'confirmation' && (
@@ -96,7 +96,7 @@ export function ModalConfirmacion({
                     </div>
                 )}
 
-                {/* Indicador de auto-cierre para modales de éxito */}
+                {/* Indicador de auto-cierre para modales de éxito 
                 {autoClose && type === 'success' && (
                     <div className="mt-6">
                         <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
@@ -107,7 +107,7 @@ export function ModalConfirmacion({
                         </div>
                         <p className="text-xs text-gray-500 mt-2">Cerrando automáticamente...</p>
                     </div>
-                )}
+                )}*/}
             </div>
 
             <style>{`
