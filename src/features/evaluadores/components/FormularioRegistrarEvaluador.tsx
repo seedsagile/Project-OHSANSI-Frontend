@@ -1,8 +1,9 @@
+//src/features/evaluadores/components/FormularioRegistrarEvaluador.tsx
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { ModalAsignarNivel } from "./ModalAsignarNivel";
+import { ModalConfirmacion } from "./ModalConfirmacion";
 import { 
   evaluadoresService, 
   areasService, 
@@ -13,70 +14,18 @@ import type {
   Nivel, 
   AreaConNiveles,
   CreateEvaluadorPayload 
-} from "../tipos/IndexEvaluador";
-
-// ==================== SCHEMA DE VALIDACIÓN ====================
-const schemaEvaluador = z.object({
-  nombre: z.string()
-    .min(1, 'El campo Nombre del evaluador es obligatorio.')
-    .transform((val) => val.trim())
-    .refine((val) => val.length > 0, {
-      message: 'El campo Nombre del evaluador es obligatorio.'
-    })
-    .pipe(
-      z.string()
-        .min(3, 'El campo Nombre del evaluador requiere un mínimo de 3 caracteres.')
-        .max(20, 'El campo Nombre del evaluador tiene un límite máximo de 20 caracteres.')
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre del evaluador solo permite letras, espacios y acentos.')
-    ),
-  apellido: z.string()
-    .min(1, 'El campo Apellido es obligatorio.')
-    .transform((val) => val.trim())
-    .refine((val) => val.length > 0, {
-      message: 'El campo Apellido es obligatorio.'
-    })
-    .pipe(
-      z.string()
-        .min(3, 'El campo Apellido del evaluador requiere un mínimo de 3 caracteres.')
-        .max(20, 'El campo Apellido del evaluador tiene un límite máximo de 20 caracteres.')
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido del evaluador solo permite letras, espacios y acentos.')
-    ),
-  email: z.string()
-    .min(1, 'El campo Correo electrónico es obligatorio.')
-    .transform((val) => val.trim())
-    .refine((val) => val.length > 0, {
-      message: 'El campo Correo Electrónico es obligatorio.'
-    })
-    .pipe(
-      z.string()
-        .min(6, 'El campo Correo electrónico requiere un mínimo de 6 caracteres.')
-        .max(254, 'El campo Correo electrónico tiene un límite máximo de 254 caracteres.')
-        .email('El correo electrónico no es válido.')
-    ),
-  ci: z.string()
-    .min(1, 'El campo Carnet de identidad es obligatorio.')
-    .transform((val) => val.trim().replace(/\s+/g, ''))
-    .refine((val) => val.length > 0, {
-      message: 'El campo Carnet de identidad es obligatorio.'
-    })
-    .pipe(
-      z.string()
-        .min(6, 'El campo Carnet de identidad requiere un mínimo de 6 caracteres.')
-        .max(15, 'El campo Carnet de identidad tiene un límite máximo de 15 caracteres.')
-        .regex(/^[a-zA-Z0-9]+$/, 'El campo Carnet de identidad solo acepta números y letras.')
-    ),
-});
-
-type FormData = z.infer<typeof schemaEvaluador>;
+} from "../types/IndexEvaluador";
+import { 
+  schemaEvaluador, 
+  type EvaluadorFormData,
+  backendErrorMessages 
+} from "../validations/evaluatorValidation";
 
 // ==================== COMPONENTE FORMULARIO ====================
 export const FormularioRegistrarEvaluador = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
-
-  const [generatedPassword, setGeneratedPassword] = useState<string>("");
-  const [passwordGenerated, setPasswordGenerated] = useState<boolean>(false);
 
   const [showModalNiveles, setShowModalNiveles] = useState(false);
   const [areaSeleccionada, setAreaSeleccionada] = useState<Area | null>(null);
@@ -86,12 +35,19 @@ export const FormularioRegistrarEvaluador = () => {
 
   const [areasAsignadas, setAreasAsignadas] = useState<AreaConNiveles[]>([]);
 
+  // Estados del modal de confirmación
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<'success' | 'error' | 'info' | 'confirmation'>('success');
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+  const [autoCloseModal, setAutoCloseModal] = useState(false);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<FormData>({
+  } = useForm<EvaluadorFormData>({
     resolver: zodResolver(schemaEvaluador),
     mode: "onChange",
   });
@@ -103,7 +59,8 @@ export const FormularioRegistrarEvaluador = () => {
         setAreas(areasData);
       } catch (error) {
         console.error("Error cargando áreas:", error);
-        alert("Error al cargar las áreas");
+        setAutoCloseModal(false);
+        mostrarModal('error', 'Error', 'Error al cargar las áreas');
       } finally {
         setLoading(false);
       }
@@ -111,6 +68,9 @@ export const FormularioRegistrarEvaluador = () => {
     fetchData();
   }, []);
 
+  /**
+   * Genera una contraseña aleatoria segura
+   */
   const generatePassword = (length = 8) => {
     const lower = "abcdefghijklmnopqrstuvwxyz";
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -136,13 +96,6 @@ export const FormularioRegistrarEvaluador = () => {
     return pwd;
   };
 
-  const handleGenerarClick = () => {
-    if (passwordGenerated) return;
-    const pwd = generatePassword(8);
-    setGeneratedPassword(pwd);
-    setPasswordGenerated(true);
-  };
-
   const handleSeleccionarArea = async (area: Area) => {
     const areaExistente = areasAsignadas.find(
       (a) => a.area.id_area === area.id_area
@@ -164,7 +117,8 @@ export const FormularioRegistrarEvaluador = () => {
       setNivelesDisponibles(niveles);
     } catch (error) {
       console.error("Error al cargar niveles:", error);
-      alert("Error al cargar los niveles del área");
+      setAutoCloseModal(false);
+      mostrarModal('error', 'Error', 'Error al cargar los niveles del área');
       setNivelesDisponibles([]);
     } finally {
       setLoadingNiveles(false);
@@ -211,20 +165,33 @@ export const FormularioRegistrarEvaluador = () => {
     handleCerrarModalNiveles();
   };
 
-  const onSubmit = async (data: FormData) => {
-    // Validar contraseña generada
-    if (!passwordGenerated || !generatedPassword) {
-      alert("Por favor genere una contraseña antes de guardar");
-      return;
-    }
+  const mostrarModal = (
+    type: 'success' | 'error' | 'info' | 'confirmation', 
+    title: string, 
+    message: string
+  ) => {
+    setModalType(type);
+    setModalTitle(title);
+    setModalMessage(message);
+    setShowModal(true);
+  };
 
+  const onSubmit = async (data: EvaluadorFormData) => {
     // Validar áreas asignadas
     if (areasAsignadas.length === 0) {
-      alert("Por favor asigne al menos un área con niveles antes de guardar");
+      setAutoCloseModal(false);
+      mostrarModal(
+        'error', 
+        'Error de Validación', 
+        'Por favor asigne al menos un área con niveles antes de guardar'
+      );
       return;
     }
 
-    // Preparar payload en el formato que espera el backend
+    // Generar contraseña automáticamente
+    const generatedPassword = generatePassword(8);
+
+    // Preparar payload (los datos ya vienen normalizados por Zod)
     const payload: CreateEvaluadorPayload = {
       nombre: data.nombre,
       apellido: data.apellido,
@@ -240,28 +207,73 @@ export const FormularioRegistrarEvaluador = () => {
     try {
       setGuardando(true);
       
-      console.log("═══════════════════════════════════════════════════════");
-      console.log("📤 ENVIANDO AL BACKEND:");
-      console.log(JSON.stringify(payload, null, 2));
-      console.log("═══════════════════════════════════════════════════════");
+      await evaluadoresService.crearEvaluador(payload);
 
-      const response = await evaluadoresService.crearEvaluador(payload);
-
-      console.log("═══════════════════════════════════════════════════════");
-      console.log("✅ RESPUESTA DEL BACKEND:");
-      console.log(JSON.stringify(response, null, 2));
-      console.log("═══════════════════════════════════════════════════════");
-
-      alert(`✅ Evaluador registrado exitosamente!\n\nNombre: ${data.nombre} ${data.apellido}\nÁreas asignadas: ${areasAsignadas.length}`);
+      const mensaje = `El evaluador "${data.nombre} ${data.apellido}" ha sido registrado correctamente y se envió un correo electrónico con sus credenciales.`;
+      
+      setAutoCloseModal(false);
+      mostrarModal('success', '¡Registro Exitoso!', mensaje);
 
       // Limpiar formulario
       reset();
-      setGeneratedPassword("");
-      setPasswordGenerated(false);
       setAreasAsignadas([]);
-    } catch (error: any) {
-      console.error("❌ Error al guardar:", error);
-      alert(error.message || "Error al registrar el evaluador. Por favor intente nuevamente.");
+    } catch (error: unknown) {
+      console.error("═══════════════════════════════════════════════════════");
+      console.error("❌ ERROR CAPTURADO EN EL FORMULARIO:");
+      console.error("Error completo:", error);
+      
+      setAutoCloseModal(false);
+      
+      // Type guard para verificar si es un error con propiedades type y message
+      if (error && typeof error === 'object' && 'type' in error && 'message' in error) {
+        const apiError = error as { type: string; message: string };
+        
+        console.error("Mensaje de error:", apiError.message);
+        console.error("Tipo:", apiError.type);
+        console.error("═══════════════════════════════════════════════════════");
+        
+        // Manejar errores según el tipo
+        if (apiError.type === 'CI_DUPLICADO') {
+          mostrarModal(
+            'error', 
+            backendErrorMessages.CI_DUPLICADO.title,
+            backendErrorMessages.CI_DUPLICADO.message
+          );
+        } else if (apiError.type === 'EMAIL_DUPLICADO') {
+          mostrarModal(
+            'error', 
+            backendErrorMessages.EMAIL_DUPLICADO.title,
+            backendErrorMessages.EMAIL_DUPLICADO.message
+          );
+        } else {
+          // Error genérico con mensaje del backend
+          mostrarModal(
+            'error', 
+            backendErrorMessages.ERROR_GENERICO.title,
+            apiError.message
+          );
+        }
+      } else if (error instanceof Error) {
+        // Error estándar de JavaScript
+        console.error("Error estándar:", error.message);
+        console.error("═══════════════════════════════════════════════════════");
+        
+        mostrarModal(
+          'error', 
+          backendErrorMessages.ERROR_GENERICO.title,
+          error.message
+        );
+      } else {
+        // Error desconocido
+        console.error("Error desconocido");
+        console.error("═══════════════════════════════════════════════════════");
+        
+        mostrarModal(
+          'error', 
+          backendErrorMessages.ERROR_GENERICO.title,
+          backendErrorMessages.ERROR_GENERICO.message
+        );
+      }
     } finally {
       setGuardando(false);
     }
@@ -318,7 +330,7 @@ export const FormularioRegistrarEvaluador = () => {
             </div>
           </div>
 
-          {/* FILA 2: EMAIL, CI, PASSWORD Y ÁREAS */}
+          {/* FILA 2: EMAIL, CI Y ÁREAS */}
           <div className="grid grid-cols-2 gap-8">
             {/* COLUMNA IZQUIERDA */}
             <div className="flex flex-col gap-4">
@@ -357,41 +369,6 @@ export const FormularioRegistrarEvaluador = () => {
                 />
                 {errors.ci && (
                   <p className="text-red-500 text-xs mt-1">{errors.ci.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-black">
-                  Contraseña
-                </label>
-                <button
-                  type="button"
-                  onClick={handleGenerarClick}
-                  disabled={passwordGenerated}
-                  className={`border rounded-md p-2 transition-colors ${
-                    passwordGenerated
-                      ? "bg-gray-300 text-black cursor-not-allowed"
-                      : "bg-[#0076FF] text-white hover:bg-blue-600"
-                  }`}
-                >
-                  {passwordGenerated
-                    ? "✓ Contraseña generada"
-                    : "Generar contraseña"}
-                </button>
-                {passwordGenerated && generatedPassword && (
-                  <div className="border rounded-md p-2 border-gray-300 bg-gray-50 flex items-center justify-between">
-                    <span className="text-sm font-mono">{generatedPassword}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedPassword);
-                        alert("Contraseña copiada al portapapeles");
-                      }}
-                      className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
-                    >
-                      Copiar
-                    </button>
-                  </div>
                 )}
               </div>
             </div>
@@ -443,39 +420,15 @@ export const FormularioRegistrarEvaluador = () => {
                   </p>
                 )}
               </div>
-
-              {/* ÁREAS ASIGNADAS */}
-              {areasAsignadas.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm font-semibold text-black mb-2">
-                    Áreas asignadas: ({areasAsignadas.length})
-                  </p>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {areasAsignadas.map((ac) => (
-                      <div
-                        key={ac.area.id_area}
-                        className="bg-blue-50 border border-blue-200 rounded-md p-2"
-                      >
-                        <p className="font-semibold text-sm">{ac.area.nombre}</p>
-                        <p className="text-xs text-gray-600">
-                          Niveles: {ac.niveles.map((n) => n.nombre).join(", ")}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
           {/* BOTONES */}
-          <footer className="flex justify-end items-center gap-4 mt-12 pt-6 border-t">
+          <footer className="flex justify-end items-center gap-4 mt-12">
             <button
               type="button"
               onClick={() => {
                 reset();
-                setGeneratedPassword("");
-                setPasswordGenerated(false);
                 setAreasAsignadas([]);
               }}
               className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
@@ -535,6 +488,7 @@ export const FormularioRegistrarEvaluador = () => {
         </form>
       </main>
 
+      {/* MODAL ASIGNAR NIVEL */}
       {areaSeleccionada && (
         <ModalAsignarNivel
           isOpen={showModalNiveles}
@@ -545,6 +499,18 @@ export const FormularioRegistrarEvaluador = () => {
           onConfirmar={handleConfirmarNiveles}
         />
       )}
+
+      {/* MODAL CONFIRMACIÓN */}
+      <ModalConfirmacion
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={() => setShowModal(false)}
+        type={modalType}
+        title={modalTitle}
+        autoClose={autoCloseModal}
+      >
+        {modalMessage}
+      </ModalConfirmacion>
     </div>
   );
 };

@@ -1,5 +1,6 @@
+//src/features/evaluadores/components/ModalAsignarNivel.tsx
 import { useState, useEffect } from "react";
-import type { Area, Nivel } from "../tipos/IndexEvaluador";
+import type { Area, Nivel } from "../types/IndexEvaluador";
 
 interface ModalAsignarNivelProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface ModalAsignarNivelProps {
 export const ModalAsignarNivel = ({
   isOpen,
   onClose,
-  area,
+  //area,
   niveles,
   nivelesPreseleccionados = [],
   onConfirmar,

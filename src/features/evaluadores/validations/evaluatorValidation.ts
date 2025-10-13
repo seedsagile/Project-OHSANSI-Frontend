@@ -1,77 +1,166 @@
-// src/evaluadores/validations/evaluatorValidation.ts
+// src/validations/evaluatorValidation.ts
+import { z } from "zod";
 
-import { z } from 'zod';
+/**
+ * Función para normalizar texto: capitaliza la primera letra de cada palabra
+ * y convierte el resto a minúsculas
+ */
+export const normalizeText = (text: string): string => {
+  return text
+    .trim()
+    .replace(/\s+/g, ' ') // Elimina espacios múltiples
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
+/**
+ * Schema de validación para el nombre del evaluador
+ * Reglas:
+ * - Obligatorio (no puede estar vacío ni contener solo espacios)
+ * - Mínimo 3 caracteres
+ * - Máximo 20 caracteres
+ * - Solo letras, espacios y acentos (NO números ni caracteres especiales)
+ * - Normalización automática al guardar
+ */
+export const nombreSchema = z.string()
+  .min(1, 'El campo Nombre del evaluador es obligatorio.')
+  .transform((val) => val.trim().replace(/\s+/g, ' ')) // Elimina espacios múltiples
+  .refine((val) => val.length > 0, {
+    message: 'El campo Nombre del evaluador es obligatorio.'
+  })
+  .pipe(
+    z.string()
+      .min(3, 'El campo Nombre del evaluador requiere un mínimo de 3 caracteres.')
+      .max(20, 'El campo Nombre del evaluador tiene un límite máximo de 20 caracteres.')
+      .refine((val) => !/\d/.test(val), {
+        message: 'El campo Nombre del evaluador contiene caracteres numéricos. Sólo se aceptan letras.'
+      })
+      .refine((val) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(val), {
+        message: 'El campo Nombre del evaluador contiene caracteres especiales. Solo se aceptan letras.'
+      })
+      .transform(normalizeText) // Normaliza al guardar
+  );
+
+/**
+ * Schema de validación para el apellido del evaluador
+ * Reglas:
+ * - Obligatorio (no puede estar vacío ni contener solo espacios)
+ * - Mínimo 3 caracteres
+ * - Máximo 20 caracteres
+ * - Solo letras, espacios y acentos (NO números ni caracteres especiales)
+ * - Normalización automática al guardar
+ */
+export const apellidoSchema = z.string()
+  .min(1, 'El campo Apellido es obligatorio.')
+  .transform((val) => val.trim().replace(/\s+/g, ' ')) // Elimina espacios múltiples
+  .refine((val) => val.length > 0, {
+    message: 'El campo Apellido es obligatorio.'
+  })
+  .pipe(
+    z.string()
+      .min(3, 'El campo Apellido del evaluador requiere un mínimo de 3 caracteres.')
+      .max(20, 'El campo Apellido del evaluador tiene un límite máximo de 20 caracteres.')
+      .refine((val) => !/\d/.test(val), {
+        message: 'El campo Apellido del evaluador contiene caracteres numéricos. Sólo se aceptan letras.'
+      })
+      .refine((val) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(val), {
+        message: 'El campo Apellido del evaluador contiene caracteres especiales. Solo se aceptan letras.'
+      })
+      .transform(normalizeText) // Normaliza al guardar
+  );
+
+/**
+ * Schema de validación para el correo electrónico
+ * Reglas:
+ * - Obligatorio (no puede estar vacío ni contener solo espacios)
+ * - Mínimo 6 caracteres
+ * - Máximo 30 caracteres
+ * - Formato de email válido
+ * - Solo permite letras, números y punto (.)
+ * - Se valida duplicidad en el backend
+ */
+export const emailSchema = z.string()
+  .min(1, 'El campo Correo electrónico es obligatorio.')
+  .transform((val) => val.trim().toLowerCase()) // Elimina espacios y convierte a minúsculas
+  .refine((val) => val.length > 0, {
+    message: 'El campo Correo Electrónico es obligatorio.'
+  })
+  .pipe(
+    z.string()
+      .min(6, 'El campo Correo electrónico requiere un mínimo de 6 caracteres.')
+      .max(30, 'El campo Correo electrónico tiene un límite máximo de 30 caracteres.')
+      .refine((val) => /^[a-zA-Z0-9.@]+$/.test(val), {
+        message: 'Correo electrónico inválido. Solo se permiten letras, números y el caracter especial .'
+      })
+      .refine((val) => /^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/.test(val), {
+        message: 'El campo Correo electrónico debe tener un formato válido (ej. usuario@uno.com).'
+      })
+  );
+
+/**
+ * Schema de validación para el carnet de identidad
+ * Reglas:
+ * - Obligatorio (no puede estar vacío ni contener solo espacios)
+ * - Mínimo 5 caracteres
+ * - Máximo 15 caracteres
+ * - Solo números O números con UNA letra al final (sin espacios ni caracteres especiales)
+ * - Se valida duplicidad en el backend
+ */
+export const ciSchema = z.string()
+  .min(1, 'El campo Carnet de identidad es obligatorio.')
+  .transform((val) => val.trim().replace(/\s+/g, '').toUpperCase()) // Elimina todos los espacios y convierte a mayúsculas
+  .refine((val) => val.length > 0, {
+    message: 'El campo Carnet de identidad es obligatorio.'
+  })
+  .pipe(
+    z.string()
+      .min(5, 'El campo Carnet de identidad requiere una longitud mínima de 5 caracteres.')
+      .max(15, 'El campo Carnet de identidad tiene un límite máximo de 15 caracteres.')
+      .refine((val) => {
+        // Verifica si tiene más de una letra
+        const letras = val.match(/[a-zA-Z]/g);
+        if (letras && letras.length > 1) {
+          return false;
+        }
+        return true;
+      }, {
+        message: 'El campo Carnet de identidad solo permite una letra al final de los números.'
+      })
+      .refine((val) => /^[0-9]+[a-zA-Z]?$/.test(val), {
+        message: 'El campo Carnet de identidad debe contener solo números, o números con una letra al final.'
+      })
+  );
+
+/**
+ * Schema completo del formulario de evaluador
+ */
 export const schemaEvaluador = z.object({
-  // Validaciones para Nombre
-  nombre: z.string()
-    .min(1, 'El campo Nombre es obligatorio.')
-    .transform((val) => val.trim().replace(/\s+/g, ' ')) // LIMPIA: espacios inicio/fin y múltiples espacios
-    .pipe(
-      z.string()
-        .min(2, 'El campo Nombre requiere un mínimo de 2 caracteres.')
-        .max(20, 'El campo Nombre tiene un límite máximo de 20 caracteres.')
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Nombre solo permite letras, espacios y acentos.')
-    ),
-
-  // Validaciones para Apellido
-  apellido: z.string()
-    .min(1, 'El campo Apellido es obligatorio.')
-    .transform((val) => val.trim().replace(/\s+/g, ' ')) // LIMPIA: espacios inicio/fin y múltiples espacios
-    .pipe(
-      z.string()
-        .min(2, 'El campo Apellido requiere un mínimo de 2 caracteres.')
-        .max(20, 'El campo Apellido tiene un límite máximo de 20 caracteres.')
-        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El campo Apellido solo permite letras, espacios y acentos.')
-    ),
-
-  // Validaciones para Email
-  email: z.string()
-    .min(1, 'El campo Email es obligatorio.')
-    .transform((val) => val.trim()) // LIMPIA: espacios inicio/fin
-    .pipe(
-      z.string()
-        .email('El campo Email debe tener un formato válido (ej. usuario@uno.com).')
-        .regex(/^[a-zA-Z@.\-_]+$/, 'El campo Email solo permite letras, @, punto, guión y guión bajo.')
-    ),
-
-  // Validaciones para CI
-  ci: z.string()
-    .min(1, 'El campo CI es obligatorio.')
-    .transform((val) => val.trim()) // LIMPIA: espacios inicio/fin
-    .pipe(
-      z.string()
-        .min(7, 'El campo CI requiere un mínimo de 7 caracteres.')
-        .max(15, 'El campo CI tiene un límite máximo de 15 caracteres.')
-        .regex(/^[0-9]+$/, 'El campo CI solo permite caracteres numéricos.')
-    ),
-
-  // Validaciones para Contraseña
-  password: z.string()
-    .min(1, 'El campo Contraseña es obligatorio.')
-    .transform((val) => val.trim()) // LIMPIA: espacios inicio/fin
-    .pipe(
-      z.string()
-        .min(8, 'La contraseña debe tener al menos 8 caracteres.')
-        .max(32, 'La contraseña tiene un límite máximo de 32 caracteres.')
-    ),
-
-  // Validación para Confirmación de Contraseña
-  password_confirmation: z.string()
-    .min(1, 'Debe confirmar la contraseña.')
-    .transform((val) => val.trim()), // LIMPIA: espacios inicio/fin
-
-  // Validaciones para Código de Evaluador
-  codigo_evaluador: z.string()
-    .min(1, 'El campo Código de acceso es obligatorio.')
-    .transform((val) => val.trim()) // LIMPIA: espacios inicio/fin
-    .pipe(
-      z.string()
-        .max(10, 'El campo Código de acceso tiene un límite máximo de 10 caracteres.')
-        .regex(/^[a-zA-Z0-9]+$/, 'El campo Código de acceso permite únicamente números y letras.')
-    )
-
-}).refine((data) => data.password === data.password_confirmation, {
-  message: "Las contraseñas no coinciden.",
-  path: ["password_confirmation"]
+  nombre: nombreSchema,
+  apellido: apellidoSchema,
+  email: emailSchema,
+  ci: ciSchema,
 });
+
+/**
+ * Tipo inferido del schema para usar con React Hook Form
+ */
+export type EvaluadorFormData = z.infer<typeof schemaEvaluador>;
+
+/**
+ * Mensajes de error personalizados para el backend
+ */
+export const backendErrorMessages = {
+  CI_DUPLICADO: {
+    title: '¡Ups! Algo salió mal',
+    message: 'Ya existe un evaluador registrado con este carnet de identidad'
+  },
+  EMAIL_DUPLICADO: {
+    title: '¡Ups! Algo salió mal',
+    message: 'Ya existe un evaluador registrado con este correo electrónico'
+  },
+  ERROR_GENERICO: {
+    title: 'Error al Registrar',
+    message: 'Ocurrió un error al registrar el evaluador. Por favor, intente nuevamente.'
+  }
+};

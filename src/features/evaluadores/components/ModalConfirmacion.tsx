@@ -1,3 +1,4 @@
+//src/features/evaluadores/components/ModalConfirmacion.tsx
 import { type ReactNode, useEffect } from 'react';
 import { AlertTriangle, Info, X, CheckCircle } from 'lucide-react';
 
@@ -11,8 +12,8 @@ type Props = {
     children: ReactNode;
     type: ModalType;
     loading?: boolean;
-    autoClose?: boolean; // Nueva prop para auto-cierre
-    autoCloseDelay?: number; // Tiempo en ms (default 2000)
+    autoClose?: boolean;
+    autoCloseDelay?: number;
 };
 
 const iconMap: Record<ModalType, ReactNode> = {
@@ -38,62 +39,60 @@ export function ModalConfirmacion({
     type, 
     loading = false,
     autoClose = false,
-    autoCloseDelay = 2000
+    autoCloseDelay = 3000
 }: Props) {
     
     // Auto-cierre para modales de éxito
     useEffect(() => {
-        if (isOpen && autoClose) {
+        if (isOpen && autoClose && type === 'success') {
             const timer = setTimeout(() => {
                 onClose();
             }, autoCloseDelay);
 
             return () => clearTimeout(timer);
         }
-    }, [isOpen, autoClose, autoCloseDelay, onClose]);
+    }, [isOpen, autoClose, type, autoCloseDelay, onClose]);
 
     if (!isOpen) return null;
 
     return (
         <div 
-            className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
-            onClick={type === 'success' && autoClose ? undefined : onClose}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn"
+            onClick={type === 'error' || type === 'info' ? onClose : undefined}
             role="dialog"
             aria-modal="true"
         >
             <div 
-                className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-8 text-center animate-scaleIn"
+                className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 text-center animate-scaleIn"
                 onClick={(e) => e.stopPropagation()}
             >
                 {iconMap[type]}
-                <h2 className="text-2xl font-bold text-neutro-800 mt-4">{title}</h2>
-                <div className="text-neutro-600 mt-2 text-md">{children}</div>
+                <h2 className="text-2xl font-bold text-gray-800 mt-4">{title}</h2>
+                <div className="text-gray-600 mt-2 text-md whitespace-pre-line">{children}</div>
 
-                {/* Solo mostrar botones si NO es auto-close */}
-                {!autoClose && (
+                {/* Botones solo para modales que NO son auto-close success */}
+                {!(autoClose && type === 'success') && (
                     <div className="mt-8 flex justify-center gap-4">
                         {type === 'confirmation' && (
                             <button
                                 onClick={onClose}
                                 disabled={loading}
-                                className="font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+                                className="font-semibold py-2.5 px-6 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                             >
                                 Cancelar
                             </button>
                         )}
-                        {type !== 'success' && (
-                            <button
-                                onClick={type === 'confirmation' ? onConfirm : onClose}
-                                disabled={loading}
-                                className={`font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-32 ${buttonStyles[type]}`}
-                            >
-                                {loading ? (
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
-                                ) : (
-                                    type === 'confirmation' ? 'Confirmar' : 'Entendido'
-                                )}
-                            </button>
-                        )}
+                        <button
+                            onClick={type === 'confirmation' ? onConfirm : onClose}
+                            disabled={loading}
+                            className={`font-semibold py-2.5 px-6 rounded-lg text-white transition-colors w-32 ${buttonStyles[type]}`}
+                        >
+                            {loading ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                            ) : (
+                                type === 'confirmation' ? 'Confirmar' : 'Entendido'
+                            )}
+                        </button>
                     </div>
                 )}
 
