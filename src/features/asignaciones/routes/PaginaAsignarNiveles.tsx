@@ -1,6 +1,6 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
 import { Save, LoaderCircle, X } from 'lucide-react';
-import { ModalConfirmacion } from '../../responsables/components/ModalConfirmacion';
+import { Modal } from '../../../components/ui/Modal';
 import type { Nivel } from '../../niveles/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,12 +31,12 @@ export function PaginaAsignarNiveles() {
                 <main className="bg-blanco w-full max-w-2xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     <header className="text-center mb-10">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-                            Asignar Niveles a un Area
+                            Asignar Niveles a un Área
                         </h1>
                     </header>
                     
                     <div className="mb-6 relative">
-                        <label htmlFor="area-selector" className="sr-only">Seleccionar Area</label>
+                        <label htmlFor="area-selector" className="sr-only">Seleccionar Área</label>
                         <select
                             id="area-selector"
                             value={areaSeleccionadaId ?? ''}
@@ -44,7 +44,7 @@ export function PaginaAsignarNiveles() {
                             className="w-full p-3 pl-4 pr-10 border border-transparent rounded-lg bg-principal-500 text-white font-semibold focus:ring-2 focus:ring-principal-300 focus:border-principal-500 transition-colors appearance-none cursor-pointer"
                             disabled={isLoading}
                         >
-                            <option value="" className="bg-white text-black">Seleccionar Area</option>
+                            <option value="" className="bg-white text-black">Seleccionar Área</option>
                             {todasLasAreas.map(area => (
                                 <option key={area.id_area} value={area.id_area} className="bg-white text-black">
                                     {area.nombre}
@@ -73,10 +73,13 @@ export function PaginaAsignarNiveles() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutro-200">
+                                    {/* --- 👇 AQUÍ ESTÁ LA MODIFICACIÓN --- */}
                                     {isLoading && areaSeleccionadaId ? (
                                         <tr><td colSpan={3} className="text-center p-10"><div className="flex justify-center items-center text-principal-500"><LoaderCircle className="animate-spin h-8 w-8" /></div></td></tr>
                                     ) : !areaSeleccionadaId ? (
                                         <tr><td colSpan={3} className="text-center p-10 text-neutro-400">Seleccione un área para ver los niveles.</td></tr>
+                                    ) : todosLosNiveles.length === 0 ? ( // <-- Nueva condición añadida
+                                        <tr><td colSpan={3} className="text-center p-10 text-neutro-500">No hay niveles disponibles.</td></tr>
                                     ) : (
                                         todosLosNiveles.map((nivel: Nivel, index: number) => (
                                             <tr key={nivel.id_nivel} className="even:bg-neutro-100 hover:bg-principal-50 transition-colors">
@@ -119,14 +122,16 @@ export function PaginaAsignarNiveles() {
                 </main>
             </div>
             
-            <ModalConfirmacion
+            <Modal
                 isOpen={modalState.isOpen}
                 onClose={closeModal}
                 title={modalState.title}
-                type={modalState.type === 'success' ? 'success' : 'error'}
+                type={modalState.type}
+                onConfirm={modalState.onConfirm}
+                loading={isSaving}
             >
                 {modalState.message}
-            </ModalConfirmacion>
+            </Modal>
         </>
     );
 }

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nivelesService } from '../services/nivelesService';
 import type { Nivel, CrearNivelData } from '../types';
+import { normalizarParaComparar } from '../utils/esquemas';
 
 type ConfirmationModalState = {
     isOpen: boolean;
@@ -18,84 +19,78 @@ const initialConfirmationState: ConfirmationModalState = {
     type: 'info',
 };
 
-// --- FUNCIÓN DE NORMALIZACIÓN CORREGIDA ---
-const normalizarParaComparar = (nombre: string): string => {
-    if (!nombre) return '';
-    let s = nombre
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-    
-    // Se aplica la misma lógica de duplicados para una comparación precisa
-    s = s.replace(/([^lrcn\s])\1+/g, '$1'); 
-    
-    return s.replace(/\s+/g, ' ');
-};
-
 export function useGestionNiveles() {
     const queryClient = useQueryClient();
     const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
+    const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
+    const modalTimerRef = useRef<number | undefined>(undefined);
 
     const { data: niveles = [], isLoading } = useQuery({
         queryKey: ['niveles'],
         queryFn: nivelesService.obtenerNiveles,
     });
 
+    const showAutoClosingModal = (title: string, message: string, type: 'success' | 'error' | 'info') => {
+        setConfirmationModal({ isOpen: true, title, message, type });
+        clearTimeout(modalTimerRef.current);
+        modalTimerRef.current = window.setTimeout(() => {
+            cerrarModalConfirmacion();
+        }, 1000);
+    };
+
     const { mutate, isPending: isCreating } = useMutation<Nivel, Error, CrearNivelData>({
         mutationFn: (data) => nivelesService.crearNivel(data),
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['niveles'] });
             cerrarModalCrear();
-            setConfirmationModal({
-                isOpen: true,
-                title: '¡Registro Exitoso!',
-                message: `El nivel "${data.nombre}" ha sido registrado correctamente.`,
-                type: 'success',
-            });
+            // Usamos la nueva función centralizada
+            showAutoClosingModal('¡Registro Exitoso!', `El nivel "${nombreNivelCreando}" ha sido registrado correctamente.`, 'success');
         },
         onError: (error) => {
-            setConfirmationModal({
-                isOpen: true,
-                title: 'Error al Crear',
-                message: error.message,
-                type: 'error',
-            });
+            showAutoClosingModal('Error al Crear', error.message, 'error');
         },
     });
 
+    useEffect(() => {
+        return () => {
+            clearTimeout(modalTimerRef.current);
+        };
+    }, []);
+
     const handleGuardarNivel = (data: CrearNivelData) => {
-        const nombreNormalizado = normalizarParaComparar(data.nombre);
+        const nombreNormalizadoParaComparar = normalizarParaComparar(data.nombre);
         
         const duplicado = niveles.find(
-            nivel => normalizarParaComparar(nivel.nombre) === nombreNormalizado
+            nivel => normalizarParaComparar(nivel.nombre) === nombreNormalizadoParaComparar
         );
 
         if (duplicado) {
-            setConfirmationModal({
-                isOpen: true,
-                title: 'Nombre Duplicado',
-                message: "El nombre del nivel ya se encuentra registrado.",
-                type: 'error',
-            });
+
+            showAutoClosingModal('Nombre Duplicado', "Ya existe un nivel con un nombre similar (ignorando acentos o plurales).", 'error');
             return;
         }
+        
+        setNombreNivelCreando(data.nombre);
         
         setConfirmationModal({
             isOpen: true,
             title: 'Confirmar Creación',
             message: `¿Está seguro de que desea crear el nivel "${data.nombre}"?`,
             type: 'confirmation',
-            onConfirm: () => mutate(data),
+            onConfirm: () => mutate({ nombre: data.nombre }),
         });
     };
 
     const abrirModalCrear = () => setModalCrearAbierto(true);
     const cerrarModalCrear = () => {
         setModalCrearAbierto(false);
+        setNombreNivelCreando('');
     };
-    const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
+    const cerrarModalConfirmacion = () => {
+        setConfirmationModal(initialConfirmationState);
+        clearTimeout(modalTimerRef.current);
+    };
 
     return {
         niveles,

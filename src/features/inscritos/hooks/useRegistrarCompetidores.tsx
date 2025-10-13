@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ApiErrorResponse, CompetidorCSV, InscripcionPayload, FilaProcesada } from '../types/indexInscritos';
@@ -7,8 +7,8 @@ import { importarCompetidoresAPI } from '../services/ApiInscripcion';
 import type { FileRejection } from 'react-dropzone';
 import { procesarYValidarCSV } from '../utils/csvProcessor';
 import { mapCSVRenglonToPayload } from '../utils/apiMapper';
-
-// Importamos las utilidades directamente para usarlas en el hook
+import { areasService } from '../../areas/services/areasService';
+import { nivelesService } from '../../niveles/services/nivelesService';
 import { headerMapping, normalizarEncabezado } from '../utils/csvProcessor';
 
 export type ModalState = {
@@ -27,6 +27,11 @@ export function useImportarCompetidores() {
     const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
     const [modalState, setModalState] = useState<ModalState>(initialModalState);
     const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]);
+    const [invalidHeaders, setInvalidHeaders] = useState<string[]>([]);
+    
+    // Obtener áreas y niveles de la API para la validación
+    const { data: areas = [], isLoading: isLoadingAreas } = useQuery({ queryKey: ['areas'], queryFn: areasService.obtenerAreas });
+    const { data: niveles = [], isLoading: isLoadingNiveles } = useQuery({ queryKey: ['niveles'], queryFn: nivelesService.obtenerNiveles });
 
     const { mutate, isPending } = useMutation<{ message: string }, AxiosError<ApiErrorResponse>, InscripcionPayload>({
         mutationFn: importarCompetidoresAPI,
@@ -54,6 +59,7 @@ export function useImportarCompetidores() {
         setFilas([]);
         setNombreArchivo(null);
         setColumnasDinamicas([]);
+        setInvalidHeaders([]);
     }, []);
 
     const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -69,7 +75,12 @@ export function useImportarCompetidores() {
         const reader = new FileReader();
         reader.onload = (e) => {
             const text = e.target?.result as string;
-            const { filasProcesadas, headers: cabecerasDetectadas, errorGlobal } = procesarYValidarCSV(text);
+            
+            const nombresAreas = areas.map(a => a.nombre);
+            const nombresNiveles = niveles.map(n => n.nombre);
+
+            const { filasProcesadas, headers: cabecerasDetectadas, errorGlobal, invalidHeaders: procesadosInvalidos } = procesarYValidarCSV(text, nombresAreas, nombresNiveles);
+            setInvalidHeaders(procesadosInvalidos ?? []);
 
             if (errorGlobal) {
                 setModalState({ isOpen: true, type: 'error', title: 'Error en el Archivo', message: errorGlobal });
@@ -77,15 +88,12 @@ export function useImportarCompetidores() {
                 return;
             }
 
-            // --- LÓGICA DE CREACIÓN DE COLUMNAS CORREGIDA Y SIMPLIFICADA ---
             const nuevasColumnas: ColumnDef<FilaProcesada>[] = cabecerasDetectadas.map(header => {
                 const normalizedHeader = normalizarEncabezado(header);
-                const key = headerMapping[normalizedHeader]; // Búsqueda directa y correcta
+                const key = headerMapping[normalizedHeader];
 
                 return {
-                    // La propiedad `header` es lo que se mostrará en la cabecera.
                     header: header,
-                    // `accessorKey` le dice a la tabla cómo obtener el dato de la fila.
                     accessorKey: `datos.${key}`,
                 };
             }).filter(col => col.accessorKey && !col.accessorKey.endsWith('undefined'));
@@ -100,18 +108,23 @@ export function useImportarCompetidores() {
             setIsParsing(false);
         };
         reader.readAsText(file, 'UTF-8');
-    }, [reset]);
+    }, [reset, areas, niveles]);
     
-    const esArchivoValido = filas.length > 0 && filas.every(f => f.esValida);
+    const esArchivoValido = filas.length > 0 && invalidHeaders.length === 0 && filas.every(f => f.esValida);
 
     const handleSave = () => {
+        if (invalidHeaders.length > 0) {
+            setModalState({ isOpen: true, type: 'error', title: 'Cabeceras no válidas', message: 'El archivo contiene columnas no reconocidas. Por favor, corrija las cabeceras marcadas en rojo antes de guardar.' });
+            return;
+        }
+        
         const filasValidas = filas.filter(f => f.esValida);
         if (filas.length === 0 || filasValidas.length === 0) {
-             setModalState({ isOpen: true, type: 'info', title: 'Sin datos', message: 'No hay filas válidas para guardar.' });
+            setModalState({ isOpen: true, type: 'info', title: 'Sin datos', message: 'No hay filas válidas para guardar.' });
             return;
         }
         if (filasValidas.length !== filas.length) {
-            setModalState({ isOpen: true, type: 'error', title: 'Datos Inválidos', message: 'No se puede guardar porque hay filas con errores.' });
+            setModalState({ isOpen: true, type: 'error', title: 'Datos Inválidos', message: 'No se puede guardar porque hay filas con errores. Por favor, revise los datos marcados en rojo.' });
             return;
         }
 
@@ -129,12 +142,13 @@ export function useImportarCompetidores() {
     };
 
     const closeModal = () => setModalState(initialModalState);
+    const isLoadingData = isLoadingAreas || isLoadingNiveles;
 
     return {
         datos: filas,
         nombreArchivo,
         esArchivoValido,
-        isParsing,
+        isParsing: isParsing || isLoadingData,
         isSubmitting: isPending,
         modalState,
         onDrop,
@@ -142,5 +156,6 @@ export function useImportarCompetidores() {
         handleCancel: reset,
         closeModal,
         columnasDinamicas,
+        invalidHeaders,
     };
 }

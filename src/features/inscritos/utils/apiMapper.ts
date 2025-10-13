@@ -1,5 +1,3 @@
-// src/features/inscritos/utils/apiMapper.ts
-
 import type { CompetidorCSV, CompetidorIndividualPayload } from '../types/indexInscritos';
 import { DEFAULT_FECHA_NAC, DEFAULT_GRADO_ESCOLAR } from '../constants';
 
@@ -19,8 +17,10 @@ export const mapCSVRenglonToPayload = (datos: CompetidorCSV): CompetidorIndividu
         competidor: {
             grado_escolar: datos.grado_escolar || DEFAULT_GRADO_ESCOLAR,
             departamento: datos.departamento,
-            contacto_tutor: datos.celular_tutor,
-            contacto_emergencia: datos.celular_emergencia || datos.celular_tutor,
+            nombre_tutor: datos.nombre_tutor || "",
+            contacto_tutor: datos.celular_tutor || "8785452121",
+            contacto_emergencia: datos.celular_emergencia || datos.celular_tutor || null,
+            
         },
         institucion: {
             nombre: datos.colegio_institucion,

@@ -3,8 +3,19 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 import { IconoPlus } from '../../areas/components/IconoPlus';
 import { useGestionNiveles } from '../hooks/useGestionNiveles';
 import type { Nivel } from '../types';
+import { Modal } from '../../../components/ui/Modal';
 import { ModalCrearNivel } from '../components/ModalCrearNivel';
-import { ModalConfirmacion } from '../../areas/components/ModalConfirmacion';
+
+const SkeletonRow = () => (
+    <tr className="animate-pulse">
+        <td className="p-4 text-neutro-700 text-center">
+            <div className="h-4 bg-gray-200 rounded-md"></div>
+        </td>
+        <td className="p-4 text-neutro-700 text-center">
+            <div className="h-4 bg-gray-200 rounded-md"></div>
+        </td>
+    </tr>
+);
 
 export function PaginaNiveles() {
     const {
@@ -31,10 +42,14 @@ export function PaginaNiveles() {
             <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                 <header className="text-center mb-10">
                     <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-                        Niveles
+                        Registrar Niveles de Olimpiada
                     </h1>
                 </header>
                 
+                <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
+                    Lista de Niveles
+                </h2>
+
                 <div className="rounded-lg border border-neutro-200 overflow-hidden relative h-96">
                     <div className="absolute inset-0 overflow-y-auto">
                         <table className="w-full text-left">
@@ -47,7 +62,7 @@ export function PaginaNiveles() {
                             </thead>
                             <tbody className="divide-y divide-neutro-200">
                                 {isLoading ? (
-                                    <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">Cargando niveles...</td></tr>
+                                    [...Array(7)].map((_, i) => <SkeletonRow key={i} />)
                                 ) : table.getRowModel().rows.length === 0 ? (
                                     <tr><td colSpan={columns.length} className="text-center p-10 text-neutro-400">No hay niveles registrados.</td></tr>
                                 ) : (
@@ -65,16 +80,26 @@ export function PaginaNiveles() {
                 </div>
 
                 <footer className="flex justify-end mt-6">
-                    <button onClick={abrirModalCrear} disabled={isLoading} className="inline-flex items-center gap-2 px-6 py-2.5 font-semibold rounded-lg bg-principal-500 text-white hover:bg-principal-600 transition-colors disabled:opacity-50">
+                    <button 
+                        onClick={abrirModalCrear} 
+                        disabled={isLoading} 
+                        className="inline-flex items-center gap-2 px-6 py-2.5 font-semibold rounded-lg bg-principal-500 text-white hover:bg-principal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Abrir formulario para crear un nuevo nivel"
+                    >
                         <IconoPlus />
                         Nuevo Nivel
                     </button>
                 </footer>
             </main>
 
-            <ModalCrearNivel isOpen={modalCrearAbierto} onClose={cerrarModalCrear} onGuardar={handleGuardarNivel} loading={isCreating} />
+            <ModalCrearNivel
+                isOpen={modalCrearAbierto}
+                onClose={cerrarModalCrear}
+                onGuardar={handleGuardarNivel}
+                loading={isCreating}
+            />
             
-            <ModalConfirmacion 
+            <Modal 
                 isOpen={confirmationModal.isOpen} 
                 onClose={cerrarModalConfirmacion} 
                 onConfirm={confirmationModal.onConfirm} 
@@ -83,7 +108,7 @@ export function PaginaNiveles() {
                 loading={isCreating}
             >
                 {confirmationModal.message}
-            </ModalConfirmacion>
+            </Modal>
         </div>
     );
 }

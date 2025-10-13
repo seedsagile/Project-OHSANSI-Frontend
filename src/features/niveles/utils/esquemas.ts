@@ -1,22 +1,38 @@
 import { z } from 'zod';
 
-function normalizarTexto(str: string): string {
+export function normalizarParaGuardar(str: string): string {
   if (!str) return '';
-  let texto = str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  texto = texto.replace(/([aeiou])\1+/gi, '$1');
-  texto = texto.replace(/([^lrcn\s])\1+/gi, '$1');
-  texto = texto.replace(/([lrcn])\1{2,}/gi, '$1$1');
-  texto = texto.trim().replace(/\s+/g, ' ');
-  return texto.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  const textoLimpio = str.trim().replace(/\s+/g, ' ');
+  
+  return textoLimpio.split(' ').map(word => {
+    if (word.length > 0 && /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]/.test(word)) {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }
+    return word;
+  }).join(' ');
+}
+
+export function normalizarParaComparar(str: string): string {
+    if (!str) return '';
+    const textoNormalizado = str
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    return textoNormalizado.split(' ').map(word => word.endsWith('s') ? word.slice(0, -1) : word).join(' ');
 }
 
 export const crearNivelEsquema = z.object({
   nombre: z.string()
-      .refine(val => val.trim().length > 0, { message: 'El campo Nombre del nivel es obligatorio.' })
-      .refine(val => /^[a-zA-Z0-9\s.]+$/.test(val), { message: 'El campo Nombre del nivel contiene caracteres especiales...' })
-      .transform(val => normalizarTexto(val))
+      .trim()
+      .min(1, { message: 'El campo Nombre del nivel es obligatorio.' })
+      .refine(val => /^[a-zA-Z0-9\s.\-áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val), { 
+          message: 'El campo contiene caracteres no permitidos. Solo se aceptan letras, números, espacios, acentos, puntos y guiones.' 
+      })
+      .transform(val => normalizarParaGuardar(val))
       .pipe(z.string()
-        .min(3, 'El campo Nombre del nivel requiere un mínimo de 3 caracteres.')
+        .min(13, 'El campo Nombre del nivel requiere un mínimo de 13 caracteres.')
         .max(30, 'El Nombre del Nivel no puede tener más de 30 caracteres.')
       )
 });

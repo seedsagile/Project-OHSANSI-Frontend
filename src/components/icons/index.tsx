@@ -33,3 +33,47 @@ export const LogoutIcon = () => (
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
     </svg>
 );
+
+// src/components/icons/index.tsx
+
+/**
+ * Este archivo centraliza todos los iconos de la aplicación, importándolos desde lucide-react.
+ * Esto nos permite gestionar y reemplazar iconos fácilmente en el futuro.
+ * Les asignamos un alias (Ej: LayoutDashboard as DashboardIcon) para que coincidan con los nombres
+ * que ya se usan en componentes como Sidebar.tsx.
+ */
+
+export {
+    // --- Iconos para Layout y UI General ---
+    Menu as IconMenu,          // Icono de menú "hamburguesa"
+    X as IconClose,            // Icono de 'X' para cerrar
+    //LogOut as LogoutIcon,      // Ícono para el botón de cerrar sesión
+    UserCircle as IconoUsuario,// Ícono para el perfil de usuario en el footer del sidebar
+
+    // --- Iconos de Navegación del Sidebar ---
+    //LayoutDashboard as DashboardIcon,
+    //Users as UsersIcon,
+    //ClipboardList as ClipboardIcon,
+    //FileText as FileTextIcon,
+    FileCheck2 as IconFileCheck, // Para 'Asignaciones' del otro diseño
+    Network as IconNetwork,        // Para 'Niveles' del otro diseño
+    BookUser as IconBookUser,      // Para 'Responsables' del otro diseño
+    BookMarked as IconBookMarked,  // Para 'Evaluadores' del otro diseño
+    LayoutGrid as IconLayoutGrid,  // Para 'Áreas' del otro diseño
+
+    // --- Iconos para Modales y Alertas ---
+    AlertTriangle as IconAlert,
+    CheckCircle2 as IconCheck,
+    Info as IconInfo,
+    AlertTriangle as IconWarning, // Reutilizamos AlertTriangle para advertencias
+
+    // --- Iconos para Acciones Comunes ---
+    PlusCircle as IconPlus,
+    UploadCloud as IconUpload,
+    Trash2 as IconTrash,
+    LoaderCircle as IconSpinner,
+    ArrowLeft as IconArrowLeft,
+    File as IconFile,
+    ChevronDown as IconChevronDown,
+
+} from 'lucide-react';
