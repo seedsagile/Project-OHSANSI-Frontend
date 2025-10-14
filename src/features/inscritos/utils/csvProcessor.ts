@@ -99,7 +99,6 @@ export const procesarYValidarCSV = (
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
                     return;
                 }
-
                 if (!/^[0-9]+(-?[A-Z])?$/.test(val)) {
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Formato inválido. Ej: 7962927, 7962927A, 7962927-A.' });
                 }
@@ -122,9 +121,14 @@ export const procesarYValidarCSV = (
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
                     return;
                 }
-
+                if (!/^[a-zA-Z\s.áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val)) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'Solo se permiten letras, espacios, acentos y puntos.'
+                    });
+                }
                 if (!DEPARTAMENTOS_VALIDOS.some(d => normalizeForComparison(d) === normalizeForComparison(val))) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El departamento no es válido.' });
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El departamento no existe.' });
                 }
             }).transform(toTitleCase),
         
@@ -137,14 +141,13 @@ export const procesarYValidarCSV = (
                 if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, números, acentos y espacios.' });
                 }
-            }),
+            }).transform(toTitleCase),
 
         celular_estudiante: z.string().transform(val => val.trim()).superRefine((val, ctx) => {
             if (val.length === 0) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
                 return;
             }
-
             if (!/^[0-9]+$/.test(sanitizePhoneNumber(val))) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten números.' });
             }
@@ -156,7 +159,6 @@ export const procesarYValidarCSV = (
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
                     return;
                 }
-
                 if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(val)) {
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El formato del email no es válido.' });
                 }
@@ -168,10 +170,13 @@ export const procesarYValidarCSV = (
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
                     return;
                 }
+                if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, números, acentos y espacios.' });
+                }
                 if (!areasValidas.some(a => normalizeForComparison(a) === normalizeForComparison(val))) {
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El área no existe. ${getSuggestion(val, areasValidas as string[]) || ''}`.trim() });
                 }
-            }),
+            }).transform(toTitleCase),
 
         nivel: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
@@ -179,10 +184,13 @@ export const procesarYValidarCSV = (
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
                     return;
                 }
+                if (!/^[a-zA-Z0-9\s.\-áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val)) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, números, espacios, acentos, puntos y guiones.' });
+                }
                 if (!nivelesValidos.some(n => normalizeForComparison(n) === normalizeForComparison(val))) {
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El nivel no existe. ${getSuggestion(val, nivelesValidos as string[]) || ''}`.trim() });
                 }
-            }),
+            }).transform(toTitleCase),
         
         fecha_nacimiento: z.string().optional().refine(val => !val || !isNaN(Date.parse(val)), { message: 'Formato de fecha inválido.' }),
         grado_escolar: z.string().optional(),
