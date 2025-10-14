@@ -88,14 +88,15 @@ export const emailSchema = z.string()
   })
   .pipe(
     z.string()
-      .min(6, 'El campo Correo electrónico requiere un mínimo de 6 caracteres.')
-      .max(30, 'El campo Correo electrónico tiene un límite máximo de 30 caracteres.')
-      .refine((val) => /^[a-zA-Z0-9.@]+$/.test(val), {
+      .min(16, 'El campo Correo electrónico requiere un mínimo de 16 caracteres.')
+      .max(50, 'El campo Correo electrónico tiene un límite máximo de 50 caracteres.')
+      .refine((val) => /^[^\s@]+@[^\s@]+.[^\s@]+$/.test(val), {
         message: 'Correo electrónico inválido. Solo se permiten letras, números y el caracter especial .'
       })
-      .refine((val) => /^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/.test(val), {
+      .refine((val) => /^[^\s@]+@[^\s@]+.[^\s@]+$/.test(val), {
         message: 'El campo Correo electrónico debe tener un formato válido (ej. usuario@uno.com).'
       })
+      
   );
 
 /**
