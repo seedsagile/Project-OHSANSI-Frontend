@@ -39,9 +39,9 @@ export const LoginForm: React.FC = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials(prev => ({
+    setCredentials((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -50,7 +50,6 @@ export const LoginForm: React.FC = () => {
       <h2 className="text-2xl font-bold text-neutro-800 text-center">Oh! SanSi - Acceso</h2>
       <p className="text-center text-neutro-600 mb-4">Acceso exclusivo para evaluadores</p>
       <form onSubmit={handleSubmit} className="space-y-4">
-        
         {/* --- 1. AQUÍ SE USA LA VARIABLE 'error' --- */}
         {error && (
           <div className="bg-acento-100 border border-acento-500 text-acento-700 px-4 py-3 rounded">

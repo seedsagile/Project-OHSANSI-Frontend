@@ -15,16 +15,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
-    
+
     // Eliminar caracteres que no sean letras, espacios o acentos
     const cleanedValue = originalValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-    
+
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
       if (cursorPosition) {
         input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
       }
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -35,16 +35,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
     const cleanedText = pastedText.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-    
+
     if (cleanedText) {
       const input = e.currentTarget;
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
       const currentValue = input.value;
       const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
-      
+
       input.value = newValue.substring(0, 20);
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -55,16 +55,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
-    
+
     // Eliminar TODO excepto números (sin espacios)
     const cleanedValue = originalValue.replace(/[^0-9]/g, '');
-    
+
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
       if (cursorPosition) {
         input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
       }
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -75,16 +75,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
     const cleanedText = pastedText.replace(/[^0-9]/g, '');
-    
+
     if (cleanedText) {
       const input = e.currentTarget;
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
       const currentValue = input.value;
       const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
-      
+
       input.value = newValue.substring(0, 15);
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -95,16 +95,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
-    
+
     // Solo permitir: letras, @, punto, guión bajo y guión (SIN espacios, SIN números)
     const cleanedValue = originalValue.replace(/[^a-zA-Z@.\-_]/g, '');
-    
+
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
       if (cursorPosition) {
         input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
       }
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -115,16 +115,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
     const cleanedText = pastedText.replace(/[^a-zA-Z@.\-_]/g, '');
-    
+
     if (cleanedText) {
       const input = e.currentTarget;
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
       const currentValue = input.value;
       const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
-      
+
       input.value = newValue.substring(0, 50);
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -135,16 +135,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
-    
+
     // Solo letras y números, sin espacios
     const cleanedValue = originalValue.replace(/[^a-zA-Z0-9]/g, '');
-    
+
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
       if (cursorPosition) {
         input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
       }
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -155,16 +155,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
     const cleanedText = pastedText.replace(/[^a-zA-Z0-9]/g, '');
-    
+
     if (cleanedText) {
       const input = e.currentTarget;
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
       const currentValue = input.value;
       const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
-      
+
       input.value = newValue.substring(0, 10);
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -175,16 +175,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     const input = e.currentTarget;
     const cursorPosition = input.selectionStart;
     const originalValue = input.value;
-    
+
     // Eliminar TODOS los espacios
     const cleanedValue = originalValue.replace(/\s/g, '');
-    
+
     if (originalValue !== cleanedValue) {
       input.value = cleanedValue;
       if (cursorPosition) {
         input.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
       }
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -195,16 +195,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
     const cleanedText = pastedText.replace(/\s/g, '');
-    
+
     if (cleanedText) {
       const input = e.currentTarget;
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
       const currentValue = input.value;
       const newValue = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
-      
+
       input.value = newValue.substring(0, 32);
-      
+
       const event = new Event('input', { bubbles: true });
       input.dispatchEvent(event);
     }
@@ -213,7 +213,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-neutro-800">Datos del Evaluador</h2>
-      
+
       {/* Nombre y Apellido lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -247,7 +247,9 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             {...register('apellido')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.apellido ? 'border-acento-500' : 'border-neutro-300'}`}
           />
-          {errors.apellido && <p className="text-acento-600 text-sm mt-1">{errors.apellido.message}</p>}
+          {errors.apellido && (
+            <p className="text-acento-600 text-sm mt-1">{errors.apellido.message}</p>
+          )}
         </div>
       </div>
 
@@ -267,10 +269,10 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
         />
         {errors.ci && <p className="text-acento-600 text-sm mt-1">{errors.ci.message}</p>}
       </div>
-    
+
       <div>
         <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
-          Correo electrónico 
+          Correo electrónico
         </label>
         <input
           type="email"
@@ -301,11 +303,16 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             {...register('password')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.password ? 'border-acento-500' : 'border-neutro-300'}`}
           />
-          {errors.password && <p className="text-acento-600 text-sm mt-1">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-acento-600 text-sm mt-1">{errors.password.message}</p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="password_confirmation" className="block text-md font-medium text-neutro-600 mb-1">
+          <label
+            htmlFor="password_confirmation"
+            className="block text-md font-medium text-neutro-600 mb-1"
+          >
             Confirmar contraseña
           </label>
           <input
@@ -318,12 +325,17 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
             {...register('password_confirmation')}
             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.password_confirmation ? 'border-acento-500' : 'border-neutro-300'}`}
           />
-          {errors.password_confirmation && <p className="text-acento-600 text-sm mt-1">{errors.password_confirmation.message}</p>}
+          {errors.password_confirmation && (
+            <p className="text-acento-600 text-sm mt-1">{errors.password_confirmation.message}</p>
+          )}
         </div>
       </div>
-      
+
       <div>
-        <label htmlFor="codigo_evaluador" className="block text-md font-medium text-neutro-600 mb-1">
+        <label
+          htmlFor="codigo_evaluador"
+          className="block text-md font-medium text-neutro-600 mb-1"
+        >
           Código de Evaluador
         </label>
         <input
@@ -336,7 +348,9 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
           {...register('codigo_evaluador')}
           className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_evaluador ? 'border-acento-500' : 'border-neutro-300'}`}
         />
-        {errors.codigo_evaluador && <p className="text-acento-600 text-sm mt-1">{errors.codigo_evaluador.message}</p>}
+        {errors.codigo_evaluador && (
+          <p className="text-acento-600 text-sm mt-1">{errors.codigo_evaluador.message}</p>
+        )}
         <p className="text-sm text-neutro-500 mt-1">
           Este código es proporcionado por la institución.
         </p>

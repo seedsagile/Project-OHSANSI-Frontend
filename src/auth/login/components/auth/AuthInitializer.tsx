@@ -4,9 +4,8 @@ import { authService } from '../../services/authService';
 
 export const AuthInitializer: React.FC = () => {
   const { setLoading, setUser, logout } = useAuthStore();
-  
-  useEffect(() => {
 
+  useEffect(() => {
     const initialToken = useAuthStore.getState().token;
 
     const validateToken = async () => {
@@ -26,7 +25,6 @@ export const AuthInitializer: React.FC = () => {
     };
 
     validateToken();
-
   }, []);
 
   return null;
