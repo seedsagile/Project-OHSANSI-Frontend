@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import type { FilaProcesada } from '../types/indexInscritos';
+import { reverseHeaderMapping } from '../utils/csvProcessor';
 
 type TooltipState = { visible: boolean; content: string; x: number; y: number };
 
@@ -16,12 +17,18 @@ export function TablaResultados({ data, columns, invalidHeaders }: TablaResultad
 
     const handleMouseMove = (e: React.MouseEvent, fila: FilaProcesada) => {
         if (fila.esValida || !fila.errores) return;
+
         const content = `Fila ${fila.numeroDeFila} - Errores:\n` +
             Object.entries(fila.errores)
-                .map(([key, value]) => `• ${key}: ${value}`)
+                .map(([key, value]) => {
+                    const displayName = reverseHeaderMapping[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                    return `• ${displayName}: ${value}`;
+                })
                 .join('\n');
+        
         setTooltip({ visible: true, content: content, x: e.clientX + 15, y: e.clientY + 15 });
     };
+    
     const handleMouseLeave = () => setTooltip({ visible: false, content: '', x: 0, y: 0 });
 
     const showTable = columns.length > 0;
@@ -30,8 +37,8 @@ export function TablaResultados({ data, columns, invalidHeaders }: TablaResultad
         <>
             {tooltip.visible && (
                 <div
-                    className="fixed bg-negro text-blanco text-sm rounded-md p-3 shadow-lg z-50 max-w-xs"
-                    style={{ top: tooltip.y, left: tooltip.x, whiteSpace: 'pre-line' }}
+                    className="fixed bg-negro text-blanco text-sm rounded-md p-3 shadow-lg z-50 max-w-xs whitespace-pre-line"
+                    style={{ top: tooltip.y, left: tooltip.x }}
                 >
                     {tooltip.content}
                 </div>
@@ -78,7 +85,9 @@ export function TablaResultados({ data, columns, invalidHeaders }: TablaResultad
                                             {row.getVisibleCells().map(cell => {
                                                 const headerText = String(cell.column.columnDef.header);
                                                 const isInvalidColumn = invalidHeaders.includes(headerText);
-                                                const cellKey = cell.column.id;
+                                                
+                                                const cellKey = String(cell.column.columnDef).split('.').pop() || '';
+                                                
                                                 const hasCellError = row.original.errores && row.original.errores[cellKey];
                                                 return (
                                                     <td key={cell.id} className={`p-4 text-neutro-700 text-center whitespace-nowrap transition-colors ${

@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores.tsx';
+import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
 import { Modal } from '../../../components/ui/Modal';
 import { Save, X, LoaderCircle } from 'lucide-react';
 import { DropzoneArea } from '../components/DropzoneArea';
@@ -29,7 +30,8 @@ export function PaginaImportarCompetidores() {
         accept: { 'text/csv': ['.csv'] }
     });
 
-    const hayErroresDeFila = datos.length > 0 && datos.some(d => !d.esValida);
+    const filasValidasParaGuardar = useMemo(() => datos.filter(d => d.esValida).length, [datos]);
+    const hayErroresDeFila = useMemo(() => datos.length > 0 && datos.some(d => !d.esValida), [datos]);
     const isPageBusy = isLoadingData || isParsing || isSubmitting;
 
     return (
@@ -37,11 +39,23 @@ export function PaginaImportarCompetidores() {
             <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex items-center justify-center">
                 <main className="bg-blanco w-full max-w-7xl rounded-xl shadow-sombra-3 p-6 md:p-8">
                     
-                    <header className="flex justify-center items-center mb-10">
+                    <header className="flex justify-center items-center mb-6">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">Registrar Competidores</h1>
                     </header>
 
-                    <section className="mb-8">
+                    <Alert
+                        type="info"
+                        message={
+                            <div>
+                                <p className="font-bold">¡Importante!</p>
+                                <p className="mt-1">
+                                    Para evitar problemas con acentos y caracteres especiales (ej: Pérez, Potosí), asegúrese de que su archivo esté guardado en formato <strong>CSV UTF-8 (delimitado por comas)</strong>.
+                                </p>
+                            </div>
+                        }
+                    />
+
+                    <section className="my-8">
                         <DropzoneArea 
                             getRootProps={getRootProps}
                             getInputProps={getInputProps}
@@ -89,7 +103,7 @@ export function PaginaImportarCompetidores() {
                             {isSubmitting ? (
                                 <>
                                     <LoaderCircle className="animate-spin h-5 w-5" />
-                                    <span>Guardando...</span>
+                                    <span>{`Guardando ${filasValidasParaGuardar} competidores...`}</span>
                                 </>
                             ) : (
                                 <>

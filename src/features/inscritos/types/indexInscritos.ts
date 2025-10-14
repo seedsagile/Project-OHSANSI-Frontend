@@ -1,4 +1,5 @@
 export type CompetidorCSV = {
+    nro?: string;
     nombres: string;
     apellidos: string;
     ci: string;
@@ -24,7 +25,8 @@ export type CompetidorCSV = {
 };
 
 export type FilaProcesada = {
-    datos: Partial<CompetidorCSV>; 
+    datos: Partial<CompetidorCSV>;
+    rawData: { [key: string]: string };
     esValida: boolean;
     errores?: { [key: string]: string };
     numeroDeFila: number;
