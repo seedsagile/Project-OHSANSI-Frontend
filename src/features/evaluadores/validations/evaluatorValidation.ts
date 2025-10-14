@@ -116,7 +116,7 @@ export const ciSchema = z.string()
   })
   .pipe(
     z.string()
-      .min(5, 'El campo Carnet de identidad requiere una longitud mínima de 5 caracteres.')
+      .min(4, 'El campo Carnet de identidad requiere una longitud mínima de 4 caracteres.')
       .max(15, 'El campo Carnet de identidad tiene un límite máximo de 15 caracteres.')
       .refine((val) => {
         // Verifica si tiene más de una letra
