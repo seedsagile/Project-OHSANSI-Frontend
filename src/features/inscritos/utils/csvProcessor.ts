@@ -39,7 +39,7 @@ const sanitizePhoneNumber = (phone: string): string => {
 
 const getSuggestion = (value: string, validOptions: readonly string[]): string | null => {
     let bestMatch: string | null = null;
-    let minDistance = 3;
+    let minDistance = 3; // Umbral de distancia para considerar una sugerencia
     for (const option of validOptions) {
         const distance = levenshtein.get(value.toLowerCase(), option.toLowerCase());
         if (distance < minDistance) {
@@ -69,127 +69,74 @@ export const procesarYValidarCSV = (
 ): ProcesamientoCSVResult => {
 
     const filaSchema = z.object({
+        // Opcionales
         nro: z.string().optional(),
-
+        
+        // Nombres: Limpia, valida y formatea
         nombres: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, acentos y espacios.' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, acentos y espacios.' });
             }).transform(toTitleCase),
 
+        // Apellidos: Limpia, valida y formatea
         apellidos: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, acentos y espacios.' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, acentos y espacios.' });
             }).transform(toTitleCase),
 
+        // CI: Limpia, valida formato y convierte a mayúsculas
         ci: z.string().transform(val => val.trim().toUpperCase())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[0-9]+(-?[A-Z])?$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Formato inválido. Ej: 7962927, 7962927A, 7962927-A.' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!/^[0-9]+(-?[A-Z])?$/.test(val)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Formato inválido. Ej: 7962927, 7962927A, 7962927-A.' });
             }),
 
+        // Género: Valida que sea 'M' o 'F'
         genero: z.string().transform(val => val.trim().toUpperCase())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[FM]$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Debe ser una sola letra: "M" o "F".' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!/^[FM]$/.test(val)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Debe ser una sola letra: "M" o "F".' });
             }),
-
+        
+        // Departamento: Valida que exista en la lista de departamentos válidos
         departamento: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-Z\s.áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val)) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: 'Solo se permiten letras, espacios, acentos y puntos.'
-                    });
-                }
-                if (!DEPARTAMENTOS_VALIDOS.some(d => normalizeForComparison(d) === normalizeForComparison(val))) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El departamento no existe.' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!DEPARTAMENTOS_VALIDOS.some(d => normalizeForComparison(d) === normalizeForComparison(val))) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El departamento no existe.' });
             }).transform(toTitleCase),
         
         colegio_institucion: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, números, acentos y espacios.' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
             }).transform(toTitleCase),
 
+        // Celular: Valida y limpia dejando solo números
         celular_estudiante: z.string().transform(val => val.trim()).superRefine((val, ctx) => {
-            if (val.length === 0) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                return;
-            }
-            if (!/^[0-9]+$/.test(sanitizePhoneNumber(val))) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten números.' });
-            }
+            if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+            else if (!/^[0-9]+$/.test(sanitizePhoneNumber(val))) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten números.' });
         }).transform(sanitizePhoneNumber),
 
+        // Email: Valida el formato
         email: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El formato del email no es válido.' });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(val)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El formato del email no es válido.' });
             }),
 
+        // Área: Valida que exista en la lista de áreas válidas y ofrece sugerencias
         area: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, números, acentos y espacios.' });
-                }
-                if (!areasValidas.some(a => normalizeForComparison(a) === normalizeForComparison(val))) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El área no existe. ${getSuggestion(val, areasValidas as string[]) || ''}`.trim() });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!areasValidas.some(a => normalizeForComparison(a) === normalizeForComparison(val))) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El área no existe. ${getSuggestion(val, areasValidas as string[]) || ''}`.trim() });
             }).transform(toTitleCase),
 
+        // Nivel: Valida que exista en la lista de niveles válidos y ofrece sugerencias
         nivel: z.string().transform(val => val.trim())
             .superRefine((val, ctx) => {
-                if (val.length === 0) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
-                    return;
-                }
-                if (!/^[a-zA-Z0-9\s.\-áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val)) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Solo se permiten letras, números, espacios, acentos, puntos y guiones.' });
-                }
-                if (!nivelesValidos.some(n => normalizeForComparison(n) === normalizeForComparison(val))) {
-                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El nivel no existe. ${getSuggestion(val, nivelesValidos as string[]) || ''}`.trim() });
-                }
+                if (val.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Este campo es obligatorio.' });
+                else if (!nivelesValidos.some(n => normalizeForComparison(n) === normalizeForComparison(val))) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El nivel no existe. ${getSuggestion(val, nivelesValidos as string[]) || ''}`.trim() });
             }).transform(toTitleCase),
         
         fecha_nacimiento: z.string().optional().refine(val => !val || !isNaN(Date.parse(val)), { message: 'Formato de fecha inválido.' }),
@@ -207,59 +154,78 @@ export const procesarYValidarCSV = (
     });
 
     let cleanText = textoCsv;
-
-    if (cleanText.charCodeAt(0) === 0xFEFF) { cleanText = cleanText.substring(1); }
-
+    if (cleanText.charCodeAt(0) === 0xFEFF) { cleanText = cleanText.substring(1); } 
     if (cleanText.trim() === '') { return { filasProcesadas: [], headers: [], errorGlobal: 'El archivo CSV está vacío.', invalidHeaders: [] }; }
     
     const firstNewLineIndex = cleanText.search(/\r\n|\n|\r/);
-    
     const headerLine = firstNewLineIndex === -1 ? cleanText : cleanText.substring(0, firstNewLineIndex);
-    
     const dataString = firstNewLineIndex === -1 ? '' : cleanText.substring(firstNewLineIndex + 1);
     
     const detectedDelimiter = [';', ',', '\t'].find(d => headerLine.includes(d)) || ';';
-    
     const headersRaw = headerLine.split(detectedDelimiter).map(h => h.trim()).filter(Boolean);
-    
     const headersMapeados = headersRaw.map(h => headerMapping[normalizarEncabezado(h)]);
     
     const encabezadosFaltantes = requiredCSVKeys.filter(key => !headersMapeados.includes(key));
-    
     const invalidHeaders = headersRaw.filter(h => !allValidNormalizedHeaders.includes(normalizarEncabezado(h)));
     
-    if (encabezadosFaltantes.length > 0) { const nombresFaltantes = encabezadosFaltantes.map(key => `"${reverseHeaderMapping[key] || key}"`); const errorMessage = `Faltan las siguientes columnas obligatorias: ${nombresFaltantes.join(', ')}. Por favor, corrija el archivo CSV.`; return { filasProcesadas: [], headers: headersRaw, errorGlobal: errorMessage, invalidHeaders }; }
+    if (encabezadosFaltantes.length > 0) {
+        const nombresFaltantes = encabezadosFaltantes.map(key => `"${reverseHeaderMapping[key] || key}"`);
+        const errorMessage = `Faltan las siguientes columnas obligatorias: ${nombresFaltantes.join(', ')}. Por favor, corrija el archivo CSV.`;
+        return { filasProcesadas: [], headers: headersRaw, errorGlobal: errorMessage, invalidHeaders };
+    }
     
-    const parseResult = Papa.parse<string[]>(dataString, { header: false, skipEmptyLines: true, delimiter: detectedDelimiter, transform: (value: string) => value.trim() });
+    const parseResult = Papa.parse<string[]>(dataString, {
+        header: false,
+        skipEmptyLines: true,
+        delimiter: detectedDelimiter,
+        transform: (value: string) => value.trim()
+    });
     
     const datosCompletos = parseResult.data.map((rowArray: string[]) => {
         const datosLimpios: Partial<CompetidorCSV> = {};
         const rawData: { [key: string]: string } = {};
-        headersRaw.forEach((header, index) => { const valor = rowArray[index] || ''; rawData[header] = valor; const key = headerMapping[normalizarEncabezado(header)]; if (key) { datosLimpios[key] = valor; } });
+        headersRaw.forEach((header, index) => {
+            const valor = rowArray[index] || '';
+            rawData[header] = valor;
+            const key = headerMapping[normalizarEncabezado(header)];
+            if (key) { datosLimpios[key] = valor; }
+        });
         return { datosLimpios, rawData };
     });
     
     const filasProcesadas: FilaProcesada[] = [];
-    
     const ciSet = new Set<string>();
-    
     const rowSignatures = new Set<string>();
-    
+
     datosCompletos.forEach(({ datosLimpios, rawData }, i) => {
         const numeroDeFila = i + 1;
+
         const rowSignature = JSON.stringify(Object.values(datosLimpios).map(v => String(v).trim().toLowerCase()));
-        if (rowSignatures.has(rowSignature)) { filasProcesadas.push({ datos: datosLimpios, rawData, esValida: false, errores: { general: 'Fila duplicada en el archivo.' }, numeroDeFila }); return; }
+        
+        if (rowSignatures.has(rowSignature)) {
+            filasProcesadas.push({ datos: datosLimpios, rawData, esValida: false, errores: { general: 'Fila duplicada en el archivo.' }, numeroDeFila });
+            return;
+        }
         rowSignatures.add(rowSignature);
+
         const validationResult = filaSchema.safeParse(datosLimpios);
 
         if (!validationResult.success) {
-            const errores = validationResult.error.issues.reduce((acc, issue) => { acc[String(issue.path[0])] = issue.message; return acc; }, {} as { [key: string]: string });
+            const errores = validationResult.error.issues.reduce((acc, issue) => {
+                acc[String(issue.path[0])] = issue.message;
+                return acc;
+            }, {} as { [key: string]: string });
             filasProcesadas.push({ datos: datosLimpios, rawData, esValida: false, errores, numeroDeFila });
         } else {
             const dataValidada = validationResult.data;
-            if (ciSet.has(dataValidada.ci)) { filasProcesadas.push({ datos: dataValidada, rawData, esValida: false, errores: { ci: 'CI duplicado en el archivo.' }, numeroDeFila }); }
-            else { ciSet.add(dataValidada.ci); filasProcesadas.push({ datos: dataValidada, rawData, esValida: true, numeroDeFila }); }
+            if (ciSet.has(dataValidada.ci)) {
+                filasProcesadas.push({ datos: dataValidada, rawData, esValida: false, errores: { ci: 'CI duplicado en el archivo.' }, numeroDeFila });
+            } else {
+                ciSet.add(dataValidada.ci);
+                filasProcesadas.push({ datos: dataValidada, rawData, esValida: true, numeroDeFila });
+            }
         }
     });
+
     return { filasProcesadas, headers: headersRaw, errorGlobal: null, invalidHeaders };
 };

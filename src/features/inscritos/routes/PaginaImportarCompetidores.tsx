@@ -27,6 +27,7 @@ export function PaginaImportarCompetidores() {
     const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
         onDrop,
         noClick: true,
+        disabled: isLoadingData || isParsing,
         accept: { 'text/csv': ['.csv'] }
     });
 
@@ -56,14 +57,27 @@ export function PaginaImportarCompetidores() {
                     />
 
                     <section className="my-8">
-                        <DropzoneArea 
-                            getRootProps={getRootProps}
-                            getInputProps={getInputProps}
-                            isDragActive={isDragActive}
-                            isParsing={isParsing}
-                            nombreArchivo={nombreArchivo}
-                            open={isLoadingData ? () => {} : open}
-                        />
+                        {isLoadingData ? (
+                            <div className="flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed border-neutro-300 bg-neutro-50 text-center">
+                                <LoaderCircle className="animate-spin h-10 w-10 text-principal-500" />
+                                <p className="mt-4 font-semibold text-neutro-600">
+                                    Cargando datos de validación (áreas y niveles)...
+                                </p>
+                                <p className="text-sm text-neutro-500">
+                                    Por favor, espere un momento.
+                                </p>
+                            </div>
+                        ) : (
+
+                            <DropzoneArea 
+                                getRootProps={getRootProps}
+                                getInputProps={getInputProps}
+                                isDragActive={isDragActive}
+                                isParsing={isParsing}
+                                nombreArchivo={nombreArchivo}
+                                open={open}
+                            />
+                        )}
                     </section>
                     
                     {invalidHeaders.length > 0 && (
