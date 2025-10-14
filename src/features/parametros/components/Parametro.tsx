@@ -148,7 +148,7 @@ export const Parametro = () => {
                 <thead className="bg-principal-500 text-blanco">
                   <tr>
                     <th className="py-2 px-4 text-left w-16">NRO</th>
-                    <th className="py-2 px-4 text-left">NIVEL</th>
+                    <th className="py-2 px-4 text-left w-10">NIVEL</th>
                     <th className="py-2 px-4 text-center w-24">TIENE</th>
                   </tr>
                 </thead>
