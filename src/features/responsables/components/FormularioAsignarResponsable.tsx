@@ -292,7 +292,7 @@ export const FormularioAsignarResponsable = () => {
                 )}
               </div>
 
-              <div className="flex flex-col gap-2">
+              {/* <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-negro">
                   Contraseña
                 </label>
@@ -315,7 +315,7 @@ export const FormularioAsignarResponsable = () => {
                     {errors.contrasena.message}
                   </span>
                 )}
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -388,6 +388,7 @@ export const FormularioAsignarResponsable = () => {
             <button
               type="submit"
               className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors"
+              onClick={handleGenerarClick}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
