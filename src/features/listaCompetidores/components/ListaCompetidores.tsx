@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AccordionArea } from "./AccordionArea";
 import { AccordionNivel } from "./AccordionNivel";
 import {
@@ -43,7 +43,7 @@ export const ListaCompetidores = () => {
       setCompetidores(data.data);
     } catch (error) {
       console.error("Error al obtener competidores:", error);
-      setCompetidores([]); // Si falla, limpiar lista
+      setCompetidores([]);
     } finally {
       setLoadingCompetidores(false);
     }
@@ -88,6 +88,7 @@ export const ListaCompetidores = () => {
     fetchCompetidores();
   };
 
+  // 🔹 FILTRADO BASE
   const filteredCompetidores = competidores.filter((c) => {
     if (
       selectedAreas.length > 0 &&
@@ -104,8 +105,27 @@ export const ListaCompetidores = () => {
     return true;
   });
 
+  // 🔹 ORDENAMIENTO AUTOMÁTICO
+  const sortedCompetidores = [...filteredCompetidores].sort((a, b) => {
+    // 1️⃣ Ordenar por nombre de área (A–Z)
+    const areaCompare = a.area.nombre.localeCompare(b.area.nombre);
+    if (areaCompare !== 0) return areaCompare;
+
+    // 2️⃣ Ordenar por nivel (número detectado en el nombre)
+    const getNivelNum = (nombre: string) => {
+      const match = nombre.match(/\d+/);
+      return match ? parseInt(match[0]) : 999; // si no tiene número, lo manda al final
+    };
+    const nivelCompare =
+      getNivelNum(a.nivel.nombre) - getNivelNum(b.nivel.nombre);
+    if (nivelCompare !== 0) return nivelCompare;
+
+    // 3️⃣ Ordenar por nombre de estudiante (A–Z)
+    return a.persona.nombre.localeCompare(b.persona.nombre);
+  });
+
   let infoMessage = "";
-  if (!loadingCompetidores && filteredCompetidores.length === 0) {
+  if (!loadingCompetidores && sortedCompetidores.length === 0) {
     if (selectedAreas.length === 0 && selectedNiveles.length === 0) {
       infoMessage = "No hay competidores registrados en el área seleccionada";
     } else if (selectedAreas.length > 0 && selectedNiveles.length === 0) {
@@ -127,7 +147,6 @@ export const ListaCompetidores = () => {
           </h1>
 
           <div className="flex justify-end items-start gap-4 mb-6">
-            {/* Botón mostrar todo */}
             <div className="flex flex-col items-end">
               <button
                 onClick={handleMostrarTodo}
@@ -159,14 +178,15 @@ export const ListaCompetidores = () => {
           </div>
 
           <div className="w-full overflow-x-auto">
-            <div className="max-h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent rounded-lg border border-gray-200">
+            <div className="max-h-[950px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent rounded-lg border border-gray-200">
               <table className="w-full border-collapse">
                 <thead className="bg-principal-500 text-blanco text-left sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-3 font-semibold">Nombre</th>
                     <th className="px-6 py-3 font-semibold">Apellido</th>
-                    <th className="px-6 py-3 font-semibold">Área</th>
                     <th className="px-6 py-3 font-semibold">Nivel</th>
+                    <th className="px-6 py-3 font-semibold">Área</th>
+
                     <th className="px-6 py-3 font-semibold">CI</th>
                   </tr>
                 </thead>
@@ -177,22 +197,23 @@ export const ListaCompetidores = () => {
                         Cargando competidores...
                       </td>
                     </tr>
-                  ) : filteredCompetidores.length === 0 ? (
+                  ) : sortedCompetidores.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-3 text-center">
                         {infoMessage}
                       </td>
                     </tr>
                   ) : (
-                    filteredCompetidores.map((c) => (
+                    sortedCompetidores.map((c) => (
                       <tr
                         key={c.id_competidor}
                         className="border-b hover:bg-gray-50"
                       >
                         <td className="px-6 py-3">{c.persona.nombre}</td>
                         <td className="px-6 py-3">{c.persona.apellido}</td>
-                        <td className="px-6 py-3">{c.area.nombre}</td>
                         <td className="px-6 py-3">{c.nivel.nombre}</td>
+                        <td className="px-6 py-3">{c.area.nombre}</td>
+
                         <td className="px-6 py-3">{c.persona.ci}</td>
                       </tr>
                     ))

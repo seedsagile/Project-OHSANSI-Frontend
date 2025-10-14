@@ -54,23 +54,24 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
         <span>Seleccionar Nivel</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          className={`transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
         >
-          <path d="m7 6 5 5 5-5" />
-          <path d="m7 13 5 5 5-5" />
+          <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg shadow-inner p-4 space-y-4 w-full h-30 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="absolute z-50 mt-2 bg-gray-50 border-2 border-principal-500 rounded-lg shadow-inner p-4 space-y-4 w-full h-30 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {sanitizedData.length === 0 ? (
             <p className="text-sm text-gris-500">No hay niveles disponibles</p>
           ) : (
