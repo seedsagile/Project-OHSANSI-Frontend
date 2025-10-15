@@ -21,7 +21,6 @@ const initialFeedbackState: FeedbackModalState = {
 export function useGestionNiveles() {
   const queryClient = useQueryClient();
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
-  // Renombramos el estado para mayor claridad, ya no es de confirmación
   const [feedbackModal, setFeedbackModal] =
     useState<FeedbackModalState>(initialFeedbackState);
   const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
@@ -41,7 +40,7 @@ export function useGestionNiveles() {
     clearTimeout(modalTimerRef.current);
     modalTimerRef.current = window.setTimeout(() => {
       cerrarFeedbackModal();
-    }, 1500); // Se cierra a los 1.5 segundos
+    }, 1500);
   };
 
   const { mutate, isPending: isCreating } = useMutation<Nivel, Error, CrearNivelData>({
@@ -56,7 +55,6 @@ export function useGestionNiveles() {
       );
     },
     onError: (error) => {
-      // Los errores se siguen mostrando, pero no como confirmación
       setFeedbackModal({ isOpen: true, title: 'Error al Crear', message: error.message, type: 'error' });
     },
   });
@@ -67,7 +65,6 @@ export function useGestionNiveles() {
     };
   }, []);
 
-  // --- LÓGICA DE GUARDADO ACTUALIZADA ---
   const handleGuardarNivel = (data: CrearNivelData) => {
     const nombreNormalizadoParaComparar = normalizarParaComparar(data.nombre);
 
@@ -87,7 +84,6 @@ export function useGestionNiveles() {
 
     setNombreNivelCreando(data.nombre);
 
-    // Se llama a la mutación directamente, sin el modal de confirmación
     mutate({ nombre: data.nombre });
   };
 
@@ -106,7 +102,6 @@ export function useGestionNiveles() {
     isLoading,
     isCreating,
     modalCrearAbierto,
-    // Exportamos el nuevo estado y su función de cierre
     feedbackModal,
     abrirModalCrear,
     cerrarModalCrear,

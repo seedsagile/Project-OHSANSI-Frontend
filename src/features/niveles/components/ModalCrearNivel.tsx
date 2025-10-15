@@ -49,7 +49,6 @@ export const ModalCrearNivel = ({
         <h2 className="text-xl font-semibold text-center mb-6">Crear Nuevo Nivel</h2>
 
         <form onSubmit={handleSubmit(onGuardar)}>
-          {/* --- INICIO DE LA SECCIÓN CORREGIDA --- */}
           <div className="mb-4">
             <label htmlFor="nombreNivel" className="block text-sm font-medium text-gray-700 mb-2">
               Nombre del Nivel: <span className="text-red-500">*</span>
@@ -68,7 +67,6 @@ export const ModalCrearNivel = ({
               aria-required="true"
               {...register('nombre')}
             />
-            {/* El mensaje de validación vuelve a su posición original, debajo del input */}
             <div className="h-6 mt-1">
               {errors.nombre && (
                 <div className="flex items-center gap-2 text-red-600 text-sm">
@@ -79,8 +77,7 @@ export const ModalCrearNivel = ({
             </div>
           </div>
 
-          {/* Se añade un margen superior amplio a los botones para separarlos del input y su error */}
-          <div className="flex gap-4 py-2 justify-center mt-8">
+          <div className="flex gap-4 py-3 justify-center mt-8">
             <button
               type="button"
               onClick={handleCancelar}
@@ -93,7 +90,6 @@ export const ModalCrearNivel = ({
             </button>
             <button
               type="submit"
-              // Se elimina la condición que deshabilitaba el botón con errores
               disabled={loading}
               className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
               aria-label="Confirmar y guardar el nuevo nivel"
@@ -108,7 +104,6 @@ export const ModalCrearNivel = ({
               )}
             </button>
           </div>
-          {/* --- FIN DE LA SECCIÓN --- */}
         </form>
       </div>
     </div>

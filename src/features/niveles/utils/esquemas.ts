@@ -34,9 +34,22 @@ export const crearNivelEsquema = z.object({
     .string()
     .trim()
     .min(1, { message: 'El campo Nombre del nivel es obligatorio.' })
+    // 1. Valida los caracteres permitidos en general
     .refine((val) => /^[a-zA-Z0-9\s.\-áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val), {
       message:
-        'El campo contiene caracteres no permitidos. Solo se aceptan letras, números, espacios, acentos, puntos y guiones.',
+        'Contiene caracteres no permitidos.',
+    })
+    // 2. Valida que el primer carácter sea una letra o número
+    .refine((val) => /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ]/.test(val), {
+      message: 'El primer carácter debe ser una letra o un número.',
+    })
+    // 3. Valida que no haya guiones o puntos consecutivos
+    .refine((val) => !/(--|\.\.)/.test(val), {
+      message: 'No se permiten puntos o guiones consecutivos.',
+    })
+    // 4. Valida que el string no contenga solo símbolos
+    .refine((val) => /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ]/.test(val), {
+        message: 'El nombre debe contener al menos una letra o número.',
     })
     .transform((val) => normalizarParaGuardar(val))
     .pipe(
