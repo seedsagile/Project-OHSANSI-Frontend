@@ -5,6 +5,7 @@ import { areasService } from '../../areas/services/areasService';
 import { nivelesService } from '../../niveles/services/nivelesService';
 import { asignacionesService } from '../services/asignarServices';
 import type { AsignacionPayload } from '../types';
+import isEqual from 'lodash.isequal';
 
 type ApiErrorResponse = {
   message: string;
@@ -26,7 +27,6 @@ export function useAsignarNiveles() {
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Set<number>>(new Set());
   const [modalState, setModalState] = useState<ModalState>(initialModalState);
   const [nivelesOriginales, setNivelesOriginales] = useState<Set<number>>(new Set());
-
   const modalTimerRef = useRef<number | undefined>(undefined);
 
   const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({
@@ -69,6 +69,11 @@ export function useAsignarNiveles() {
     }
   }, [nivelesAsignados, isFetched, areaSeleccionadaId]);
 
+  const closeModal = () => {
+    setModalState(initialModalState);
+    clearTimeout(modalTimerRef.current);
+  };
+
   const { mutate: guardarAsignaciones, isPending: isSaving } = useMutation({
     mutationFn: async ({
       paraCrear,
@@ -90,15 +95,10 @@ export function useAsignarNiveles() {
       const areaActual = todasLasAreas.find((area) => area.id_area === areaSeleccionadaId);
       const nombreArea = areaActual ? areaActual.nombre : '';
       const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
-
       setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
-
       queryClient.invalidateQueries({ queryKey: ['asignaciones', areaSeleccionadaId] });
-
       clearTimeout(modalTimerRef.current);
-      modalTimerRef.current = window.setTimeout(() => {
-        closeModal();
-      }, 2500);
+      modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
     },
     onError: (error: AxiosError<ApiErrorResponse>) => {
       clearTimeout(modalTimerRef.current);
@@ -108,9 +108,7 @@ export function useAsignarNiveles() {
   });
 
   useEffect(() => {
-    return () => {
-      clearTimeout(modalTimerRef.current);
-    };
+    return () => clearTimeout(modalTimerRef.current);
   }, []);
 
   const handleGuardar = () => {
@@ -150,17 +148,11 @@ export function useAsignarNiveles() {
 
     if (paraCrear.length === 0 && paraActualizar.length === 0) {
       setModalState({
-        isOpen: true,
-        type: 'info',
-        title: 'Sin Cambios',
+        isOpen: true, type: 'info', title: 'Sin Cambios',
         message: 'No se ha realizado ninguna modificación.',
       });
-
       clearTimeout(modalTimerRef.current);
-      modalTimerRef.current = window.setTimeout(() => {
-        closeModal();
-      }, 1500);
-
+      modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
       return;
     }
 
@@ -186,10 +178,24 @@ export function useAsignarNiveles() {
   const handleCancelarCambios = () => {
     setNivelesSeleccionados(nivelesOriginales);
   };
+  
+  const handleChangeArea = (nuevaAreaId: number | undefined) => {
+    const hayCambiosSinGuardar = !isEqual(new Set(nivelesOriginales), new Set(nivelesSeleccionados));
 
-  const closeModal = () => {
-    setModalState(initialModalState);
-    clearTimeout(modalTimerRef.current);
+    if (hayCambiosSinGuardar) {
+      setModalState({
+        isOpen: true,
+        type: 'confirmation',
+        title: 'Descartar Cambios',
+        message: 'Tienes cambios sin guardar. ¿Estás seguro de que quieres cambiar de área y perderlos?',
+        onConfirm: () => {
+          setAreaSeleccionadaId(nuevaAreaId);
+          closeModal();
+        },
+      });
+    } else {
+      setAreaSeleccionadaId(nuevaAreaId);
+    }
   };
 
   return {
@@ -197,7 +203,6 @@ export function useAsignarNiveles() {
     todosLosNiveles: nivelesOrdenados,
     nivelesOriginales,
     areaSeleccionadaId,
-    setAreaSeleccionadaId,
     nivelesSeleccionados,
     handleToggleNivel,
     handleGuardar,
@@ -206,5 +211,7 @@ export function useAsignarNiveles() {
     modalState,
     closeModal,
     handleCancelarCambios,
+    handleChangeArea,
+    setAreaSeleccionadaId,
   };
 }

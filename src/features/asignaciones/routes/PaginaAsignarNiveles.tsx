@@ -1,15 +1,15 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
-import { Save, LoaderCircle, X } from 'lucide-react';
+import { Save, LoaderCircle, X} from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import type { Nivel } from '../../niveles/types';
 import { useNavigate } from 'react-router-dom';
+import { CustomDropdown } from '../../../components/ui/CustomDropdown';
 
 export function PaginaAsignarNiveles() {
   const {
     todasLasAreas,
     todosLosNiveles,
     areaSeleccionadaId,
-    setAreaSeleccionadaId,
     nivelesSeleccionados,
     handleToggleNivel,
     handleGuardar,
@@ -17,6 +17,7 @@ export function PaginaAsignarNiveles() {
     isSaving,
     modalState,
     closeModal,
+    handleChangeArea,
   } = useAsignarNiveles();
 
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ export function PaginaAsignarNiveles() {
   const handleCancel = () => {
     navigate('/dashboard');
   };
+
+  const areaOptions = todasLasAreas.map(area => ({
+    value: area.id_area,
+    label: area.nombre
+  }));
 
   return (
     <>
@@ -36,41 +42,16 @@ export function PaginaAsignarNiveles() {
           </header>
 
           <div className="mb-6 relative">
-            <label htmlFor="area-selector" className="sr-only">
-              Seleccionar Área
+            <label htmlFor="area-selector" className="block text-md font-medium text-neutro-600 mb-2">
+              Seleccione un Área
             </label>
-            <select
-              id="area-selector"
-              value={areaSeleccionadaId ?? ''}
-              onChange={(e) => setAreaSeleccionadaId(Number(e.target.value) || undefined)}
-              className="w-full p-3 pl-4 pr-10 border border-transparent rounded-lg bg-principal-500 text-white font-semibold focus:ring-2 focus:ring-principal-300 focus:border-principal-500 transition-colors appearance-none cursor-pointer"
-              disabled={isLoading}
-            >
-              <option value="" className="bg-white text-black">
-                Seleccionar Área
-              </option>
-              {todasLasAreas.map((area) => (
-                <option key={area.id_area} value={area.id_area} className="bg-white text-black">
-                  {area.nombre}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
+            <CustomDropdown
+              placeholder="Seleccionar Área"
+              options={areaOptions}
+              selectedValue={areaSeleccionadaId ?? null}
+              onSelect={(value) => handleChangeArea(Number(value) || undefined)}
+              disabled={isLoading || isSaving}
+            />
           </div>
 
           <h2 className="text-xl font-semibold text-gray-800 text-center mb-4">Lista de Niveles</h2>
@@ -82,28 +63,12 @@ export function PaginaAsignarNiveles() {
               <table className="w-full text-left">
                 <thead className="bg-principal-500 sticky top-0 z-10">
                   <tr>
-                    <th
-                      scope="col"
-                      className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
-                    >
-                      NRO
-                    </th>
-                    <th
-                      scope="col"
-                      className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
-                    >
-                      NIVEL
-                    </th>
-                    <th
-                      scope="col"
-                      className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
-                    >
-                      TIENE
-                    </th>
+                    <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">NRO</th>
+                    <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">NIVEL</th>
+                    <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">ASIGNADO</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutro-200">
-                  {/* --- 👇 AQUÍ ESTÁ LA MODIFICACIÓN --- */}
                   {isLoading && areaSeleccionadaId ? (
                     <tr>
                       <td colSpan={3} className="text-center p-10">
@@ -114,22 +79,15 @@ export function PaginaAsignarNiveles() {
                     </tr>
                   ) : !areaSeleccionadaId ? (
                     <tr>
-                      <td colSpan={3} className="text-center p-10 text-neutro-400">
-                        Seleccione un área para ver los niveles.
-                      </td>
+                      <td colSpan={3} className="text-center p-10 text-neutro-400">Seleccione un área para ver los niveles.</td>
                     </tr>
-                  ) : todosLosNiveles.length === 0 ? ( // <-- Nueva condición añadida
+                  ) : todosLosNiveles.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="text-center p-10 text-neutro-500">
-                        No hay niveles disponibles.
-                      </td>
+                      <td colSpan={3} className="text-center p-10 text-neutro-500">No hay niveles disponibles para registrar.</td>
                     </tr>
                   ) : (
                     todosLosNiveles.map((nivel: Nivel, index: number) => (
-                      <tr
-                        key={nivel.id_nivel}
-                        className="even:bg-neutro-100 hover:bg-principal-50 transition-colors"
-                      >
+                      <tr key={nivel.id_nivel} className="even:bg-neutro-100 hover:bg-principal-50 transition-colors">
                         <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
                         <td className="p-4 text-neutro-700 text-left">{nivel.nombre}</td>
                         <td className="p-4 text-neutro-700 text-center">
@@ -160,7 +118,7 @@ export function PaginaAsignarNiveles() {
 
             <button
               onClick={handleGuardar}
-              disabled={!areaSeleccionadaId || isSaving}
+              disabled={!areaSeleccionadaId || isSaving || isLoading}
               className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]"
             >
               {isSaving ? (
