@@ -9,11 +9,17 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  
-  const { user, token, loading, setUser, setToken, setLoading, logout: zustandLogout } = useAuthStore();
-  
-  useEffect(() => {
+  const {
+    user,
+    token,
+    loading,
+    setUser,
+    setToken,
+    setLoading,
+    logout: zustandLogout,
+  } = useAuthStore();
 
+  useEffect(() => {
     const initialToken = useAuthStore.getState().token;
 
     const validateExistingToken = async () => {
@@ -34,23 +40,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     validateExistingToken();
   }, []);
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    const { user: userData, token: newToken } = await authService.login(credentials);
-    setUser(userData);
-    setToken(newToken);
-  }, [setUser, setToken]);
+  const login = useCallback(
+    async (credentials: LoginCredentials) => {
+      const { user: userData, token: newToken } = await authService.login(credentials);
+      setUser(userData);
+      setToken(newToken);
+    },
+    [setUser, setToken]
+  );
 
   const logout = useCallback(() => {
     zustandLogout();
   }, [zustandLogout]);
 
-  const value = useMemo(() => ({
-    user,
-    loading,
-    isAuthenticated: !!user && !!token,
-    login,
-    logout,
-  }), [user, loading, token, login, logout]);
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: !!user && !!token,
+      login,
+      logout,
+    }),
+    [user, loading, token, login, logout]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

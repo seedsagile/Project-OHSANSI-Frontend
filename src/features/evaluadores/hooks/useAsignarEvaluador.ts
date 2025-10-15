@@ -6,9 +6,17 @@ import { useMutation } from '@tanstack/react-query';
 
 import { evaluadorService } from '../services/ApiEvaluador';
 import { schemaEvaluador } from '../validations/evaluatorValidation';
-import type { FormularioDataEvaluador, PayloadEvaluador, ErrorConData } from '../tipos/IndexEvaluador';
+import type {
+  FormularioDataEvaluador,
+  PayloadEvaluador,
+  ErrorConData,
+} from '../tipos/IndexEvaluador';
 
-export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void }) {
+export function useAsignarEvaluador({
+  mostrarModal,
+}: {
+  mostrarModal: (tipo: 'success' | 'error', titulo: string, mensaje: string) => void;
+}) {
   const {
     register,
     handleSubmit,
@@ -24,10 +32,10 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
     onSuccess: (data) => {
       console.log('=== ÉXITO EN EL HOOK ===');
       console.log('Respuesta completa recibida:', data);
-      
+
       // Mensaje con área y nivel
       const mensaje = `El evaluador "${data.evaluador.nombre} ${data.evaluador.apellido}" ha sido registrado correctamente en el área "${data.area}" - Nivel "${data.nivel}".`;
-      
+
       mostrarModal('success', '¡Registro Exitoso!', mensaje);
       reset();
     },
@@ -35,15 +43,28 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
       console.log('=== ERROR EN EL HOOK ===');
       console.log('Error completo:', error);
       console.log('Mensaje de error:', error.message);
-      
-      const errorMessage = error.message || "Ocurrió un error inesperado.";
-      
+
+      const errorMessage = error.message || 'Ocurrió un error inesperado.';
+
       // Verificar si es un error de duplicación con datos de área y nivel
       if (error.errorData?.errors) {
-        const { errors: validationErrors, area_ci, nivel_ci, area_email, nivel_email } = error.errorData;
-        
+        const {
+          errors: validationErrors,
+          area_ci,
+          nivel_ci,
+          area_email,
+          nivel_email,
+        } = error.errorData;
+
         // Si hay errores tanto de CI como de email
-        if (validationErrors.ci && validationErrors.email && area_ci && nivel_ci && area_email && nivel_email) {
+        if (
+          validationErrors.ci &&
+          validationErrors.email &&
+          area_ci &&
+          nivel_ci &&
+          area_email &&
+          nivel_email
+        ) {
           // Verificar si el área y nivel son los mismos para ambos
           if (area_ci === area_email && nivel_ci === nivel_email) {
             const mensaje = `El evaluador ya se encuentra registrado en el área "${area_ci}" - Nivel "${nivel_ci}".`;
@@ -55,14 +76,14 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
           }
           return;
         }
-        
+
         // Solo error de CI
         if (validationErrors.ci && area_ci && nivel_ci) {
           const mensaje = `El evaluador ya se encuentra registrado en el área "${area_ci}" - Nivel "${nivel_ci}".`;
           mostrarModal('error', 'CI Repetido', mensaje);
           return;
         }
-        
+
         // Solo error de email
         if (validationErrors.email && area_email && nivel_email) {
           const mensaje = `El  evaluador ya se encuentra registrado en el área "${area_email}" - Nivel "${nivel_email}".`;
@@ -70,11 +91,11 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
           return;
         }
       }
-      
+
       // Otros errores
-      if (errorMessage.includes("formato")) {
+      if (errorMessage.includes('formato')) {
         mostrarModal('error', 'Formato Inválido', errorMessage);
-      } else if (errorMessage.includes("Errores de validación")) {
+      } else if (errorMessage.includes('Errores de validación')) {
         mostrarModal('error', 'Datos Inválidos', errorMessage);
       } else {
         mostrarModal('error', 'Error del Servidor', errorMessage);
@@ -85,7 +106,7 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
   const onSubmit = (data: FormularioDataEvaluador) => {
     console.log('=== DATOS DEL FORMULARIO ===');
     console.log('Datos capturados del formulario:', data);
-    
+
     const payload: PayloadEvaluador = {
       nombre: data.nombre,
       apellido: data.apellido,
@@ -95,7 +116,7 @@ export function useAsignarEvaluador({ mostrarModal }: { mostrarModal: (tipo: 'su
       password_confirmation: data.password_confirmation,
       codigo_evaluador: data.codigo_evaluador,
     };
-    
+
     console.log('Payload creado para enviar:', payload);
     mutate(payload);
   };

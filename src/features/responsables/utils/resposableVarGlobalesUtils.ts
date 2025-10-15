@@ -1,4 +1,3 @@
-
 export const NOMBRE_MIN_LENGTH = 2;
 export const NOMBRE_MAX_LENGTH = 40;
 export const CI_MIN_LENGTH = 4;
