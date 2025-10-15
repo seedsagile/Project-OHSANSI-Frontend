@@ -261,7 +261,7 @@ export const FormularioAsignarResponsable = () => {
                 <input
                   type="email"
                   placeholder="ejemplo@ejemplo.com"
-                  maxLength={30}
+                  maxLength={50}
                   {...register("correo")}
                   onBlur={() => trigger("correo")}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
@@ -283,8 +283,17 @@ export const FormularioAsignarResponsable = () => {
                   maxLength={9}
                   {...register("carnet")}
                   onBlur={() => trigger("carnet")}
+                  onKeyDown={(e) => {
+                    if (e.key === " ") e.preventDefault(); // ❌ Evita escribir espacios
+                  }}
+                  onInput={(e) => {
+                    // 🔧 Elimina espacios pegados desde portapapeles
+                    const input = e.target as HTMLInputElement;
+                    input.value = input.value.replace(/\s+/g, "");
+                  }}
                   className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
                 />
+
                 {errors.carnet && (
                   <span className="text-red-500 text-sm">
                     {errors.carnet.message}

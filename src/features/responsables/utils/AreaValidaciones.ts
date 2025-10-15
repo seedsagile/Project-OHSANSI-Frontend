@@ -14,7 +14,7 @@ export const CONTRASENA_MAX_LENGTH = 16;
 
 export const REGEX_SOLO_LETRAS = /^[a-zA-Z\s\u00C0-\u017F]+$/;
 export const REGEX_CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-export const REGEX_CI = /^\d+(?:[A-Za-z]|-[A-Za-z])?$/;
+export const REGEX_CI = /^\d+[a-zA-Z]?$/;
 export const REGEX_CONTRASENA =
   /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/;
 
@@ -81,6 +81,10 @@ export const ApellidoSchema = z
   );
 
 // Correo
+// Nuevo regex: solo permite letras, números, @ y .
+export const REGEX_CORREO_PERMITIDO = /^[A-Za-z0-9@.]*$/;
+
+// Correo
 export const CorreoSchema = z
   .string()
   .trim()
@@ -88,9 +92,15 @@ export const CorreoSchema = z
     message: "El campo Correo electrónico es obligatorio.",
   })
   .min(6, {
-    message: "El campo Correo electronico requiere un mínimo de 6 caracteres.",
+    message: "El campo Correo electrónico requiere un mínimo de 6 caracteres.",
   })
-  .regex(REGEX_CORREO_VALIDO, {
+  // Primero: valida que solo use letras, números, @ y .
+  .regex(REGEX_CORREO_PERMITIDO, {
+    message:
+      "Correo electrónico inválido. Solo se permiten letras, números y el caracter especial @ y .",
+  })
+  // Segundo: valida formato general tipo usuario@dominio.com
+  .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
     message:
       "El campo Correo electrónico debe tener un formato válido (ej. usuario@uno.com).",
   })
@@ -100,16 +110,19 @@ export const CorreoSchema = z
 export const CISchema = z
   .string()
   .trim()
-  .min(1, {
-    message: `El campo Carnet de identidad es obligatorio.`,
-  })
+  .min(1, { message: "El campo Carnet de identidad es obligatorio." })
   .min(4, {
-    message: `El campo Carnet de identidad requiere un mínimo de 4 caracteres.`,
+    message: "El campo Carnet de identidad requiere un mínimo de 4 caracteres.",
   })
   .max(CI_MAX_LENGTH, {
     message: `El campo CI acepta un máximo de ${CI_MAX_LENGTH} caracteres.`,
   })
-  .regex(REGEX_CI, {
+  // Validación general: solo números con opcional 1 letra al final
+  .refine((val) => /^\d+[a-zA-Z]?$/.test(val), {
+    message: "CI inválido",
+  })
+  // Validación de caracteres especiales o letras en medio
+  .refine((val) => /^[0-9]+[a-zA-Z]?$/.test(val), {
     message:
       "El campo Carnet de identidad contiene caracteres especiales. Solo se aceptan números y una letra al final",
   })
