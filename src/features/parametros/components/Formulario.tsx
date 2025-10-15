@@ -6,7 +6,6 @@ import type { Nivel } from "../interface/interface";
 import { crearParametroAPI } from "../service/service";
 import { Modal } from "../../../components/ui/Modal";
 
-// ----- Zod Schema -----
 const limpiarEspacios = (val: string) => val.trim().replace(/\s+/g, "");
 
 const esquemaNotas = z.object({
@@ -15,7 +14,7 @@ const esquemaNotas = z.object({
     .refine((val) => limpiarEspacios(val) !== "", {
       message: "El campo Nota mínima es obligatorio.",
     })
-    .refine((val) => /^(\d+([.,]\d+)?)$/.test(limpiarEspacios(val)), {
+    .refine((val) => /^(\d+(,\d+)?)$/.test(limpiarEspacios(val)), {
       message: "Solo se permiten números y coma en Nota mínima.",
     }),
   notaMaxima: z
@@ -23,7 +22,7 @@ const esquemaNotas = z.object({
     .refine((val) => limpiarEspacios(val) !== "", {
       message: "El campo Nota máxima es obligatorio.",
     })
-    .refine((val) => /^(\d+([.,]\d+)?)$/.test(limpiarEspacios(val)), {
+    .refine((val) => /^(\d+(,\d+)?)$/.test(limpiarEspacios(val)), {
       message: "Solo se permiten números y coma en Nota máxima.",
     }),
   cantidadMaxCompetidores: z
@@ -37,15 +36,13 @@ const esquemaNotas = z.object({
     }),
 });
 
-// ----- Tipo inferido -----
 type FormValues = z.infer<typeof esquemaNotas>;
 
-// ----- Componente -----
 interface FormularioProps {
   nivel: Nivel;
   idArea: number;
   onCerrar: () => void;
-  onMarcarEnviado: (idNivel: number) => void;
+  onMarcarEnviado: (idNivel: number, idArea: number) => void;
 }
 
 export const Formulario: React.FC<FormularioProps> = ({
@@ -63,7 +60,7 @@ export const Formulario: React.FC<FormularioProps> = ({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(esquemaNotas),
-    mode: "onChange", // Validación en tiempo real
+    mode: "onChange",
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -85,7 +82,7 @@ export const Formulario: React.FC<FormularioProps> = ({
 
       setTimeout(() => {
         setModalExito(false);
-        onMarcarEnviado(nivel.id);
+        onMarcarEnviado(nivel.id, idArea);
         onCerrar();
       }, 3000);
     } catch (error) {
@@ -100,11 +97,10 @@ export const Formulario: React.FC<FormularioProps> = ({
       <div className="fixed inset-0 bg-opacity-50 z-50 flex justify-center items-center p-4">
         <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg p-8">
           <h2 className="text-2xl font-bold mb-6 text-center">
-            Agregar parámetro de calificación para: {nivel.nombre}
+            Agregar parámetro de clasificacion
           </h2>
 
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-            {/* Nota mínima */}
             <div>
               <label className="block mb-1 font-medium text-black">
                 Nota mínima
@@ -113,7 +109,7 @@ export const Formulario: React.FC<FormularioProps> = ({
                 {...register("notaMinima")}
                 onKeyDown={(e) => {
                   if (
-                    !/[0-9.,]/.test(e.key) &&
+                    !/[0-9,]/.test(e.key) &&
                     e.key !== "Backspace" &&
                     e.key !== "ArrowLeft" &&
                     e.key !== "ArrowRight" &&
@@ -133,7 +129,6 @@ export const Formulario: React.FC<FormularioProps> = ({
               )}
             </div>
 
-            {/* Nota máxima */}
             <div>
               <label className="block mb-1 font-medium text-black">
                 Nota máxima
@@ -142,7 +137,7 @@ export const Formulario: React.FC<FormularioProps> = ({
                 {...register("notaMaxima")}
                 onKeyDown={(e) => {
                   if (
-                    !/[0-9.,]/.test(e.key) &&
+                    !/[0-9,]/.test(e.key) &&
                     e.key !== "Backspace" &&
                     e.key !== "ArrowLeft" &&
                     e.key !== "ArrowRight" &&
@@ -162,7 +157,6 @@ export const Formulario: React.FC<FormularioProps> = ({
               )}
             </div>
 
-            {/* Cantidad máxima de competidores */}
             <div>
               <label className="block mb-1 font-medium text-black">
                 Cantidad máxima de competidores
@@ -191,7 +185,6 @@ export const Formulario: React.FC<FormularioProps> = ({
               )}
             </div>
 
-            {/* Botones */}
             <div className="flex justify-end gap-4 mt-6">
               <button
                 type="button"
@@ -205,10 +198,10 @@ export const Formulario: React.FC<FormularioProps> = ({
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  className="lucide lucide-x-icon lucide-x"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="lucide lucide-x"
                 >
                   <path d="M18 6 6 18" />
                   <path d="m6 6 12 12" />
@@ -231,10 +224,10 @@ export const Formulario: React.FC<FormularioProps> = ({
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  className="lucide lucide-save-icon lucide-save "
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="lucide lucide-save"
                 >
                   <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
                   <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
@@ -247,7 +240,6 @@ export const Formulario: React.FC<FormularioProps> = ({
         </div>
       </div>
 
-      {/* Modal de éxito */}
       <Modal
         isOpen={modalExito}
         onClose={() => setModalExito(false)}
