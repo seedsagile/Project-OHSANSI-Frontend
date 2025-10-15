@@ -1,3 +1,4 @@
+//src/features/types/index.ts
 export type Area = {
   id_area: number; //ver db talvez es unico preguntar a maria
   nombre: string;

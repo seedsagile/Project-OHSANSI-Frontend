@@ -1,3 +1,4 @@
+//src/features/components/IconoPlus.tsx
 //import React from 'react';
 
 export const IconoPlus = () => (
