@@ -1,105 +1,405 @@
-import type { FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form';
-import type { FormularioData } from '../types/IndexResponsable';
-import { handlePaste, restringirCaracteres } from '../utils/formUtils';
-import {
-  NOMBRE_MAX_LENGTH,
-  CARACTERES_ACETADOS_NOMBRE_COMPLETO,
-  CARACTERES_ACETADOS_EMAIL,
-  CI_MAX_LENGTH,
-  CARACTERES_ACETADOS_CI,
-  CODIGO_MAX_LENGTH,
-  CARACTERES_ACETADOS_CODIGO,
-} from '../utils/resposableVarGlobalesUtils';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { AxiosError } from 'axios';
+import { areasService } from '../../areas/services/areasService';
+import { asignarResponsableAPI, obtenerResponsablesAPI } from '../services/ApiResposableArea';
 
-type Props = {
-  register: UseFormRegister<FormularioData>;
-  errors: FieldErrors<FormularioData>;
-  setValue: UseFormSetValue<FormularioData>;
-};
+import type { Area } from '../../areas/types';
+import type { AreaInterface } from '../interface/AreaInterface';
+import { ResponsableAreaSchema } from '../utils/AreaValidaciones';
+import { type ResponsableForm } from '../utils/AreaValidaciones';
+import { Link } from 'react-router-dom';
 
-export function FormularioAsignarResponsable({ register, errors, setValue }: Props) {
+import { Modal, type ModalType } from '../../../components/ui/Modal';
+
+export const FormularioAsignarResponsable = () => {
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [responsables, setResponsables] = useState<AreaInterface[]>([]);
+
+  const [mensaje, setMensaje] = useState<string | null>(null);
+
+  const [passwordGenerated, setPasswordGenerated] = useState(false);
+  const [selectedAreas, setSelectedAreas] = useState<number[]>([]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>('success'); // success | error
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    trigger,
+    reset,
+    formState: { errors },
+  } = useForm<ResponsableForm>({
+    resolver: zodResolver(ResponsableAreaSchema),
+    mode: 'onChange',
+    defaultValues: { areas: [] },
+  });
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const data = await areasService.obtenerAreas();
+        setAreas(data);
+      } catch (error) {
+        console.error('Error cargando áreas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchResponsables = async () => {
+      try {
+        const data = await obtenerResponsablesAPI();
+        setResponsables(data);
+      } catch (error) {
+        console.error('Error cargando responsables:', error);
+      }
+    };
+
+    fetchAreas();
+    fetchResponsables();
+  }, []);
+
+  const generatePassword = (length = 8) => {
+    const lower = 'abcdefghijklmnopqrstuvwxyz';
+    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const special = '@$!%*?&.';
+    const all = lower + upper + numbers + special;
+
+    const randChar = (set: string) => set.charAt(Math.floor(Math.random() * set.length));
+
+    let pwd = '';
+    pwd += randChar(lower);
+    pwd += randChar(upper);
+    pwd += randChar(numbers);
+    pwd += randChar(special);
+
+    for (let i = 4; i < length; i++) {
+      pwd += randChar(all);
+    }
+
+    return pwd
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+  };
+
+  const handleGenerarClick = () => {
+    if (passwordGenerated) return;
+    const pwd = generatePassword(10);
+    setPasswordGenerated(true);
+    setValue('contrasena', pwd);
+    trigger('contrasena');
+  };
+
+  const handleAreaToggle = (id: number) => {
+    const updated = selectedAreas.includes(id)
+      ? selectedAreas.filter((a) => a !== id)
+      : [...selectedAreas, id];
+    setSelectedAreas(updated);
+    setValue('areas', updated);
+    trigger('areas');
+  };
+
+  const limpiarFormulario = () => {
+    reset();
+    setPasswordGenerated(false);
+    setSelectedAreas([]);
+    setMensaje(null);
+  };
+
+  const onSubmit = async (data: ResponsableForm) => {
+    // Validar si el correo ya existe
+    const correoExiste = responsables.some(
+      (resp) => resp.email.toLowerCase() === data.correo.toLowerCase()
+    );
+    if (correoExiste) {
+      setMensaje(
+        '¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este correo electrónico.'
+      );
+      return;
+    }
+    // Validar si el carnet ya existe
+    // const carnetExiste = responsables.some(
+    //   (resp) => resp.ci.toLowerCase() === data.carnet.toLowerCase()
+    // );
+    // if (carnetExiste) {
+    //   setMensaje(
+    //     "¡Ups! Algo salió mal - Ya existe un responsable de área registrado con este carnet de identidad."
+    //   );
+    //   return;
+    // }
+
+    const payload: AreaInterface = {
+      nombre: data.nombre,
+      apellido: data.apellido,
+      email: data.correo,
+      ci: data.carnet,
+      password: data.contrasena,
+      areas: data.areas,
+    };
+
+    try {
+      const response = await asignarResponsableAPI(payload);
+      console.log('Responsable creado:', response);
+
+      limpiarFormulario();
+      setModalType('success');
+      setModalTitle('Registro Exitoso');
+      setModalMessage(
+        'El responsable de área fue registrado correctamente y se envio un correo electronico con las credenciales.'
+      );
+      setModalOpen(true);
+      setMensaje('¡Registro exitoso!');
+
+      // Cerrar modal y mensaje después de 3 segundos
+      setTimeout(() => {
+        setModalOpen(false);
+        setMensaje(null);
+      }, 3000);
+
+      // Actualizamos el estado de responsables
+      setResponsables((prev) => [...prev, payload]);
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message?: string }>;
+      console.error('Error al guardar responsable:', error);
+
+      setMensaje(
+        err.response?.data?.message || '¡Ups! Algo salió mal - No se pudo registrar el responsable.'
+      );
+    }
+  };
+
+  const handleCancelar = () => {
+    limpiarFormulario();
+  };
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-neutro-800">Datos del Responsable</h2>
+    <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
+      <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-8">
+        <header className="flex justify-center items-center mb-10">
+          <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center">
+            Registrar Responsable de Area
+          </h1>
+        </header>
 
-      <div>
-        <label htmlFor="nombreCompleto" className="block text-md font-medium text-neutro-600 mb-1">
-          Nombre completo del responsable
-        </label>
-        <input
-          type="text"
-          id="nombreCompleto"
-          placeholder="Ingrese el nombre y apellidos"
-          maxLength={NOMBRE_MAX_LENGTH}
-          onPaste={(e) =>
-            handlePaste(e, setValue, 'nombreCompleto', CARACTERES_ACETADOS_NOMBRE_COMPLETO)
-          }
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_NOMBRE_COMPLETO)}
-          {...register('nombreCompleto')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.nombreCompleto ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.nombreCompleto && (
-          <p className="text-acento-600 text-sm mt-1">{errors.nombreCompleto.message}</p>
+        {mensaje && (
+          <div
+            className={`mb-6 text-center font-semibold ${
+              mensaje.includes('¡Registro Exitoso!') ? 'text-green-600' : 'text-red-600'
+            }`}
+          >
+            {mensaje}
+          </div>
         )}
-      </div>
 
-      <div>
-        <label htmlFor="email" className="block text-md font-medium text-neutro-600 mb-1">
-          Correo electrónico institucional
-        </label>
-        <input
-          type="email"
-          id="email"
-          placeholder="ejemplo@institucion.edu"
-          onPaste={(e) => handlePaste(e, setValue, 'email', CARACTERES_ACETADOS_EMAIL)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_EMAIL)}
-          {...register('email')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.email ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.email && <p className="text-acento-600 text-sm mt-1">{errors.email.message}</p>}
-      </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8" noValidate>
+          <div className="flex gap-8">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-negro">
+                Nombre del responsable de area
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Pepito"
+                maxLength={20}
+                {...register('nombre')}
+                onBlur={() => trigger('nombre')}
+                className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+              />
+              {errors.nombre && (
+                <span className="text-red-500 text-sm">{errors.nombre.message}</span>
+              )}
+            </div>
 
-      <div>
-        <label htmlFor="ci" className="block text-md font-medium text-neutro-600 mb-1">
-          Carnet de Identidad
-        </label>
-        <input
-          type="text"
-          id="ci"
-          placeholder="Ej: 1234567 o 1234567-1B"
-          maxLength={CI_MAX_LENGTH}
-          onPaste={(e) => handlePaste(e, setValue, 'ci', CARACTERES_ACETADOS_CI)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CI)}
-          {...register('ci')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.ci ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.ci && <p className="text-acento-600 text-sm mt-1">{errors.ci.message}</p>}
-      </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-negro">
+                Apellido del responsable de area
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Perez"
+                maxLength={20}
+                {...register('apellido')}
+                onBlur={() => trigger('apellido')}
+                className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+              />
+              {errors.apellido && (
+                <span className="text-red-500 text-sm">{errors.apellido.message}</span>
+              )}
+            </div>
+          </div>
 
-      <div>
-        <label
-          htmlFor="codigo_encargado"
-          className="block text-md font-medium text-neutro-600 mb-1"
+          <div className="flex gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-negro">Correo Electrónico</label>
+                <input
+                  type="email"
+                  placeholder="ejemplo@ejemplo.com"
+                  maxLength={50}
+                  {...register('correo')}
+                  onBlur={() => trigger('correo')}
+                  className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                />
+                {errors.correo && (
+                  <span className="text-red-500 text-sm">{errors.correo.message}</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-negro">Carnet de identidad</label>
+                <input
+                  type="text"
+                  placeholder="Ej: 1234567 o 1234567b"
+                  maxLength={9}
+                  {...register('carnet')}
+                  onBlur={() => trigger('carnet')}
+                  onKeyDown={(e) => {
+                    if (e.key === ' ') e.preventDefault(); // ❌ Evita escribir espacios
+                  }}
+                  onInput={(e) => {
+                    // 🔧 Elimina espacios pegados desde portapapeles
+                    const input = e.target as HTMLInputElement;
+                    input.value = input.value.replace(/\s+/g, '');
+                  }}
+                  className="w-[400px] border rounded-md p-2 border-neutro-400 focus:outline-none focus:ring-2 focus:ring-principal-400"
+                />
+
+                {errors.carnet && (
+                  <span className="text-red-500 text-sm">{errors.carnet.message}</span>
+                )}
+              </div>
+
+              {/* <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-negro">
+                  Contraseña
+                </label>
+                <button
+                  type="button"
+                  onClick={handleGenerarClick}
+                  disabled={passwordGenerated}
+                  className={`w-[400px] border rounded-md p-2 border-neutro-400 transition-colors ${
+                    passwordGenerated
+                      ? "bg-neutro-300 text-black cursor-not-allowed"
+                      : "bg-[#0076FF] text-white hover:bg-principal-600"
+                  }`}
+                >
+                  {passwordGenerated
+                    ? "Contraseña generada"
+                    : "Generar contraseña"}
+                </button>
+                {errors.contrasena && (
+                  <span className="text-red-500 text-sm">
+                    {errors.contrasena.message}
+                  </span>
+                )}
+              </div> */}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-negro">Area</label>
+              <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-[#0076FF] text-white text-center">
+                Asignar Area
+              </div>
+              <div className="w-[400px] border rounded-md p-2 border-neutro-400 bg-neutro-50 max-h-[137px] overflow-y-auto text-sm">
+                {loading ? (
+                  <p className="text-neutro-500 italic">Cargando áreas...</p>
+                ) : areas.length > 0 ? (
+                  <ul className="space-y-1">
+                    {areas.map((area, index) => (
+                      <li
+                        key={area.id_area}
+                        className={`flex justify-between items-center rounded-md px-2 py-1 transition-colors cursor-pointer ${
+                          index % 2 === 0 ? 'bg-[#E5E7EB]' : 'bg-[#F3F4F6]'
+                        } hover:bg-neutro-200`}
+                        onClick={() => handleAreaToggle(area.id_area)}
+                      >
+                        <span>{area.nombre}</span>
+                        <input
+                          type="checkbox"
+                          className="ml-2"
+                          checked={selectedAreas.includes(area.id_area)}
+                          readOnly
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-neutro-500 italic">No hay áreas registradas</p>
+                )}
+              </div>
+              {errors.areas && <span className="text-red-500 text-sm">{errors.areas.message}</span>}
+            </div>
+          </div>
+
+          <footer className="flex justify-end items-center gap-4 mt-12">
+            <Link
+              type="button"
+              onClick={handleCancelar}
+              className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
+              to="/dashboard"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                className="lucide lucide-x-icon lucide-x"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+              Cancelar
+            </Link>
+
+            <button
+              type="submit"
+              className="flex items-center justify-center gap-2 w-48 font-semibold py-2.5 px-6 rounded-lg bg-[#0076FF] text-blanco hover:bg-principal-600 transition-colors"
+              onClick={handleGenerarClick}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                className="lucide lucide-save-icon lucide-save"
+              >
+                <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+                <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+              </svg>
+              Guardar
+            </button>
+          </footer>
+        </form>
+
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          type={modalType}
+          title={modalTitle}
         >
-          Código de Acceso de Responsable
-        </label>
-        <input
-          type="text"
-          id="codigo_encargado"
-          placeholder="Ingrese el código único. Ej: MAT01"
-          maxLength={CODIGO_MAX_LENGTH}
-          onPaste={(e) => handlePaste(e, setValue, 'codigo_encargado', CARACTERES_ACETADOS_CODIGO)}
-          onKeyDown={(e) => restringirCaracteres(e, CARACTERES_ACETADOS_CODIGO)}
-          {...register('codigo_encargado')}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 transition-colors ${errors.codigo_encargado ? 'border-acento-500' : 'border-neutro-300'}`}
-        />
-        {errors.codigo_encargado && (
-          <p className="text-acento-600 text-sm mt-1">{errors.codigo_encargado.message}</p>
-        )}
-        <p className="text-sm text-neutro-500 mt-1">
-          Este código es proporcionado por la institución y valida el rol del usuario.
-        </p>
-      </div>
+          {modalMessage}
+        </Modal>
+      </main>
     </div>
   );
-}
+};

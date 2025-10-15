@@ -15,8 +15,12 @@ import { useAuth } from "../auth/login/hooks/useAuth";
 import { PaginaAsignarEvaluador } from "../features/evaluadores/routes/PaginaAsignarEvaluador";
 import { PaginaNiveles } from "../features/niveles/routes/PaginaNiveles";
 import { PaginaAsignarNiveles } from "../features/asignaciones/routes/PaginaAsignarNiveles";
+<<<<<<< HEAD
 import { ListaCompetidores } from "../features/listaCompetidores/components/ListaCompetidores";
 import { Parametro } from "../features/parametros/components/Parametro";
+=======
+import { FormularioAsignarResponsable } from "../features/responsables/components/FormularioAsignarResponsable";
+>>>>>>> V2-E5
 
 const Dashboard = () => (
   <div className="p-8">
@@ -57,13 +61,20 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
       { path: "competidores", element: <PaginaImportarCompetidores /> },
+<<<<<<< HEAD
       { path: "responsables", element: <PaginaAsignarResponsable /> },
+=======
+      { path: "responsables", element: <FormularioAsignarResponsable /> },
+>>>>>>> V2-E5
       { path: "evaluadores", element: <PaginaAsignarEvaluador /> },
       { path: "areas", element: <PaginaAreas /> },
       { path: "niveles", element: <PaginaNiveles /> },
       { path: "asignarNiveles", element: <PaginaAsignarNiveles /> },
+<<<<<<< HEAD
       { path: "listaCompetidores", element: <ListaCompetidores /> },
       { path: "parametrosCalificaciones", element: <Parametro /> },
+=======
+>>>>>>> V2-E5
     ],
   },
 ]);
