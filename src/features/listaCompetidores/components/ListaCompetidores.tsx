@@ -88,7 +88,6 @@ export const ListaCompetidores = () => {
     fetchCompetidores();
   };
 
-  // 🔹 FILTRADO BASE
   const filteredCompetidores = competidores.filter((c) => {
     if (
       selectedAreas.length > 0 &&
@@ -105,22 +104,18 @@ export const ListaCompetidores = () => {
     return true;
   });
 
-  // 🔹 ORDENAMIENTO AUTOMÁTICO
   const sortedCompetidores = [...filteredCompetidores].sort((a, b) => {
-    // 1️⃣ Ordenar por nombre de área (A–Z)
     const areaCompare = a.area.nombre.localeCompare(b.area.nombre);
     if (areaCompare !== 0) return areaCompare;
 
-    // 2️⃣ Ordenar por nivel (número detectado en el nombre)
     const getNivelNum = (nombre: string) => {
       const match = nombre.match(/\d+/);
-      return match ? parseInt(match[0]) : 999; // si no tiene número, lo manda al final
+      return match ? parseInt(match[0]) : 999;
     };
     const nivelCompare =
       getNivelNum(a.nivel.nombre) - getNivelNum(b.nivel.nombre);
     if (nivelCompare !== 0) return nivelCompare;
 
-    // 3️⃣ Ordenar por nombre de estudiante (A–Z)
     return a.persona.nombre.localeCompare(b.persona.nombre);
   });
 
