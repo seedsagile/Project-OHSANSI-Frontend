@@ -104,7 +104,7 @@ export const Parametro = () => {
                 />
               </svg>
             </button>
-            //ESTE ES EL COMBOBOX WILIAM
+            {/* ESTE ES EL COMBOBOX WILIAM */}
             {isOpen && (
               <div
                 className="absolute left-0 top-full z-20 w-full bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto transition-all duration-300"
