@@ -17,7 +17,6 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  // Sincronizar estado local con el del padre
   useEffect(() => {
     setLocalSelectedAreas(selectedAreas);
   }, [selectedAreas]);
@@ -35,24 +34,24 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-60">
       <button
         type="button"
         onClick={toggleAccordion}
-        className="flex items-center justify-between w-60 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
+        className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
       >
         <span>Seleccionar Área</span>
 
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className={`transition-transform duration-300 ${
             isOpen ? "rotate-180" : ""
           }`}
@@ -62,31 +61,44 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 bg-gray-50 border-2 border-principal-500 rounded-lg shadow-inner p-4 space-y-4 w-full h-30 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div
+          className="absolute left-0 top-full z-20 w-full bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto transition-all duration-300"
+          style={{
+            maxHeight: "200px",
+            scrollbarWidth: "thin",
+            scrollbarColor: "#a3a3a3 #f5f5f5",
+          }}
+        >
           {areas.length === 0 ? (
-            <p className="text-center text-gray-500">
-              No hay áreas registradas
+            <p className="text-neutro-700 text-sm text-center">
+              No hay áreas disponibles.
             </p>
           ) : (
-            areas.map((area) => {
-              const isChecked = localSelectedAreas.some(
-                (a) => a.id_area === area.id_area
-              );
-              return (
-                <label
-                  key={area.id_area}
-                  className="flex justify-between items-center gap-2 cursor-pointer"
-                >
-                  <span className="text-negro">{area.nombre}</span>
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => handleCheckboxChange(area)}
-                    className="accent-principal-500 w-4 h-4"
-                  />
-                </label>
-              );
-            })
+            <div className="space-y-2">
+              {areas.map((area) => {
+                const isChecked = localSelectedAreas.some(
+                  (a) => a.id_area === area.id_area
+                );
+                return (
+                  <label
+                    key={area.id_area}
+                    className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                      isChecked
+                        ? "bg-principal-100 border-principal-400 text-principal-700 font-semibold"
+                        : "bg-blanco hover:bg-neutro-100 border-neutro-200"
+                    }`}
+                  >
+                    <span className="text-negro">{area.nombre}</span>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleCheckboxChange(area)}
+                      className="accent-principal-500 w-4 h-4"
+                    />
+                  </label>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
