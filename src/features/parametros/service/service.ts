@@ -1,11 +1,5 @@
 import apiClient from "../../../api/ApiPhp";
-import type {
-  Area,
-  Nivel,
-  ParametroClasificacion,
-  CompetidoresResponse,
-  Competidor,
-} from "../interface/interface";
+import type { Area, Nivel, ParametroClasificacion } from "../interface/interface";
 
 export const obtenerAreasAPI = async (): Promise<Area[]> => {
   const response = await apiClient.get("/area");
@@ -18,31 +12,28 @@ export const obtenerAreasAPI = async (): Promise<Area[]> => {
 export const obtenerNivelesPorAreaAPI = async (
   id_area: number
 ): Promise<Nivel[]> => {
-  const response = await apiClient.get<CompetidoresResponse>(
-    `/responsables/2/competidores`
+  const response = await apiClient.get("/areas-con-niveles");
+
+  const areas = response.data.data;
+
+  const areaEncontrada = areas.find(
+    (a: { id_area: number }) => a.id_area === id_area
   );
 
-  const data: Competidor[] = response.data.data;
+  if (!areaEncontrada) {
+    return [];
+  }
 
-  const nivelesFiltrados = data
-    .filter((c) => c.id_area === id_area)
-    .map((c) => ({
-      id: c.nivel.id_nivel,
-      nombre: c.nivel.nombre,
-    }));
+  const niveles: Nivel[] = areaEncontrada.niveles.map(
+    (n: { id_nivel: number; nombre: string }) => ({
+      id: n.id_nivel,
+      nombre: n.nombre,
+    })
+  );
 
-  const nivelesUnicos: Nivel[] = [];
-  const idsVistos = new Set<number>();
-
-  nivelesFiltrados.forEach((n) => {
-    if (!idsVistos.has(n.id)) {
-      idsVistos.add(n.id);
-      nivelesUnicos.push(n);
-    }
-  });
-
-  return nivelesUnicos;
+  return niveles;
 };
+
 
 export const crearParametroAPI = async (payload: ParametroClasificacion) => {
   const response = await apiClient.post("/fases", payload);
