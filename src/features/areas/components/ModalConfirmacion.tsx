@@ -5,20 +5,20 @@ import { AlertTriangle, Info, X, CheckCircle } from 'lucide-react';
 type ModalType = 'confirmation' | 'error' | 'info' | 'success';
 
 type Props = {
-    isOpen: boolean;
-    onClose: () => void;
-    onConfirm?: () => void;
-    title: string;
-    children: ReactNode;
-    type: ModalType;
-    loading?: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm?: () => void;
+  title: string;
+  children: ReactNode;
+  type: ModalType;
+  loading?: boolean;
 };
 
 const iconMap: Record<ModalType, ReactNode> = {
-    confirmation: <AlertTriangle className="h-16 w-16 text-yellow-500 mx-auto" />,
-    error: <X className="h-16 w-16 text-red-500 mx-auto" />,
-    info: <Info className="h-16 w-16 text-blue-500 mx-auto" />,
-    success: <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />,
+  confirmation: <AlertTriangle className="h-16 w-16 text-yellow-500 mx-auto" />,
+  error: <X className="h-16 w-16 text-red-500 mx-auto" />,
+  info: <Info className="h-16 w-16 text-blue-500 mx-auto" />,
+  success: <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />,
 };
 
 const buttonStyles: Record<ModalType, string> = {
@@ -28,8 +28,16 @@ const buttonStyles: Record<ModalType, string> = {
     success: 'bg-green-500 hover:bg-green-600',
 };
 
-export function ModalConfirmacion({ isOpen, onClose, onConfirm, title, children, type, loading = false }: Props) {
-    if (!isOpen) return null;
+export function ModalConfirmacion({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  children,
+  type,
+  loading = false,
+}: Props) {
+  if (!isOpen) return null;
 
     return (
         <div 

@@ -17,11 +17,9 @@ interface LoginApiResponse {
 }
 
 class AuthService {
-
   async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
-    
     const response = await apiClient.post<LoginApiResponse>('/v1/login', credentials);
-    
+
     const { data, access_token } = response.data;
 
     const user: User = {
@@ -39,7 +37,7 @@ class AuthService {
     const response = await apiClient.get<LoginApiResponse>('/v1/login');
 
     const { data } = response.data;
-    
+
     const user: User = {
       id: String(data.id_usuario),
       email: data.persona.email,

@@ -6,17 +6,17 @@ import { X, Save, AlertCircle } from 'lucide-react';
 import { crearAreaEsquema, type CrearAreaFormData } from '../utils/esquemas';
 
 type ModalCrearAreaProps = {
-    isOpen: boolean;
-    onClose: () => void;
-    onGuardar: (data: CrearAreaFormData) => void;
-    loading?: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  onGuardar: (data: CrearAreaFormData) => void;
+  loading?: boolean;
 };
 
-export const ModalCrearArea = ({ 
-    isOpen, 
-    onClose, 
-    onGuardar, 
-    loading = false,
+export const ModalCrearArea = ({
+  isOpen,
+  onClose,
+  onGuardar,
+  loading = false,
 }: ModalCrearAreaProps) => {
     const { 
         register, 

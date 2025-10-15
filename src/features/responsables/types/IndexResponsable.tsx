@@ -18,8 +18,8 @@ export type PayloadResponsable = {
 
 // Tipo para los datos que vienen del formulario
 export type FormularioData = {
-    nombreCompleto: string;
-    email: string;
-    ci: string;
-    codigo_encargado: string;
+  nombreCompleto: string;
+  email: string;
+  ci: string;
+  codigo_encargado: string;
 };

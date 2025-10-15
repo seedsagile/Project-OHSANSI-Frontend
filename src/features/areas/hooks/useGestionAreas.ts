@@ -6,18 +6,18 @@ import type { Area, CrearAreaData } from '../types';
 import toast from 'react-hot-toast';
 
 type ConfirmationModalState = {
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm?: () => void;
-    type: 'confirmation' | 'info' | 'error' | 'success';
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm?: () => void;
+  type: 'confirmation' | 'info' | 'error' | 'success';
 };
 
 const initialConfirmationState: ConfirmationModalState = {
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'info',
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'info',
 };
 
 // Función para eliminar caracteres duplicados (IGUAL que en esquemas.ts)
@@ -162,17 +162,17 @@ export function useGestionAreas() {
     
     const cerrarModalConfirmacion = () => setConfirmationModal(initialConfirmationState);
 
-    return {
-        areas,
-        isLoading,
-        isCreating,
-        modalCrearAbierto,
-        confirmationModal,
-        areaSeleccionada,
-        setAreaSeleccionada,
-        abrirModalCrear,
-        cerrarModalCrear,
-        cerrarModalConfirmacion,
-        handleGuardarArea,
-    };
+  return {
+    areas,
+    isLoading,
+    isCreating,
+    modalCrearAbierto,
+    confirmationModal,
+    areaSeleccionada,
+    setAreaSeleccionada,
+    abrirModalCrear,
+    cerrarModalCrear,
+    cerrarModalConfirmacion,
+    handleGuardarArea,
+  };
 }

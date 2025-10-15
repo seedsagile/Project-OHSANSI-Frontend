@@ -8,19 +8,19 @@ import { useGestionAreas } from '../hooks/useGestionAreas';
 import type { Area } from '../types';
 
 export function PaginaAreas() {
-    const {
-        areas,
-        isLoading,
-        isCreating,
-        modalCrearAbierto,
-        confirmationModal,
-        areaSeleccionada,
-        setAreaSeleccionada,
-        abrirModalCrear,
-        cerrarModalCrear,
-        cerrarModalConfirmacion,
-        handleGuardarArea,
-    } = useGestionAreas();
+  const {
+    areas,
+    isLoading,
+    isCreating,
+    modalCrearAbierto,
+    confirmationModal,
+    areaSeleccionada,
+    setAreaSeleccionada,
+    abrirModalCrear,
+    cerrarModalCrear,
+    cerrarModalConfirmacion,
+    handleGuardarArea,
+  } = useGestionAreas();
 
     const columns = useMemo<ColumnDef<Area>[]>(() => [
         { 
