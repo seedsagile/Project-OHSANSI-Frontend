@@ -115,7 +115,7 @@ export const ModalCrearArea = ({
 
     return (
         <div 
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={handleClickOutside}
         >
             <div 
