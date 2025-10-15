@@ -124,6 +124,12 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
             label="Lista de competidores"
             onClick={() => setOpen(false)}
           />
+          <NavLink
+            to="/parametrosCalificaciones"
+            icon={<ClipboardIcon />}
+            label="Parametros de Calificacion"
+            onClick={() => setOpen(false)}
+          />
           <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Gestión
           </p>
@@ -164,12 +170,6 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
             to="/calificaciones"
             icon={<ClipboardIcon />}
             label="Calificaciones"
-            onClick={() => setOpen(false)}
-          />
-          <NavLink
-            to="/parametrosCalificaciones"
-            icon={<ClipboardIcon />}
-            label="Parametros de Calificacion"
             onClick={() => setOpen(false)}
           />
           <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">

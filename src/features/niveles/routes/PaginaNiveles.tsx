@@ -23,10 +23,11 @@ export function PaginaNiveles() {
     isLoading,
     isCreating,
     modalCrearAbierto,
-    confirmationModal,
+    // --- CAMBIOS AQUÍ ---
+    feedbackModal, // Se cambia el nombre de la variable
     abrirModalCrear,
     cerrarModalCrear,
-    cerrarModalConfirmacion,
+    cerrarFeedbackModal, // Se cambia el nombre de la función
     handleGuardarNivel,
   } = useGestionNiveles();
 
@@ -116,15 +117,16 @@ export function PaginaNiveles() {
         loading={isCreating}
       />
 
+      {/* --- CAMBIOS AQUÍ --- */}
       <Modal
-        isOpen={confirmationModal.isOpen}
-        onClose={cerrarModalConfirmacion}
-        onConfirm={confirmationModal.onConfirm}
-        title={confirmationModal.title}
-        type={confirmationModal.type}
+        isOpen={feedbackModal.isOpen}
+        onClose={cerrarFeedbackModal} // Se usa la nueva función
+        title={feedbackModal.title}
+        type={feedbackModal.type}
         loading={isCreating}
+        // Se elimina onConfirm porque ya no es necesario
       >
-        {confirmationModal.message}
+        {feedbackModal.message}
       </Modal>
     </div>
   );

@@ -4,15 +4,14 @@ import { nivelesService } from '../services/nivelesService';
 import type { Nivel, CrearNivelData } from '../types';
 import { normalizarParaComparar } from '../utils/esquemas';
 
-type ConfirmationModalState = {
+type FeedbackModalState = {
   isOpen: boolean;
   title: string;
   message: string;
-  onConfirm?: () => void;
-  type: 'confirmation' | 'info' | 'error' | 'success';
+  type: 'info' | 'error' | 'success';
 };
 
-const initialConfirmationState: ConfirmationModalState = {
+const initialFeedbackState: FeedbackModalState = {
   isOpen: false,
   title: '',
   message: '',
@@ -22,8 +21,9 @@ const initialConfirmationState: ConfirmationModalState = {
 export function useGestionNiveles() {
   const queryClient = useQueryClient();
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
-  const [confirmationModal, setConfirmationModal] =
-    useState<ConfirmationModalState>(initialConfirmationState);
+  // Renombramos el estado para mayor claridad, ya no es de confirmación
+  const [feedbackModal, setFeedbackModal] =
+    useState<FeedbackModalState>(initialFeedbackState);
   const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
   const modalTimerRef = useRef<number | undefined>(undefined);
 
@@ -37,11 +37,11 @@ export function useGestionNiveles() {
     message: string,
     type: 'success' | 'error' | 'info'
   ) => {
-    setConfirmationModal({ isOpen: true, title, message, type });
+    setFeedbackModal({ isOpen: true, title, message, type });
     clearTimeout(modalTimerRef.current);
     modalTimerRef.current = window.setTimeout(() => {
-      cerrarModalConfirmacion();
-    }, 1000);
+      cerrarFeedbackModal();
+    }, 1500); // Se cierra a los 1.5 segundos
   };
 
   const { mutate, isPending: isCreating } = useMutation<Nivel, Error, CrearNivelData>({
@@ -49,7 +49,6 @@ export function useGestionNiveles() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['niveles'] });
       cerrarModalCrear();
-      // Usamos la nueva función centralizada
       showAutoClosingModal(
         '¡Registro Exitoso!',
         `El nivel "${nombreNivelCreando}" ha sido registrado correctamente.`,
@@ -57,7 +56,8 @@ export function useGestionNiveles() {
       );
     },
     onError: (error) => {
-      showAutoClosingModal('Error al Crear', error.message, 'error');
+      // Los errores se siguen mostrando, pero no como confirmación
+      setFeedbackModal({ isOpen: true, title: 'Error al Crear', message: error.message, type: 'error' });
     },
   });
 
@@ -67,6 +67,7 @@ export function useGestionNiveles() {
     };
   }, []);
 
+  // --- LÓGICA DE GUARDADO ACTUALIZADA ---
   const handleGuardarNivel = (data: CrearNivelData) => {
     const nombreNormalizadoParaComparar = normalizarParaComparar(data.nombre);
 
@@ -75,23 +76,19 @@ export function useGestionNiveles() {
     );
 
     if (duplicado) {
-      showAutoClosingModal(
-        'Nombre Duplicado',
-        'Ya existe un nivel con un nombre similar (ignorando acentos o plurales).',
-        'error'
-      );
+      setFeedbackModal({
+        isOpen: true,
+        title: 'Nombre Duplicado',
+        message: 'Ya existe un nivel con un nombre similar.',
+        type: 'error',
+      });
       return;
     }
 
     setNombreNivelCreando(data.nombre);
 
-    setConfirmationModal({
-      isOpen: true,
-      title: 'Confirmar Creación',
-      message: `¿Está seguro de que desea crear el nivel "${data.nombre}"?`,
-      type: 'confirmation',
-      onConfirm: () => mutate({ nombre: data.nombre }),
-    });
+    // Se llama a la mutación directamente, sin el modal de confirmación
+    mutate({ nombre: data.nombre });
   };
 
   const abrirModalCrear = () => setModalCrearAbierto(true);
@@ -99,8 +96,8 @@ export function useGestionNiveles() {
     setModalCrearAbierto(false);
     setNombreNivelCreando('');
   };
-  const cerrarModalConfirmacion = () => {
-    setConfirmationModal(initialConfirmationState);
+  const cerrarFeedbackModal = () => {
+    setFeedbackModal(initialFeedbackState);
     clearTimeout(modalTimerRef.current);
   };
 
@@ -109,10 +106,11 @@ export function useGestionNiveles() {
     isLoading,
     isCreating,
     modalCrearAbierto,
-    confirmationModal,
+    // Exportamos el nuevo estado y su función de cierre
+    feedbackModal,
     abrirModalCrear,
     cerrarModalCrear,
-    cerrarModalConfirmacion,
+    cerrarFeedbackModal,
     handleGuardarNivel,
   };
 }
