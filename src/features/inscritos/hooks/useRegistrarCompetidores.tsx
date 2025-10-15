@@ -9,11 +9,10 @@ import type {
   CompetidorCSV,
   InscripcionPayload,
   FilaProcesada,
+  // 'AreaConNiveles' se ha eliminado de esta lista de importación
 } from '../types/indexInscritos';
-import { importarCompetidoresAPI } from '../services/ApiInscripcion';
+import { importarCompetidoresAPI, obtenerAreasConNivelesAPI } from '../services/ApiInscripcion';
 import { mapCSVRenglonToPayload } from '../utils/apiMapper';
-import { areasService } from '../../areas/services/areasService';
-import { nivelesService } from '../../niveles/services/nivelesService';
 import {
   headerMapping,
   normalizarEncabezado,
@@ -38,13 +37,14 @@ export function useImportarCompetidores() {
   const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]);
   const [invalidHeaders, setInvalidHeaders] = useState<string[]>([]);
   const workerRef = useRef<Worker | null>(null);
-  const { data: areas = [], isLoading: isLoadingAreas } = useQuery({
-    queryKey: ['areas'],
-    queryFn: areasService.obtenerAreas,
-  });
-  const { data: niveles = [], isLoading: isLoadingNiveles } = useQuery({
-    queryKey: ['niveles'],
-    queryFn: nivelesService.obtenerNiveles,
+  const modalTimerRef = useRef<number | undefined>(undefined);
+
+  const { data: areasConNiveles = [], isLoading: isLoadingData } = useQuery({
+    queryKey: ['areasConNiveles'],
+    queryFn: async () => {
+      const response = await obtenerAreasConNivelesAPI();
+      return response.data;
+    },
   });
 
   const reset = useCallback(() => {
@@ -52,6 +52,11 @@ export function useImportarCompetidores() {
     setNombreArchivo(null);
     setColumnasDinamicas([]);
     setInvalidHeaders([]);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalState(initialModalState);
+    clearTimeout(modalTimerRef.current);
   }, []);
 
   const { mutate, isPending } = useMutation<
@@ -67,6 +72,9 @@ export function useImportarCompetidores() {
         title: '¡Registro Exitoso!',
         message: data.message || 'Los competidores han sido registrados correctamente.',
       });
+      modalTimerRef.current = window.setTimeout(() => {
+        closeModal();
+      }, 1500);
       reset();
     },
     onError: (error) => {
@@ -148,6 +156,7 @@ export function useImportarCompetidores() {
 
     return () => {
       workerRef.current?.terminate();
+      clearTimeout(modalTimerRef.current);
     };
   }, [reset]);
 
@@ -172,13 +181,9 @@ export function useImportarCompetidores() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        const nombresAreas = areas.map((a) => a.nombre);
-        const nombresNiveles = niveles.map((n) => n.nombre);
-
         workerRef.current?.postMessage({
           csvText: text,
-          areas: nombresAreas,
-          niveles: nombresNiveles,
+          areasConNiveles: areasConNiveles,
         });
       };
       reader.onerror = () => {
@@ -192,7 +197,7 @@ export function useImportarCompetidores() {
       };
       reader.readAsText(file, 'UTF-8');
     },
-    [reset, areas, niveles]
+    [reset, areasConNiveles]
   );
 
   const handleSave = () => {
@@ -214,6 +219,9 @@ export function useImportarCompetidores() {
         title: 'Sin datos',
         message: 'No hay filas válidas para guardar.',
       });
+      modalTimerRef.current = window.setTimeout(() => {
+        closeModal();
+      }, 1500);
       return;
     }
     if (filasValidas.length !== filas.length) {
@@ -241,11 +249,8 @@ export function useImportarCompetidores() {
     });
   };
 
-  const closeModal = () => setModalState(initialModalState);
-
   const esArchivoValido =
     filas.length > 0 && invalidHeaders.length === 0 && filas.every((f) => f.esValida);
-  const isLoadingData = isLoadingAreas || isLoadingNiveles;
 
   return {
     datos: filas,

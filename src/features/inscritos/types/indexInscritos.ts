@@ -84,3 +84,23 @@ export type ApiErrorResponse = {
     [key: string]: string[];
   };
 };
+
+export type NivelAsignado = {
+  id_nivel: number;
+  nombre: string;
+  orden: number;
+  asignado_activo: boolean;
+};
+
+export type AreaConNiveles = {
+  id_area: number;
+  nombre: string;
+  activo: boolean;
+  niveles: NivelAsignado[];
+};
+
+export type ApiResponseAreas = {
+  success: boolean;
+  data: AreaConNiveles[];
+  message: string;
+};

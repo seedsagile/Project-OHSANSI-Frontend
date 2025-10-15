@@ -1,9 +1,11 @@
 import { procesarYValidarCSV } from './csvProcessor';
-self.onmessage = (e: MessageEvent<{ csvText: string; areas: string[]; niveles: string[] }>) => {
-  const { csvText, areas, niveles } = e.data;
+import type { AreaConNiveles } from '../types/indexInscritos';
+
+self.onmessage = (e: MessageEvent<{ csvText: string; areasConNiveles: AreaConNiveles[] }>) => {
+  const { csvText, areasConNiveles } = e.data;
 
   try {
-    const resultado = procesarYValidarCSV(csvText, areas, niveles);
+    const resultado = procesarYValidarCSV(csvText, areasConNiveles);
 
     self.postMessage({ type: 'SUCCESS', payload: resultado });
   } catch (error) {

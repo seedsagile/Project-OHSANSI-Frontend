@@ -1,5 +1,5 @@
 import apiClient from '../../../api/ApiPhp';
-import type { InscripcionPayload } from '../types/indexInscritos';
+import type { InscripcionPayload, ApiResponseAreas } from '../types/indexInscritos'; // Se importa ApiResponseAreas
 import { AxiosError } from 'axios';
 
 apiClient.interceptors.request.use((request) => {
@@ -40,5 +40,10 @@ apiClient.interceptors.response.use(
 
 export const importarCompetidoresAPI = async (payload: InscripcionPayload) => {
   const response = await apiClient.post('/competidores/importar', payload);
+  return response.data;
+};
+
+export const obtenerAreasConNivelesAPI = async (): Promise<ApiResponseAreas> => {
+  const response = await apiClient.get<ApiResponseAreas>('/areas-con-niveles');
   return response.data;
 };
