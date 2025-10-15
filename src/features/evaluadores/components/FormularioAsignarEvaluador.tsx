@@ -139,7 +139,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
     }
     
     // Mostrar mensaje si intentaron ingresar espacios o solo hay espacios
-    if (hasSpaces || onlySpaces) {
+    /*if (hasSpaces || onlySpaces) {
       setLimitMessages(prev => ({ 
         ...prev, 
         email: 'No se permiten espacios vacíos. Por favor, ingrese datos válidos.' 
@@ -149,14 +149,14 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
       }, 3000);
     } else {
       showLimitMessage('email', input.value.length, 50);
-    }
+    }*/
   };
 
   const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
-    const cleanedText = pastedText.replace(/[^a-zA-Z@.\-_]/g, '');
-
+    //const pastedText = e.clipboardData.getData('text');
+    //const cleanedText = pastedText.replace(/[^a-zA-Z@.\-_]/g, '');
+    /*
     if (cleanedText) {
       const input = e.currentTarget;
       const start = input.selectionStart || 0;
@@ -189,7 +189,7 @@ export function FormularioAsignarEvaluador({ register, errors }: Props) {
       setTimeout(() => {
         setLimitMessages(prev => ({ ...prev, email: '' }));
       }, 3000);
-    }
+    }*/
   };
 
   // Función para limpiar y validar código en tiempo real (SIN ESPACIOS)
