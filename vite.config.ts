@@ -8,11 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [
-      react(),
-      svgr(),
-      tailwindcss()
-    ],
+    plugins: [react(), svgr(), tailwindcss()],
 
     resolve: {
       alias: {
@@ -29,11 +25,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
-      }
+      },
     },
-    
+
     define: {
-      'process.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL)
+      'process.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL),
     },
 
     build: {
