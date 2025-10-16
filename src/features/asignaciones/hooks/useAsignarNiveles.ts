@@ -148,7 +148,9 @@ export function useAsignarNiveles() {
 
     if (paraCrear.length === 0 && paraActualizar.length === 0) {
       setModalState({
-        isOpen: true, type: 'info', title: 'Sin Cambios',
+        isOpen: true,
+        type: 'info',
+        title: 'Sin Cambios',
         message: 'No se ha realizado ninguna modificación.',
       });
       clearTimeout(modalTimerRef.current);
@@ -178,16 +180,20 @@ export function useAsignarNiveles() {
   const handleCancelarCambios = () => {
     setNivelesSeleccionados(nivelesOriginales);
   };
-  
+
   const handleChangeArea = (nuevaAreaId: number | undefined) => {
-    const hayCambiosSinGuardar = !isEqual(new Set(nivelesOriginales), new Set(nivelesSeleccionados));
+    const hayCambiosSinGuardar = !isEqual(
+      new Set(nivelesOriginales),
+      new Set(nivelesSeleccionados)
+    );
 
     if (hayCambiosSinGuardar) {
       setModalState({
         isOpen: true,
         type: 'confirmation',
         title: 'Descartar Cambios',
-        message: 'Tienes cambios sin guardar. ¿Estás seguro de que quieres cambiar de área y perderlos?',
+        message:
+          'Tienes cambios sin guardar. ¿Estás seguro de que quieres cambiar de área y perderlos?',
         onConfirm: () => {
           setAreaSeleccionadaId(nuevaAreaId);
           closeModal();

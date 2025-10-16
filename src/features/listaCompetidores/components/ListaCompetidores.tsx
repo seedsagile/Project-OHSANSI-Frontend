@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
-import { AccordionArea } from "./AccordionArea";
-import { AccordionNivel } from "./AccordionNivel";
-import {
-  getAreasPorResponsableAPI,
-  getCompetidoresPorResponsableAPI,
-} from "../service/service";
-import type { Nivel, Competidor, Area } from "../interface/interface";
+import { useEffect, useState } from 'react';
+import { AccordionArea } from './AccordionArea';
+import { AccordionNivel } from './AccordionNivel';
+import { getAreasPorResponsableAPI, getCompetidoresPorResponsableAPI } from '../service/service';
+import type { Nivel, Competidor, Area } from '../interface/interface';
 
 export const ListaCompetidores = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [competidores, setCompetidores] = useState<Competidor[]>([]);
-  const [areaNiveles, setAreaNiveles] = useState<
-    { areaNombre: string; niveles: Nivel[] }[]
-  >([]);
+  const [areaNiveles, setAreaNiveles] = useState<{ areaNombre: string; niveles: Nivel[] }[]>([]);
 
   const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
   const [selectedNiveles, setSelectedNiveles] = useState<number[]>([]);
@@ -28,7 +23,7 @@ export const ListaCompetidores = () => {
         const data = await getAreasPorResponsableAPI(responsableId);
         setAreas(data);
       } catch (error) {
-        console.error("Error al obtener áreas:", error);
+        console.error('Error al obtener áreas:', error);
       } finally {
         setLoadingAreas(false);
       }
@@ -42,7 +37,7 @@ export const ListaCompetidores = () => {
       const data = await getCompetidoresPorResponsableAPI(responsableId);
       setCompetidores(data.data);
     } catch (error) {
-      console.error("Error al obtener competidores:", error);
+      console.error('Error al obtener competidores:', error);
       setCompetidores([]);
     } finally {
       setLoadingCompetidores(false);
@@ -90,16 +85,10 @@ export const ListaCompetidores = () => {
 
   // 🔹 FILTRADO BASE
   const filteredCompetidores = competidores.filter((c) => {
-    if (
-      selectedAreas.length > 0 &&
-      !selectedAreas.some((a) => a.id_area === c.area.id_area)
-    ) {
+    if (selectedAreas.length > 0 && !selectedAreas.some((a) => a.id_area === c.area.id_area)) {
       return false;
     }
-    if (
-      selectedNiveles.length > 0 &&
-      !selectedNiveles.includes(c.nivel.id_nivel)
-    ) {
+    if (selectedNiveles.length > 0 && !selectedNiveles.includes(c.nivel.id_nivel)) {
       return false;
     }
     return true;
@@ -116,25 +105,23 @@ export const ListaCompetidores = () => {
       const match = nombre.match(/\d+/);
       return match ? parseInt(match[0]) : 999; // si no tiene número, lo manda al final
     };
-    const nivelCompare =
-      getNivelNum(a.nivel.nombre) - getNivelNum(b.nivel.nombre);
+    const nivelCompare = getNivelNum(a.nivel.nombre) - getNivelNum(b.nivel.nombre);
     if (nivelCompare !== 0) return nivelCompare;
 
     // 3️⃣ Ordenar por nombre de estudiante (A–Z)
     return a.persona.nombre.localeCompare(b.persona.nombre);
   });
 
-  let infoMessage = "";
+  let infoMessage = '';
   if (!loadingCompetidores && sortedCompetidores.length === 0) {
     if (selectedAreas.length === 0 && selectedNiveles.length === 0) {
-      infoMessage = "No hay competidores registrados en el área seleccionada";
+      infoMessage = 'No hay competidores registrados en el área seleccionada';
     } else if (selectedAreas.length > 0 && selectedNiveles.length === 0) {
-      infoMessage = "No hay competidores registrados en el área seleccionada";
+      infoMessage = 'No hay competidores registrados en el área seleccionada';
     } else if (selectedAreas.length > 0 && selectedNiveles.length > 0) {
-      infoMessage =
-        "No hay competidores registrados en el área y nivel seleccionados";
+      infoMessage = 'No hay competidores registrados en el área y nivel seleccionados';
     } else if (selectedAreas.length === 0 && selectedNiveles.length > 0) {
-      infoMessage = "No hay competidores registrados en el nivel seleccionado";
+      infoMessage = 'No hay competidores registrados en el nivel seleccionado';
     }
   }
 
@@ -205,10 +192,7 @@ export const ListaCompetidores = () => {
                     </tr>
                   ) : (
                     sortedCompetidores.map((c) => (
-                      <tr
-                        key={c.id_competidor}
-                        className="border-b hover:bg-gray-50"
-                      >
+                      <tr key={c.id_competidor} className="border-b hover:bg-gray-50">
                         <td className="px-6 py-3">{c.persona.nombre}</td>
                         <td className="px-6 py-3">{c.persona.apellido}</td>
                         <td className="px-6 py-3">{c.nivel.nombre}</td>

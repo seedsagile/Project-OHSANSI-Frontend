@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // =======================
 // CONSTANTES
@@ -15,8 +15,7 @@ export const CONTRASENA_MAX_LENGTH = 16;
 export const REGEX_SOLO_LETRAS = /^[a-zA-Z\s\u00C0-\u017F]+$/;
 export const REGEX_CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const REGEX_CI = /^\d+[a-zA-Z]?$/;
-export const REGEX_CONTRASENA =
-  /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/;
+export const REGEX_CONTRASENA = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]+$/;
 
 // =======================
 // SCHEMAS
@@ -27,7 +26,7 @@ export const NombreSchema = z
   .string()
   .trim()
   .min(1, {
-    message: "El campo Nombre del responsable de área es obligatorio.",
+    message: 'El campo Nombre del responsable de área es obligatorio.',
   })
   .min(NOMBRE_MIN_LENGTH, {
     message: `El campo Nombre del responsablede área requiere un mínimo de ${NOMBRE_MIN_LENGTH} caracteres.`,
@@ -37,18 +36,18 @@ export const NombreSchema = z
   })
   .refine((val) => !/\d/.test(val), {
     message:
-      "El campo Nombre del responsable de área contiene caracteres numéricos. Solo se aceptan letras.",
+      'El campo Nombre del responsable de área contiene caracteres numéricos. Solo se aceptan letras.',
   })
   .regex(REGEX_SOLO_LETRAS, {
     message:
-      "El campo Nombre del responsable de área contiene caracteres especiales. Solo se aceptan letras",
+      'El campo Nombre del responsable de área contiene caracteres especiales. Solo se aceptan letras',
   })
   .transform((val) =>
     val
       .trim()
-      .replace(/\s+/g, " ")
-      .toLocaleLowerCase("es-ES")
-      .replace(/(^\p{L})|(?<=\s)\p{L}/gu, (c) => c.toLocaleUpperCase("es-ES"))
+      .replace(/\s+/g, ' ')
+      .toLocaleLowerCase('es-ES')
+      .replace(/(^\p{L})|(?<=\s)\p{L}/gu, (c) => c.toLocaleUpperCase('es-ES'))
   );
 
 // Apellido
@@ -56,7 +55,7 @@ export const ApellidoSchema = z
   .string()
   .trim()
   .min(1, {
-    message: "El campo Apellido del responsable de área es obligatorio.",
+    message: 'El campo Apellido del responsable de área es obligatorio.',
   })
   .min(APELLIDO_MIN_LENGTH, {
     message: `El campo Apellido del responsable de área requiere un mínimo de ${APELLIDO_MIN_LENGTH} caracteres.`,
@@ -66,18 +65,18 @@ export const ApellidoSchema = z
   })
   .refine((val) => !/\d/.test(val), {
     message:
-      "El campo Apellido del responsable de área contiene caracteres numéricos. Solo se aceptan letras.",
+      'El campo Apellido del responsable de área contiene caracteres numéricos. Solo se aceptan letras.',
   })
   .regex(REGEX_SOLO_LETRAS, {
     message:
-      "El campo Apellido del responsable de área contiene caracteres especiales. Solo se aceptan letras",
+      'El campo Apellido del responsable de área contiene caracteres especiales. Solo se aceptan letras',
   })
   .transform((val) =>
     val
       .trim()
-      .replace(/\s+/g, " ")
-      .toLocaleLowerCase("es-ES")
-      .replace(/(^\p{L})|(?<=\s)\p{L}/gu, (c) => c.toLocaleUpperCase("es-ES"))
+      .replace(/\s+/g, ' ')
+      .toLocaleLowerCase('es-ES')
+      .replace(/(^\p{L})|(?<=\s)\p{L}/gu, (c) => c.toLocaleUpperCase('es-ES'))
   );
 
 // Correo
@@ -89,20 +88,19 @@ export const CorreoSchema = z
   .string()
   .trim()
   .min(1, {
-    message: "El campo Correo electrónico es obligatorio.",
+    message: 'El campo Correo electrónico es obligatorio.',
   })
   .min(6, {
-    message: "El campo Correo electrónico requiere un mínimo de 6 caracteres.",
+    message: 'El campo Correo electrónico requiere un mínimo de 6 caracteres.',
   })
   // Primero: valida que solo use letras, números, @ y .
   .regex(REGEX_CORREO_PERMITIDO, {
     message:
-      "Correo electrónico inválido. Solo se permiten letras, números y el caracter especial @ y .",
+      'Correo electrónico inválido. Solo se permiten letras, números y el caracter especial @ y .',
   })
   // Segundo: valida formato general tipo usuario@dominio.com
   .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
-    message:
-      "El campo Correo electrónico debe tener un formato válido (ej. usuario@uno.com).",
+    message: 'El campo Correo electrónico debe tener un formato válido (ej. usuario@uno.com).',
   })
   .transform((val) => val.toLowerCase());
 
@@ -110,21 +108,21 @@ export const CorreoSchema = z
 export const CISchema = z
   .string()
   .trim()
-  .min(1, { message: "El campo Carnet de identidad es obligatorio." })
+  .min(1, { message: 'El campo Carnet de identidad es obligatorio.' })
   .min(4, {
-    message: "El campo Carnet de identidad requiere un mínimo de 4 caracteres.",
+    message: 'El campo Carnet de identidad requiere un mínimo de 4 caracteres.',
   })
   .max(CI_MAX_LENGTH, {
     message: `El campo CI acepta un máximo de ${CI_MAX_LENGTH} caracteres.`,
   })
   // Validación general: solo números con opcional 1 letra al final
   .refine((val) => /^\d+[a-zA-Z]?$/.test(val), {
-    message: "CI inválido",
+    message: 'CI inválido',
   })
   // Validación de caracteres especiales o letras en medio
   .refine((val) => /^[0-9]+[a-zA-Z]?$/.test(val), {
     message:
-      "El campo Carnet de identidad contiene caracteres especiales. Solo se aceptan números y una letra al final",
+      'El campo Carnet de identidad contiene caracteres especiales. Solo se aceptan números y una letra al final',
   })
   .transform((val) => val.trim());
 
@@ -138,13 +136,12 @@ export const ContrasenaSchema = z
     message: `La contraseña no puede superar los ${CONTRASENA_MAX_LENGTH} caracteres.`,
   })
   .regex(REGEX_CONTRASENA, {
-    message:
-      "La contraseña debe incluir al menos una mayúscula, un número y un carácter especial.",
+    message: 'La contraseña debe incluir al menos una mayúscula, un número y un carácter especial.',
   });
 
 // Áreas
 export const AreasSchema = z.array(z.number()).nonempty({
-  message: "Debe seleccionar al menos un área para el responsable.",
+  message: 'Debe seleccionar al menos un área para el responsable.',
 });
 
 // =======================

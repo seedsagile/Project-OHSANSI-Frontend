@@ -1,10 +1,5 @@
-import apiClient from "../../../api/ApiPhp";
-import type {
-  Area,
-  Nivel,
-  Competidor,
-  CompetidoresResponse,
-} from "../interface/interface";
+import apiClient from '../../../api/ApiPhp';
+import type { Area, Nivel, Competidor, CompetidoresResponse } from '../interface/interface';
 
 // ✅ Obtener todos los competidores de un responsable específico
 export const getCompetidoresPorResponsableAPI = async (
@@ -17,17 +12,13 @@ export const getCompetidoresPorResponsableAPI = async (
 };
 
 // ✅ Obtener todas las ÁREAS de los competidores de un responsable (sin duplicados)
-export const getAreasPorResponsableAPI = async (
-  id_responsable: number
-): Promise<Area[]> => {
+export const getAreasPorResponsableAPI = async (id_responsable: number): Promise<Area[]> => {
   const response = await getCompetidoresPorResponsableAPI(id_responsable);
   const competidores: Competidor[] = response.data || [];
 
   const areas = Array.from(
     new Map(
-      competidores
-        .filter((item) => item.area)
-        .map((item) => [item.area.id_area, item.area])
+      competidores.filter((item) => item.area).map((item) => [item.area.id_area, item.area])
     ).values()
   );
 
@@ -35,17 +26,13 @@ export const getAreasPorResponsableAPI = async (
 };
 
 // ✅ Obtener todos los NIVELES de los competidores de un responsable (sin duplicados)
-export const getNivelesPorResponsableAPI = async (
-  id_responsable: number
-): Promise<Nivel[]> => {
+export const getNivelesPorResponsableAPI = async (id_responsable: number): Promise<Nivel[]> => {
   const response = await getCompetidoresPorResponsableAPI(id_responsable);
   const competidores: Competidor[] = response.data || [];
 
   const niveles = Array.from(
     new Map(
-      competidores
-        .filter((item) => item.nivel)
-        .map((item) => [item.nivel.id_nivel, item.nivel])
+      competidores.filter((item) => item.nivel).map((item) => [item.nivel.id_nivel, item.nivel])
     ).values()
   );
 

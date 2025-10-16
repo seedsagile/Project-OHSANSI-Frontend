@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import type { Area } from "../interface/interface";
+import React, { useState, useEffect } from 'react';
+import type { Area } from '../interface/interface';
 
 interface AccordionAreaProps {
   areas: Area[];
@@ -22,9 +22,7 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
   }, [selectedAreas]);
 
   const handleCheckboxChange = (area: Area) => {
-    const isSelected = localSelectedAreas.some(
-      (a) => a.id_area === area.id_area
-    );
+    const isSelected = localSelectedAreas.some((a) => a.id_area === area.id_area);
     const newSelected = isSelected
       ? localSelectedAreas.filter((a) => a.id_area !== area.id_area)
       : [...localSelectedAreas, area];
@@ -52,9 +50,7 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -64,28 +60,24 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
         <div
           className="absolute left-0 top-full z-20 w-full bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto transition-all duration-300"
           style={{
-            maxHeight: "200px",
-            scrollbarWidth: "thin",
-            scrollbarColor: "#a3a3a3 #f5f5f5",
+            maxHeight: '200px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#a3a3a3 #f5f5f5',
           }}
         >
           {areas.length === 0 ? (
-            <p className="text-neutro-700 text-sm text-center">
-              No hay áreas disponibles.
-            </p>
+            <p className="text-neutro-700 text-sm text-center">No hay áreas disponibles.</p>
           ) : (
             <div className="space-y-2">
               {areas.map((area) => {
-                const isChecked = localSelectedAreas.some(
-                  (a) => a.id_area === area.id_area
-                );
+                const isChecked = localSelectedAreas.some((a) => a.id_area === area.id_area);
                 return (
                   <label
                     key={area.id_area}
                     className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
                       isChecked
-                        ? "bg-principal-100 border-principal-400 text-principal-700 font-semibold"
-                        : "bg-blanco hover:bg-neutro-100 border-neutro-200"
+                        ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                        : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
                     }`}
                   >
                     <span className="text-negro">{area.nombre}</span>

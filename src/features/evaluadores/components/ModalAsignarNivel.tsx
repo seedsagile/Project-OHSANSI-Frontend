@@ -1,6 +1,6 @@
 //src/features/evaluadores/components/ModalAsignarNivel.tsx
-import { useState, useEffect } from "react";
-import type { Area, Nivel } from "../types/IndexEvaluador";
+import { useState, useEffect } from 'react';
+import type { Area, Nivel } from '../types/IndexEvaluador';
 
 interface ModalAsignarNivelProps {
   isOpen: boolean;
@@ -45,9 +45,7 @@ export const ModalAsignarNivel = ({
   };
 
   const handleConfirmarNiveles = () => {
-    const nivelesSeleccionados = niveles.filter((n) =>
-      selectedNiveles.includes(n.id_nivel)
-    );
+    const nivelesSeleccionados = niveles.filter((n) => selectedNiveles.includes(n.id_nivel));
     onConfirmar(nivelesSeleccionados);
     handleCerrar();
   };
@@ -58,9 +56,7 @@ export const ModalAsignarNivel = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl border-2 border-black">
         <div className="mb-4">
-          <label className="text-sm font-semibold text-black mb-2 block">
-            Nivel
-          </label>
+          <label className="text-sm font-semibold text-black mb-2 block">Nivel</label>
           <button
             type="button"
             className="w-full bg-[#0076FF] text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
@@ -73,9 +69,25 @@ export const ModalAsignarNivel = ({
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-2">
-                <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin h-8 w-8 text-blue-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 <p className="text-gray-500 text-sm">Cargando niveles...</p>
               </div>
@@ -87,7 +99,7 @@ export const ModalAsignarNivel = ({
                   key={nivel.id_nivel}
                   onClick={() => handleToggleNivel(nivel.id_nivel)}
                   className={`flex justify-between items-center rounded-md px-2 py-2 transition-colors cursor-pointer hover:bg-neutro-200 ${
-                    index % 2 === 0 ? "bg-[#E5E7EB]" : "bg-[#F3F4F6]"
+                    index % 2 === 0 ? 'bg-[#E5E7EB]' : 'bg-[#F3F4F6]'
                   }`}
                 >
                   <span>{nivel.nombre}</span>
@@ -101,9 +113,7 @@ export const ModalAsignarNivel = ({
               ))}
             </ul>
           ) : (
-            <p className="text-neutro-500 italic">
-              No hay niveles disponibles
-            </p>
+            <p className="text-neutro-500 italic">No hay niveles disponibles</p>
           )}
         </div>
 

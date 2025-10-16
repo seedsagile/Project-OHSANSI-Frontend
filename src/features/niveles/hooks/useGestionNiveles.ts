@@ -21,8 +21,7 @@ const initialFeedbackState: FeedbackModalState = {
 export function useGestionNiveles() {
   const queryClient = useQueryClient();
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
-  const [feedbackModal, setFeedbackModal] =
-    useState<FeedbackModalState>(initialFeedbackState);
+  const [feedbackModal, setFeedbackModal] = useState<FeedbackModalState>(initialFeedbackState);
   const [nombreNivelCreando, setNombreNivelCreando] = useState<string>('');
   const modalTimerRef = useRef<number | undefined>(undefined);
 
@@ -55,7 +54,12 @@ export function useGestionNiveles() {
       );
     },
     onError: (error) => {
-      setFeedbackModal({ isOpen: true, title: 'Error al Crear', message: error.message, type: 'error' });
+      setFeedbackModal({
+        isOpen: true,
+        title: 'Error al Crear',
+        message: error.message,
+        type: 'error',
+      });
     },
   });
 

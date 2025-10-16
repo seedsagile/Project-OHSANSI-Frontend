@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { areasService } from "../../areas/services/areasService"; // ajusta la ruta según tu estructura
-import type { Area } from "../../areas/types/index";
+import { useEffect, useState } from 'react';
+import { areasService } from '../../areas/services/areasService'; // ajusta la ruta según tu estructura
+import type { Area } from '../../areas/types/index';
 
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Estado para la contraseña generada
-  const [generatedPassword, setGeneratedPassword] = useState<string>("");
+  const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [passwordGenerated, setPasswordGenerated] = useState<boolean>(false);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export const FormularioAsignarResponsable = () => {
         const data = await areasService.obtenerAreas();
         setAreas(data);
       } catch (error) {
-        console.error("Error cargando áreas:", error);
+        console.error('Error cargando áreas:', error);
       } finally {
         setLoading(false);
       }
@@ -27,16 +27,15 @@ export const FormularioAsignarResponsable = () => {
   // Genera una contraseña de 8 caracteres (letras y números), asegurando al menos
   // una minúscula, una mayúscula y un número.
   const generatePassword = (length = 8) => {
-    const lower = "abcdefghijklmnopqrstuvwxyz";
-    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const numbers = "0123456789";
+    const lower = 'abcdefghijklmnopqrstuvwxyz';
+    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
     const all = lower + upper + numbers;
 
-    const randChar = (set: string) =>
-      set.charAt(Math.floor(Math.random() * set.length));
+    const randChar = (set: string) => set.charAt(Math.floor(Math.random() * set.length));
 
     // Garantizar 1 minúscula, 1 mayúscula y 1 número
-    let pwd = "";
+    let pwd = '';
     pwd += randChar(lower);
     pwd += randChar(upper);
     pwd += randChar(numbers);
@@ -47,9 +46,9 @@ export const FormularioAsignarResponsable = () => {
 
     // Mezclar para no dejar los caracteres garantizados al inicio
     pwd = pwd
-      .split("")
+      .split('')
       .sort(() => Math.random() - 0.5)
-      .join("");
+      .join('');
     return pwd;
   };
 
@@ -71,7 +70,7 @@ export const FormularioAsignarResponsable = () => {
       // areasAsignadas: [...],
     };
 
-    console.log("Payload a enviar:", payload);
+    console.log('Payload a enviar:', payload);
     // usar tu servicio para enviar payload al backend
   };
 
@@ -84,11 +83,7 @@ export const FormularioAsignarResponsable = () => {
           </h1>
         </header>
 
-        <form
-          action=""
-          className="space-y-8"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form action="" className="space-y-8" onSubmit={(e) => e.preventDefault()}>
           <div className="flex gap-8">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-negro">
@@ -115,9 +110,7 @@ export const FormularioAsignarResponsable = () => {
           <div className="flex gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-negro">
-                  Correo Electrónico
-                </label>
+                <label className="text-sm font-semibold text-negro">Correo Electrónico</label>
                 <input
                   type="text"
                   placeholder="ejemplo@ejemplo.com"
@@ -126,9 +119,7 @@ export const FormularioAsignarResponsable = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-negro">
-                  Carnet de identidad
-                </label>
+                <label className="text-sm font-semibold text-negro">Carnet de identidad</label>
                 <input
                   type="text"
                   placeholder="Ej: 1234567 o 1234567-18"
@@ -137,9 +128,7 @@ export const FormularioAsignarResponsable = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-negro">
-                  Contraseña
-                </label>
+                <label className="text-sm font-semibold text-negro">Contraseña</label>
 
                 <div className="flex gap-2 items-center">
                   <button
@@ -148,13 +137,11 @@ export const FormularioAsignarResponsable = () => {
                     disabled={passwordGenerated}
                     className={`w-[400px] border rounded-md p-2  border-neutro-400 transition-colors ${
                       passwordGenerated
-                        ? "bg-neutro-300 text-black cursor-not-allowed"
-                        : "bg-[#0076FF] text-white hover:bg-principal-600"
+                        ? 'bg-neutro-300 text-black cursor-not-allowed'
+                        : 'bg-[#0076FF] text-white hover:bg-principal-600'
                     }`}
                   >
-                    {passwordGenerated
-                      ? "Contraseña generada"
-                      : "Generar contraseña"}
+                    {passwordGenerated ? 'Contraseña generada' : 'Generar contraseña'}
                   </button>
 
                   {/* Mostrar la contraseña generada (readOnly). Si no quieres mostrarla, elimina este input */}
@@ -188,7 +175,7 @@ export const FormularioAsignarResponsable = () => {
                         <li
                           key={area.id_area}
                           className={`flex justify-between items-center rounded-md px-2 py-1 transition-colors cursor-pointer ${
-                            index % 2 === 0 ? "bg-[#E5E7EB]" : "bg-[#F3F4F6]"
+                            index % 2 === 0 ? 'bg-[#E5E7EB]' : 'bg-[#F3F4F6]'
                           } hover:bg-neutro-200`}
                         >
                           <span>{area.nombre}</span>
@@ -197,9 +184,7 @@ export const FormularioAsignarResponsable = () => {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-neutro-500 italic">
-                      No hay areas registradas
-                    </p>
+                    <p className="text-neutro-500 italic">No hay areas registradas</p>
                   )}
                 </div>
               </div>

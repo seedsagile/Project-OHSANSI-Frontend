@@ -1,5 +1,5 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
-import { Save, LoaderCircle, X} from 'lucide-react';
+import { Save, LoaderCircle, X } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import type { Nivel } from '../../niveles/types';
 import { useNavigate } from 'react-router-dom';
@@ -26,9 +26,9 @@ export function PaginaAsignarNiveles() {
     navigate('/dashboard');
   };
 
-  const areaOptions = todasLasAreas.map(area => ({
+  const areaOptions = todasLasAreas.map((area) => ({
     value: area.id_area,
-    label: area.nombre
+    label: area.nombre,
   }));
 
   return (
@@ -42,7 +42,10 @@ export function PaginaAsignarNiveles() {
           </header>
 
           <div className="mb-6 relative">
-            <label htmlFor="area-selector" className="block text-md font-medium text-neutro-600 mb-2">
+            <label
+              htmlFor="area-selector"
+              className="block text-md font-medium text-neutro-600 mb-2"
+            >
               Seleccione un Área
             </label>
             <CustomDropdown
@@ -63,9 +66,24 @@ export function PaginaAsignarNiveles() {
               <table className="w-full text-left">
                 <thead className="bg-principal-500 sticky top-0 z-10">
                   <tr>
-                    <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">NRO</th>
-                    <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">NIVEL</th>
-                    <th scope="col" className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center">ASIGNADO</th>
+                    <th
+                      scope="col"
+                      className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
+                    >
+                      NRO
+                    </th>
+                    <th
+                      scope="col"
+                      className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
+                    >
+                      NIVEL
+                    </th>
+                    <th
+                      scope="col"
+                      className="p-4 text-sm font-bold text-blanco tracking-wider uppercase text-center"
+                    >
+                      ASIGNADO
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutro-200">
@@ -79,15 +97,22 @@ export function PaginaAsignarNiveles() {
                     </tr>
                   ) : !areaSeleccionadaId ? (
                     <tr>
-                      <td colSpan={3} className="text-center p-10 text-neutro-400">Seleccione un área para ver los niveles.</td>
+                      <td colSpan={3} className="text-center p-10 text-neutro-400">
+                        Seleccione un área para ver los niveles.
+                      </td>
                     </tr>
                   ) : todosLosNiveles.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="text-center p-10 text-neutro-500">No hay niveles disponibles para registrar.</td>
+                      <td colSpan={3} className="text-center p-10 text-neutro-500">
+                        No hay niveles disponibles para registrar.
+                      </td>
                     </tr>
                   ) : (
                     todosLosNiveles.map((nivel: Nivel, index: number) => (
-                      <tr key={nivel.id_nivel} className="even:bg-neutro-100 hover:bg-principal-50 transition-colors">
+                      <tr
+                        key={nivel.id_nivel}
+                        className="even:bg-neutro-100 hover:bg-principal-50 transition-colors"
+                      >
                         <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
                         <td className="p-4 text-neutro-700 text-left">{nivel.nombre}</td>
                         <td className="p-4 text-neutro-700 text-center">

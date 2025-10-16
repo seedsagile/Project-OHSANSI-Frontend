@@ -1,14 +1,8 @@
-import { type ReactNode, useEffect } from "react";
-import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import {
-  DashboardIcon,
-  UsersIcon,
-  ClipboardIcon,
-  FileTextIcon,
-  LogoutIcon,
-} from "../icons";
-import { useAuth } from "../../auth/login/hooks/useAuth";
-import { IconoUsuario } from "../ui/IconoUsuario";
+import { type ReactNode, useEffect } from 'react';
+import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
+import { DashboardIcon, UsersIcon, ClipboardIcon, FileTextIcon, LogoutIcon } from '../icons';
+import { useAuth } from '../../auth/login/hooks/useAuth';
+import { IconoUsuario } from '../ui/IconoUsuario';
 
 const NavLink = ({
   to,
@@ -57,7 +51,7 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
     <>
       <div
         className={`fixed inset-0 bg-black/50 z-20 transition-opacity lg:hidden ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setOpen(false)}
       />
@@ -66,7 +60,7 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
                     fixed top-0 left-0 w-72 h-screen bg-principal-700 text-blanco flex flex-col p-4 shadow-lg
                     transform transition-transform duration-300 ease-in-out z-30
                     lg:translate-x-0
-                    ${isOpen ? "translate-x-0" : "-translate-x-full"}
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
       >
         <div className="flex items-center justify-between pt-6 pb-10">
@@ -76,9 +70,7 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
               alt="Logo Oh! SanSi"
               className="h-32 w-32 rounded-full object-cover border-4 border-principal-500 shadow-md"
             />
-            <span className="text-2xl font-bold tracking-tighter text-blanco mt-4">
-              Oh! SanSi
-            </span>
+            <span className="text-2xl font-bold tracking-tighter text-blanco mt-4">Oh! SanSi</span>
           </div>
           <button
             onClick={() => setOpen(false)}
@@ -145,12 +137,7 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
             label="Evaluadores"
             onClick={() => setOpen(false)}
           />
-          <NavLink
-            to="/areas"
-            icon={<UsersIcon />}
-            label="Areas"
-            onClick={() => setOpen(false)}
-          />
+          <NavLink to="/areas" icon={<UsersIcon />} label="Areas" onClick={() => setOpen(false)} />
           <NavLink
             to="/niveles"
             icon={<UsersIcon />}
@@ -189,12 +176,8 @@ export function Sidebar({ isOpen, setOpen }: SidebarProps) {
               <IconoUsuario />
             </div>
             <div>
-              <p className="font-semibold text-blanco truncate">
-                {user?.name || "Usuario"}
-              </p>
-              <p className="text-sm text-principal-200 capitalize">
-                {user?.role || "Rol"}
-              </p>
+              <p className="font-semibold text-blanco truncate">{user?.name || 'Usuario'}</p>
+              <p className="text-sm text-principal-200 capitalize">{user?.role || 'Rol'}</p>
             </div>
           </div>
           <button

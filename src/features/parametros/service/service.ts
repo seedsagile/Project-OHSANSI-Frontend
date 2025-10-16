@@ -1,24 +1,20 @@
-import apiClient from "../../../api/ApiPhp";
-import type { Area, Nivel, ParametroClasificacion } from "../interface/interface";
+import apiClient from '../../../api/ApiPhp';
+import type { Area, Nivel, ParametroClasificacion } from '../interface/interface';
 
 export const obtenerAreasAPI = async (): Promise<Area[]> => {
-  const response = await apiClient.get("/area");
+  const response = await apiClient.get('/area');
   return response.data.map((a: { id_area: number; nombre: string }) => ({
     id: a.id_area,
     nombre: a.nombre,
   }));
 };
 
-export const obtenerNivelesPorAreaAPI = async (
-  id_area: number
-): Promise<Nivel[]> => {
-  const response = await apiClient.get("/areas-con-niveles");
+export const obtenerNivelesPorAreaAPI = async (id_area: number): Promise<Nivel[]> => {
+  const response = await apiClient.get('/areas-con-niveles');
 
   const areas = response.data.data;
 
-  const areaEncontrada = areas.find(
-    (a: { id_area: number }) => a.id_area === id_area
-  );
+  const areaEncontrada = areas.find((a: { id_area: number }) => a.id_area === id_area);
 
   if (!areaEncontrada) {
     return [];
@@ -34,8 +30,7 @@ export const obtenerNivelesPorAreaAPI = async (
   return niveles;
 };
 
-
 export const crearParametroAPI = async (payload: ParametroClasificacion) => {
-  const response = await apiClient.post("/fases", payload);
+  const response = await apiClient.post('/fases', payload);
   return response.data;
 };

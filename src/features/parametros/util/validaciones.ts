@@ -6,9 +6,9 @@ export const NOTA_MIN_REGEX_NUMERIC = /^[0-9]+(\.[0-9]+)?$/;
 
 export const MENSAJE_NOTA_MIN_CORTA = `El campo Nota Mínima requiere un mínimo de ${NOTA_MIN_MIN_LENGTH} caracteres numéricos`;
 export const MENSAJE_NOTA_MIN_CARACTERES_ESPECIALES =
-  "El campo Nota Mínima contiene caracteres especiales. Solo se permiten números";
+  'El campo Nota Mínima contiene caracteres especiales. Solo se permiten números';
 export const MENSAJE_NOTA_MIN_CARACTERES_LITERALS =
-  "El campo Nota Mínima contiene caracteres literales. Solo se permiten números";
+  'El campo Nota Mínima contiene caracteres literales. Solo se permiten números';
 
 // ----------------- CANTIDAD MÁXIMA DE COMPETIDORES -----------------
 export const CANT_COMPET_MAX_MIN_LENGTH = 2; // mínimo 2 caracteres
@@ -18,6 +18,6 @@ export const CANT_COMPET_MAX_REGEX_NUMERIC = /^[0-9]+$/;
 
 export const MENSAJE_CANT_COMPET_CORTA = `El campo Cantidad máxima de competidores requiere un mínimo de ${CANT_COMPET_MAX_MIN_LENGTH} caracteres numéricos`;
 export const MENSAJE_CANT_COMPET_CARACTERES_ESPECIALES =
-  "El campo Cantidad máxima de competidores contiene caracteres especiales. Solo se permiten números enteros";
+  'El campo Cantidad máxima de competidores contiene caracteres especiales. Solo se permiten números enteros';
 export const MENSAJE_CANT_COMPET_CARACTERES_LITERALS =
-  "El campo Cantidad máxima de competidores contiene caracteres literales. Solo se permiten números enteros";
+  'El campo Cantidad máxima de competidores contiene caracteres literales. Solo se permiten números enteros';

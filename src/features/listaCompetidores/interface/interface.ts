@@ -4,7 +4,7 @@ export interface Persona {
   apellido: string;
   ci: string;
   fecha_nac: string; // ISO string (e.g., "2002-01-01T00:00:00.000Z")
-  genero: "M" | "F" | string;
+  genero: 'M' | 'F' | string;
   telefono: string;
   email: string;
   created_at: string | null;
