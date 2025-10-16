@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { useAuthStore } from '../auth/login/stores/authStore';
+const url = import.meta.env.VITE_API_BASE_URL;
+
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL + '/api',
+  baseURL: url + '/api',
   headers: {
     'Content-Type': 'application/json',
   },
