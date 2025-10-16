@@ -1,69 +1,82 @@
-# React + TypeScript + Vite
+🏅 Oh! SanSi - Sistema de Gestión de Olimpiadas
+Bienvenido al repositorio del frontend para Oh! SanSi, el sistema de gestión integral para las Olimpiadas de Ciencia y Tecnología. Esta aplicación está construida con tecnologías modernas para ofrecer una experiencia de usuario fluida, rápida y robusta.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+🚀 Sobre el Proyecto
+Este proyecto es una Single Page Application (SPA) desarrollada con React y Vite, diseñada para facilitar la administración de todos los aspectos de la olimpiada. Permite a los administradores gestionar áreas de competencia, niveles, asignar evaluadores y responsables, y registrar a los competidores de manera masiva y eficiente.
 
-Currently, two official plugins are available:
+✨ Características Principales
+El sistema cuenta con una arquitectura modular y escalable, dividida en las siguientes funcionalidades clave:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🔐 Autenticación: Sistema de inicio de sesión seguro para el personal autorizado.
 
-## Expanding the ESLint configuration
+📚 Gestión de Áreas y Niveles: Permite crear y visualizar las áreas de competencia (ej. Matemáticas, Física) y los niveles (ej. Primero de Secundaria).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+🔗 Asignación de Niveles: Interfaz intuitiva para asignar qué niveles están disponibles en cada área, con protección contra la pérdida de cambios no guardados.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+👥 Gestión de Usuarios: Formularios robustos para registrar Responsables de Área y Evaluadores en el sistema.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+📄 Importación Masiva de Competidores: Potente herramienta para registrar participantes subiendo un archivo CSV, con validaciones avanzadas en tiempo real, sanitización de datos y feedback detallado de errores por fila.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
+📊 Lista de Competidores: Visualizador jerárquico que permite explorar a los participantes registrados, agrupados por área y nivel.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+📝 Parámetros de Calificación: Módulo para definir los criterios y porcentajes de evaluación para cada categoría de la competencia.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+🛠️ Stack Tecnológico
+Este proyecto está construido con un stack de tecnologías moderno y de alto rendimiento:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
+⚙️ Primeros Pasos (Getting Started)
+Sigue estos pasos para levantar el proyecto en tu entorno de desarrollo local.
+
+Prerrequisitos
+Node.js: Asegúrate de tener una versión LTS (v18 o superior).
+
+npm o yarn: Administrador de paquetes de Node.js.
+
+Instalación
+
+Clona el repositorio:
+git clone https://github.com/tu-usuario/project-ohsansi-frontend.git
+Navega al directorio del proyecto:
+
+cd project-ohsansi-frontend
+Instala las dependencias:
+
+npm install
+Ejecuta el servidor de desarrollo:
+
+npm run dev
+La aplicación estará disponible en http://localhost:3000.
+
+📂 Estructura del Proyecto
+El proyecto sigue una arquitectura modular orientada a funcionalidades (feature-based), lo que facilita la escalabilidad y el mantenimiento.
+
+src/
+├── api/          # Configuración central de Axios.
+├── auth/         # Lógica de autenticación (login, rutas protegidas).
+├── components/   # Componentes de UI reutilizables (Layout, Modales, Botones).
+├── features/     # El corazón del proyecto, cada carpeta es una funcionalidad.
+│   ├── asignaciones/
+│   ├── evaluadores/
+│   ├── inscritos/
+│   ├── ... (etc.)
+│   └── [feature]/
+│       ├── components/ # Componentes específicos de la feature.
+│       ├── hooks/      # Hooks con la lógica de estado y fetching.
+│       ├── routes/     # El componente principal de la página.
+│       ├── services/   # Funciones para las llamadas a la API.
+│       ├── types/      # Interfaces y tipos de TypeScript.
+│       └── utils/      # Funciones de ayuda y validaciones.
+├── styles/       # Estilos globales y configuración de Tailwind.
+└── main.tsx      # Punto de entrada de la aplicación.
+📜 Scripts Disponibles
+En el package.json, encontrarás los siguientes scripts:
+
+npm run dev: Inicia el servidor de desarrollo con Hot-Reload.
+
+npm run build: Compila la aplicación para producción en la carpeta dist/.
+
+npm run lint: Ejecuta ESLint para analizar el código en busca de errores.
+
+npm run format: Formatea todo el código con Prettier.
+
+npm run preview: Sirve la carpeta dist/ para previsualizar la build de producción.
