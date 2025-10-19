@@ -59,7 +59,7 @@ export function PaginaAreas() {
         <div className="min-h-screen p-4 sm:p-6 flex flex-col items-center justify-center">
             <div className="w-full max-w-3xl">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-6 sm:mb-8">
-                    Registrar Áreas de Olimpiada
+                    Registrar Área 
                 </h1>
 
                 {/* Tabla de áreas */}
