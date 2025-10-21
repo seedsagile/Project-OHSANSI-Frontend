@@ -7,12 +7,12 @@ import { AuthInitializer } from '../auth/login/components/auth/AuthInitializer';
 import { LoginForm } from '../auth/login/components/auth/LoginForm';
 import { ProtectedRoute } from '../auth/login/components/auth/ProtectedRoute';
 import { useAuth } from '../auth/login/hooks/useAuth';
-import { PaginaAsignarEvaluador } from '../features/evaluadores/routes/PaginaAsignarEvaluador';
+import { PaginaAsignarEvaluador } from '../features/usuarios/evaluadores/routes/PaginaAsignarEvaluador';
 import { PaginaNiveles } from '../features/niveles/routes/PaginaNiveles';
 import { PaginaAsignarNiveles } from '../features/asignaciones/routes/PaginaAsignarNiveles';
 import { ListaCompetidores } from '../features/listaCompetidores/components/ListaCompetidores';
 import { Parametro } from '../features/parametros/components/Parametro';
-import { FormularioAsignarResponsable } from '../features/responsables/components/FormularioAsignarResponsable';
+import { FormularioAsignarResponsable } from '@/features/usuarios/responsables/components/FormularioAsignarResponsable';
 
 const Dashboard = () => (
   <div className="p-8">

@@ -1,6 +1,6 @@
+import { areasService } from '@/features/areas/services/areasService';
+import { Area } from '@/features/areas/types';
 import { useEffect, useState } from 'react';
-import { areasService } from '../../areas/services/areasService'; // ajusta la ruta según tu estructura
-import type { Area } from '../../areas/types/index';
 
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);

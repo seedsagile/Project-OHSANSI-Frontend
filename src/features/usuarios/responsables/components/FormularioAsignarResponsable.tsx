@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { AxiosError } from 'axios';
-import { areasService } from '../../areas/services/areasService';
 import { asignarResponsableAPI, obtenerResponsablesAPI } from '../services/ApiResposableArea';
 
-import type { Area } from '../../areas/types';
 import type { AreaInterface } from '../interface/AreaInterface';
 import { ResponsableAreaSchema } from '../utils/AreaValidaciones';
 import { type ResponsableForm } from '../utils/AreaValidaciones';
 import { Link } from 'react-router-dom';
+import { ModalType, Modal } from '@/components/ui/Modal';
+import { areasService } from '@/features/areas/services/areasService';
+import { Area } from '@/features/areas/types';
 
-import { Modal, type ModalType } from '../../../components/ui/Modal';
 
 export const FormularioAsignarResponsable = () => {
   const [areas, setAreas] = useState<Area[]>([]);
