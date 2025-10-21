@@ -54,8 +54,9 @@ export const crearNivelEsquema = z.object({
     .pipe(
       z
         .string()
-        .min(13, 'El campo Nombre del nivel requiere un mínimo de 13 caracteres.')
-        .max(30, 'El Nombre del Nivel no puede tener más de 30 caracteres.')
+        //.min(13, 'El campo Nombre del nivel requiere un mínimo de 13 caracteres.')
+        //.max(30, 'El Nombre del Nivel no puede tener más de 30 caracteres.')
+        .max(40, 'El Nombre del Nivel no puede tener más de 40 caracteres.')
     ),
 });
 
