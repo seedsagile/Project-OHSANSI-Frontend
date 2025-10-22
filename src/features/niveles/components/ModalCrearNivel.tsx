@@ -57,7 +57,7 @@ export const ModalCrearNivel = ({
               id="nombreNivel"
               type="text"
               placeholder="Ej: Primero de Secundaria"
-              maxLength={30}
+              maxLength={40}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                 errors.nombre
                   ? 'border-red-500 focus:ring-red-500'
