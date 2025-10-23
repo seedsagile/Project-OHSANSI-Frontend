@@ -12,7 +12,7 @@ import { PaginaNiveles } from '../features/niveles/routes/PaginaNiveles';
 import { PaginaAsignarNiveles } from '../features/asignaciones/routes/PaginaAsignarNiveles';
 import { ListaCompetidores } from '../features/listaCompetidores/components/ListaCompetidores';
 import { Parametro } from '../features/parametros/components/Parametro';
-import { FormularioAsignarResponsable } from '@/features/usuarios/responsables/components/FormularioAsignarResponsable';
+import { PaginaRegistrarResponsable } from '@/features/usuarios/responsables/routes/PaginaRegistrarResponsable';
 
 const Dashboard = () => (
   <div className="p-8">
@@ -45,7 +45,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'competidores', element: <PaginaImportarCompetidores /> },
-      { path: 'responsables', element: <FormularioAsignarResponsable /> },
+      { path: 'responsables', element: <PaginaRegistrarResponsable /> },
       { path: 'evaluadores', element: <PaginaAsignarEvaluador /> },
       { path: 'areas', element: <PaginaAreas /> },
       { path: 'niveles', element: <PaginaNiveles /> },
