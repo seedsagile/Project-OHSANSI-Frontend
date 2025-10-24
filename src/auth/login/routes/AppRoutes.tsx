@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth, type User } from '../hooks/useAuth';
-import { LoginForm } from '../components/auth/LoginForm';
-import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { useAuth, type User } from '../hooks/useAuth'; // No necesita cambios aquí
+import { LoginForm } from '../components/auth/LoginForm'; // No necesita cambios aquí
+import { ProtectedRoute } from '../components/auth/ProtectedRoute'; // No necesita cambios aquí
 
 const EvaluatorDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -19,9 +19,9 @@ const EvaluatorDashboard: React.FC = () => {
         </button>
       </div>
       <p>
-        Bienvenido, {user?.name} ({user?.email})
+        Bienvenido, {user?.nombre} {user?.apellido} ({user?.email})
       </p>
-      <p>Área: {user?.area || 'No asignada'}</p>
+      <p>Rol: {user?.role}</p>
     </div>
   );
 };
@@ -40,7 +40,7 @@ const EncargadoDashboard: React.FC = () => {
         </button>
       </div>
       <p>
-        Bienvenido, {user?.name} ({user?.email})
+        Bienvenido, {user?.nombre} {user?.apellido} ({user?.email})
       </p>
     </div>
   );
@@ -60,7 +60,7 @@ const PrivilegiadoDashboard: React.FC = () => {
         </button>
       </div>
       <p>
-        Bienvenido, {user?.name} ({user?.email})
+        Bienvenido, {user?.nombre} {user?.apellido} ({user?.email})
       </p>
     </div>
   );
@@ -80,14 +80,15 @@ const AdminDashboard: React.FC = () => {
         </button>
       </div>
       <p>
-        Bienvenido, {user?.name} ({user?.email})
+        Bienvenido, {user?.nombre} {user?.apellido} ({user?.email})
       </p>
-      <p>Rol: Administrador</p>
+      <p>Rol: Administrador</p> {/* Esto ya estaba bien */}
     </div>
   );
 };
 
 const getDashboardByRole = (user: User | null) => {
+  // ... (sin cambios aquí) ...
   switch (user?.role) {
     case 'evaluador':
       return '/evaluador/dashboard';

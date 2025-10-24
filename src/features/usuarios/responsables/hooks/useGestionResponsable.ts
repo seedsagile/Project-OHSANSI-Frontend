@@ -1,41 +1,43 @@
 // src/features/usuarios/responsables/hooks/useGestionResponsable.ts
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form'; // Quitar DeepPartial
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
+// *** CORREGIDO: Importar los tipos que SÍ existen ***
 import type {
   DatosPersonaVerificada,
   Gestion,
   CrearResponsablePayload,
   ResponsableCreado,
-  PasoRegistroResponsable,
-  ModalFeedbackState,
+  PasoRegistroResponsable, // <--- CORREGIDO
+  ModalFeedbackState, // <--- CORREGIDO
   Area,
-} from '../types'; // Asegúrate que la ruta sea correcta (index.ts)
+} from '../types';
 import { verificacionCISchema, datosResponsableSchema } from '../utils/validations';
-// Importar solo el tipo final (Output) y el tipo Input inferido
 import type {
-    VerificacionCIForm,
-    ResponsableFormData // Tipo final (Output)
+  VerificacionCIForm,
+  ResponsableFormData, // Tipo Output (después de Zod)
+  ResponsableFormInput // Tipo Input (antes de Zod)
 } from '../utils/validations';
 
-import * as responsableService from '../services/responsablesService'; // Asegúrate que la ruta sea correcta
+import * as responsableService from '../services/responsablesService';
 import { areasService } from '@/features/areas/services/areasService';
 
 const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
 
-// Valores por defecto explícitos ANTES de la transformación Zod
-const defaultFormValues = {
+// *** CORREGIDO: defaultFormValues debe coincidir con ResponsableFormInput ***
+const defaultFormValues: ResponsableFormInput = {
   nombres: '',
   apellidos: '',
   correo: '',
   ci: '',
   celular: '',
-  gestionPasadaId: '', // <- String vacío ANTES de preprocess
-  areas: [] as number[], // Tipar como array de números vacío
+  gestionPasadaId: '', // string vacío es compatible con string | undefined
+  areas: [],
 };
+
 
 export function useGestionResponsable() {
   const navigate = useNavigate();
@@ -45,6 +47,7 @@ export function useGestionResponsable() {
   const [areasSeleccionadas, setAreasSeleccionadas] = useState<number[]>([]);
   const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>(initialModalState);
   const modalTimerRef = useRef<number | undefined>(undefined);
+  const primerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => clearTimeout(modalTimerRef.current), []);
 
@@ -67,10 +70,10 @@ export function useGestionResponsable() {
   const { mutate: verificarCI, isPending: isVerifyingCI } = useMutation<DatosPersonaVerificada | null, Error, string>({
     mutationFn: responsableService.verificarCI,
     onSuccess: (data, ciInput) => {
-      // CORRECCIÓN 1: Pasar objeto compatible con defaultValues (tipo Input) a reset
-      const resetValuesBase = {
-        ...defaultFormValues, // Empezar con los defaults completos
-        ci: ciInput, // Sobrescribir CI
+      // *** CORREGIDO: El tipo para reset debe ser ResponsableFormInput ***
+      const resetValuesBase: ResponsableFormInput = {
+        ...defaultFormValues,
+        ci: ciInput,
       };
 
       if (data) {
@@ -80,13 +83,14 @@ export function useGestionResponsable() {
           nombres: data.nombres,
           apellidos: data.apellidos,
           celular: data.celular || '',
-          gestionPasadaId: '', // Asegurar string vacío
+          gestionPasadaId: '', // string vacío para el <select>
         });
       } else {
         setDatosPersona(null);
         formMethodsPrincipal.reset(resetValuesBase);
       }
       setPasoActual('FORMULARIO_DATOS');
+      setTimeout(() => { primerInputRef.current?.focus(); }, 0);
     },
     onError: (error) => {
       setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message: error.message || 'No se pudo verificar CI.' });
@@ -97,6 +101,7 @@ export function useGestionResponsable() {
   const { mutate: crearResponsable, isPending: isCreatingResponsable } = useMutation<ResponsableCreado, Error, CrearResponsablePayload>({
     mutationFn: responsableService.crearResponsable,
     onSuccess: (data) => {
+       // *** CORREGIDO: Acceder a data.message ***
        setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message: data.message || `Responsable registrado.` });
        queryClient.invalidateQueries({ queryKey: ['responsables'] });
        modalTimerRef.current = window.setTimeout(() => { closeModalFeedback(); navigate('/dashboard'); }, 2000);
@@ -108,12 +113,11 @@ export function useGestionResponsable() {
   });
 
   // --- React Hook Form ---
-  // CORRECCIÓN 2: Simplificar useForm, usar solo el resolver. TypeScript inferirá el tipo final.
-  const formMethodsPrincipal = useForm({ // Quitar <ResponsableFormData>
+  // *** CORREGIDO: Usar los 3 tipos genéricos: Output, Context, Input ***
+  const formMethodsPrincipal = useForm<ResponsableFormData, any, ResponsableFormInput>({
     resolver: zodResolver(datosResponsableSchema),
     mode: 'onChange',
-    // CORRECCIÓN 3: defaultValues usan el tipo Input
-    defaultValues: defaultFormValues,
+    defaultValues: defaultFormValues, // Coincide con ResponsableFormInput
   });
 
   const formMethodsVerificacion = useForm<VerificacionCIForm>({
@@ -126,45 +130,51 @@ export function useGestionResponsable() {
   }, [verificarCI]);
 
   const handleSeleccionarArea = useCallback((areaId: number, seleccionado: boolean) => {
-    const nuevasAreas = seleccionado ? [...areasSeleccionadas, areaId] : areasSeleccionadas.filter(id => id !== areaId);
+    const nuevasAreas = seleccionado
+        ? [...areasSeleccionadas, areaId]
+        : areasSeleccionadas.filter(id => id !== areaId);
     setAreasSeleccionadas(nuevasAreas);
-    // @ts-ignore // CORRECCIÓN 4: Usar ts-ignore si setValue sigue dando problemas de tipo
     formMethodsPrincipal.setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
   }, [areasSeleccionadas, formMethodsPrincipal]);
 
-  // CORRECCIÓN 5: Tipar explícitamente formData como ResponsableFormData
+  // 'formData' aquí es el tipo OUTPUT (ResponsableFormData)
   const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback((formData) => {
     setPasoActual('CARGANDO_GUARDADO');
     const payload: CrearResponsablePayload = {
       persona: {
-        nombre: formData.nombres, apellido: formData.apellidos, ci: formData.ci,
-        email: formData.correo, telefono: formData.celular,
+        nombre: formData.nombres,
+        apellido: formData.apellidos,
+        ci: formData.ci,
+        email: formData.correo,
+        telefono: formData.celular,
       },
       areas: formData.areas,
-      id_gestion_pasada: formData.gestionPasadaId
+      ...(formData.gestionPasadaId && { id_gestion_pasada: formData.gestionPasadaId })
     };
     crearResponsable(payload);
   }, [crearResponsable]);
 
   const handleCancelar = useCallback(() => {
-    setPasoActual('VERIFICACION_CI'); setDatosPersona(null);
-    // CORRECCIÓN 6: Resetear con el tipo Input
+    setPasoActual('VERIFICACION_CI');
+    setDatosPersona(null);
+    // *** CORREGIDO: Reset usa ResponsableFormInput ***
     formMethodsPrincipal.reset(defaultFormValues);
     formMethodsVerificacion.reset();
-    setAreasSeleccionadas([]); closeModalFeedback();
+    setAreasSeleccionadas([]);
+    closeModalFeedback();
   }, [formMethodsPrincipal, formMethodsVerificacion, closeModalFeedback]);
 
   // --- Estados Consolidados ---
   const isLoading = isLoadingAreas || isLoadingGestiones;
-  const isProcessing = isVerifyingCI || isCreatingResponsable || pasoActual === 'CARGANDO_VERIFICACION' || pasoActual === 'CARGANDO_GUARDADO';
+  const isProcessing = isVerifyingCI || isCreatingResponsable;
 
   return {
     pasoActual, formMethodsVerificacion, formMethodsPrincipal,
     areasDisponibles, gestionesPasadas, areasSeleccionadas, datosPersona,
-    isLoading, isProcessing, modalFeedback,
+    isLoading, isProcessing, modalFeedback, primerInputRef,
     handleVerificarCISubmit: formMethodsVerificacion.handleSubmit(handleVerificarCI),
     handleSeleccionarArea,
-    // CORRECCIÓN 7: Asegurar que el handler pasado a handleSubmit coincida
+    // *** CORREGIDO: El handler que se pasa debe aceptar el tipo Output (ResponsableFormData) ***
     onSubmitFormularioPrincipal: formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
     handleCancelar, closeModalFeedback,
   };

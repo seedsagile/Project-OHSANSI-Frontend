@@ -1,9 +1,13 @@
+export type UserRole = 'evaluador' | 'privilegiado' | 'responsable' | 'encargado' | 'administrador' | 'desconocido';
+
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: 'evaluador' | 'privilegiado' | 'responsable' | 'encargado' | 'administrador';
-  area?: string;
+  nombre: string;
+  apellido: string;
+  role: UserRole;
+  ci?: string;
+  telefono?: string;
 }
 
 export interface LoginCredentials {

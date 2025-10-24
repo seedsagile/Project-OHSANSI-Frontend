@@ -40,7 +40,7 @@ export type CrearResponsablePayload = {
     fecha_nac?: string; // Opcional o requerido por API?
     genero?: 'M' | 'F' | null; // Opcional o requerido por API?
   };
-  id_gestion_pasada?: number; // Opcional
+  gestionPasadaId?: number; // Opcional
   areas: number[]; // Array de IDs de las áreas seleccionadas
 };
 
@@ -62,12 +62,13 @@ export type ResponsableCreado = {
     rol: string;
   };
   areas_asignadas: Array<{ id_area: number; nombre: string }>;
-  message: string;
+  message: string; // <-- **CORRECCIÓN: Añadido 'message'**
 };
 
 /**
  * Representa los diferentes pasos o estados visuales del proceso de registro.
  */
+// --- **NUEVO: Añadido tipo faltante** ---
 export type PasoRegistroResponsable =
   | 'VERIFICACION_CI'
   | 'CARGANDO_VERIFICACION'
@@ -77,6 +78,7 @@ export type PasoRegistroResponsable =
 /**
  * Tipo para el estado del modal de feedback (éxito o error).
  */
+// --- **NUEVO: Añadido tipo faltante** ---
 export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
@@ -86,5 +88,3 @@ export type ModalFeedbackState = {
 
 // Exportamos el tipo Area también desde aquí para conveniencia
 export type { Area };
-
-// El tipo ResponsableFormData se definirá en validations.ts
