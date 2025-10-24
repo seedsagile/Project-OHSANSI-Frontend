@@ -1,123 +1,154 @@
-// src/features/usuarios/responsables/services/responsablesService.ts
 import { AxiosError } from 'axios';
-import apiClient from '@/api/ApiPhp'; // Usa el alias configurado
-// Asegúrate que la ruta al archivo de tipos sea correcta (debería ser index.ts)
+import apiClient from '@/api/ApiPhp';
 import type {
   DatosPersonaVerificada,
   Gestion,
   CrearResponsablePayload,
   ResponsableCreado,
+  AreaPasadaResponse,
+  Area as AreaGeneral,
 } from '../types/index';
 
-// Tipo genérico para errores de API con posible campo 'message' o 'errors'
+type Area = AreaGeneral;
+const GESTION_ACTUAL = '2025';
+const ID_OLIMPIADA_ACTUAL = 1;
+
 type ApiErrorResponse = {
   message?: string;
-  errors?: Record<string, string[]>; // Para errores de validación del backend
+  errors?: Record<string, string[]>;
 };
 
-/**
- * Verifica si existe una persona registrada con el CI proporcionado.
- * @param ci - Carnet de Identidad a verificar.
- * @returns Los datos de la persona si existe, o null si no existe.
- * @throws Error si ocurre un problema de red o un error inesperado del servidor.
- */
 export const verificarCI = async (ci: string): Promise<DatosPersonaVerificada | null> => {
   try {
-    // *** AJUSTA ESTE ENDPOINT *** Ejemplo: '/v1/personas/ci/{ci}'
-    const response = await apiClient.get<DatosPersonaVerificada>(`/v1/personas/ci/${ci}`);
-    // Asumimos que la API devuelve los datos directamente si la persona existe
-    return response.data;
+    const response = await apiClient.get<{ data: any }>(`/usuarios/ci/${ci}`);
+
+    if (response.data && response.data.data) {
+      const apiData = response.data.data;
+      const personaVerificada: DatosPersonaVerificada = {
+        Id_usuario: apiData.Id_usuario,
+        Nombres: apiData.Nombres,
+        Apellidos: apiData.Apellidos,
+        Correo: apiData.Correo,
+        Ci: apiData.Ci,
+        Teléfono: apiData.Teléfono,
+        Rol: apiData.Rol ? {
+          Id_rol: apiData.Rol.Id_rol,
+          Nombre_rol: apiData.Rol.Nombre_rol
+        } : undefined,
+        // TODO: Determinar cómo la API indica si está en la GESTIÓN ACTUAL para Escenario 3
+        // estaEnGestionActual: apiData.estaEnGestionActual ?? false,
+        // areasEnGestionActual: apiData.areasEnGestionActual ?? [],
+      };
+      return personaVerificada;
+    }
+    console.warn(`Respuesta inesperada o sin datos de /usuarios/ci/${ci}:`, response.data);
+    return null;
+
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response?.status === 404) {
-      // Si la API devuelve 404 cuando la persona no existe, retornamos null
       return null;
     }
-    // Para otros errores (red, servidor 500, etc.), lanzamos el error
     console.error('Error al verificar CI:', error);
     const apiError = axiosError.response?.data as ApiErrorResponse;
-    // Prioriza mensaje de API, luego mensaje Axios, luego mensaje genérico
     throw new Error(apiError?.message || axiosError.message || 'Error de red al verificar CI.');
   }
 };
 
-/**
- * Obtiene la lista de gestiones pasadas disponibles para seleccionar.
- * @returns Un array de objetos Gestion.
- * @throws Error si ocurre un problema al obtener las gestiones.
- */
-export const obtenerGestionesPasadas = async (): Promise<Gestion[]> => {
+export const obtenerGestionesPasadas = async (ci: string): Promise<Gestion[]> => {
+  if (!ci) return [];
   try {
-    // *** AJUSTA ESTE ENDPOINT *** Ejemplo: '/v1/gestiones?tipo=pasada'
-    // Asumimos que la respuesta tiene una estructura como { data: Gestion[] }
-    const response = await apiClient.get<{ data: Gestion[] }>('/v1/gestiones/pasadas');
-    return response.data.data || []; // Devuelve el array de gestiones o uno vacío si no hay data
+    const response = await apiClient.get<Gestion[]>(`/responsables/ci/${ci}/gestiones`);
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     const axiosError = error as AxiosError;
-    console.error('Error al obtener gestiones pasadas:', error);
+    if (axiosError.response?.status === 404) {
+      return [];
+    }
+    console.error(`Error al obtener gestiones pasadas para CI ${ci}:`, error);
     const apiError = axiosError.response?.data as ApiErrorResponse;
-    throw new Error(
-      apiError?.message || axiosError.message || 'Error de red al obtener gestiones pasadas.'
-    );
+    throw new Error(apiError?.message || axiosError.message || 'Error de red al obtener gestiones.');
   }
 };
 
-/**
- * Envía los datos para crear un nuevo responsable de área.
- * @param payload - Datos del responsable a crear (tipo CrearResponsablePayload).
- * @returns Los datos del responsable creado (tipo ResponsableCreado).
- * @throws Error si ocurre un problema durante la creación.
- */
+export const obtenerAreasPasadas = async (gestion: string, ci: string): Promise<number[]> => {
+  if (!gestion || !ci) return [];
+  try {
+    const response = await apiClient.get<AreaPasadaResponse[]>(
+      `/responsables/ci/${ci}/gestion/${gestion}/areas`
+    );
+    return response.data
+            ?.map(item => item?.Area?.Id_area)
+            .filter((id): id is number => typeof id === 'number')
+          || [];
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    if (axiosError.response?.status === 404) {
+      return [];
+    }
+    console.error(`Error al obtener áreas pasadas para gestión ${gestion} y CI ${ci}:`, error);
+    const apiError = axiosError.response?.data as ApiErrorResponse;
+    throw new Error(apiError?.message || axiosError.message || 'Error de red al obtener áreas pasadas.');
+  }
+};
+
+export const obtenerAreasActuales = async (): Promise<Area[]> => {
+  try {
+    const response = await apiClient.get<{ data: Array<{ id_area: number; nombre: string }> }>(
+      `/olimpiadas/${GESTION_ACTUAL}/areas`
+    );
+    return response.data?.data?.map((itemApi): Area => ({
+      id_area: itemApi.id_area,
+      nombre: itemApi.nombre,
+      activo: 1,
+      created_at: '',
+      update_ad: '',
+    })) || [];
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error(`Error al obtener áreas para la gestión ${GESTION_ACTUAL}:`, error);
+    const apiError = axiosError.response?.data as ApiErrorResponse;
+    throw new Error(apiError?.message || axiosError.message || 'Error de red al obtener áreas actuales.');
+  }
+};
+
 export const crearResponsable = async (
   payload: CrearResponsablePayload
 ): Promise<ResponsableCreado> => {
+  const apiPayload = {
+    nombre: payload.nombre,
+    apellido: payload.apellido,
+    ci: payload.ci,
+    email: payload.email,
+    telefono: payload.telefono,
+    areas: payload.areas,
+    password: payload.password,
+    // TODO: Confirmar si se necesita enviar id_olimpiada y cómo obtener ID_OLIMPIADA_ACTUAL
+    id_olimpiada: payload.id_olimpiada ?? ID_OLIMPIADA_ACTUAL,
+  };
+
   try {
-    // *** AJUSTA ESTE ENDPOINT *** Ejemplo: '/v1/responsables' o '/v1/responsableArea'
-    const response = await apiClient.post<ResponsableCreado>('/v1/responsableArea', payload);
-    return response.data; // Devuelve la respuesta completa de la API
+    console.log("Enviando payload a POST /responsables:", apiPayload);
+    const response = await apiClient.post<ResponsableCreado>('/responsables', apiPayload);
+    // TODO: Ajustar el tipo ResponsableCreado según la respuesta REAL
+    return response.data;
   } catch (error) {
     const axiosError = error as AxiosError<ApiErrorResponse>;
     console.error('Error al crear responsable:', error);
-
     let errorMessage = 'No se pudo registrar al responsable.';
     if (axiosError.response?.data) {
       const apiError = axiosError.response.data;
-      // Priorizar mensaje general si existe
       if (apiError.message) {
         errorMessage = apiError.message;
       } else if (apiError.errors) {
-        // Si no hay mensaje general, tomar el primer error de validación
-        const firstErrorKey = Object.keys(apiError.errors)[0];
-        if (firstErrorKey && apiError.errors[firstErrorKey]?.[0]) {
-           errorMessage = apiError.errors[firstErrorKey][0];
-        }
+        const validationErrors = Object.values(apiError.errors).flat().join(' ');
+        if (validationErrors) errorMessage = validationErrors;
       }
     } else if (axiosError.request) {
-      errorMessage = 'No se recibió respuesta del servidor al intentar crear el responsable.';
+      errorMessage = 'No se recibió respuesta del servidor.';
     } else {
       errorMessage = axiosError.message || errorMessage;
     }
     throw new Error(errorMessage);
-  }
-};
-
-/**
- * Obtiene la lista completa de responsables (si es necesaria para validación de duplicados u otra pantalla).
- * @returns Un array con los datos de los responsables. Define un tipo específico si usas esto.
- * @throws Error si ocurre un problema al obtener la lista.
- */
-export const obtenerResponsables = async (): Promise<any[]> => {
-  // TODO: Define una interfaz para la lista de responsables si usas esta función (ej: ResponsableListItem[])
-  try {
-    // *** AJUSTA ESTE ENDPOINT *** Ejemplo: '/v1/responsables' o '/v1/responsableArea'
-    const response = await apiClient.get<{ data: any[] }>('/v1/responsableArea');
-    return response.data.data || [];
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    console.error('Error al obtener responsables:', error);
-    const apiError = axiosError.response?.data as ApiErrorResponse;
-    throw new Error(
-      apiError?.message || axiosError.message || 'Error de red al obtener responsables.'
-    );
   }
 };
