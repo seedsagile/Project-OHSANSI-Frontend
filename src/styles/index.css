@@ -1,66 +1,66 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-    /* ─── Tipografia base ─── */
-    --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* ─── Tipografia base ─── */
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-    /* ─── Pantallas Responsives ─── */
-    --breakpoint-sm: 640px;
-    --breakpoint-md: 768px;
-    --breakpoint-lg: 1024px;
-    --breakpoint-xl: 1280px;
-    --breakpoint-2xl: 1440px;
+  /* ─── Pantallas Responsives ─── */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1440px;
 
-    /* ─── Colores ─── */
+  /* ─── Colores ─── */
 
-    /*Color Principal (Azul) - Usado para la marca, enlaces y acciones primarias.*/
-    --color-principal-50:  #eff6ff;
-    --color-principal-100: #dbeafe;
-    --color-principal-200: #bfdbfe;
-    --color-principal-300: #93c5fd;
-    --color-principal-400: #60a5fa;
-    --color-principal-500: #0076FF; /*Tono principal*/
-    --color-principal-600: #005BCC; /*Tono para hovers*/
-    --color-principal-700: #0046a1;
-    --color-principal-800: #003377;
-    --color-principal-900: #002652;
+  /*Color Principal (Azul) - Usado para la marca, enlaces y acciones primarias.*/
+  --color-principal-50: #eff6ff;
+  --color-principal-100: #dbeafe;
+  --color-principal-200: #bfdbfe;
+  --color-principal-300: #93c5fd;
+  --color-principal-400: #60a5fa;
+  --color-principal-500: #0076ff; /*Tono principal*/
+  --color-principal-600: #005bcc; /*Tono para hovers*/
+  --color-principal-700: #0046a1;
+  --color-principal-800: #003377;
+  --color-principal-900: #002652;
 
-    /*Color de Acento (Rojo) - Usado para errores, alertas y acciones destructivas.*/
-    --color-acento-50:  #fef2f2;
-    --color-acento-100: #fee2e2;
-    --color-acento-200: #fecaca;
-    --color-acento-300: #fca5a5;
-    --color-acento-400: #f87171;
-    --color-acento-500: #E02E45; /*Tono principal*/
-    --color-acento-600: #B81C32; /*Tono para hovers*/
-    --color-acento-700: #8f1627;
-    --color-acento-800: #6b101d;
-    --color-acento-900: #4a0b15;
+  /*Color de Acento (Rojo) - Usado para errores, alertas y acciones destructivas.*/
+  --color-acento-50: #fef2f2;
+  --color-acento-100: #fee2e2;
+  --color-acento-200: #fecaca;
+  --color-acento-300: #fca5a5;
+  --color-acento-400: #f87171;
+  --color-acento-500: #e02e45; /*Tono principal*/
+  --color-acento-600: #b81c32; /*Tono para hovers*/
+  --color-acento-700: #8f1627;
+  --color-acento-800: #6b101d;
+  --color-acento-900: #4a0b15;
 
-    /*Colores Neutros - La base para fondos, textos, bordes e inputs.*/
-    --color-neutro-50:  #f9fafb;
-    --color-neutro-100: #f3f4f6;
-    --color-neutro-200: #e5e7eb;
-    --color-neutro-300: #d1d5db; /*Tono para bordes*/
-    --color-neutro-400: #9ca3af;
-    --color-neutro-500: #5A5F66;
-    --color-neutro-600: #4b5563;
-    --color-neutro-700: #2B2F36; /*Tono para texto principal*/
-    --color-neutro-800: #1f2937;
-    --color-neutro-900: #111827;
+  /*Colores Neutros - La base para fondos, textos, bordes e inputs.*/
+  --color-neutro-50: #f9fafb;
+  --color-neutro-100: #f3f4f6;
+  --color-neutro-200: #e5e7eb;
+  --color-neutro-300: #d1d5db; /*Tono para bordes*/
+  --color-neutro-400: #9ca3af;
+  --color-neutro-500: #5a5f66;
+  --color-neutro-600: #4b5563;
+  --color-neutro-700: #2b2f36; /*Tono para texto principal*/
+  --color-neutro-800: #1f2937;
+  --color-neutro-900: #111827;
 
-    --color-negro: #000000;
-    --color-blanco: #ffffff;
+  --color-negro: #000000;
+  --color-blanco: #ffffff;
 
-    /* Colores Semanticos Adicionales - Para estados especificos.*/
-    --color-exito-500: #22c55e;
-    --color-exito-600: #16a34a;
-    --color-advertencia-500: #f59e0b;
-    --color-advertencia-600: #d97706;
-    --color-info-500: #3b82f6;
-    --color-info-600: #2563eb;
+  /* Colores Semanticos Adicionales - Para estados especificos.*/
+  --color-exito-500: #22c55e;
+  --color-exito-600: #16a34a;
+  --color-advertencia-500: #f59e0b;
+  --color-advertencia-600: #d97706;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
 
-    /* ─── Transiciones/easings ─── */
-    --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
-    --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+  /* ─── Transiciones/easings ─── */
+  --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
 }

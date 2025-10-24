@@ -1,69 +1,43 @@
-# React + TypeScript + Vite
+Oh! SanSi - Sistema de Gestión de Olimpiadas
+Bienvenido al repositorio del frontend para Oh! SanSi, el sistema de gestión integral para las Olimpiadas de Ciencia y Tecnología. Esta aplicación está construida con tecnologías modernas para ofrecer una experiencia de usuario fluida, rápida y robusta.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sobre el Proyecto
+Este proyecto es una Single Page Application (SPA) desarrollada con React y Vite, diseñada para facilitar la administración de todos los aspectos de la olimpiada. Permite a los administradores gestionar áreas de competencia, niveles, asignar evaluadores y responsables, y registrar a los competidores de manera masiva y eficiente.
 
-Currently, two official plugins are available:
+Primeros Pasos (Getting Started)
+Sigue estos pasos para levantar el proyecto en tu entorno de desarrollo local.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Prerrequisitos
+Node.js: Asegúrate de tener una versión LTS (v18 o superior).
 
-## Expanding the ESLint configuration
+npm o yarn: Administrador de paquetes de Node.js.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Instalación
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Clona el repositorio:
+git clone https://github.com/tu-usuario/project-ohsansi-frontend.git
+Navega al directorio del proyecto:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+cd project-ohsansi-frontend
+Instala las dependencias:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+npm install
+Ejecuta el servidor de desarrollo:
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+npm run dev
+La aplicación estará disponible en http://localhost:3000.
+Estructura del Proyecto
+El proyecto sigue una arquitectura modular orientada a funcionalidades (feature-based), lo que facilita la escalabilidad y el mantenimiento
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Scripts Disponibles
+En el package.json, encontrarás los siguientes scripts:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+npm run dev: Inicia el servidor de desarrollo con Hot-Reload.
+
+npm run build: Compila la aplicación para producción en la carpeta dist/.
+
+npm run lint: Ejecuta ESLint para analizar el código en busca de errores.
+
+npm run format: Formatea todo el código con Prettier.
+
+npm run preview: Sirve la carpeta dist/ para previsualizar la build de producción.
