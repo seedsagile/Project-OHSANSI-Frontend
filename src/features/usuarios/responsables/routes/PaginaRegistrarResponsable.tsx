@@ -16,7 +16,7 @@ export function PaginaRegistrarResponsable() {
     gestionesPasadas,
     areasSeleccionadas,
     datosPersona,
-    isLoading,
+    isLoading, // Carga combinada (incluye gestiones)
     isProcessing,
     modalFeedback,
     handleVerificarCISubmit,
@@ -27,10 +27,9 @@ export function PaginaRegistrarResponsable() {
     primerInputRef,
     handleGestionPasadaChange,
     gestionPasadaSeleccionadaId,
-    isLoadingGestiones,
     isReadOnly,
     handleToggleSeleccionarTodas,
-  } = useGestionResponsable();
+  } = useGestionResponsable(); //
 
   const mostrarCargaPagina = isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
   const pasoVerificacionActivo = pasoActual.startsWith('VERIFICACION') || pasoActual === 'CARGANDO_VERIFICACION';
@@ -45,9 +44,9 @@ export function PaginaRegistrarResponsable() {
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col justify-center items-center z-20 rounded-xl transition-opacity duration-200">
               <LoaderCircle className="animate-spin h-12 w-12 text-principal-500" />
               <p className="mt-4 text-neutro-600 font-semibold">
-                {pasoActual === 'CARGANDO_VERIFICACION' && 'Verificando CI'}
-                {pasoActual === 'CARGANDO_GUARDADO' && 'Guardando responsable'}
-                {mostrarCargaPagina && 'Cargando datos iniciales'}
+                {pasoActual === 'CARGANDO_VERIFICACION' && 'Verificando CI...'} {/* Corrección textual */}
+                {pasoActual === 'CARGANDO_GUARDADO' && 'Guardando responsable...'} {/* Corrección textual */}
+                {mostrarCargaPagina && 'Cargando datos iniciales...'}
               </p>
             </div>
           )}
@@ -58,35 +57,38 @@ export function PaginaRegistrarResponsable() {
             </h1>
           </header>
 
+          {/* Stepper */}
           <div className="flex justify-center items-center space-x-2 sm:space-x-4 mb-8 text-sm sm:text-base">
-            <span className={`flex items-center gap-2 font-semibold ${pasoVerificacionActivo ? 'text-principal-600' : 'text-neutro-500'}`}>
-              <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
-                pasoVerificacionCompletado ? 'border-principal-600 bg-principal-600 text-white' :
-                pasoVerificacionActivo ? 'border-principal-900 bg-principal-900 text-white' :
-                'border-neutro-400'
-              }`}>
-                {pasoVerificacionCompletado ? <Check size={16} /> : '1'}
+              <span className={`flex items-center gap-2 font-semibold ${pasoVerificacionActivo ? 'text-principal-600' : 'text-neutro-500'}`}>
+                <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
+                  pasoVerificacionCompletado ? 'border-principal-600 bg-principal-600 text-white' : // Marcado como completado (check)
+                  pasoVerificacionActivo ? 'border-principal-600 bg-principal-600 text-white' : // Activo (número y color)
+                  'border-neutro-400' // Inactivo
+                }`}>
+                  {pasoVerificacionCompletado ? <Check size={16} /> : '1'}
+                </span>
+                Verificar CI
               </span>
-              Verificar CI
-            </span>
-            <span className={`h-1 w-8 sm:w-12 rounded ${pasoFormularioActivo ? 'bg-principal-500' : 'bg-neutro-300'}`}></span>
-            <span className={`flex items-center gap-2 font-semibold ${pasoFormularioActivo ? 'text-principal-600' : 'text-neutro-400'}`}>
-              <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${pasoFormularioActivo ? 'border-principal-600 bg-principal-600 text-white' : 'border-neutro-400'}`}>2</span>
-              Completar Datos
-            </span>
+              <span className={`h-1 w-8 sm:w-12 rounded ${pasoFormularioActivo ? 'bg-principal-500' : 'bg-neutro-300'}`}></span> {/* Línea conector */}
+              <span className={`flex items-center gap-2 font-semibold ${pasoFormularioActivo ? 'text-principal-600' : 'text-neutro-400'}`}>
+                <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${pasoFormularioActivo ? 'border-principal-600 bg-principal-600 text-white' : 'border-neutro-400'}`}>2</span>
+                Completar Datos
+              </span>
           </div>
 
           <div className="transition-opacity duration-300 ease-in-out">
             {/* Paso 1: Verificación */}
             {pasoActual === 'VERIFICACION_CI' && (
               <FormProvider {...formMethodsVerificacion}>
-                <VerificacionCI onSubmit={handleVerificarCISubmit} />
+                <VerificacionCI onSubmit={handleVerificarCISubmit} /> {/* */}
               </FormProvider>
             )}
 
+            {/* Paso 2: Formulario Principal */}
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
+                  {/* Alertas */}
                   {datosPersona?.Id_usuario && pasoActual !== 'READ_ONLY' && (
                       <Alert
                         type="info"
@@ -104,12 +106,12 @@ export function PaginaRegistrarResponsable() {
                     ref={primerInputRef}
                     gestiones={gestionesPasadas}
                     personaVerificada={datosPersona}
-                    isLoading={isLoading}
-                    isLoadingGestiones={isLoadingGestiones}
+                    isLoading={isLoading} // Se pasa isLoading combinado
+                    // isLoadingGestiones ya no se pasa
                     isReadOnly={isReadOnly}
                     onGestionPasadaChange={handleGestionPasadaChange}
                     gestionPasadaSeleccionada={gestionPasadaSeleccionadaId}
-                  />
+                  /> {/* */}
 
                   <hr className="my-8 border-t border-neutro-200" />
 
@@ -118,25 +120,30 @@ export function PaginaRegistrarResponsable() {
                     areasSeleccionadas={areasSeleccionadas}
                     onSeleccionarArea={handleSeleccionarArea}
                     onToggleSeleccionarTodas={handleToggleSeleccionarTodas}
-                    isLoading={isLoading}
+                    isLoading={isLoading} // Se pasa isLoading combinado
                     isReadOnly={isReadOnly}
-                  />
+                  /> {/* */}
 
+                  {/* Footer con botones */}
                   <footer className="flex justify-end items-center gap-4 mt-12 border-t border-neutro-200 pt-6">
                     <button
                       type="button"
                       onClick={handleCancelar}
+                      // Deshabilitado solo si hay un procesamiento activo (verificación o guardado)
                       disabled={isProcessing}
                       className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <X size={20} strokeWidth={2.5}/>
+                      {/* Cambia texto del botón si es read-only */}
                       <span>{isReadOnly ? 'Volver' : 'Cancelar'}</span>
                     </button>
 
+                    {/* Botón Guardar solo visible si NO es read-only */}
                     {!isReadOnly && (
                       <button
                         type="submit"
-                        disabled={isProcessing || isLoading}
+                        // Deshabilitado si hay carga inicial O procesamiento activo
+                        disabled={isLoading || isProcessing}
                         className="flex items-center justify-center gap-2 min-w-[150px] font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
                       >
                         {pasoActual === 'CARGANDO_GUARDADO' ? (
@@ -144,7 +151,7 @@ export function PaginaRegistrarResponsable() {
                         ) : (
                           <Save size={20} strokeWidth={2.5}/>
                         )}
-                        <span>{pasoActual === 'CARGANDO_GUARDADO' ? 'Guardando' : 'Guardar'}</span>
+                        <span>{pasoActual === 'CARGANDO_GUARDADO' ? 'Guardando...' : 'Guardar'}</span> {/* Corrección textual */}
                       </button>
                     )}
                   </footer>
