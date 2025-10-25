@@ -53,9 +53,7 @@ export const ModalCrearArea = ({
           'El campo Nombre del Área contiene caracteres numéricos. Sólo se aceptan letras y espacios.'
         );
       } else if (tieneCaracteresEspeciales) {
-        setErrorTiempoReal(
-          'El campo Nombre del Área contiene caracteres especiales. Solo se permiten letras y espacios.'
-        );
+        setErrorTiempoReal('El campo Nombre del Área contiene caracteres especiales.');
       } else {
         setErrorTiempoReal('');
       }
@@ -137,7 +135,7 @@ export const ModalCrearArea = ({
           }
         }}
       >
-        <h2 className="text-xl font-semibold text-center mb-6">Crear Área</h2>
+        <h2 className="text-xl font-semibold text-center mb-6">Crear Nueva Área</h2>
 
         <form onSubmit={handleFormSubmit}>
           <div className="mb-4">
@@ -147,7 +145,7 @@ export const ModalCrearArea = ({
             <input
               id="nombre"
               type="text"
-              placeholder="Ingrese el nombre del área"
+              placeholder="Ej: Matematicas"
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
                 mensajeError
                   ? 'border-red-500 focus:ring-red-500'
