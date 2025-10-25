@@ -37,10 +37,9 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: (
-      // <ProtectedRoute>
-      //   <RootLayout />
-      // </ProtectedRoute>
-      <PaginaAreas />
+      <ProtectedRoute>
+        <RootLayout />
+      </ProtectedRoute>
     ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
