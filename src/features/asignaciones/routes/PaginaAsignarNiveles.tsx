@@ -36,9 +36,14 @@ export function PaginaAsignarNiveles() {
     <>
       <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex justify-center items-center">
         <main className="bg-blanco w-full max-w-2xl rounded-xl shadow-sombra-3 p-6 md:p-8">
-          <header className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-              Asignar Niveles a un Área
+          <header className="mb-10">
+            <div className="text-right mb-2">
+              <p className="text-sm font-semibold text-negro tracking-wider">
+                Gestión 2025
+              </p>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter text-center">
+              Asignar Niveles a Área
             </h1>
           </header>
 
