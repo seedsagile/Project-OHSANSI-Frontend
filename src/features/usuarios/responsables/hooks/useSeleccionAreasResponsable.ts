@@ -1,13 +1,9 @@
-// src/features/usuarios/responsables/hooks/useSeleccionAreasResponsable.ts
-// CORRECCIÓN: Se elimina useMemo. Se importa useState, useEffect, useCallback
-import { useState, useEffect, useCallback } from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import { useEffect, useCallback } from 'react';
+import { UseFormReturn, useWatch } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import isEqual from 'lodash.isequal';
 import * as responsableService from '../services/responsablesService';
-// CORRECCIÓN: Importar Area desde ../types
 import type { Area } from '../types';
-// CORRECCIÓN: Importar tipos de formulario desde ../utils/validations
 import type { ResponsableFormData, ResponsableFormInput } from '../utils/validations';
 
 interface UseSeleccionAreasProps {
@@ -30,9 +26,16 @@ export function useSeleccionAreasResponsable({
   isReadOnly,
   areasDisponiblesQuery,
 }: UseSeleccionAreasProps) {
-  const [areasSeleccionadas, setAreasSeleccionadas] = useState<number[]>(initialAreas);
-  const { setValue, getValues } = formMethods;
+  const { setValue, getValues, control } = formMethods;
   const { data: areasDisponibles = [], isLoading: isLoadingAreasActuales } = areasDisponiblesQuery;
+
+  console.log('[useSeleccionAreasResponsable] Hook inicializado con initialAreas:', initialAreas, 'isReadOnly:', isReadOnly);
+
+  const watchedAreas = useWatch({ control, name: 'areas', defaultValue: initialAreas });
+
+  useEffect(() => {
+    console.log('[useSeleccionAreasResponsable] watchedAreas cambió:', watchedAreas);
+  }, [watchedAreas]);
 
   const { data: areasPasadasIds = [], isLoading: isLoadingAreasPasadas } = useQuery<number[], Error>({
       queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado],
@@ -42,23 +45,27 @@ export function useSeleccionAreasResponsable({
       refetchOnWindowFocus: false,
   });
 
-  // Efecto para sincronizar áreas cuando cambia la gestión pasada
   useEffect(() => {
-      const currentFormAreas = getValues('areas') || [];
-      if (gestionPasadaSeleccionadaAnio && !isLoadingAreasPasadas && areasPasadasIds.length > 0 && areasDisponibles.length > 0) {
-          const idsAreasActualesSet = new Set(areasDisponibles.map((a) => a.id_area));
-          const idsComunes = areasPasadasIds.filter((idPasada) => idsAreasActualesSet.has(idPasada));
-          const currentFormAreasSet = new Set(currentFormAreas);
-          const idsComunesSet = new Set(idsComunes);
+    const currentFormAreas = getValues('areas') || [];
+    console.log('[useSeleccionAreasResponsable] useEffect [gestionPasada] - Start. gestion:', gestionPasadaSeleccionadaAnio, 'currentFormAreas:', currentFormAreas, 'areasPasadasIds:', areasPasadasIds, 'isReadOnly:', isReadOnly);
 
-          if (!isEqual(currentFormAreasSet, idsComunesSet)) {
-              setAreasSeleccionadas(idsComunes);
-              setValue('areas', idsComunes, { shouldValidate: true, shouldDirty: true });
-          }
-      } else if (!gestionPasadaSeleccionadaAnio && !isReadOnly && currentFormAreas.length > 0) {
-          setAreasSeleccionadas([]);
-          setValue('areas', [], { shouldValidate: true, shouldDirty: true });
-      }
+    if (gestionPasadaSeleccionadaAnio && !isLoadingAreasPasadas && areasPasadasIds.length > 0 && areasDisponibles.length > 0) {
+        const idsAreasActualesSet = new Set(areasDisponibles.map((a) => a.id_area));
+        const idsComunes = areasPasadasIds.filter((idPasada) => idsAreasActualesSet.has(idPasada));
+        if (!isEqual(new Set(currentFormAreas), new Set(idsComunes))) {
+            console.log(`[useSeleccionAreasResponsable] useEffect [gestionPasada] - Setting RHF areas based on past gestion:`, idsComunes);
+            setValue('areas', idsComunes, { shouldValidate: true, shouldDirty: true });
+        } else {
+            console.log(`[useSeleccionAreasResponsable] useEffect [gestionPasada] - No change needed.`);
+        }
+    } else if (!gestionPasadaSeleccionadaAnio && !isReadOnly) {
+        // --- LÓGICA DE LIMPIEZA ELIMINADA ---
+        // Ya no limpiamos automáticamente aquí solo porque la gestión sea null.
+        // El reset general (handleCancelar) o un cambio explícito de gestión (handleGestionPasadaChange) deberían encargarse.
+        console.log('[useSeleccionAreasResponsable] useEffect [gestionPasada] - Gestion is null, doing nothing.');
+    }
+    console.log('[useSeleccionAreasResponsable] useEffect [gestionPasada] - End.');
+    // *** MODIFICADO: QUITAR watchedAreas y getValues de las dependencias ***
   }, [
       gestionPasadaSeleccionadaAnio,
       isLoadingAreasPasadas,
@@ -66,48 +73,65 @@ export function useSeleccionAreasResponsable({
       areasDisponibles,
       isReadOnly,
       setValue,
-      getValues, // getValues es estable, usualmente seguro incluirlo aquí
   ]);
 
-   // Inicializar áreas en modo READ_ONLY
-   useEffect(() => {
-    if (isReadOnly && initialAreas.length > 0) {
-        const currentFormAreas = getValues('areas') || [];
-        if(!isEqual(new Set(currentFormAreas), new Set(initialAreas))) {
-            setAreasSeleccionadas(initialAreas);
-            setValue('areas', initialAreas, { shouldValidate: true });
-        }
-    }
-   // Incluir getValues como dependencia aquí es seguro porque solo se ejecuta al cambiar isReadOnly o initialAreas
-   }, [isReadOnly, initialAreas, setValue, getValues]);
+  useEffect(() => {
 
+    const currentFormAreas = getValues('areas') || [];
+    console.log('[useSeleccionAreasResponsable] useEffect [readOnly] - Start. isReadOnly:', isReadOnly, 'initialAreas:', initialAreas, 'currentFormAreas:', currentFormAreas);
+    if (isReadOnly && initialAreas.length > 0) {
+        if(!isEqual(new Set(currentFormAreas), new Set(initialAreas))) {
+            console.log(`[useSeleccionAreasResponsable] useEffect [readOnly] - Setting RHF areas for readOnly mode:`, initialAreas);
+            setValue('areas', initialAreas, { shouldValidate: true });
+        } else {
+            console.log(`[useSeleccionAreasResponsable] useEffect [readOnly] - No change needed.`);
+        }
+    } else if (!isReadOnly) {
+        console.log('[useSeleccionAreasResponsable] useEffect [readOnly] - Not in readOnly mode.');
+    }
+    console.log('[useSeleccionAreasResponsable] useEffect [readOnly] - End.');
+     // *** MODIFICADO: QUITAR watchedAreas y getValues de las dependencias ***
+  }, [isReadOnly, initialAreas, setValue]);
 
   const handleSeleccionarArea = useCallback((areaId: number, seleccionado: boolean) => {
-    if (isReadOnly) return;
-    setAreasSeleccionadas(prev => {
-      const nuevasAreas = seleccionado ? [...prev, areaId] : prev.filter(id => id !== areaId);
-      setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
-      return nuevasAreas;
-    });
-  }, [isReadOnly, setValue]);
+    if (isReadOnly) {
+        console.log('[useSeleccionAreasResponsable] handleSeleccionarArea - Ignored (readOnly)');
+        return;
+    }
+    const currentAreas = watchedAreas || [];
+    const nuevasAreas = seleccionado
+        ? [...currentAreas, areaId]
+        : currentAreas.filter(id => id !== areaId);
+    console.log(`[useSeleccionAreasResponsable] handleSeleccionarArea - Area ID: ${areaId}, Seleccionado: ${seleccionado}, Calculando Nuevas Áreas:`, nuevasAreas);
+    setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
+    console.log('[useSeleccionAreasResponsable] handleSeleccionarArea - Called setValue');
+  }, [isReadOnly, setValue, watchedAreas]);
 
   const handleToggleSeleccionarTodas = useCallback((seleccionar: boolean) => {
-    if (isReadOnly || isLoadingAreasActuales) return;
-    const todosLosIds = areasDisponibles.map(area => area.id_area);
-    const nuevasAreas = seleccionar ? todosLosIds : [];
-    setAreasSeleccionadas(nuevasAreas);
-    setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
+    if (isReadOnly || isLoadingAreasActuales) {
+        console.log(`[useSeleccionAreasResponsable] handleToggleSeleccionarTodas - Ignored (readOnly: ${isReadOnly}, loading: ${isLoadingAreasActuales})`);
+        return;
+    }
+    const todosLosIds = seleccionar ? areasDisponibles.map(area => area.id_area) : [];
+    console.log(`[useSeleccionAreasResponsable] handleToggleSeleccionarTodas - Seleccionar: ${seleccionar}, Setting RHF areas:`, todosLosIds);
+    setValue('areas', todosLosIds, { shouldValidate: true, shouldDirty: true });
   }, [areasDisponibles, isReadOnly, isLoadingAreasActuales, setValue]);
 
-  const resetAreaSelection = useCallback((areasToResetTo: number[] = []) => {
-      setAreasSeleccionadas(areasToResetTo);
-  }, []);
+  // Reset Function (sin cambios)
+  /*const resetAreaSelection = useCallback((areasToResetTo: number[] = []) => {
+      console.log('[useSeleccionAreasResponsable] resetAreaSelection called');
+      // Podrías explícitamente llamar a setValue aquí si el reset general no funciona
+      // setValue('areas', areasToResetTo, { shouldValidate: false });
+  },setValue ]);*/
+  
+
+  console.log('[useSeleccionAreasResponsable] Hook Render. Returning watchedAreas:', watchedAreas);
 
   return {
-    areasSeleccionadas,
+    areasSeleccionadas: watchedAreas || [],
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
     isLoadingAreas: isLoadingAreasActuales || isLoadingAreasPasadas,
-    resetAreaSelection,
+    //resetAreaSelection,
   };
 }

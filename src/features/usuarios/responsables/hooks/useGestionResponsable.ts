@@ -1,14 +1,9 @@
-// src/features/usuarios/responsables/hooks/useGestionResponsable.ts
-import { useState, useCallback, useRef, useEffect } from 'react'; // Ensure useEffect is imported
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-
 import { useVerificacionResponsable } from './useVerificacionResponsable';
-// VERIFICAR: Asegúrate que useFormularioPrincipalResponsable.ts EXPORTE la función
 import { useFormularioPrincipalResponsable } from './useFormularioPrincipalResponsable';
-// VERIFICAR: Asegúrate que este archivo exista y se llame useSeleccionAreasResponsable.ts
 import { useSeleccionAreasResponsable } from './useSeleccionAreasResponsable';
-
 import type { PasoRegistroResponsable, ModalFeedbackState, ResponsableCreado, DatosPersonaVerificada } from '../types';
 
 const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
@@ -17,7 +12,6 @@ export function useGestionResponsable() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pasoActual, setPasoActual] = useState<PasoRegistroResponsable>('VERIFICACION_CI');
-  // CORRECCIÓN: Añadir valor inicial a useState
   const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>(initialModalState);
   const [datosPersona, setDatosPersona] = useState<DatosPersonaVerificada | null>(null);
   const [isReadOnlyMode, setIsReadOnlyMode] = useState(false);
@@ -25,19 +19,17 @@ export function useGestionResponsable() {
 
   const modalTimerRef = useRef<number | undefined>(undefined);
     useEffect(() => {
-        // Cleanup function: clear the timer when the component unmounts
         return () => clearTimeout(modalTimerRef.current);
-    }, []); // Empty dependency array means this runs only on mount and unmount
+    }, []);
 
     const closeModalFeedback = useCallback(() => {
         setModalFeedback(initialModalState);
-        // Also clear the timer if the modal is closed manually
         clearTimeout(modalTimerRef.current);
     }, []);
 
   // --- Hook de Verificación ---
   const {
-    pasoActualVerificacion,
+    //pasoActualVerificacion,
     isVerifying,
     formMethodsVerificacion,
     handleVerificarCISubmit,
@@ -96,7 +88,6 @@ export function useGestionResponsable() {
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
     isLoadingAreas,
-    resetAreaSelection,
   } = useSeleccionAreasResponsable({
       formMethods: formMethodsPrincipal,
       ciVerificado,
@@ -110,19 +101,18 @@ export function useGestionResponsable() {
   const handleCancelar = useCallback(() => {
     resetVerification();
     resetFormularioPrincipal(true);
-    resetAreaSelection();
     setDatosPersona(null);
     setIsReadOnlyMode(false);
     setInitialAreasReadOnly([]);
     setPasoActual('VERIFICACION_CI');
     closeModalFeedback();
-  }, [resetVerification, resetFormularioPrincipal, resetAreaSelection, closeModalFeedback]);
+  }, [resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
   // --- Estados Consolidados ---
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingGestiones || isLoadingAreas;
   const isProcessing = isVerifying || isCreatingResponsable;
-  const pasoActualUI = pasoActualVerificacion === 'CARGANDO_VERIFICACION' || pasoActual === 'CARGANDO_GUARDADO'
-        ? pasoActual
+  const pasoActualUI = isVerifying ? 'CARGANDO_VERIFICACION'
+        : isCreatingResponsable ? 'CARGANDO_GUARDADO'
         : isReadOnlyMode ? 'READ_ONLY'
         : pasoActual;
 

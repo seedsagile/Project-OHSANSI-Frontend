@@ -1,10 +1,8 @@
-// src/features/usuarios/responsables/hooks/useVerificacionResponsable.ts
 import { useState, useCallback } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation} from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as responsableService from '../services/responsablesService';
-// CORRECCIÓN: Cambiada la ruta de importación a la ubicación actual del archivo
 import { GESTION_ACTUAL_ANIO } from '../utils/constants';
 import type { DatosPersonaVerificada, PasoRegistroResponsable } from '../types';
 import type { VerificacionCIForm } from '../utils/validations';
@@ -28,14 +26,15 @@ export function useVerificacionResponsable(
     mode: 'onSubmit',
   });
 
-  // Utiliza la constante importada GESTION_ACTUAL_ANIO
-  const { refetch: refetchAsignacionActual } = useQuery<number[], Error>({
+  // Mantener el hook query para fines de invalidación o si se requiere refetch manual más tarde
+  // Sin embargo, lo marcamos como deshabilitado y lo ignoraremos en onSuccess.
+  /*const { refetch: refetchAsignacionActual } = useQuery<number[], Error>({
     queryKey: ['areasAsignadasActuales', ciVerificado, GESTION_ACTUAL_ANIO],
     queryFn: () => responsableService.obtenerAreasPasadas(GESTION_ACTUAL_ANIO, ciVerificado),
-    enabled: false, // Solo se ejecuta manually con refetch
+    enabled: false, // Deshabilitar el fetch automático
     staleTime: 0,
-    gcTime: 0, // Evita caché innecesaria aquí
-  });
+    gcTime: 0, 
+  });*/
 
   const { mutate: verificarCI, isPending: isVerifyingCI } = useMutation<
     DatosPersonaVerificada | null,
@@ -52,15 +51,17 @@ export function useVerificacionResponsable(
         setVerificandoAsignacionActual(true);
         setPasoActual('CARGANDO_VERIFICACION');
         try {
-          const { data: areasActualesIdsData, isSuccess } = await refetchAsignacionActual();
-          if (isSuccess) {
-              const areasActualesIds = Array.isArray(areasActualesIdsData) ? areasActualesIdsData : [];
-              if (areasActualesIds.length > 0) {
-                  isReadOnly = true;
-                  initialAreas = areasActualesIds;
-              }
+          const areasActualesIdsData = await responsableService.obtenerAreasPasadas(GESTION_ACTUAL_ANIO, ciInput);
+          
+          console.log(`[useVerificacionResponsable] DEBUG ASIGNACION: Data Received (Direct Service Call)=`, areasActualesIdsData);
+          
+          const areasActualesIds = Array.isArray(areasActualesIdsData) ? areasActualesIdsData : [];
+          if (areasActualesIds.length > 0) {
+              isReadOnly = true;
+              initialAreas = areasActualesIds;
+              console.log("[useVerificacionResponsable] DEBUG: SCENARIO 3 ACTIVATED - Areas found:", initialAreas);
           } else {
-              console.warn("No se pudo confirmar la asignación actual.");
+              console.log("[useVerificacionResponsable] DEBUG: SCENARIO 2 ACTIVATED (No current assignments)");
           }
 
         } catch (errorCaught) {
@@ -72,8 +73,9 @@ export function useVerificacionResponsable(
       }
 
       const nextStep: PasoRegistroResponsable = isReadOnly ? 'READ_ONLY' : 'FORMULARIO_DATOS';
+      console.log(`[useVerificacionResponsable] FINAL DECISION: isReadOnly=${isReadOnly}. Next Step: ${nextStep}`);
       setPasoActual(nextStep);
-      onVerificationComplete(data, ciInput, isReadOnly, initialAreas);
+      onVerificationComplete(data, ciInput, isReadOnly, initialAreas); 
     },
     onError: (error) => {
       setCiVerificado('');

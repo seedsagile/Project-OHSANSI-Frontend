@@ -1,4 +1,3 @@
-// src/features/usuarios/responsables/hooks/useFormularioPrincipalResponsable.ts
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,10 +15,8 @@ import type {
     ResponsableFormData,
     ResponsableFormInput
 } from '../utils/validations';
-// Importa la constante desde su ubicación correcta
 import { ID_OLIMPIADA_ACTUAL } from '../utils/constants';
 
-// Helper para generar contraseña
 const generatePassword = (): string => {
     const lower = 'abcdefghijklmnopqrstuvwxyz';
     const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -33,7 +30,6 @@ const generatePassword = (): string => {
 
 const defaultFormValues: ResponsableFormInput = {
   nombres: '', apellidos: '', correo: '', ci: '', celular: '',
-  gestionPasadaId: '', // Aunque no esté en el schema, lo usamos para el <select>
   areas: [],
 };
 
@@ -63,8 +59,7 @@ export function useFormularioPrincipalResponsable({
     mode: 'onChange',
     defaultValues: defaultFormValues,
   });
-  // Se elimina getValues si no se usa
-  const { reset: resetPrincipalForm } = formMethodsPrincipal;
+  const { reset: resetPrincipalForm} = formMethodsPrincipal;
 
   const { data: gestionesPasadas = [], isLoading: isLoadingGestiones } = useQuery<Gestion[], Error>({
       queryKey: ['gestionesPasadas', ciVerificado],
@@ -82,44 +77,49 @@ export function useFormularioPrincipalResponsable({
       enabled: true,
   });
 
-   // Efecto para resetear/rellenar el formulario
-   useEffect(() => {
-    const resetValuesBase: ResponsableFormInput = { ...defaultFormValues, ci: ciVerificado ?? '', gestionPasadaId: '' };
+  useEffect(() => {
+    const resetValuesBase: ResponsableFormInput = {
+        ...defaultFormValues,
+        ci: ciVerificado ?? '',
+    };
+
     if (isReadOnly && datosPersonaVerificada) {
+        console.log("[useFormularioPrincipalResponsable] useEffect - Scenario 3 (ReadOnly): Resetting form", datosPersonaVerificada, initialAreas);
         resetPrincipalForm({
             ...resetValuesBase,
             nombres: datosPersonaVerificada.Nombres || '',
             apellidos: datosPersonaVerificada.Apellidos || '',
             celular: datosPersonaVerificada.Teléfono || '',
-            correo: datosPersonaVerificada.Correo || '',
+            correo: datosPersonaVerificada.Correo || '', 
             areas: initialAreas,
+        });
+        setGestionPasadaSeleccionadaId(null); 
+        setGestionPasadaSeleccionadaAnio(null);
+    } else if (datosPersonaVerificada) {
+        console.log("[useFormularioPrincipalResponsable] useEffect - Scenario 2: Resetting form", datosPersonaVerificada);
+        resetPrincipalForm({
+            ...resetValuesBase,
+            nombres: datosPersonaVerificada.Nombres || '',
+            apellidos: datosPersonaVerificada.Apellidos || '',
+            celular: datosPersonaVerificada.Teléfono || '',
+            correo: datosPersonaVerificada.Correo || '', 
+            areas: [],
         });
         setGestionPasadaSeleccionadaId(null);
         setGestionPasadaSeleccionadaAnio(null);
-    } else if (datosPersonaVerificada) {
-        resetPrincipalForm({
-            ...resetValuesBase,
-            nombres: datosPersonaVerificada.Nombres || '',
-            apellidos: datosPersonaVerificada.Apellidos || '',
-            celular: datosPersonaVerificada.Teléfono || '',
-            correo: '', // Correo vacío
-            areas: [], // Áreas vacías
-        });
+    } else if (ciVerificado) {
+        console.log("[useFormularioPrincipalResponsable] useEffect - Scenario 1: Resetting form with CI", ciVerificado);
+        resetPrincipalForm(resetValuesBase);
         setGestionPasadaSeleccionadaId(null);
         setGestionPasadaSeleccionadaAnio(null);
         setTimeout(() => primerInputRef.current?.focus(), 100);
-    } else if (ciVerificado) {
-         resetPrincipalForm(resetValuesBase);
-         setGestionPasadaSeleccionadaId(null);
-         setGestionPasadaSeleccionadaAnio(null);
-         setTimeout(() => primerInputRef.current?.focus(), 100);
     } else {
-         resetPrincipalForm(defaultFormValues);
-         setGestionPasadaSeleccionadaId(null);
-         setGestionPasadaSeleccionadaAnio(null);
+        console.log("[useFormularioPrincipalResponsable] useEffect - Default Reset");
+        resetPrincipalForm(defaultFormValues);
+        setGestionPasadaSeleccionadaId(null);
+        setGestionPasadaSeleccionadaAnio(null);
     }
-   }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]);
-
+  }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]);
 
   const { mutate: crearResponsable, isPending: isCreatingResponsable } = useMutation<
     ResponsableCreado, Error, CrearResponsablePayload
@@ -140,25 +140,34 @@ export function useFormularioPrincipalResponsable({
     const id = value ? parseInt(value, 10) : null;
     const anio = gestionAnio || null;
 
+    console.log("[useFormularioPrincipalResponsable] handleGestionPasadaChange - ID:", id, "Año:", anio);
     setGestionPasadaSeleccionadaId(id);
     setGestionPasadaSeleccionadaAnio(anio);
-    // CORRECCIÓN: Eliminar la siguiente línea
-    // setValue('gestionPasadaId', value); // <-- Esta línea causa el error
-
-  }, [/* No necesita setValue como dependencia */]); // Se elimina setValue de las dependencias
+  }, []);
 
   const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback((formData) => {
-    if (isReadOnly) return;
+    if (isReadOnly) {
+        console.warn("[useFormularioPrincipalResponsable] onSubmit called in readOnly mode. Ignoring.");
+        return;
+    }
+    console.log("[useFormularioPrincipalResponsable] onSubmitFormularioPrincipal - Data validated by Zod:", formData);
     const generatedPassword = generatePassword();
     const payload: CrearResponsablePayload = {
-        nombre: formData.nombres, apellido: formData.apellidos, ci: formData.ci,
-        email: formData.correo, telefono: formData.celular, areas: formData.areas,
-        password: generatedPassword, id_olimpiada: ID_OLIMPIADA_ACTUAL,
+        nombre: formData.nombres,
+        apellido: formData.apellidos,
+        ci: formData.ci,
+        email: formData.correo,
+        telefono: formData.celular,
+        areas: formData.areas,
+        password: generatedPassword,
+        id_olimpiada: ID_OLIMPIADA_ACTUAL,
     };
+    console.log("[useFormularioPrincipalResponsable] onSubmitFormularioPrincipal - Calling mutation with payload:", payload);
     crearResponsable(payload);
   }, [crearResponsable, isReadOnly]);
 
-  const resetFormularioPrincipal = useCallback((resetToDefault = false) => {
+  const resetFormularioPrincipalHook = useCallback((resetToDefault = false) => {
+      console.log("[useFormularioPrincipalResponsable] resetFormularioPrincipalHook called");
       setGestionPasadaSeleccionadaId(null);
       setGestionPasadaSeleccionadaAnio(null);
       if(resetToDefault) {
@@ -177,6 +186,6 @@ export function useFormularioPrincipalResponsable({
     gestionPasadaSeleccionadaId,
     gestionPasadaSeleccionadaAnio,
     primerInputRef,
-    resetFormularioPrincipal,
+    resetFormularioPrincipal: resetFormularioPrincipalHook,
   };
 }

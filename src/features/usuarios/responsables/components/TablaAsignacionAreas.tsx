@@ -1,11 +1,10 @@
-import { useMemo, useRef, useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import type { Area } from '../types';
 import type { ResponsableFormData } from '../utils/validations';
 
 type TablaAsignacionAreasProps = {
   areas: Area[];
-  areasSeleccionadas: number[];
   onSeleccionarArea: (areaId: number, seleccionado: boolean) => void;
   onToggleSeleccionarTodas: (seleccionar: boolean) => void;
   isLoading?: boolean;
@@ -14,32 +13,42 @@ type TablaAsignacionAreasProps = {
 
 export function TablaAsignacionAreas({
   areas,
-  areasSeleccionadas,
   onSeleccionarArea,
   onToggleSeleccionarTodas,
   isLoading = false,
   isReadOnly = false,
 }: TablaAsignacionAreasProps) {
-  const { formState: { errors, isSubmitting } } = useFormContext<ResponsableFormData>();
+  const { formState: { errors, isSubmitting }, control } = useFormContext<ResponsableFormData>();
   const errorAreas = errors.areas;
-  const isDisabled = isLoading || isSubmitting || isReadOnly;
+  const isDisabled = isLoading || isSubmitting || isReadOnly; 
+  const watchedAreas = useWatch({ control, name: 'areas', defaultValue: [] });
 
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
 
   const todasSeleccionadas = useMemo(() => {
-    if (!areas || areas.length === 0) return false;
-    return areas.every(area => areasSeleccionadas.includes(area.id_area));
-  }, [areas, areasSeleccionadas]);
+    const result = (
+      areas && areas.length > 0 &&
+      Array.isArray(watchedAreas) &&
+      areas.length === watchedAreas.length &&
+      areas.every(area => watchedAreas.includes(area.id_area))
+    );
+    return result;
+  }, [areas, watchedAreas]);
 
   const algunasSeleccionadas = useMemo(() => {
-    return areasSeleccionadas.length > 0 && !todasSeleccionadas;
-  }, [areasSeleccionadas, todasSeleccionadas]);
+    const result = (
+        Array.isArray(watchedAreas) &&
+        watchedAreas.length > 0 && !todasSeleccionadas
+    );
+    return result;
+  }, [watchedAreas, todasSeleccionadas]);
 
   useEffect(() => {
     if (selectAllCheckboxRef.current) {
       selectAllCheckboxRef.current.indeterminate = algunasSeleccionadas;
     }
   }, [algunasSeleccionadas]);
+
 
   const handleToggleTodas = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (isDisabled) return;
@@ -51,18 +60,16 @@ export function TablaAsignacionAreas({
       onSeleccionarArea(areaId, event.target.checked);
   };
 
-  console.log('[TablaAsignacionAreas] Rendering with props:', { areasCount: areas.length, areasSeleccionadas, isLoading, isReadOnly });
-
   return (
-    <fieldset className="space-y-4" disabled={isReadOnly}>
+    <fieldset className="space-y-4" disabled={isReadOnly}> 
       <legend className="text-lg font-semibold text-neutro-800 border-b border-neutro-200 pb-2 w-full flex justify-between items-center">
         <span>Asignación de Áreas <span className="text-acento-500">*</span></span>
         <span className="text-sm font-normal text-neutro-500">
-          {areasSeleccionadas.length} / {(areas || []).length} seleccionada(s)
+          {Array.isArray(watchedAreas) ? watchedAreas.length : 0} / {(areas || []).length} seleccionada(s)
         </span>
       </legend>
 
-      {areas && areas.length > 0 && (
+      {areas && areas.length > 0 && !isReadOnly && ( 
         <div className="flex items-center mb-2 pl-1">
           <input
             id="seleccionar-todas-areas"
@@ -82,6 +89,8 @@ export function TablaAsignacionAreas({
           </label>
         </div>
       )}
+
+      {/* Contenedor de la tabla */}
       <div className={`rounded-lg border overflow-hidden ${errorAreas && !isDisabled ? 'border-acento-500' : 'border-neutro-300'}`}>
         <div className="max-h-60 overflow-y-auto relative scrollbar-thin scrollbar-thumb-neutro-300 scrollbar-track-neutro-100 hover:scrollbar-thumb-neutro-400">
           {isLoading && (
@@ -97,7 +106,7 @@ export function TablaAsignacionAreas({
                 <th scope="col" className="px-4 py-2 w-20 text-center">Asignar</th>
               </tr>
             </thead>
-            <tbody className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}>
+            <tbody className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}> 
               {!isLoading && (!areas || areas.length === 0) ? (
                 <tr>
                   <td colSpan={3} className="px-4 py-6 text-center text-neutro-500 italic">
@@ -106,17 +115,19 @@ export function TablaAsignacionAreas({
                 </tr>
               ) : (
                 (areas || []).map((area, index) => {
-                  const isSelected = areasSeleccionadas.includes(area.id_area);
+                  const isSelected = Array.isArray(watchedAreas) && watchedAreas.includes(area.id_area);
+                  
+                  const rowDisabled = isDisabled; 
+                  
                   return (
                     <tr
                       key={area.id_area}
                       className={`border-b border-neutro-200 transition-colors ${
-                          isSelected ? 'bg-principal-100' : 'bg-white hover:bg-principal-50'
-                        } ${
-                          isDisabled ? 'cursor-not-allowed' : 'hover:bg-principal-50'
-                        }`
-                      }
-                      aria-disabled={isDisabled ? "true" : "false"}
+                          isSelected ? 'bg-principal-100' : 'bg-white'
+                      } ${
+                          rowDisabled ? '' : 'hover:bg-principal-50'
+                      }`}
+                      aria-disabled={rowDisabled ? "true" : "false"}
                     >
                       <td className="px-4 py-2 text-center font-medium text-neutro-900">{index + 1}</td>
                       <td className="px-4 py-2">{area.nombre}</td>
@@ -124,10 +135,10 @@ export function TablaAsignacionAreas({
                         <input
                           id={`area-${area.id_area}`}
                           type="checkbox"
-                          className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                          checked={isSelected}
+                          className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${rowDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                          checked={isSelected} 
                           onChange={(e) => handleCheckboxChange(e, area.id_area)}
-                          disabled={isDisabled}
+                          disabled={rowDisabled}
                           aria-labelledby={`area-label-${area.id_area}`}
                         />
                         <label htmlFor={`area-${area.id_area}`} id={`area-label-${area.id_area}`} className="sr-only">
