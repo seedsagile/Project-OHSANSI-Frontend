@@ -23,7 +23,7 @@ export function VerificacionCI({ onSubmit }: VerificacionCIProps) {
           <input
             id="ci-verificacion"
             type="text"
-            placeholder="Ej: 7912324, 7912324A, 7912324-1B"
+            placeholder="Ej: 7912324, 7912324A"
             autoFocus
             disabled={isSubmitting}
             className={`flex-grow w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${

@@ -11,8 +11,6 @@ const CELULAR_LENGTH = 8;
 const REGEX_NOMBRES_APELLIDOS = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/;
 const REGEX_CI_BOLIVIA = /^\d+([-\dA-Z]{0,3})?$/;
 const REGEX_CELULAR_BOLIVIA = /^[67]\d{7}$/;
-// TODO: Ajusta el dominio 'uni.edu.bo' si es diferente
-const REGEX_CORREO_INSTITUCIONAL = /^[^\s@]+@(?:[a-zA-Z0-9-]+\.)*(?:uni\.edu\.bo)$/i;
 
 const toTitleCase = (str: string): string => {
   if (!str) return '';
@@ -31,7 +29,7 @@ export const verificacionCISchema = z.object({
     .min(CI_MIN_LENGTH, `Mínimo ${CI_MIN_LENGTH} caracteres.`)
     .max(CI_MAX_LENGTH, `Máximo ${CI_MAX_LENGTH} caracteres.`)
     .transform((val) => val.toUpperCase().replace(/\s+/g, ''))
-    .pipe(z.string().regex(REGEX_CI_BOLIVIA, 'Formato inválido (ej: 1234567, 1234567LP, 1234567-1B).')),
+    .pipe(z.string().regex(REGEX_CI_BOLIVIA, 'Formato inválido (ej: 1234567, 1234567PP, 1234567-1B).')),
 });
 
 export type VerificacionCIForm = z.infer<typeof verificacionCISchema>;
@@ -60,7 +58,6 @@ export const datosResponsableSchema = z.object({
       .trim()
       .min(1, 'El Correo Electrónico es obligatorio.')
       .email('Formato de correo no válido.')
-      .regex(REGEX_CORREO_INSTITUCIONAL, 'Se requiere un correo institucional válido (ej: usuario@uni.edu.bo).')
       .toLowerCase(),
 
   ci: z.string().trim().min(1, 'El CI es requerido (debe venir de la verificación).'),

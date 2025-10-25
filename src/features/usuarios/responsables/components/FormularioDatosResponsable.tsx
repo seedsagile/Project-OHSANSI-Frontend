@@ -127,16 +127,16 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
               {errors.apellidos?.message && <p id="apellidos-error" role="alert" className="mt-1 text-xs text-acento-600">{errors.apellidos.message}</p>}
             </div>
 
-            {/* Correo Electrónico (Institucional) */}
+            {/* Correo Electrónico */}
             <div>
               <label htmlFor="correo" className="block text-sm font-medium text-neutro-700 mb-1">
-                Correo Electrónico (Institucional) <span className="text-acento-500">*</span>
+                Correo Electrónico <span className="text-acento-500">*</span>
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
                   ref={rhfRefCorreo} 
-                  id="correo" type="email" placeholder="Ej: juan.perez@uni.edu.bo"
+                  id="correo" type="email" placeholder="Ej: juan.perez@example.com"
                   disabled={disableCorreoField}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
                     errors.correo ? inputErrorClass : esUsuarioExistente ? inputPrefilledClass : inputNormalClass
@@ -152,7 +152,6 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                   </span>
                 )}
               </div>
-              {!errors.correo && <p id="correo-hint" className="mt-1 text-xs text-neutro-500">Debe ser un correo institucional (ej: @uni.edu.bo).</p>}
               {errors.correo?.message && <p id="correo-error" role="alert" className="mt-1 text-xs text-acento-600">{errors.correo.message}</p>}
             </div>
 
