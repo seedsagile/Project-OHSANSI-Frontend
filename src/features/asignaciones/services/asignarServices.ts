@@ -9,9 +9,10 @@ export const asignacionesService = {
   },
 
   // Crear nuevas asignaciones (solo para niveles nuevos)
-  async crearAsignacionesDeArea(payload: AsignacionPayload[]): Promise<AreaNivel[]> {
+  async crearAsignacionesDeArea(payload: AsignacionPayload[]): Promise<ApiResponse<AreaNivel[]>> {
     const response = await apiClient.post<ApiResponse<AreaNivel[]>>('/area-niveles', payload);
-    return response.data.data;
+    // Retornar la respuesta completa para poder acceder a success_count y errors
+    return response.data;
   },
 
   // Mantener estas por si se necesitan después

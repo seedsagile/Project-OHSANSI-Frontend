@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { nivelesService } from '../../niveles/services/nivelesService';
 import { asignacionesService } from '../services/asignarServices';
-import type { AsignacionPayload, AreaConNiveles } from '../types';
+import type { AsignacionPayload} from '../types';
 import isEqual from 'lodash.isequal';
 
 type ApiErrorResponse = {
@@ -82,12 +82,30 @@ export function useAsignarNiveles() {
     mutationFn: async (payload: AsignacionPayload[]) => {
       return asignacionesService.crearAsignacionesDeArea(payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       const nombreArea = areaActual ? areaActual.nombre : '';
+      
+      // Validar si realmente se guardó algo
+      if (response.success_count === 0 || response.created_count === 0) {
+        // No se guardó nada, mostrar errores
+        const erroresDetalle = response.errors && response.errors.length > 0 
+          ? response.errors.join('\n') 
+          : 'No se pudieron crear las asignaciones.';
+        
+        setModalState({ 
+          isOpen: true, 
+          type: 'error', 
+          title: 'Error al Guardar', 
+          message: `${response.message}\n\n${erroresDetalle}` 
+        });
+        return;
+      }
+      
+      // Éxito: se guardó al menos una asignación
       const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
       setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
       
-      // Invalida ambas queries para refrescar los datos
+      // Invalida la query para refrescar los datos
       queryClient.invalidateQueries({ queryKey: ['areas-con-niveles'] });
       
       clearTimeout(modalTimerRef.current);
