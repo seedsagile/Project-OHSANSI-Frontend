@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import isEqual from 'lodash.isequal';
 
 import type {
   DatosPersonaVerificada,
@@ -22,20 +23,20 @@ import type {
 
 import * as responsableService from '../services/responsablesService';
 
-// TODO: Obtener ID_OLIMPIADA_ACTUAL de forma dinámica (config, API global, etc.)
+const GESTION_ACTUAL_ANIO = '2025';
 const ID_OLIMPIADA_ACTUAL = 1;
 
-const generatePassword = (length = 8): string => {
+const generatePassword = (): string => {
   const lower = 'abcdefghijklmnopqrstuvwxyz';
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const numbers = '0123456789';
   const all = lower + upper + numbers;
   const randChar = (set: string) => set.charAt(Math.floor(Math.random() * set.length));
   let pwd = randChar(lower) + randChar(upper) + randChar(numbers);
-  for (let i = 3; i < length; i++) pwd += randChar(all);
-  return pwd.split('').sort(() => Math.random() - 0.5).join('');
+  for (let i = 3; i < 8; i++) pwd += randChar(all);
+  pwd = pwd.split('').sort(() => Math.random() - 0.5).join('');
+  return pwd;
 };
-
 const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
 const defaultFormValues: ResponsableFormInput = {
   nombres: '', apellidos: '', correo: '', ci: '', celular: '',
@@ -54,6 +55,7 @@ export function useGestionResponsable() {
   const [gestionPasadaSeleccionadaId, setGestionPasadaSeleccionadaId] = useState<number | null>(null);
   const [gestionPasadaSeleccionadaAnio, setGestionPasadaSeleccionadaAnio] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [verificandoAsignacionActual, setVerificandoAsignacionActual] = useState(false);
 
   const modalTimerRef = useRef<number | undefined>(undefined);
   const primerInputRef = useRef<HTMLInputElement>(null);
@@ -65,9 +67,22 @@ export function useGestionResponsable() {
     clearTimeout(modalTimerRef.current);
   }, []);
 
+  const formMethodsPrincipal: UseFormReturn<ResponsableFormData, any, ResponsableFormInput> = useForm<ResponsableFormData, any, ResponsableFormInput>({
+    resolver: zodResolver(datosResponsableSchema),
+    mode: 'onChange',
+    defaultValues: defaultFormValues,
+  });
+  const { setValue, getValues, reset: resetPrincipal } = formMethodsPrincipal;
+
+  const formMethodsVerificacion = useForm<VerificacionCIForm>({
+    resolver: zodResolver(verificacionCISchema),
+    mode: 'onSubmit',
+  });
+  const { reset: resetVerificacion } = formMethodsVerificacion;
+
   const { data: areasDisponibles = [], isLoading: isLoadingAreas } = useQuery<Area[], Error>({
-    queryKey: ['areasActuales'],
-    queryFn: responsableService.obtenerAreasActuales, // Servicio actualizado
+    queryKey: ['areasActuales', GESTION_ACTUAL_ANIO],
+    queryFn: responsableService.obtenerAreasActuales,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
     enabled: pasoActual === 'FORMULARIO_DATOS' || pasoActual === 'READ_ONLY',
@@ -89,104 +104,140 @@ export function useGestionResponsable() {
     refetchOnWindowFocus: false,
   });
 
+  const { refetch: refetchAsignacionActual } = useQuery<number[], Error>({
+      queryKey: ['areasAsignadasActuales', ciVerificado, GESTION_ACTUAL_ANIO],
+      queryFn: () => responsableService.obtenerAreasPasadas(GESTION_ACTUAL_ANIO, ciVerificado),
+      enabled: false,
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+  });
+
   const { mutate: verificarCI, isPending: isVerifyingCI } = useMutation<DatosPersonaVerificada | null, Error, string>({
     mutationFn: responsableService.verificarCI,
-    onSuccess: (data, ciInput) => {
+    onSuccess: async (data, ciInput) => {
       setCiVerificado(ciInput);
       setDatosPersona(data);
       setIsReadOnly(false);
       setGestionPasadaSeleccionadaId(null);
       setGestionPasadaSeleccionadaAnio(null);
       setAreasSeleccionadas([]);
+      setVerificandoAsignacionActual(false);
 
-      const resetValuesBase: ResponsableFormInput = { ...defaultFormValues, ci: ciInput };
+      const resetValuesBase: ResponsableFormInput = { ...defaultFormValues, ci: ciInput, gestionPasadaId: '' };
 
-      // TODO: Implementar lógica real para Escenario 3 basada en la respuesta de `data`
-      // Esta lógica necesita saber si `data` indica que el usuario ya está en GESTION_ACTUAL
-      // y cuáles son sus `areasEnGestionActual`. Asumiremos que no por ahora.
-      /*
-      if (data?.estaEnGestionActual) { // Necesita info de la API
-          setIsReadOnly(true);
-          setPasoActual('READ_ONLY');
-          const areasActualesAsignadas = data.areasEnGestionActual || [];
-          setAreasSeleccionadas(areasActualesAsignadas);
-          formMethodsPrincipal.reset({
-              ...resetValuesBase,
-              nombres: data.Nombres,
-              apellidos: data.Apellidos,
-              celular: data.Teléfono || '',
-              correo: data.Correo || '', // Usar correo existente
-              areas: areasActualesAsignadas,
-              gestionPasadaId: '', // Incluido para tipo Input
-          });
-      } else */
       if (data) {
-        setPasoActual('FORMULARIO_DATOS');
-        const resetData: ResponsableFormInput = {
-            ...resetValuesBase,
-            nombres: data.Nombres,
-            apellidos: data.Apellidos,
-            celular: data.Teléfono || '',
-            correo: '',
-            gestionPasadaId: '',
-            areas: [],
-        };
-        formMethodsPrincipal.reset(resetData);
+        setVerificandoAsignacionActual(true);
+        setPasoActual('CARGANDO_VERIFICACION');
+        try {
+            const { data: areasActualesIdsData } = await refetchAsignacionActual();
+            const areasActualesIds = Array.isArray(areasActualesIdsData) ? areasActualesIdsData : [];
+            const estaEnGestionActual = areasActualesIds.length > 0;
+
+            if (estaEnGestionActual) {
+                setIsReadOnly(true);
+                setPasoActual('READ_ONLY');
+                setAreasSeleccionadas(areasActualesIds);
+                const resetDataReadOnly: ResponsableFormInput = {
+                    ...resetValuesBase,
+                    nombres: data.Nombres || '', apellidos: data.Apellidos || '',
+                    celular: data.Teléfono || '', correo: data.Correo || '',
+                    areas: areasActualesIds,
+                };
+                resetPrincipal(resetDataReadOnly);
+            } else {
+                setPasoActual('FORMULARIO_DATOS');
+                const resetDataExisting: ResponsableFormInput = {
+                    ...resetValuesBase,
+                    nombres: data.Nombres || '', apellidos: data.Apellidos || '',
+                    celular: data.Teléfono || '', correo: '', areas: [],
+                };
+                resetPrincipal(resetDataExisting);
+            }
+        } catch (errorCaught) {
+            console.error("Error al verificar asignación actual:", errorCaught);
+            setPasoActual('FORMULARIO_DATOS');
+            const resetDataFallback: ResponsableFormInput = {
+                ...resetValuesBase,
+                nombres: data.Nombres || '', apellidos: data.Apellidos || '',
+                celular: data.Teléfono || '', correo: '', areas: [],
+            };
+            resetPrincipal(resetDataFallback);
+            setModalFeedback({ isOpen: true, type: 'error', title: 'Advertencia', message: 'No se pudo verificar si el responsable ya está asignado. Procediendo con el registro normal.' });
+        } finally {
+            setVerificandoAsignacionActual(false);
+        }
       } else {
         setPasoActual('FORMULARIO_DATOS');
-        formMethodsPrincipal.reset(resetValuesBase);
+        resetPrincipal(resetValuesBase);
       }
 
-      if (!isReadOnly) {
+      if (!isReadOnly && !verificandoAsignacionActual) {
           setTimeout(() => { primerInputRef.current?.focus(); }, 100);
       }
     },
     onError: (error) => {
-      setCiVerificado('');
-      setDatosPersona(null);
-      setIsReadOnly(false);
+      console.error('Error al verificar CI:', error);
+      setCiVerificado(''); setDatosPersona(null); setIsReadOnly(false);
       setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message: error.message || 'No se pudo verificar CI.' });
       setPasoActual('VERIFICACION_CI');
     },
   });
 
-  // Crear Responsable
   const { mutate: crearResponsable, isPending: isCreatingResponsable } = useMutation<ResponsableCreado, Error, CrearResponsablePayload>({
     mutationFn: responsableService.crearResponsable,
     onSuccess: (data) => {
       setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message: data.message || `Responsable registrado.` });
       queryClient.invalidateQueries({ queryKey: ['responsables'] });
       modalTimerRef.current = window.setTimeout(() => {
-            closeModalFeedback();
-            handleCancelar();
-            navigate('/dashboard');
+          closeModalFeedback();
+          handleCancelar();
+          navigate('/dashboard');
       }, 2000);
     },
     onError: (error) => {
+      console.error('Error al crear responsable:', error); // Mantener este log es útil
       setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message: error.message || 'No se pudo registrar.' });
-      setPasoActual('FORMULARIO_DATOS');
+      setPasoActual('FORMULARIO_DATOS'); // Permite reintentar
     },
   });
 
-  const formMethodsPrincipal = useForm<ResponsableFormData, any, ResponsableFormInput>({
-    resolver: zodResolver(datosResponsableSchema),
-    mode: 'onChange',
-    defaultValues: defaultFormValues,
-  });
-
-  const formMethodsVerificacion = useForm<VerificacionCIForm>({
-    resolver: zodResolver(verificacionCISchema),
-    mode: 'onSubmit',
-  });
+  const previousGestionIdRef = useRef<number | null | undefined>(undefined);
 
   useEffect(() => {
-    if (gestionPasadaSeleccionadaId && areasDisponibles.length > 0 && areasPasadasIds.length > 0 && !isLoadingAreasPasadas) {
-      const idsAreasActuales = areasDisponibles.map(a => a.id_area);
-      const idsComunes = areasPasadasIds.filter(idPasada => idsAreasActuales.includes(idPasada));
-      setAreasSeleccionadas(idsComunes);
-      formMethodsPrincipal.setValue('areas', idsComunes, { shouldValidate: true, shouldDirty: true });
+    const currentGestionId = gestionPasadaSeleccionadaId;
+    const previousGestionId = previousGestionIdRef.current;
+
+    if (currentGestionId !== previousGestionId) {
+      const currentFormAreas = getValues('areas') || [];
+
+      if (typeof currentGestionId === 'number' && areasDisponibles.length > 0 && Array.isArray(areasPasadasIds) && areasPasadasIds.length > 0 && !isLoadingAreasPasadas) {
+        const idsAreasActuales = (areasDisponibles || []).map((a: Area) => a.id_area);
+        const idsComunes = (areasPasadasIds || []).filter((idPasada: number) => idsAreasActuales.includes(idPasada));
+        const currentFormAreasSet = new Set(currentFormAreas);
+        const idsComunesSet = new Set(idsComunes);
+
+        if (!isEqual(currentFormAreasSet, idsComunesSet)) {
+          setAreasSeleccionadas(idsComunes);
+          setValue('areas', idsComunes, { shouldValidate: true, shouldDirty: true });
+        }
+      } else if (currentGestionId === null) {
+        if (!isReadOnly && currentFormAreas.length > 0) {
+          setAreasSeleccionadas([]);
+          setValue('areas', [], { shouldValidate: true, shouldDirty: true });
+        }
+      }
     }
-  }, [gestionPasadaSeleccionadaId, areasDisponibles, areasPasadasIds, isLoadingAreasPasadas, formMethodsPrincipal]);
+
+    previousGestionIdRef.current = currentGestionId;
+  }, [
+      gestionPasadaSeleccionadaId,
+      areasDisponibles,
+      areasPasadasIds,
+      isLoadingAreasPasadas,
+      isReadOnly,
+      setValue, 
+      getValues
+  ]);
 
   const handleVerificarCISubmit = formMethodsVerificacion.handleSubmit((formData) => {
     setPasoActual('CARGANDO_VERIFICACION');
@@ -195,94 +246,75 @@ export function useGestionResponsable() {
 
   const handleSeleccionarArea = useCallback((areaId: number, seleccionado: boolean) => {
     if (isReadOnly) return;
-    const nuevasAreas = seleccionado
-        ? [...areasSeleccionadas, areaId]
-        : areasSeleccionadas.filter(id => id !== areaId);
-    setAreasSeleccionadas(nuevasAreas);
-    formMethodsPrincipal.setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
-  }, [areasSeleccionadas, formMethodsPrincipal, isReadOnly]);
+    setAreasSeleccionadas(prev => {
+        const nuevasAreas = seleccionado
+            ? [...prev, areaId]
+            : prev.filter(id => id !== areaId);
+        setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
+        return nuevasAreas;
+    });
+  }, [isReadOnly, setValue]);
+
 
   const handleToggleSeleccionarTodas = useCallback((seleccionar: boolean) => {
     if (isReadOnly || isLoadingAreas) return;
-
-    const todosLosIds = areasDisponibles.map(area => area.id_area);
+    const todosLosIds = (areasDisponibles || []).map(area => area.id_area);
     const nuevasAreas = seleccionar ? todosLosIds : [];
-
     setAreasSeleccionadas(nuevasAreas);
-    formMethodsPrincipal.setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
-  }, [areasDisponibles, formMethodsPrincipal, isReadOnly, isLoadingAreas]);
+    setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
+  }, [areasDisponibles, isReadOnly, isLoadingAreas, setValue]);
+
 
   const handleGestionPasadaChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
       const selectedOption = event.target.selectedOptions[0];
       const value = selectedOption.value;
       const gestionAnio = selectedOption.dataset.gestion;
-
       const id = value ? parseInt(value, 10) : null;
       const anio = gestionAnio || null;
 
-      setGestionPasadaSeleccionadaId(id);
-      setGestionPasadaSeleccionadaAnio(anio);
+      if(id !== gestionPasadaSeleccionadaId) {
+          setGestionPasadaSeleccionadaId(id);
+          setGestionPasadaSeleccionadaAnio(anio);
+      }
+  }, [gestionPasadaSeleccionadaId]);
 
-      setAreasSeleccionadas([]);
-      formMethodsPrincipal.setValue('areas', [], { shouldValidate: true });
-  }, [formMethodsPrincipal]);
 
   const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback((formData) => {
     if (isReadOnly) return;
     setPasoActual('CARGANDO_GUARDADO');
-    const generatedPassword = generatePassword(); 
-
+    const generatedPassword = generatePassword();
     const payload: CrearResponsablePayload = {
-      nombre: formData.nombres,
-      apellido: formData.apellidos,
-      ci: formData.ci,
-      email: formData.correo,
-      telefono: formData.celular,
-      areas: formData.areas,
-      password: generatedPassword,
-      // TODO: Confirmar si id_olimpiada es necesario y cómo obtener ID_OLIMPIADA_ACTUAL
-      id_olimpiada: ID_OLIMPIADA_ACTUAL,
+      nombre: formData.nombres, apellido: formData.apellidos, ci: formData.ci,
+      email: formData.correo, telefono: formData.celular, areas: formData.areas,
+      password: generatedPassword, id_olimpiada: ID_OLIMPIADA_ACTUAL,
     };
     crearResponsable(payload);
   }, [crearResponsable, isReadOnly]);
 
+
   const handleCancelar = useCallback(() => {
     setPasoActual('VERIFICACION_CI');
-    setDatosPersona(null);
-    setCiVerificado('');
-    setAreasSeleccionadas([]);
-    setGestionPasadaSeleccionadaId(null);
-    setGestionPasadaSeleccionadaAnio(null);
+    setDatosPersona(null); setCiVerificado(''); setAreasSeleccionadas([]);
+    setGestionPasadaSeleccionadaId(null); setGestionPasadaSeleccionadaAnio(null);
     setIsReadOnly(false);
-    formMethodsPrincipal.reset(defaultFormValues);
-    formMethodsVerificacion.reset();
+    resetPrincipal(defaultFormValues);
+    resetVerificacion();
     closeModalFeedback();
-  }, [formMethodsPrincipal, formMethodsVerificacion, closeModalFeedback /*, navigate */]);
+  }, [resetPrincipal, resetVerificacion, closeModalFeedback]);
 
-  const isLoading = isLoadingAreas;
-  const isProcessing = isVerifyingCI || isCreatingResponsable;
+  const isLoading = isLoadingAreas; 
+  const isProcessing = isVerifyingCI || verificandoAsignacionActual || isCreatingResponsable;
+
+
   return {
-    pasoActual,
-    datosPersona,
-    areasDisponibles,
-    gestionesPasadas,
-    areasSeleccionadas,
-    modalFeedback,
-    isReadOnly,
-    gestionPasadaSeleccionadaId,
-    isLoading,
-    isLoadingGestiones,
-    isLoadingAreasPasadas,
-    isProcessing,
-    formMethodsVerificacion,
-    formMethodsPrincipal,
+    pasoActual, datosPersona, areasDisponibles, gestionesPasadas,
+    areasSeleccionadas, modalFeedback, isReadOnly, gestionPasadaSeleccionadaId,
+    isLoading, isLoadingGestiones, isLoadingAreasPasadas, isProcessing,
+    formMethodsVerificacion, formMethodsPrincipal,
     primerInputRef,
-    handleVerificarCISubmit,
-    handleSeleccionarArea,
-    handleToggleSeleccionarTodas,
+    handleVerificarCISubmit, handleSeleccionarArea, handleToggleSeleccionarTodas,
     handleGestionPasadaChange,
     onSubmitFormularioPrincipal: formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
-    handleCancelar,
-    closeModalFeedback,
+    handleCancelar, closeModalFeedback,
   };
 }

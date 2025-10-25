@@ -27,7 +27,8 @@ export function TablaAsignacionAreas({
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
 
   const todasSeleccionadas = useMemo(() => {
-    return areas.length > 0 && areas.every(area => areasSeleccionadas.includes(area.id_area));
+    if (!areas || areas.length === 0) return false;
+    return areas.every(area => areasSeleccionadas.includes(area.id_area));
   }, [areas, areasSeleccionadas]);
 
   const algunasSeleccionadas = useMemo(() => {
@@ -40,36 +41,35 @@ export function TablaAsignacionAreas({
     }
   }, [algunasSeleccionadas]);
 
-  const handleRowClick = (areaId: number) => {
+  const handleToggleTodas = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (isDisabled) return;
-    const currentlySelected = areasSeleccionadas.includes(areaId);
-    onSeleccionarArea(areaId, !currentlySelected);
+    onToggleSeleccionarTodas(event.target.checked);
   };
 
-  const handleToggleTodas = () => {
-    if (isDisabled) return;
-    onToggleSeleccionarTodas(!todasSeleccionadas);
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, areaId: number) => {
+      if (isDisabled) return;
+      onSeleccionarArea(areaId, event.target.checked);
   };
+
+  console.log('[TablaAsignacionAreas] Rendering with props:', { areasCount: areas.length, areasSeleccionadas, isLoading, isReadOnly });
 
   return (
     <fieldset className="space-y-4" disabled={isReadOnly}>
       <legend className="text-lg font-semibold text-neutro-800 border-b border-neutro-200 pb-2 w-full flex justify-between items-center">
         <span>Asignación de Áreas <span className="text-acento-500">*</span></span>
         <span className="text-sm font-normal text-neutro-500">
-          {areasSeleccionadas.length} / {areas.length} seleccionada(s)
+          {areasSeleccionadas.length} / {(areas || []).length} seleccionada(s)
         </span>
       </legend>
 
-      {areas.length > 0 && (
+      {areas && areas.length > 0 && (
         <div className="flex items-center mb-2 pl-1">
           <input
             id="seleccionar-todas-areas"
             type="checkbox"
             className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-            checked={todasSeleccionadas}
-            // ** CORRECCIÓN: Asignar la ref creada **
+            checked={todasSeleccionadas && !algunasSeleccionadas}
             ref={selectAllCheckboxRef}
-            // ** Fin Corrección **
             onChange={handleToggleTodas}
             disabled={isDisabled}
             aria-label="Seleccionar o deseleccionar todas las áreas"
@@ -82,7 +82,6 @@ export function TablaAsignacionAreas({
           </label>
         </div>
       )}
-
       <div className={`rounded-lg border overflow-hidden ${errorAreas && !isDisabled ? 'border-acento-500' : 'border-neutro-300'}`}>
         <div className="max-h-60 overflow-y-auto relative scrollbar-thin scrollbar-thumb-neutro-300 scrollbar-track-neutro-100 hover:scrollbar-thumb-neutro-400">
           {isLoading && (
@@ -99,23 +98,22 @@ export function TablaAsignacionAreas({
               </tr>
             </thead>
             <tbody className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}>
-              {!isLoading && areas.length === 0 ? (
+              {!isLoading && (!areas || areas.length === 0) ? (
                 <tr>
                   <td colSpan={3} className="px-4 py-6 text-center text-neutro-500 italic">
                     No hay áreas disponibles para asignar.
                   </td>
                 </tr>
               ) : (
-                areas.map((area, index) => {
+                (areas || []).map((area, index) => {
                   const isSelected = areasSeleccionadas.includes(area.id_area);
                   return (
                     <tr
                       key={area.id_area}
-                      onClick={() => handleRowClick(area.id_area)}
-                      className={`border-b border-neutro-200 transition-all duration-150 ${
-                          isDisabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-principal-50 hover:shadow-sm'
+                      className={`border-b border-neutro-200 transition-colors ${
+                          isSelected ? 'bg-principal-100' : 'bg-white hover:bg-principal-50'
                         } ${
-                          isSelected ? 'bg-principal-100 hover:bg-principal-100/80' : 'bg-white'
+                          isDisabled ? 'cursor-not-allowed' : 'hover:bg-principal-50'
                         }`
                       }
                       aria-disabled={isDisabled ? "true" : "false"}
@@ -126,9 +124,9 @@ export function TablaAsignacionAreas({
                         <input
                           id={`area-${area.id_area}`}
                           type="checkbox"
-                          readOnly tabIndex={-1}
-                          className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 pointer-events-none`}
+                          className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                           checked={isSelected}
+                          onChange={(e) => handleCheckboxChange(e, area.id_area)}
                           disabled={isDisabled}
                           aria-labelledby={`area-label-${area.id_area}`}
                         />

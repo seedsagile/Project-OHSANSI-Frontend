@@ -61,8 +61,8 @@ export function PaginaRegistrarResponsable() {
           <div className="flex justify-center items-center space-x-2 sm:space-x-4 mb-8 text-sm sm:text-base">
             <span className={`flex items-center gap-2 font-semibold ${pasoVerificacionActivo ? 'text-principal-600' : 'text-neutro-500'}`}>
               <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
-                pasoVerificacionCompletado ? 'border-exito-500 bg-exito-500 text-white' :
-                pasoVerificacionActivo ? 'border-principal-600 bg-principal-600 text-white' :
+                pasoVerificacionCompletado ? 'border-principal-600 bg-principal-600 text-white' :
+                pasoVerificacionActivo ? 'border-principal-900 bg-principal-900 text-white' :
                 'border-neutro-400'
               }`}>
                 {pasoVerificacionCompletado ? <Check size={16} /> : '1'}
