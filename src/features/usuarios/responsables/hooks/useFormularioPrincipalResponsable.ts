@@ -1,4 +1,3 @@
-// src/features/usuarios/responsables/hooks/useFormularioPrincipalResponsable.ts
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,34 +6,29 @@ import { AxiosError } from 'axios';
 import * as responsableService from '../services/responsablesService';
 import { datosResponsableSchema } from '../utils/validations';
 import type {
-  Gestion,
-  Area,
-  DatosPersonaVerificada,
-  CrearResponsablePayload, // Importar CrearResponsablePayload
-  ResponsableCreado,
+    Gestion,
+    Area,
+    DatosPersonaVerificada,
+    CrearResponsablePayload,
+    ResponsableCreado,
 } from '../types';
 import type {
     ResponsableFormData,
     ResponsableFormInput
 } from '../utils/validations';
-// --- ELIMINADO: Import innecesario ---
-// import { ID_OLIMPIADA_ACTUAL } from '../utils/constants';
-
-// --- ELIMINADO: Función no usada aquí ---
-// const generatePassword = (): string => { ... };
 
 const defaultFormValues: ResponsableFormInput = {
-  nombres: '', apellidos: '', correo: '', ci: '', celular: '',
-  areas: [],
+    nombres: '', apellidos: '', correo: '', ci: '', celular: '',
+    areas: [],
 };
 
 interface UseFormularioPrincipalProps {
-  ciVerificado: string | null;
-  datosPersonaVerificada: DatosPersonaVerificada | null;
-  isReadOnly: boolean;
-  initialAreas?: number[];
-  onFormSubmitSuccess: (data: ResponsableCreado) => void;
-  onFormSubmitError: (message: string) => void;
+    ciVerificado: string | null;
+    datosPersonaVerificada: DatosPersonaVerificada | null;
+    isReadOnly: boolean;
+    initialAreas?: number[];
+    onFormSubmitSuccess: (data: ResponsableCreado) => void;
+    onFormSubmitError: (message: string) => void;
 }
 
 type BackendValidationError = {
@@ -43,174 +37,161 @@ type BackendValidationError = {
 };
 
 export function useFormularioPrincipalResponsable({
-  ciVerificado,
-  datosPersonaVerificada,
-  isReadOnly,
-  initialAreas = [],
-  onFormSubmitSuccess,
-  onFormSubmitError,
+    ciVerificado,
+    datosPersonaVerificada,
+    isReadOnly,
+    initialAreas = [],
+    onFormSubmitSuccess,
+    onFormSubmitError,
 }: UseFormularioPrincipalProps) {
-  const [gestionPasadaSeleccionadaId, setGestionPasadaSeleccionadaId] = useState<number | null>(null);
-  const [gestionPasadaSeleccionadaAnio, setGestionPasadaSeleccionadaAnio] = useState<string | null>(null);
-  const primerInputRef = useRef<HTMLInputElement>(null);
+    const [gestionPasadaSeleccionadaId, setGestionPasadaSeleccionadaId] = useState<number | null>(null);
+    const [gestionPasadaSeleccionadaAnio, setGestionPasadaSeleccionadaAnio] = useState<string | null>(null);
+    const primerInputRef = useRef<HTMLInputElement>(null);
 
-  const formMethodsPrincipal = useForm<ResponsableFormData, any, ResponsableFormInput>({
-    resolver: zodResolver(datosResponsableSchema),
-    mode: 'onChange',
-    defaultValues: defaultFormValues,
-  });
-  // Extraemos setError y setFocus
-  const { reset: resetPrincipalForm, setError, setFocus } = formMethodsPrincipal;
+    const formMethodsPrincipal = useForm<ResponsableFormData, any, ResponsableFormInput>({
+        resolver: zodResolver(datosResponsableSchema),
+        mode: 'onChange',
+        defaultValues: defaultFormValues,
+    });
+    const { reset: resetPrincipalForm, setError, setFocus } = formMethodsPrincipal;
 
-  const { data: gestionesPasadas = [], isLoading: isLoadingGestiones } = useQuery<Gestion[], Error>({
-      queryKey: ['gestionesPasadas', ciVerificado],
-      queryFn: () => responsableService.obtenerGestionesPasadas(ciVerificado!),
-      enabled: !!ciVerificado && !!datosPersonaVerificada && !isReadOnly,
-      staleTime: 1000 * 60 * 5,
-      refetchOnWindowFocus: false,
-  });
+    const { data: gestionesPasadas = [], isLoading: isLoadingGestiones } = useQuery<Gestion[], Error>({
+        queryKey: ['gestionesPasadas', ciVerificado],
+        queryFn: () => responsableService.obtenerGestionesPasadas(ciVerificado!),
+        enabled: !!ciVerificado && !!datosPersonaVerificada && !isReadOnly,
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+    });
 
-  const areasDisponiblesQuery = useQuery<Area[], Error>({
-      queryKey: ['areasActuales'],
-      queryFn: responsableService.obtenerAreasActuales,
-      staleTime: 1000 * 60 * 5,
-      refetchOnWindowFocus: false,
-      enabled: true,
-  });
+    const areasDisponiblesQuery = useQuery<Area[], Error>({
+        queryKey: ['areasActuales'],
+        queryFn: responsableService.obtenerAreasActuales,
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+        enabled: true,
+    });
 
-  // useEffect para resetear el formulario
-  useEffect(() => {
-        const resetValuesBase: ResponsableFormInput = {
-            ...defaultFormValues,
-            ci: ciVerificado ?? '',
-        };
+    useEffect(() => {
+            const resetValuesBase: ResponsableFormInput = {
+                ...defaultFormValues,
+                ci: ciVerificado ?? '',
+            };
 
-        if (isReadOnly && datosPersonaVerificada) {
-            resetPrincipalForm({
-                nombres: datosPersonaVerificada.Nombres || '',
-                apellidos: datosPersonaVerificada.Apellidos || '',
-                celular: datosPersonaVerificada.Teléfono || '',
-                correo: datosPersonaVerificada.Correo || '',
-                ci: ciVerificado ?? '', // Asegurar que el CI se mantenga
-                areas: initialAreas,
-            });
-            setGestionPasadaSeleccionadaId(null);
-            setGestionPasadaSeleccionadaAnio(null);
-        } else if (datosPersonaVerificada) {
-            resetPrincipalForm({
-                nombres: datosPersonaVerificada.Nombres || '',
-                apellidos: datosPersonaVerificada.Apellidos || '',
-                celular: datosPersonaVerificada.Teléfono || '',
-                correo: datosPersonaVerificada.Correo || '',
-                ci: ciVerificado ?? '', // Asegurar que el CI se mantenga
-                areas: [], // Empezar sin áreas seleccionadas
-            });
-            setGestionPasadaSeleccionadaId(null);
-            setGestionPasadaSeleccionadaAnio(null);
-        } else if (ciVerificado) {
-             resetPrincipalForm(resetValuesBase);
-            setGestionPasadaSeleccionadaId(null);
-            setGestionPasadaSeleccionadaAnio(null);
-            // Intentar enfocar el primer input editable (nombres)
-            setTimeout(() => primerInputRef.current?.focus(), 100);
-        } else {
-             // Reset completo si no hay CI verificado (ej. al cancelar)
-             resetPrincipalForm(defaultFormValues);
-            setGestionPasadaSeleccionadaId(null);
-            setGestionPasadaSeleccionadaAnio(null);
-        }
-  }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]);
-
-  // Mutación para crear el responsable
-  const { mutate: crearResponsable, isPending: isCreatingResponsable } = useMutation<
-    ResponsableCreado,
-    AxiosError<BackendValidationError>,
-    CrearResponsablePayload // Usar el tipo importado
-  >({
-    mutationFn: responsableService.crearResponsable,
-    onSuccess: (data) => {
-        onFormSubmitSuccess(data); // Llama al callback de éxito del padre
-    },
-    onError: (error) => {
-        let errorMessage = 'No se pudo registrar al responsable.';
-        const errorData = error.response?.data;
-
-        if (error.response?.status === 422 && errorData?.errors) {
-            let firstFieldWithError: keyof ResponsableFormData | null = null;
-            Object.entries(errorData.errors).forEach(([field, messages]) => {
-                // Asume que los nombres de campo coinciden, ajustar si es necesario
-                const fieldName = field as keyof ResponsableFormData;
-                if (messages.length > 0) {
-                    setError(fieldName, { type: 'backend', message: messages[0] });
-                    if (!firstFieldWithError) {
-                        firstFieldWithError = fieldName;
-                    }
-                }
-            });
-            if (firstFieldWithError) {
-                // Usa setFocus de RHF
-                setFocus(firstFieldWithError);
-                errorMessage = errorData.message || errorData.errors[firstFieldWithError]?.[0] || errorMessage;
+            if (isReadOnly && datosPersonaVerificada) {
+                resetPrincipalForm({
+                    nombres: datosPersonaVerificada.Nombres || '',
+                    apellidos: datosPersonaVerificada.Apellidos || '',
+                    celular: datosPersonaVerificada.Teléfono || '',
+                    correo: datosPersonaVerificada.Correo || '',
+                    ci: ciVerificado ?? '',
+                    areas: initialAreas,
+                });
+                setGestionPasadaSeleccionadaId(null);
+                setGestionPasadaSeleccionadaAnio(null);
+            } else if (datosPersonaVerificada) {
+                resetPrincipalForm({
+                    nombres: datosPersonaVerificada.Nombres || '',
+                    apellidos: datosPersonaVerificada.Apellidos || '',
+                    celular: datosPersonaVerificada.Teléfono || '',
+                    correo: datosPersonaVerificada.Correo || '',
+                    ci: ciVerificado ?? '',
+                    areas: [],
+                });
+                setGestionPasadaSeleccionadaId(null);
+                setGestionPasadaSeleccionadaAnio(null);
+            } else if (ciVerificado) {
+                resetPrincipalForm(resetValuesBase);
+                setGestionPasadaSeleccionadaId(null);
+                setGestionPasadaSeleccionadaAnio(null);
+                setTimeout(() => primerInputRef.current?.focus(), 100);
             } else {
-                 errorMessage = errorData.message || errorMessage;
+                resetPrincipalForm(defaultFormValues);
+                setGestionPasadaSeleccionadaId(null);
+                setGestionPasadaSeleccionadaAnio(null);
             }
-        } else if (errorData?.message) {
-            errorMessage = errorData.message;
-        } else if (error.request) {
-            errorMessage = 'No se recibió respuesta del servidor.';
-        } else if (error.message) {
-            errorMessage = error.message;
+    }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]);
+
+    const { mutate: crearResponsable, isPending: isCreatingResponsable } = useMutation<
+        ResponsableCreado,
+        AxiosError<BackendValidationError>,
+        CrearResponsablePayload
+    >({
+        mutationFn: responsableService.crearResponsable,
+        onSuccess: (data) => {
+            onFormSubmitSuccess(data);
+        },
+        onError: (error) => {
+            let errorMessage = 'No se pudo registrar al responsable.';
+            const errorData = error.response?.data;
+
+            if (error.response?.status === 422 && errorData?.errors) {
+                let firstFieldWithError: keyof ResponsableFormData | null = null;
+                Object.entries(errorData.errors).forEach(([field, messages]) => {
+                    const fieldName = field as keyof ResponsableFormData;
+                    if (messages.length > 0) {
+                        setError(fieldName, { type: 'backend', message: messages[0] });
+                        if (!firstFieldWithError) {
+                            firstFieldWithError = fieldName;
+                        }
+                    }
+                });
+                if (firstFieldWithError) {
+                    setFocus(firstFieldWithError);
+                    errorMessage = errorData.message || errorData.errors[firstFieldWithError]?.[0] || errorMessage;
+                } else {
+                    errorMessage = errorData.message || errorMessage;
+                }
+            } else if (errorData?.message) {
+                errorMessage = errorData.message;
+            } else if (error.request) {
+                errorMessage = 'No se recibió respuesta del servidor.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            onFormSubmitError(errorMessage);
+        },
+    });
+
+    // Callback para cambio de gestión pasada
+    const handleGestionSelect = useCallback((selectedValue: string | number | null) => {
+        const id = typeof selectedValue === 'number' ? selectedValue : (selectedValue === '' ? null : (selectedValue ? parseInt(String(selectedValue), 10) : null)); // Manejar '' como null
+        const anio = id ? gestionesPasadas.find(g => g.Id_olimpiada === id)?.gestion ?? null : null;
+        setGestionPasadaSeleccionadaId(id);
+        setGestionPasadaSeleccionadaAnio(anio);
+    }, [gestionesPasadas]);
+
+    const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback((formData) => {
+        if (isReadOnly) return;
+        const payload: CrearResponsablePayload = {
+            nombre: formData.nombres,
+            apellido: formData.apellidos,
+            ci: formData.ci,
+            email: formData.correo,
+            telefono: formData.celular,
+            areas: formData.areas,
+        };
+        crearResponsable(payload);
+    }, [crearResponsable, isReadOnly]);
+
+    const resetFormularioPrincipalHook = useCallback((resetToDefault = false) => {
+        setGestionPasadaSeleccionadaId(null);
+        setGestionPasadaSeleccionadaAnio(null);
+        if(resetToDefault) {
+            resetPrincipalForm(defaultFormValues);
         }
-        onFormSubmitError(errorMessage); // Llama al callback de error del padre
-    },
-  });
+    }, [resetPrincipalForm]);
 
-  // Callback para cambio de gestión pasada
-  const handleGestionSelect = useCallback((selectedValue: string | number | null) => {
-    const id = typeof selectedValue === 'number' ? selectedValue : (selectedValue === '' ? null : (selectedValue ? parseInt(String(selectedValue), 10) : null)); // Manejar '' como null
-    const anio = id ? gestionesPasadas.find(g => g.Id_olimpiada === id)?.gestion ?? null : null;
-    setGestionPasadaSeleccionadaId(id);
-    setGestionPasadaSeleccionadaAnio(anio);
-  }, [gestionesPasadas]);
-
-
-  // Callback para submit del formulario principal
-  const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback((formData) => {
-    if (isReadOnly) return;
-    // La generación de contraseña y ID de olimpiada ahora se maneja en el servicio
-    const payload: CrearResponsablePayload = {
-        nombre: formData.nombres,
-        apellido: formData.apellidos,
-        ci: formData.ci,
-        email: formData.correo,
-        telefono: formData.celular,
-        areas: formData.areas,
-        // password y id_olimpiada se añadirán en responsablesService.ts
+    return {
+        formMethodsPrincipal,
+        gestionesPasadas,
+        areasDisponiblesQuery,
+        isLoadingGestiones,
+        isCreatingResponsable,
+        onSubmitFormularioPrincipal: formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
+        handleGestionSelect,
+        gestionPasadaSeleccionadaId,
+        gestionPasadaSeleccionadaAnio,
+        primerInputRef,
+        resetFormularioPrincipal: resetFormularioPrincipalHook,
     };
-    crearResponsable(payload);
-  }, [crearResponsable, isReadOnly]);
-
-  // Callback para resetear este hook
-  const resetFormularioPrincipalHook = useCallback((resetToDefault = false) => {
-      setGestionPasadaSeleccionadaId(null);
-      setGestionPasadaSeleccionadaAnio(null);
-      if(resetToDefault) {
-          resetPrincipalForm(defaultFormValues);
-      }
-      // No reseteamos a resetValuesBase aquí, el useEffect se encarga
-  }, [resetPrincipalForm]);
-
-  return {
-    formMethodsPrincipal,
-    gestionesPasadas,
-    areasDisponiblesQuery,
-    isLoadingGestiones,
-    isCreatingResponsable,
-    onSubmitFormularioPrincipal: formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
-    handleGestionSelect, // Cambiado
-    gestionPasadaSeleccionadaId,
-    gestionPasadaSeleccionadaAnio,
-    primerInputRef,
-    resetFormularioPrincipal: resetFormularioPrincipalHook,
-  };
 }

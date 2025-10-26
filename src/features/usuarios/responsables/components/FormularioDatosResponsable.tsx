@@ -1,9 +1,7 @@
-// src/features/usuarios/responsables/components/FormularioDatosResponsable.tsx
-import { forwardRef, useMemo } from 'react'; // Import useMemo
+import { forwardRef, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
-// --- IMPORTAR CustomDropdown ---
-import { CustomDropdown } from '@/components/ui/CustomDropdown'; // Asegúrate que la ruta sea correcta
-import { Info, Mail, Smartphone, User, Hash } from 'lucide-react'; // Quitamos ChevronDown si ya no se usa aquí
+import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { Info, Mail, Smartphone, User, Hash } from 'lucide-react';
 import type { ResponsableFormData } from '../utils/validations';
 import type { DatosPersonaVerificada, Gestion } from '../types/index';
 
@@ -11,11 +9,10 @@ type FormularioDatosResponsableProps = {
   gestiones: Gestion[];
   personaVerificada: DatosPersonaVerificada | null;
   isLoading?: boolean;
-  isLoadingGestiones?: boolean; // Añadir prop para saber si las gestiones están cargando
+  isLoadingGestiones?: boolean;
   isReadOnly?: boolean;
-  // --- MODIFICADO: Ahora recibe onGestionSelect ---
   onGestionSelect: (value: string | number | null) => void;
-  gestionPasadaSeleccionadaId: number | null; // Renombrado para claridad
+  gestionPasadaSeleccionadaId: number | null;
 };
 
 export const FormularioDatosResponsable = forwardRef<HTMLInputElement, FormularioDatosResponsableProps>(
@@ -24,32 +21,28 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
       gestiones,
       personaVerificada,
       isLoading = false,
-      isLoadingGestiones = false, // Recibir prop
+      isLoadingGestiones = false,
       isReadOnly = false,
-      // --- MODIFICADO: Recibe onGestionSelect y el ID ---
       onGestionSelect,
       gestionPasadaSeleccionadaId,
     },
     forwardedRef
   ) => {
     const {
-      register, // register ya no se usa para el dropdown
+      register,
       formState: { errors, isSubmitting },
       watch,
     } = useFormContext<ResponsableFormData>();
 
     const ciValue = watch('ci');
 
-    // Lógica de deshabilitación: incluir isLoadingGestiones
     const disableAllPersonalAndCorreoFields = isLoading || isLoadingGestiones || isSubmitting || isReadOnly || !!personaVerificada?.Id_usuario;
     const disablePersonalFields = disableAllPersonalAndCorreoFields;
     const disableCorreoField = disableAllPersonalAndCorreoFields;
     const disableGestionPasadaBase = isLoading || isSubmitting || isReadOnly;
-    // La deshabilitación del dropdown ahora también depende de isLoadingGestiones
     const disableGestionPasada = disableGestionPasadaBase || isLoadingGestiones;
     const esUsuarioExistente = !!personaVerificada?.Id_usuario;
 
-    // Clases CSS (sin cambios)
     const inputBaseClass = `w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors`;
     const inputNormalClass = 'border-neutro-300 focus:border-principal-500 focus:ring-principal-300';
     const inputErrorClass = 'border-acento-500 focus:ring-acento-300';
@@ -57,13 +50,11 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
     const inputPrefilledClass = 'bg-principal-50 border-principal-200';
     const inputWithIconClass = 'pl-10';
 
-    // Lógica de ref (adaptada para el primer campo editable)
     const { ref: rhfRefNombres, ...nombresRegisterProps } = register('nombres');
     const { ref: rhfRefCorreo, ...correoRegisterProps } = register('correo');
 
     const nombresRef = (el: HTMLInputElement | null) => {
         rhfRefNombres(el);
-        // Asigna la ref externa al input de nombres SOLO si NO es usuario existente Y NO es readOnly
         if (!esUsuarioExistente && !isReadOnly) {
             if (typeof forwardedRef === 'function') {
                 forwardedRef(el);
@@ -75,7 +66,6 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
 
     const correoRef = (el: HTMLInputElement | null) => {
         rhfRefCorreo(el);
-         // Asigna la ref externa al input de correo SOLO si ES usuario existente Y NO es readOnly
         if (esUsuarioExistente && !isReadOnly) {
             if (typeof forwardedRef === 'function') {
                 forwardedRef(el);
@@ -85,35 +75,27 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
         }
     };
 
-
-    // --- NUEVO: Mapear gestiones a formato de opciones para CustomDropdown ---
     const gestionOptions = useMemo(() => {
-        // Añadir opción "-- Ninguna --" al principio si hay gestiones y no está cargando
         const options = gestiones.map(g => ({
-            value: g.Id_olimpiada, // El ID será el valor
-            label: `Gestión ${g.gestion}` // El texto a mostrar
+            value: g.Id_olimpiada,
+            label: `Gestión ${g.gestion}`
         }));
         if (!isLoadingGestiones && gestiones.length > 0) {
-            // Usar null como valor para "Ninguna" para que coincida con el estado inicial
             return [{ value: '', label: '-- Ninguna --'}, ...options];
         }
-        return options; // Si está cargando o no hay gestiones, solo devuelve las opciones
+        return options;
 
     }, [gestiones, isLoadingGestiones]);
 
-    // --- NUEVO: Determinar el placeholder del CustomDropdown ---
     const dropdownPlaceholder = useMemo(() => {
         if (isLoadingGestiones) return 'Cargando gestiones...';
-        // Si no está cargando y no hay gestiones, muestra este mensaje
         if (gestiones.length === 0 && esUsuarioExistente && !isReadOnly) return 'No participó en gestiones anteriores';
-        // Placeholder por defecto si hay opciones o no aplica
         return '-- Seleccione Gestión (Opcional) --';
     }, [isLoadingGestiones, gestiones, esUsuarioExistente, isReadOnly]);
 
 
     return (
       <div className="space-y-6">
-        {/* Fieldset Datos Personales */}
         <fieldset className="space-y-4 border border-neutro-200 p-4 rounded-lg">
           <legend className="text-lg font-semibold text-neutro-800 px-2">Datos Personales</legend>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -126,7 +108,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
               <div className="relative">
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
-                  ref={nombresRef} // <-- Ref condicional
+                  ref={nombresRef}
                   id="nombres" type="text" placeholder="Ej: Juan José"
                   disabled={disablePersonalFields}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
@@ -137,7 +119,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                   aria-describedby={errors.nombres ? 'nombres-error' : undefined}
                   {...nombresRegisterProps}
                 />
-                {esUsuarioExistente && !isReadOnly && ( // <-- Mostrar solo si NO es readOnly
+                {esUsuarioExistente && !isReadOnly && (
                   <span title="Campo pre-rellenado" className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Info size={16} className="text-principal-500" aria-hidden="true" />
                   </span>
@@ -164,7 +146,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                   aria-describedby={errors.apellidos ? 'apellidos-error' : undefined}
                   {...register('apellidos')}
                 />
-                {esUsuarioExistente && !isReadOnly && ( // <-- Mostrar solo si NO es readOnly
+                {esUsuarioExistente && !isReadOnly && (
                   <span title="Campo pre-rellenado" className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Info size={16} className="text-principal-500" aria-hidden="true" />
                   </span>
@@ -181,7 +163,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
-                  ref={correoRef} // <-- Ref condicional
+                  ref={correoRef}
                   id="correo" type="email" placeholder="Ej: juan.perez@example.com"
                   disabled={disableCorreoField}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
@@ -192,7 +174,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                   aria-describedby={errors.correo ? 'correo-error correo-hint' : 'correo-hint'}
                   {...correoRegisterProps}
                 />
-                {esUsuarioExistente && !isReadOnly && ( // <-- Mostrar solo si NO es readOnly
+                {esUsuarioExistente && !isReadOnly && (
                   <span title="Campo pre-rellenado" className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Info size={16} className="text-principal-500" aria-hidden="true" />
                   </span>
@@ -235,7 +217,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                   aria-describedby={errors.celular ? 'celular-error celular-hint' : 'celular-hint'}
                   {...register('celular')}
                 />
-                {esUsuarioExistente && !isReadOnly && ( // <-- Mostrar solo si NO es readOnly
+                {esUsuarioExistente && !isReadOnly && (
                     <span title="Campo pre-rellenado" className="absolute right-3 top-1/2 -translate-y-1/2">
                         <Info size={16} className="text-principal-500" aria-hidden="true" />
                     </span>

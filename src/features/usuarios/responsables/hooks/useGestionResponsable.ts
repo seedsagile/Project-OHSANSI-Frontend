@@ -1,4 +1,3 @@
-// src/features/usuarios/responsables/hooks/useGestionResponsable.ts
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -64,7 +63,7 @@ export function useGestionResponsable() {
           }
           navigate('/dashboard');
       }, 2000);
-  }, [queryClient, closeModalFeedback, navigate]); // handleCancelar removed from deps here
+  }, [queryClient, closeModalFeedback, navigate]);
 
   const handleFormSubmitError = useCallback((message: string) => {
       setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
@@ -75,7 +74,7 @@ export function useGestionResponsable() {
     formMethodsPrincipal,
     gestionesPasadas,
     areasDisponiblesQuery,
-    isLoadingGestiones, // <-- Keep extracting it
+    isLoadingGestiones,
     isCreatingResponsable,
     onSubmitFormularioPrincipal,
     handleGestionSelect,
@@ -116,10 +115,9 @@ export function useGestionResponsable() {
     closeModalFeedback();
   }, [resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
-  // Recalculate handleFormSubmitSuccess dependencies now that handleCancelar is defined
   useEffect(() => {
-      handleFormSubmitSuccess; // Reference it to satisfy linter if needed, but it uses the latest handleCancelar
-  }, [handleFormSubmitSuccess, handleCancelar]);
+      handleFormSubmitSuccess;
+    }, [handleFormSubmitSuccess, handleCancelar]);
 
 
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingGestiones || isLoadingAreas;
@@ -140,7 +138,7 @@ export function useGestionResponsable() {
     gestionPasadaSeleccionadaId,
     areasLoadedFromPast,
     isLoading,
-    isLoadingGestiones, // <-- RETURN IT HERE
+    isLoadingGestiones,
     isProcessing,
     formMethodsVerificacion,
     formMethodsPrincipal,

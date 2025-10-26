@@ -1,4 +1,3 @@
-// src/features/usuarios/responsables/routes/PaginaRegistrarResponsable.tsx
 import { FormProvider } from 'react-hook-form';
 import { LoaderCircle, X, Save, Check } from 'lucide-react';
 import { useGestionResponsable } from '../hooks/useGestionResponsable';
@@ -17,7 +16,7 @@ export function PaginaRegistrarResponsable() {
     gestionesPasadas,
     datosPersona,
     isLoading,
-    isLoadingGestiones, // <-- EXTRACT IT HERE
+    isLoadingGestiones,
     isProcessing,
     modalFeedback,
     handleVerificarCISubmit,
@@ -33,10 +32,8 @@ export function PaginaRegistrarResponsable() {
     areasLoadedFromPast,
   } = useGestionResponsable();
 
-  // Determinar si mostrar el spinner de carga inicial de la página
   const mostrarCargaPagina = isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
 
-  // Determinar estados del stepper visual
   const pasoVerificacionActivo = pasoActual.startsWith('VERIFICACION') || pasoActual === 'CARGANDO_VERIFICACION';
   const pasoFormularioActivo = pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO' || pasoActual === 'READ_ONLY';
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
@@ -83,18 +80,15 @@ export function PaginaRegistrarResponsable() {
           </div>
 
           <div className="transition-opacity duration-300 ease-in-out">
-            {/* Paso 1: Verificación */}
             {pasoActual === 'VERIFICACION_CI' && (
               <FormProvider {...formMethodsVerificacion}>
                 <VerificacionCI onSubmit={handleVerificarCISubmit} />
               </FormProvider>
             )}
 
-            {/* Paso 2: Formulario Principal */}
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
-                  {/* Alertas */}
                   {datosPersona?.Id_usuario && !isReadOnly && (
                       <Alert
                         type="info"
@@ -113,7 +107,7 @@ export function PaginaRegistrarResponsable() {
                     gestiones={gestionesPasadas}
                     personaVerificada={datosPersona}
                     isLoading={isLoading}
-                    isLoadingGestiones={isLoadingGestiones} // <-- PASS IT HERE
+                    isLoadingGestiones={isLoadingGestiones}
                     isReadOnly={isReadOnly}
                     onGestionSelect={handleGestionSelect}
                     gestionPasadaSeleccionadaId={gestionPasadaSeleccionadaId}
@@ -131,7 +125,6 @@ export function PaginaRegistrarResponsable() {
                     gestionPasadaId={gestionPasadaSeleccionadaId}
                   />
 
-                  {/* Footer con botones */}
                   <footer className="flex justify-end items-center gap-4 mt-12 border-t border-neutro-200 pt-6">
                     <button
                       type="button"

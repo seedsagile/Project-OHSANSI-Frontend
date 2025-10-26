@@ -11,10 +11,6 @@ export type DatosPersonaVerificada = {
     Id_rol: number;
     Nombre_rol: string;
   };
-  // TODO: Confirmar con Backend cómo se indicará si ya está en la gestión actual para Escenario 3
-  // Propiedades conceptuales para Escenario 3:
-  // estaEnGestionActual?: boolean;
-  // areasEnGestionActual?: number[]; // IDs de áreas si ya está en la gestión actual
 };
 
 export type Gestion = {

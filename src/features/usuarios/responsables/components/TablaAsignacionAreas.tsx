@@ -1,7 +1,6 @@
-// src/features/usuarios/responsables/components/TablaAsignacionAreas.tsx
-import React, { useMemo, useRef, useEffect } from 'react'; // Eliminado useState
+import React, { useMemo, useRef, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { History } from 'lucide-react'; // Eliminado Search
+import { History } from 'lucide-react';
 import type { Area } from '../types';
 import type { ResponsableFormData } from '../utils/validations';
 
@@ -30,8 +29,6 @@ export function TablaAsignacionAreas({
   const watchedAreas = useWatch({ control, name: 'areas', defaultValue: [] });
 
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
-  // --- ELIMINADO: Estado del filtro ---
-  // const [filtro, setFiltro] = useState('');
 
   const todasSeleccionadas = useMemo(() => {
     return (
@@ -65,9 +62,6 @@ export function TablaAsignacionAreas({
       onSeleccionarArea(areaId, _event.target.checked);
   };
 
-  // --- ELIMINADO: Lógica de areasFiltradas ---
-  // const areasFiltradas = useMemo(() => { ... });
-
   return (
     <fieldset className="space-y-4" disabled={isReadOnly}>
       <legend className="text-lg font-semibold text-neutro-800 border-b border-neutro-200 pb-2 w-full flex justify-between items-center">
@@ -77,28 +71,25 @@ export function TablaAsignacionAreas({
         </span>
       </legend>
 
-      {/* --- ELIMINADO: Input de Filtro --- */}
-      {/* <div className="relative"> ... </div> */}
-
       {areas && areas.length > 0 && !isReadOnly && (
-         <div className="flex items-center mb-2 pl-1">
-            <input
-              id="seleccionar-todas-areas"
-              type="checkbox"
-              className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-              checked={todasSeleccionadas && !algunasSeleccionadas}
-              ref={selectAllCheckboxRef}
-              onChange={handleToggleTodas}
-              disabled={isDisabled}
-              aria-label="Seleccionar o deseleccionar todas las áreas"
-            />
-            <label
-              htmlFor="seleccionar-todas-areas"
-              className={`ml-2 text-sm font-medium ${isDisabled ? 'text-neutro-400 cursor-not-allowed' : 'text-neutro-700 cursor-pointer'}`}
-            >
-              Seleccionar Todas
-            </label>
-         </div>
+        <div className="flex items-center mb-2 pl-1">
+          <input
+            id="seleccionar-todas-areas"
+            type="checkbox"
+            className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+            checked={todasSeleccionadas && !algunasSeleccionadas}
+            ref={selectAllCheckboxRef}
+            onChange={handleToggleTodas}
+            disabled={isDisabled}
+            aria-label="Seleccionar o deseleccionar todas las áreas"
+          />
+          <label
+            htmlFor="seleccionar-todas-areas"
+            className={`ml-2 text-sm font-medium ${isDisabled ? 'text-neutro-400 cursor-not-allowed' : 'text-neutro-700 cursor-pointer'}`}
+          >
+            Seleccionar Todas
+          </label>
+        </div>
       )}
 
       <div className={`mb-4 overflow-hidden rounded-lg shadow-md ${errorAreas && !isDisabled ? 'border border-acento-500' : ''}`}>
@@ -113,34 +104,31 @@ export function TablaAsignacionAreas({
             </thead>
             <tbody className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}>
               {isLoading ? (
-                 <tr>
-                    <td colSpan={3} className="text-center py-10 text-gray-400 italic">
-                        Cargando áreas...
-                    </td>
-                 </tr>
-              // --- MODIFICADO: Usar 'areas' directamente y comprobar si está vacío ---
-              ) : !(areas && areas.length > 0) ? (
-                 <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-neutro-500 italic">
-                       No hay áreas disponibles para asignar.
-                    </td>
-                 </tr>
+                <tr>
+                  <td colSpan={3} className="text-center py-10 text-gray-400 italic">
+                      Cargando áreas...
+                  </td>
+                </tr>
+            ) : !(areas && areas.length > 0) ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center text-neutro-500 italic">
+                      No hay áreas disponibles para asignar.
+                  </td>
+                </tr>
               ) : (
-                // --- MODIFICADO: Iterar sobre 'areas' directamente ---
-                areas.map((area: Area, index: number) => { // Usar 'index' del map ahora
+                areas.map((area: Area, index: number) => {
                   const isSelected = Array.isArray(watchedAreas) && watchedAreas.includes(area.id_area);
                   const rowDisabled = isDisabled;
                   const loadedFromPast = !!gestionPasadaId && areasFromPastGestion.has(area.id_area) && isSelected;
-                  // Usamos el 'index' del map para el fondo alterno
                   const originalIndex = index;
 
                   return (
                     <tr
                       key={area.id_area}
                       className={`${originalIndex % 2 === 0 ? 'bg-gray-50' : 'bg-neutro-100'} ${
-                           isSelected ? (loadedFromPast ? 'bg-blue-100' : 'bg-principal-100') : ''
+                          isSelected ? (loadedFromPast ? 'bg-blue-100' : 'bg-principal-100') : ''
                       } ${
-                           rowDisabled ? '' : 'hover:bg-principal-50 transition-colors'
+                          rowDisabled ? '' : 'hover:bg-principal-50 transition-colors'
                       } h-16`}
                     >
                       <td className="py-3 px-4 text-center font-medium text-neutro-900">{originalIndex + 1}</td>

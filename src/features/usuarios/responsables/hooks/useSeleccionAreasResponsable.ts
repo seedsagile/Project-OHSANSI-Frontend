@@ -1,4 +1,3 @@
-// src/features/usuarios/responsables/hooks/useSeleccionAreasResponsable.ts
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
@@ -43,7 +42,6 @@ export function useSeleccionAreasResponsable({
   const prevAreasPasadasIdsRef = useRef<number[] | undefined>(undefined);
   const prevAreasDisponiblesRef = useRef<Area[] | undefined>(undefined);
 
-  // --- useEffect para sincronizar con la selección de GESTIÓN PASADA ---
   useEffect(() => {
     const areasPasadasChanged = !isEqual(prevAreasPasadasIdsRef.current, areasPasadasIds);
     const areasDisponiblesChanged = !isEqual(prevAreasDisponiblesRef.current, areasDisponibles);
@@ -57,23 +55,15 @@ export function useSeleccionAreasResponsable({
       const newAreasLoadedFromPast = new Set(idsComunes);
 
       if (areasPasadasChanged || areasDisponiblesChanged || !isEqual(areasLoadedFromPast, newAreasLoadedFromPast)) {
-          console.log("[DEBUG useEffect Gestión Pasada] Datos cambiaron o áreas cargadas son diferentes. Actualizando estado local.");
           setAreasLoadedFromPast(newAreasLoadedFromPast);
-
           const currentFormAreas = getValues('areas') || [];
           if (!isEqual(new Set(currentFormAreas), newAreasLoadedFromPast)) {
-              console.log("[DEBUG useEffect Gestión Pasada] Actualizando áreas en RHF:", idsComunes);
               setValue('areas', idsComunes, { shouldValidate: true, shouldDirty: true });
-          } else {
-              console.log("[DEBUG useEffect Gestión Pasada] Áreas en RHF ya coinciden, no se llama a setValue.");
           }
-      } else {
-          console.log("[DEBUG useEffect Gestión Pasada] Datos de query no cambiaron significativamente y áreas cargadas son iguales, omitiendo actualización.");
       }
 
     } else if (!gestionPasadaSeleccionadaAnio && !isReadOnly) {
       if (areasLoadedFromPast.size > 0) {
-        console.log("[DEBUG useEffect Gestión Pasada] Limpiando áreas de gestión pasada del estado local.");
         setAreasLoadedFromPast(new Set());
       }
     }
@@ -89,36 +79,27 @@ export function useSeleccionAreasResponsable({
     areasLoadedFromPast
   ]);
 
-
-  // --- useEffect para sincronizar con el modo READ-ONLY ---
   useEffect(() => {
     if (isReadOnly && initialAreas.length > 0) {
         const currentFormAreas = getValues('areas') || [];
         if(!isEqual(new Set(currentFormAreas), new Set(initialAreas))) {
-            console.log("[DEBUG useEffect ReadOnly] Estableciendo áreas iniciales en RHF:", initialAreas);
             setValue('areas', initialAreas, { shouldValidate: true });
         }
     }
   }, [isReadOnly, initialAreas, setValue, getValues]);
 
-
-  // --- Callback para seleccionar/deseleccionar UN área ---
   const handleSeleccionarArea = useCallback((areaId: number, seleccionado: boolean) => {
     if (isReadOnly) return;
     const currentAreas = watchedAreas || [];
     const nuevasAreas = seleccionado
         ? [...currentAreas, areaId]
         : currentAreas.filter(id => id !== areaId);
-    console.log(`[DEBUG handleSeleccionarArea] Area ID: ${areaId}, Seleccionado: ${seleccionado}, Nuevas Áreas:`, nuevasAreas);
     setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
   }, [isReadOnly, setValue, watchedAreas]);
 
-
-  // --- Callback para seleccionar/deseleccionar TODAS las áreas ---
   const handleToggleSeleccionarTodas = useCallback((seleccionar: boolean) => {
     if (isReadOnly || isLoadingAreasActuales) return;
     const todosLosIds = seleccionar ? areasDisponibles.map(area => area.id_area) : [];
-    console.log(`[DEBUG handleToggleSeleccionarTodas] Seleccionar Todas: ${seleccionar}, IDs:`, todosLosIds);
     setValue('areas', todosLosIds, { shouldValidate: true, shouldDirty: true });
   }, [areasDisponibles, isReadOnly, isLoadingAreasActuales, setValue]);
 
