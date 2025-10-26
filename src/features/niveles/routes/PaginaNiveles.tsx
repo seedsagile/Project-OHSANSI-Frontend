@@ -45,7 +45,7 @@ export function PaginaNiveles() {
       <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-6 md:p-8">
         <header className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-            Registrar Niveles de Olimpiada
+            Registrar Nivel
           </h1>
         </header>
 

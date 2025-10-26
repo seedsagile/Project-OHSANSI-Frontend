@@ -80,7 +80,7 @@ export function useGestionNiveles() {
       setFeedbackModal({
         isOpen: true,
         title: 'Nombre Duplicado',
-        message: 'Ya existe un nivel con un nombre similar.',
+        message: `El nombre del Nivel "${data.nombre}" ya se encuentra registrado`,
         type: 'error',
       });
       return;
