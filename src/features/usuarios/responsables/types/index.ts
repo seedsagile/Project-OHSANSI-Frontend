@@ -1,84 +1,54 @@
-// src/features/usuarios/responsables/types/index.ts
+import type { Area as AreaGeneral } from '@/features/areas/types';
 
-// Importamos el tipo Area ya existente si es el mismo que usamos en otras partes
-import type { Area } from '@/features/areas/types'; // Asegúrate que la ruta sea correcta
-
-/**
- * Describe los datos de una persona obtenidos tras verificar su CI en la API.
- * Ajusta los campos según lo que realmente devuelva tu endpoint de verificación.
- */
 export type DatosPersonaVerificada = {
-  id_persona?: number; // Puede ser undefined si la persona es nueva
-  nombres: string;
-  apellidos: string;
-  email: string; // Puede ser correo personal, el formulario pide institucional
-  celular: string; // O telefono
-  // Podría incluir más datos si la API los devuelve (ej: fecha_nac, genero)
+  Id_usuario: number;
+  Nombres: string;
+  Apellidos: string;
+  Correo: string;
+  Ci: string;
+  Teléfono: string;
+  Rol?: {
+    Id_rol: number;
+    Nombre_rol: string;
+  };
 };
 
-/**
- * Describe la estructura de una Gestión (para el dropdown opcional).
- * Ajusta según cómo obtengas estos datos de tu API.
- */
 export type Gestion = {
-  id_gestion: number; // O string si usas IDs diferentes
-  nombre: string; // Ejemplo: "Gestión 2024", "Olimpiada Verano 2023"
+  Id_olimpiada: number;
+  gestion: string;
 };
 
-/**
- * Define la estructura del payload que se enviará a la API
- * para crear (registrar) un nuevo responsable de área.
- * Asegúrate de que coincida con lo que espera tu backend.
- */
+export type AreaPasadaResponse = {
+  id_responsable_area: number;
+  Area: {
+    Id_area: number;
+    Nombre: string;
+  };
+};
+
 export type CrearResponsablePayload = {
-  persona: {
-    nombre: string;
-    apellido: string;
-    ci: string;
-    email: string; // Correo institucional del formulario
-    telefono: string; // Celular del formulario
-    fecha_nac?: string; // Opcional o requerido por API?
-    genero?: 'M' | 'F' | null; // Opcional o requerido por API?
-  };
-  gestionPasadaId?: number; // Opcional
-  areas: number[]; // Array de IDs de las áreas seleccionadas
+  nombre: string;
+  apellido: string;
+  ci: string;
+  email: string;
+  password?: string;
+  telefono: string;
+  id_olimpiada?: number;
+  areas: number[];
 };
 
-/**
- * Describe la respuesta esperada de la API al crear exitosamente un responsable.
- * Ajusta según la estructura real de tu respuesta.
- */
 export type ResponsableCreado = {
-  id_responsable: number;
-  persona: {
-    id_persona: number;
-    nombre: string;
-    apellido: string;
-    email: string;
-  };
-  usuario: {
-    id_usuario: number;
-    email: string;
-    rol: string;
-  };
-  areas_asignadas: Array<{ id_area: number; nombre: string }>;
-  message: string; // <-- **CORRECCIÓN: Añadido 'message'**
+  message: string;
+  [key: string]: any;
 };
 
-/**
- * Representa los diferentes pasos o estados visuales del proceso de registro.
- */
-// --- **NUEVO: Añadido tipo faltante** ---
 export type PasoRegistroResponsable =
   | 'VERIFICACION_CI'
   | 'CARGANDO_VERIFICACION'
   | 'FORMULARIO_DATOS'
-  | 'CARGANDO_GUARDADO';
+  | 'CARGANDO_GUARDADO'
+  | 'READ_ONLY';
 
-/**
- * Tipo para el estado del modal de feedback (éxito o error).
- */
-// --- **NUEVO: Añadido tipo faltante** ---
 export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
@@ -86,5 +56,4 @@ export type ModalFeedbackState = {
   type: 'success' | 'error' | 'info';
 };
 
-// Exportamos el tipo Area también desde aquí para conveniencia
-export type { Area };
+export type { AreaGeneral as Area };

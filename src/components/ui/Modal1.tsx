@@ -1,5 +1,4 @@
-// src/components/ui/Modal.tsx
-import React, { type ReactNode, useEffect } from 'react'; // Import React
+import { type ReactNode, useEffect } from 'react'; // Import React
 import { AlertTriangle, CheckCircle, Info, XCircle, X, Check, LoaderCircle } from 'lucide-react';
 
 export type ModalType = 'success' | 'error' | 'warning' | 'info' | 'confirmation';
@@ -39,8 +38,8 @@ const typeConfig = {
   },
   confirmation: {
     icon: AlertTriangle,
-    className: 'text-advertencia-500', // Mantenido amarillo para confirmación
-    buttonClass: 'bg-principal-500 hover:bg-principal-600', // Botón principal azul
+    className: 'text-advertencia-500',
+    buttonClass: 'bg-principal-500 hover:bg-principal-600',
   },
 };
 
@@ -66,35 +65,30 @@ export function Modal1({
       window.addEventListener('keydown', handleKeyDown);
     }
 
-    // Limpiar listener al desmontar o cerrar
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
-  // No renderizar nada si no está abierto
   if (!isOpen) {
     return null;
   }
 
   const { icon: IconComponent, className, buttonClass } = typeConfig[type];
   const needsActionButtons = type === 'confirmation';
-  // NUEVO: Determinar si se necesita el botón "Entendido"
-  const needsUnderstoodButton = !needsActionButtons && type !== 'success'; // No mostrar en éxito o confirmación
+  const needsUnderstoodButton = !needsActionButtons && type !== 'success';
 
   return (
     <div
-      // NUEVO: Añadida clase animate-fadeIn para el fondo
       className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
-      onClick={onClose} // Cerrar al hacer clic en el fondo
+      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      {/* NUEVO: Añadida clase animate-scaleIn para el contenido */}
       <div
-        className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-6 sm:p-8 text-center animate-scaleIn" // Ajustado padding
-        onClick={(e) => e.stopPropagation()} // Evitar que el clic dentro cierre el modal
+        className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-6 sm:p-8 text-center animate-scaleIn"
+        onClick={(e) => e.stopPropagation()}
       >
         <IconComponent className={`h-16 w-16 mx-auto ${className}`} aria-hidden="true" />
 
@@ -102,10 +96,8 @@ export function Modal1({
           {title}
         </h2>
 
-        {/* Asegurar que children tenga estilo adecuado */}
         <div className="text-neutro-600 mt-2 text-sm sm:text-base leading-relaxed">{children}</div>
 
-        {/* Botones de Acción (Confirmación) */}
         {needsActionButtons && (
           <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <button
@@ -131,38 +123,35 @@ export function Modal1({
           </div>
         )}
 
-        {/* Botón "Entendido" (Info, Error, Warning) */}
         {needsUnderstoodButton && (
-           <div className="mt-6 sm:mt-8 flex justify-center">
-             <button
-              onClick={onClose}
-              // Usar buttonClass correspondiente al tipo (ej. rojo para error)
-              className={`font-semibold py-2.5 px-8 rounded-lg text-blanco transition-colors ${buttonClass}`}
-             >
-               Entendido
-             </button>
-           </div>
+          <div className="mt-6 sm:mt-8 flex justify-center">
+            <button
+            onClick={onClose}
+            className={`font-semibold py-2.5 px-8 rounded-lg text-blanco transition-colors ${buttonClass}`}
+            >
+              Entendido
+            </button>
+          </div>
         )}
-        {/* El tipo 'success' no muestra botones por defecto (se cierra solo o el padre decide) */}
 
       </div>
-       {/* NUEVO: Estilos para las animaciones (si no están ya globales en index.css) */}
-       <style>{`
-          @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-          }
-          @keyframes scaleIn {
-              from { transform: scale(0.9); opacity: 0; }
-              to { transform: scale(1); opacity: 1; }
-          }
-          .animate-fadeIn {
-              animation: fadeIn 0.2s ease-out forwards;
-          }
-          .animate-scaleIn {
-              animation: scaleIn 0.3s ease-out forwards;
-          }
-        `}</style>
+      <style>{`
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        .animate-scaleIn {
+            animation: scaleIn 0.3s ease-out forwards;
+        }
+      `}
+      </style>
     </div>
   );
 }

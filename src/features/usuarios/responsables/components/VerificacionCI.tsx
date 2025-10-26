@@ -1,7 +1,6 @@
-// src/features/usuarios/responsables/components/VerificacionCI.tsx
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Search, LoaderCircle } from 'lucide-react'; // Importar LoaderCircle
+import { Search, LoaderCircle } from 'lucide-react';
 import type { VerificacionCIForm } from '../utils/validations';
 
 type VerificacionCIProps = {
@@ -24,15 +23,14 @@ export function VerificacionCI({ onSubmit }: VerificacionCIProps) {
           <input
             id="ci-verificacion"
             type="text"
-            placeholder="Ej: 7912324, 7912324A, 7912324-1B"
+            placeholder="Ej: 7912324, 7912324A"
             autoFocus
-            // Deshabilitar input mientras se verifica
             disabled={isSubmitting}
             className={`flex-grow w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
               errors.ci
                 ? 'border-acento-500 focus:ring-acento-300'
                 : 'border-neutro-300 focus:border-principal-500 focus:ring-principal-300'
-            } ${isSubmitting ? 'bg-neutro-100 cursor-not-allowed' : ''}`} // Estilo disabled
+            } ${isSubmitting ? 'bg-neutro-100 cursor-not-allowed' : ''}`}
             {...register('ci')}
             aria-invalid={errors.ci ? "true" : "false"}
             aria-describedby={errors.ci ? 'ci-verificacion-error' : undefined}
@@ -42,17 +40,14 @@ export function VerificacionCI({ onSubmit }: VerificacionCIProps) {
             type="submit"
             disabled={isSubmitting}
             aria-label="Verificar Carnet de Identidad"
-            // Añadir min-w para evitar cambio de tamaño
             className="w-full sm:w-auto flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
           >
-            {/* --- NUEVO: Renderizado Condicional Icono/Spinner --- */}
             {isSubmitting ? (
               <LoaderCircle size={18} className="animate-spin" />
             ) : (
               <Search size={18} />
             )}
             <span>{isSubmitting ? 'Verificando...' : 'Verificar'}</span>
-            {/* --- Fin Condicional --- */}
           </button>
         </div>
         {errors.ci && (
