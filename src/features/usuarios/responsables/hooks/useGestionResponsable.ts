@@ -1,3 +1,4 @@
+// src/features/usuarios/responsables/hooks/useGestionResponsable.ts
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,7 +15,7 @@ export function useGestionResponsable() {
   const [pasoActual, setPasoActual] = useState<PasoRegistroResponsable>('VERIFICACION_CI');
   const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>(initialModalState);
   const [datosPersona, setDatosPersona] = useState<DatosPersonaVerificada | null>(null);
-  const [isReadOnlyMode, setIsReadOnlyMode] = useState(false);
+  const [isAssignedToCurrentGestion, setIsAssignedToCurrentGestion] = useState(false);
   const [initialAreasReadOnly, setInitialAreasReadOnly] = useState<number[]>([]);
 
   const modalTimerRef = useRef<number | undefined>(undefined);
@@ -27,37 +28,57 @@ export function useGestionResponsable() {
         clearTimeout(modalTimerRef.current);
     }, []);
 
-  // --- Hook de Verificación ---
+  const handleVerificationComplete = useCallback((
+      data: DatosPersonaVerificada | null,
+      ci: string,
+      isAlreadyAssigned: boolean,
+      initialAreas: number[]
+  ) => {
+      console.log("[useGestionResponsable] Verification Complete Callback:", { data, ci, isAlreadyAssigned, initialAreas });
+      setDatosPersona(data);
+      setIsAssignedToCurrentGestion(isAlreadyAssigned);
+      setInitialAreasReadOnly(initialAreas);
+      setPasoActual(isAlreadyAssigned ? 'READ_ONLY' : 'FORMULARIO_DATOS');
+  }, []);
+
+  const handleVerificationError = useCallback((message: string) => {
+      setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message });
+      setPasoActual('VERIFICACION_CI');
+  }, []);
+
   const {
-    //pasoActualVerificacion,
     isVerifying,
     formMethodsVerificacion,
     handleVerificarCISubmit,
     resetVerification,
     ciVerificado,
-  } = useVerificacionResponsable(
-      (data, ci, initialReadOnlyState, initialAreas) => {
-          console.log("Verification Complete:", { data, ci, initialReadOnlyState, initialAreas });
-          setDatosPersona(data);
-          setIsReadOnlyMode(initialReadOnlyState);
-          setInitialAreasReadOnly(initialAreas);
-          setPasoActual(initialReadOnlyState ? 'READ_ONLY' : 'FORMULARIO_DATOS');
-      },
-      (message) => {
-          setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message });
-          setPasoActual('VERIFICACION_CI');
-      }
-  );
+  } = useVerificacionResponsable(handleVerificationComplete, handleVerificationError);
 
-  // --- Hook del Formulario Principal ---
+  const handleFormSubmitSuccess = useCallback((data: ResponsableCreado) => {
+      setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message: data.message || `Responsable registrado.` });
+      queryClient.invalidateQueries({ queryKey: ['responsables'] });
+      modalTimerRef.current = window.setTimeout(() => {
+          closeModalFeedback();
+          if (handleCancelar) {
+              handleCancelar();
+          }
+          navigate('/dashboard');
+      }, 2000);
+  }, [queryClient, closeModalFeedback, navigate]); // handleCancelar removed from deps here
+
+  const handleFormSubmitError = useCallback((message: string) => {
+      setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
+      setPasoActual(isAssignedToCurrentGestion ? 'READ_ONLY' : 'FORMULARIO_DATOS');
+  }, [isAssignedToCurrentGestion]);
+
   const {
     formMethodsPrincipal,
     gestionesPasadas,
     areasDisponiblesQuery,
-    isLoadingGestiones,
+    isLoadingGestiones, // <-- Keep extracting it
     isCreatingResponsable,
     onSubmitFormularioPrincipal,
-    handleGestionPasadaChange,
+    handleGestionSelect,
     gestionPasadaSeleccionadaId,
     gestionPasadaSeleccionadaAnio,
     primerInputRef,
@@ -65,69 +86,61 @@ export function useGestionResponsable() {
   } = useFormularioPrincipalResponsable({
       ciVerificado,
       datosPersonaVerificada: datosPersona,
-      isReadOnly: isReadOnlyMode,
+      isReadOnly: isAssignedToCurrentGestion,
       initialAreas: initialAreasReadOnly,
-      onFormSubmitSuccess: (data: ResponsableCreado) => {
-          setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message: data.message || `Responsable registrado.` });
-          queryClient.invalidateQueries({ queryKey: ['responsables'] });
-          modalTimerRef.current = window.setTimeout(() => {
-              closeModalFeedback();
-              handleCancelar();
-              navigate('/dashboard');
-          }, 2000);
-      },
-      onFormSubmitError: (message: string) => {
-          setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
-          setPasoActual(isReadOnlyMode ? 'READ_ONLY' : 'FORMULARIO_DATOS');
-      },
+      onFormSubmitSuccess: handleFormSubmitSuccess,
+      onFormSubmitError: handleFormSubmitError,
   });
 
-  // --- Hook de Selección de Áreas ---
   const {
-    areasSeleccionadas,
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
     isLoadingAreas,
+    areasLoadedFromPast,
   } = useSeleccionAreasResponsable({
       formMethods: formMethodsPrincipal,
       ciVerificado,
       gestionPasadaSeleccionadaAnio,
       initialAreas: initialAreasReadOnly,
-      isReadOnly: isReadOnlyMode,
+      isReadOnly: isAssignedToCurrentGestion,
       areasDisponiblesQuery,
   });
 
-  // --- Handler Cancelar General ---
   const handleCancelar = useCallback(() => {
     resetVerification();
     resetFormularioPrincipal(true);
     setDatosPersona(null);
-    setIsReadOnlyMode(false);
+    setIsAssignedToCurrentGestion(false);
     setInitialAreasReadOnly([]);
     setPasoActual('VERIFICACION_CI');
     closeModalFeedback();
   }, [resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
-  // --- Estados Consolidados ---
+  // Recalculate handleFormSubmitSuccess dependencies now that handleCancelar is defined
+  useEffect(() => {
+      handleFormSubmitSuccess; // Reference it to satisfy linter if needed, but it uses the latest handleCancelar
+  }, [handleFormSubmitSuccess, handleCancelar]);
+
+
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingGestiones || isLoadingAreas;
   const isProcessing = isVerifying || isCreatingResponsable;
   const pasoActualUI = isVerifying ? 'CARGANDO_VERIFICACION'
         : isCreatingResponsable ? 'CARGANDO_GUARDADO'
-        : isReadOnlyMode ? 'READ_ONLY'
+        : isAssignedToCurrentGestion ? 'READ_ONLY'
         : pasoActual;
 
 
-  // --- Objeto de Retorno ---
   return {
     pasoActual: pasoActualUI,
     datosPersona,
     areasDisponibles: areasDisponiblesQuery.data || [],
     gestionesPasadas,
-    areasSeleccionadas,
     modalFeedback,
-    isReadOnly: isReadOnlyMode,
+    isReadOnly: isAssignedToCurrentGestion,
     gestionPasadaSeleccionadaId,
+    areasLoadedFromPast,
     isLoading,
+    isLoadingGestiones, // <-- RETURN IT HERE
     isProcessing,
     formMethodsVerificacion,
     formMethodsPrincipal,
@@ -135,7 +148,7 @@ export function useGestionResponsable() {
     handleVerificarCISubmit,
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
-    handleGestionPasadaChange,
+    handleGestionSelect,
     onSubmitFormularioPrincipal,
     handleCancelar,
     closeModalFeedback,

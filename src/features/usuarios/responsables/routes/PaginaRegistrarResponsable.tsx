@@ -1,3 +1,4 @@
+// src/features/usuarios/responsables/routes/PaginaRegistrarResponsable.tsx
 import { FormProvider } from 'react-hook-form';
 import { LoaderCircle, X, Save, Check } from 'lucide-react';
 import { useGestionResponsable } from '../hooks/useGestionResponsable';
@@ -16,6 +17,7 @@ export function PaginaRegistrarResponsable() {
     gestionesPasadas,
     datosPersona,
     isLoading,
+    isLoadingGestiones, // <-- EXTRACT IT HERE
     isProcessing,
     modalFeedback,
     handleVerificarCISubmit,
@@ -24,21 +26,20 @@ export function PaginaRegistrarResponsable() {
     handleCancelar,
     closeModalFeedback,
     primerInputRef,
-    handleGestionPasadaChange,
+    handleGestionSelect,
     gestionPasadaSeleccionadaId,
     isReadOnly,
     handleToggleSeleccionarTodas,
+    areasLoadedFromPast,
   } = useGestionResponsable();
 
+  // Determinar si mostrar el spinner de carga inicial de la página
   const mostrarCargaPagina = isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
+
+  // Determinar estados del stepper visual
   const pasoVerificacionActivo = pasoActual.startsWith('VERIFICACION') || pasoActual === 'CARGANDO_VERIFICACION';
   const pasoFormularioActivo = pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO' || pasoActual === 'READ_ONLY';
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
-
-  /*const pasoActualUI = isVerifying ? 'CARGANDO_VERIFICACION'
-        : isProcessing ? 'CARGANDO_GUARDADO'
-        : isReadOnly ? 'READ_ONLY'
-        : pasoActual;*/
 
 
   return (
@@ -94,7 +95,7 @@ export function PaginaRegistrarResponsable() {
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
                   {/* Alertas */}
-                  {datosPersona?.Id_usuario && pasoActual !== 'READ_ONLY' && (
+                  {datosPersona?.Id_usuario && !isReadOnly && (
                       <Alert
                         type="info"
                         message={`Se encontraron datos existentes para el CI ingresado. Por favor, revise y complete la información.`}
@@ -112,9 +113,10 @@ export function PaginaRegistrarResponsable() {
                     gestiones={gestionesPasadas}
                     personaVerificada={datosPersona}
                     isLoading={isLoading}
+                    isLoadingGestiones={isLoadingGestiones} // <-- PASS IT HERE
                     isReadOnly={isReadOnly}
-                    onGestionPasadaChange={handleGestionPasadaChange}
-                    gestionPasadaSeleccionada={gestionPasadaSeleccionadaId}
+                    onGestionSelect={handleGestionSelect}
+                    gestionPasadaSeleccionadaId={gestionPasadaSeleccionadaId}
                   />
 
                   <hr className="my-8 border-t border-neutro-200" />
@@ -125,6 +127,8 @@ export function PaginaRegistrarResponsable() {
                     onToggleSeleccionarTodas={handleToggleSeleccionarTodas}
                     isLoading={isLoading}
                     isReadOnly={isReadOnly}
+                    areasFromPastGestion={areasLoadedFromPast}
+                    gestionPasadaId={gestionPasadaSeleccionadaId}
                   />
 
                   {/* Footer con botones */}
@@ -139,7 +143,6 @@ export function PaginaRegistrarResponsable() {
                       <span>{isReadOnly ? 'Volver' : 'Cancelar'}</span>
                     </button>
 
-                    {/* Botón Guardar solo visible si NO es read-only */}
                     {!isReadOnly && (
                       <button
                         type="submit"

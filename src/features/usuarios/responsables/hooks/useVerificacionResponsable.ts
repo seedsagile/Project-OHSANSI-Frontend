@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+// responsables/hooks/useVerificacionResponsable.ts
+import { useState, useCallback } from 'react'; // <-- Quita useState si ya no se usa para nada más
 import { useMutation} from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as responsableService from '../services/responsablesService';
 import { GESTION_ACTUAL_ANIO } from '../utils/constants';
-import type { DatosPersonaVerificada, PasoRegistroResponsable } from '../types';
+// --- Quita PasoRegistroResponsable si ya no se usa ---
+import type { DatosPersonaVerificada /*, PasoRegistroResponsable */ } from '../types';
 import type { VerificacionCIForm } from '../utils/validations';
 import { verificacionCISchema } from '../utils/validations';
 
@@ -12,12 +14,13 @@ export function useVerificacionResponsable(
     onVerificationComplete: (
         data: DatosPersonaVerificada | null,
         ci: string,
-        initialReadOnlyState: boolean,
+        isAssignedToCurrentGestion: boolean, // <-- Nombre actualizado para claridad
         initialAreas: number[]
     ) => void,
     onError: (message: string) => void
 ) {
-  const [pasoActual, setPasoActual] = useState<PasoRegistroResponsable>('VERIFICACION_CI');
+  // --- ELIMINADO ---
+  // const [pasoActual, setPasoActual] = useState<PasoRegistroResponsable>('VERIFICACION_CI');
   const [ciVerificado, setCiVerificado] = useState<string>('');
   const [verificandoAsignacionActual, setVerificandoAsignacionActual] = useState(false);
 
@@ -25,16 +28,6 @@ export function useVerificacionResponsable(
     resolver: zodResolver(verificacionCISchema),
     mode: 'onSubmit',
   });
-
-  // Mantener el hook query para fines de invalidación o si se requiere refetch manual más tarde
-  // Sin embargo, lo marcamos como deshabilitado y lo ignoraremos en onSuccess.
-  /*const { refetch: refetchAsignacionActual } = useQuery<number[], Error>({
-    queryKey: ['areasAsignadasActuales', ciVerificado, GESTION_ACTUAL_ANIO],
-    queryFn: () => responsableService.obtenerAreasPasadas(GESTION_ACTUAL_ANIO, ciVerificado),
-    enabled: false, // Deshabilitar el fetch automático
-    staleTime: 0,
-    gcTime: 0, 
-  });*/
 
   const { mutate: verificarCI, isPending: isVerifyingCI } = useMutation<
     DatosPersonaVerificada | null,
@@ -44,26 +37,20 @@ export function useVerificacionResponsable(
     mutationFn: responsableService.verificarCI,
     onSuccess: async (data, ciInput) => {
       setCiVerificado(ciInput);
-      let isReadOnly = false;
+      let isAssigned = false; // <-- Nombre actualizado
       let initialAreas: number[] = [];
 
       if (data) {
         setVerificandoAsignacionActual(true);
-        setPasoActual('CARGANDO_VERIFICACION');
+        // --- ELIMINADO ---
+        // setPasoActual('CARGANDO_VERIFICACION');
         try {
           const areasActualesIdsData = await responsableService.obtenerAreasPasadas(GESTION_ACTUAL_ANIO, ciInput);
-          
-          console.log(`[useVerificacionResponsable] DEBUG ASIGNACION: Data Received (Direct Service Call)=`, areasActualesIdsData);
-          
           const areasActualesIds = Array.isArray(areasActualesIdsData) ? areasActualesIdsData : [];
           if (areasActualesIds.length > 0) {
-              isReadOnly = true;
+              isAssigned = true; // <-- Nombre actualizado
               initialAreas = areasActualesIds;
-              console.log("[useVerificacionResponsable] DEBUG: SCENARIO 3 ACTIVATED - Areas found:", initialAreas);
-          } else {
-              console.log("[useVerificacionResponsable] DEBUG: SCENARIO 2 ACTIVATED (No current assignments)");
           }
-
         } catch (errorCaught) {
           console.error("Error al verificar asignación actual:", errorCaught);
           onError('Advertencia: No se pudo verificar si el responsable ya está asignado.');
@@ -72,32 +59,36 @@ export function useVerificacionResponsable(
         }
       }
 
-      const nextStep: PasoRegistroResponsable = isReadOnly ? 'READ_ONLY' : 'FORMULARIO_DATOS';
-      console.log(`[useVerificacionResponsable] FINAL DECISION: isReadOnly=${isReadOnly}. Next Step: ${nextStep}`);
-      setPasoActual(nextStep);
-      onVerificationComplete(data, ciInput, isReadOnly, initialAreas); 
+      // --- ELIMINADO ---
+      // const nextStep: PasoRegistroResponsable = isAssigned ? 'READ_ONLY' : 'FORMULARIO_DATOS';
+      // setPasoActual(nextStep);
+
+      // Llama al callback con el resultado
+      onVerificationComplete(data, ciInput, isAssigned, initialAreas); // <-- Nombre actualizado
     },
     onError: (error) => {
       setCiVerificado('');
-      setPasoActual('VERIFICACION_CI');
+      // --- ELIMINADO ---
+      // setPasoActual('VERIFICACION_CI');
       onError(error.message || 'No se pudo verificar CI.');
     },
   });
 
   const handleVerificarCISubmit = formMethodsVerificacion.handleSubmit((formData) => {
-    setPasoActual('CARGANDO_VERIFICACION');
+    // --- ELIMINADO ---
+    // setPasoActual('CARGANDO_VERIFICACION');
     verificarCI(formData.ci);
   });
 
   const resetVerification = useCallback(() => {
-      setPasoActual('VERIFICACION_CI');
+      // --- ELIMINADO ---
+      // setPasoActual('VERIFICACION_CI');
       setCiVerificado('');
       setVerificandoAsignacionActual(false);
       formMethodsVerificacion.reset();
   }, [formMethodsVerificacion]);
 
   return {
-    pasoActualVerificacion: pasoActual,
     isVerifying: isVerifyingCI || verificandoAsignacionActual,
     formMethodsVerificacion,
     handleVerificarCISubmit,
