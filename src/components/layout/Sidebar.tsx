@@ -92,28 +92,30 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             Principal
           </p>
           <NavLink to="/dashboard" icon={<DashboardIcon />} label="Dashboard" onClick={() => setOpen(false)} />
-          <NavLink to="/competidores" icon={<UsersIcon />} label="Competidores" onClick={() => setOpen(false)} />
-          <NavLink to="/listaCompetidores" icon={<UsersIcon />} label="Lista de competidores" onClick={() => setOpen(false)} />
-          <NavLink to="/parametrosCalificaciones" icon={<ClipboardIcon />} label="Parametros de Calificacion" onClick={() => setOpen(false)} />
-
-          <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
-            Gestión
+          
+          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+            Gestión de la Olimpiada
           </p>
-          <NavLink to="/responsables" icon={<UsersIcon />} label="Responsables de Area" onClick={() => setOpen(false)} />
-          <NavLink to="/evaluadores" icon={<UsersIcon />} label="Evaluadores" onClick={() => setOpen(false)} />
           <NavLink to="/areas" icon={<UsersIcon />} label="Areas" onClick={() => setOpen(false)} />
           <NavLink to="/niveles" icon={<UsersIcon />} label="Niveles" onClick={() => setOpen(false)} />
           <NavLink to="/asignarNiveles" icon={<UsersIcon />} label="Asignar Niveles a Areas" onClick={() => setOpen(false)} />
-
+          
           <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
-            Evaluación
+            Gestión de Usuarios
           </p>
-          <NavLink to="/calificaciones" icon={<ClipboardIcon />} label="Calificaciones" onClick={() => setOpen(false)} />
-
+          <NavLink to="/responsables" icon={<UsersIcon />} label="Responsables de Area" onClick={() => setOpen(false)} />
+          <NavLink to="/evaluadores" icon={<UsersIcon />} label="Evaluadores" onClick={() => setOpen(false)} />
+          
           <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
-            Reportes
+            Gestión de Competidores
           </p>
-          <NavLink to="/reportes" icon={<FileTextIcon />} label="Generar Reportes" onClick={() => setOpen(false)} />
+          <NavLink to="/competidores" icon={<UsersIcon />} label="Competidores" onClick={() => setOpen(false)} />
+          <NavLink to="/listaCompetidores" icon={<UsersIcon />} label="Lista de competidores" onClick={() => setOpen(false)} />
+          
+          <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+            Evaluación y Clasificación
+          </p>
+          <NavLink to="/parametrosCalificaciones" icon={<ClipboardIcon />} label="Parametros de Calificacion" onClick={() => setOpen(false)} />
         </nav>
 
         <footer className="flex-shrink-0 border-t border-principal-600 pt-4 mt-4">
