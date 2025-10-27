@@ -25,3 +25,10 @@ export interface Nivel {
   id: number;
   nombre: string;
 }
+export interface ParametroGestionAPI {
+  area: string; // nombre del área
+  nivel: string; // nombre del nivel, ej. "1ro de Secundaria"
+  notaMinima: number;
+  notaMaxima: number;
+  cantidadMaxima: number;
+}

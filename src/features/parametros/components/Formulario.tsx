@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -42,6 +42,13 @@ interface FormularioProps {
   idArea: number;
   onCerrar: () => void;
   onMarcarEnviado: (idNivel: number, idArea: number) => void;
+  valoresCopiados?: {
+    notaMinima: number | '';
+    notaMaxima: number | '';
+    cantidadMaxima: number | '';
+  };
+  valoresCopiadosManualmente?: boolean;
+  onLimpiarSeleccion?: () => void;
 }
 
 export const Formulario: React.FC<FormularioProps> = ({
@@ -49,6 +56,9 @@ export const Formulario: React.FC<FormularioProps> = ({
   idArea,
   onCerrar,
   onMarcarEnviado,
+  valoresCopiados,
+  valoresCopiadosManualmente,
+  onLimpiarSeleccion,
 }) => {
   const [loading, setLoading] = useState(false);
   const [modalExito, setModalExito] = useState(false);
@@ -65,13 +75,29 @@ export const Formulario: React.FC<FormularioProps> = ({
 
   const formularioBloqueado = !nivel;
 
+  // Copiar valores solo cuando se selecciona un nivel nuevo
+  useEffect(() => {
+    if (valoresCopiadosManualmente && valoresCopiados && !formularioBloqueado) {
+      reset({
+        notaMinima: valoresCopiados.notaMinima?.toString() || '',
+        notaMaxima: valoresCopiados.notaMaxima?.toString() || '',
+        cantidadMaxCompetidores: valoresCopiados.cantidadMaxima?.toString() || '',
+      });
+    } else if (!valoresCopiadosManualmente && !formularioBloqueado) {
+      reset({
+        notaMinima: '',
+        notaMaxima: '',
+        cantidadMaxCompetidores: '',
+      });
+    }
+  }, [valoresCopiados, valoresCopiadosManualmente, formularioBloqueado, reset]);
+
   const onSubmit = async (data: FormValues) => {
     if (formularioBloqueado) return;
 
     try {
       setLoading(true);
 
-      // 1️⃣ Obtener el id_area_nivel correspondiente al área y nivel seleccionado
       const response = await apiClient.get(`/area-niveles/${idArea}`);
       const areaNiveles = response.data.data;
 
@@ -83,7 +109,6 @@ export const Formulario: React.FC<FormularioProps> = ({
         return;
       }
 
-      // 2️⃣ Crear payload con el formato que espera el backend
       const payload = {
         area_niveles: [
           {
@@ -95,12 +120,18 @@ export const Formulario: React.FC<FormularioProps> = ({
         ],
       };
 
-      // 3️⃣ Enviar POST al endpoint correcto
       await apiClient.post('/parametros', payload);
 
-      reset();
+      // Limpiar el formulario después de guardar
+      reset({
+        notaMinima: '',
+        notaMaxima: '',
+        cantidadMaxCompetidores: '',
+      });
 
-      // 4️⃣ Mostrar modal de éxito y cerrar formulario
+      // Limpiar checkbox en tabla si existe callback
+      if (onLimpiarSeleccion) onLimpiarSeleccion();
+
       setModalExito(true);
       setTimeout(() => {
         setModalExito(false);
@@ -128,6 +159,12 @@ export const Formulario: React.FC<FormularioProps> = ({
           <label className="block mb-1 font-medium text-black">Nota mínima</label>
           <input
             {...register('notaMinima')}
+            onInput={(e) => {
+              // Solo permitir dígitos y una coma opcional
+              e.currentTarget.value = e.currentTarget.value
+                .replace(/[^0-9,]/g, '') // quita todo excepto números y coma
+                .replace(/(,.*),/g, '$1'); // permite solo una coma
+            }}
             disabled={formularioBloqueado}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
               errors.notaMinima ? 'border-red-500' : ''
@@ -142,6 +179,11 @@ export const Formulario: React.FC<FormularioProps> = ({
           <label className="block mb-1 font-medium text-black">Nota máxima</label>
           <input
             {...register('notaMaxima')}
+            onInput={(e) => {
+              e.currentTarget.value = e.currentTarget.value
+                .replace(/[^0-9,]/g, '')
+                .replace(/(,.*),/g, '$1');
+            }}
             disabled={formularioBloqueado}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
               errors.notaMaxima ? 'border-red-500' : ''
@@ -158,6 +200,11 @@ export const Formulario: React.FC<FormularioProps> = ({
           </label>
           <input
             {...register('cantidadMaxCompetidores')}
+            onInput={(e) => {
+              e.currentTarget.value = e.currentTarget.value
+                .replace(/[^0-9]/g, '')
+                .replace(/(,.*),/g, '$1');
+            }}
             disabled={formularioBloqueado}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
               errors.cantidadMaxCompetidores ? 'border-red-500' : ''
@@ -171,12 +218,35 @@ export const Formulario: React.FC<FormularioProps> = ({
         <div className="flex justify-end gap-4 mt-6">
           <button
             type="button"
-            onClick={onCerrar}
+            onClick={() => {
+              reset({
+                notaMinima: '',
+                notaMaxima: '',
+                cantidadMaxCompetidores: '',
+              });
+              if (onLimpiarSeleccion) onLimpiarSeleccion(); // si quieres limpiar el checkbox también
+              onCerrar();
+            }}
             disabled={formularioBloqueado}
             className={`px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center ${
               formularioBloqueado ? 'opacity-60 cursor-not-allowed' : ''
             }`}
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              className="lucide lucide-x-icon lucide-x"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
             Cancelar
           </button>
           <button
@@ -188,6 +258,22 @@ export const Formulario: React.FC<FormularioProps> = ({
                 : 'bg-principal-500 hover:bg-principal-700'
             } text-white`}
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              className="lucide lucide-save-icon lucide-save"
+            >
+              <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+              <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+              <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+            </svg>
             {loading ? 'Guardando...' : 'Guardar'}
           </button>
         </div>

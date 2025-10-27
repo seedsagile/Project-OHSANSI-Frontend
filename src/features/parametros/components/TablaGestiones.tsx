@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { obtenerParametrosPorOlimpiadaAPI } from '../service/service';
 
-interface Gestion {
+interface Parametro {
   id: number;
   gestion: string;
   area: string;
@@ -12,48 +12,47 @@ interface Gestion {
 }
 
 interface TablaGestionesProps {
-  onSelectGestion: (id: number) => void;
+  onSelectGestion: (id: number | null) => void; // 👈 admite null
   gestionSeleccionada: number | null;
-  areaSeleccionada: number | null;
-  nivelSeleccionado: string | null;
+  formularioHabilitado: boolean;
+  onCopiarValores: (valores: {
+    notaMinima: number;
+    notaMaxima: number;
+    cantidadMaxima: number;
+  }) => void;
 }
 
 export const TablaGestiones: React.FC<TablaGestionesProps> = ({
   onSelectGestion,
   gestionSeleccionada,
-  areaSeleccionada,
-  nivelSeleccionado,
+  formularioHabilitado,
+  onCopiarValores,
 }) => {
-  const [gestiones, setGestiones] = useState<Gestion[]>([]);
-  const [filteredGestiones, setFilteredGestiones] = useState<Gestion[]>([]);
+  const [parametros, setParametros] = useState<Parametro[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchGestionesPasadas = async () => {
+    const fetchParametros = async () => {
       try {
-        const data = await obtenerParametrosPorOlimpiadaAPI(2); // id olimpiada
-        setGestiones(data);
+        const data = await obtenerParametrosPorOlimpiadaAPI(2);
+        setParametros(data);
       } catch (error) {
-        console.error('Error al obtener gestiones pasadas:', error);
+        console.error('Error al obtener parámetros:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchGestionesPasadas();
+    fetchParametros();
   }, []);
 
-  useEffect(() => {
-    if (areaSeleccionada && nivelSeleccionado) {
-      const filtered = gestiones.filter(
-        (g) => g.area === areaSeleccionada.toString() && g.nivel === nivelSeleccionado
-      );
-      setFilteredGestiones(filtered);
-    } else {
-      setFilteredGestiones([]);
-    }
-  }, [gestiones, areaSeleccionada, nivelSeleccionado]);
+  if (loading) {
+    return <p className="text-center text-neutro-600">Cargando datos...</p>;
+  }
 
   return (
     <div className="mt-10">
       <h2 className="text-2xl font-bold text-negro mb-4 text-center">
-        Parámetros de clasificación de Gestiones Pasadas
+        Parámetros de clasificación de gestiones pasadas
       </h2>
 
       <div className="overflow-hidden rounded-lg border border-neutro-300">
@@ -62,51 +61,58 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
             <thead className="bg-principal-500 text-blanco sticky top-0 z-10">
               <tr>
                 <th className="py-2 px-4 text-left w-[10%]">Gestión</th>
-                <th className="py-2 px-4 text-left w-[20%]">Área</th>
-                <th className="py-2 px-4 text-left w-[20%]">Nivel</th>
-                <th className="py-2 px-4 text-left w-[10%]">Nota mínima</th>
-                <th className="py-2 px-4 text-left w-[10%]">Nota máxima</th>
-                <th className="py-2 px-2 text-left w-[12%]">Cant. máx. Estudiantes</th>
+                {/* <th className="py-2 px-4 text-left w-[20%]">Área</th>
+                <th className="py-2 px-4 text-left w-[20%]">Nivel</th> */}
+                <th className="py-2 px-4 text-center w-[10%]">Nota mínima</th>
+                <th className="py-2 px-4 text-center w-[10%]">Nota máxima</th>
+                <th className="py-2 px-4 text-center w-[15%]">Cant. máx. Estudiantes</th>
                 <th className="py-2 px-4 text-center w-[8%]">Seleccionar</th>
               </tr>
             </thead>
+
             <tbody className="text-neutro-800 bg-white">
-              {areaSeleccionada && nivelSeleccionado ? (
-                filteredGestiones.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-4 text-neutro-600">
-                      No hay datos para esta área y nivel.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredGestiones.map((g) => (
-                    <tr
-                      key={g.id}
-                      className="border-t border-neutro-200 hover:bg-neutro-100 transition"
-                    >
-                      <td className="py-2 px-4">{g.gestion}</td>
-                      <td className="py-2 px-4">{g.area}</td>
-                      <td className="py-2 px-4">{g.nivel}</td>
-                      <td className="py-2 px-4 text-center">{g.notaMinima}</td>
-                      <td className="py-2 px-4 text-center">{g.notaMaxima}</td>
-                      <td className="py-2 px-2 text-center">{g.cantidadMaxima}</td>
-                      <td className="py-2 px-4 text-center">
-                        <input
-                          type="checkbox"
-                          className="w-5 h-5 accent-principal-500"
-                          checked={gestionSeleccionada === g.id}
-                          onChange={() => onSelectGestion(g.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))
-                )
-              ) : (
+              {parametros.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-4 text-neutro-600">
-                    Seleccione un área y nivel para ver las gestiones.
+                    No hay datos disponibles.
                   </td>
                 </tr>
+              ) : (
+                parametros.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-t border-neutro-200 hover:bg-neutro-100 transition"
+                  >
+                    <td className="py-2 px-4">{p.gestion}</td>
+                    {/* <td className="py-2 px-4">{p.area}</td>
+                    <td className="py-2 px-4">{p.nivel}</td> */}
+                    <td className="py-2 px-4 text-center">{p.notaMinima}</td>
+                    <td className="py-2 px-4 text-center">{p.notaMaxima}</td>
+                    <td className="py-2 px-4 text-center">{p.cantidadMaxima}</td>
+                    <td className="py-2 px-4 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-principal-500"
+                        checked={gestionSeleccionada === p.id}
+                        onChange={() => {
+                          if (gestionSeleccionada === p.id) {
+                            // ✅ desmarcar
+                            onSelectGestion(null);
+                          } else {
+                            // ✅ seleccionar y copiar
+                            onSelectGestion(p.id);
+                            onCopiarValores({
+                              notaMinima: p.notaMinima,
+                              notaMaxima: p.notaMaxima,
+                              cantidadMaxima: p.cantidadMaxima,
+                            });
+                          }
+                        }}
+                        disabled={!formularioHabilitado}
+                      />
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
