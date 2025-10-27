@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect } from 'react';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-import { DashboardIcon, UsersIcon, ClipboardIcon, FileTextIcon, LogoutIcon } from '../icons';
+import { DashboardIcon, UsersIcon, ClipboardIcon,LogoutIcon } from '../icons';
 import { useAuth } from '../../auth/login/hooks/useAuth';
 import { IconoUsuario } from '../ui/IconoUsuario';
 
