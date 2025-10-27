@@ -2,7 +2,6 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { RootLayout } from '../components/layout/RootLayout';
 import { PaginaImportarCompetidores } from '../features/inscritos/routes/PaginaImportarCompetidores';
 import { PaginaAreas } from '../features/areas/routes/PaginaAreas';
-
 import { AuthInitializer } from '../auth/login/components/auth/AuthInitializer';
 import { LoginForm } from '../auth/login/components/auth/LoginForm';
 import { ProtectedRoute } from '../auth/login/components/auth/ProtectedRoute';
@@ -13,13 +12,7 @@ import { PaginaAsignarNiveles } from '../features/asignaciones/routes/PaginaAsig
 import { ListaCompetidores } from '../features/listaCompetidores/components/ListaCompetidores';
 import { Parametro } from '../features/parametros/components/Parametro';
 import { PaginaRegistrarResponsable } from '@/features/usuarios/responsables/routes/PaginaRegistrarResponsable';
-
-const Dashboard = () => (
-  <div className="p-8">
-    <h1 className="text-4xl font-bold text-neutro-800 justify-center text-center">Dashboard</h1>
-    <p className="mt-2 text-neutro-600 text-center">Bienvenido al panel de administración.</p>
-  </div>
-);
+import { Dashboard } from '@/features/dashboard/components/Dashboard';
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
