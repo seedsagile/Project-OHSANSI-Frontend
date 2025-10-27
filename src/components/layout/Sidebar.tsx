@@ -1,6 +1,17 @@
 import { type ReactNode, useEffect } from 'react';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-import { DashboardIcon, UsersIcon, ClipboardIcon,LogoutIcon } from '../icons';
+import {
+  LayoutDashboard as DashboardIcon,
+  LayoutGrid,
+  Network,
+  Link2,
+  UserCheck,
+  UserSquare,
+  UserPlus,
+  ListChecks,
+  SlidersHorizontal,
+  LogOut as LogoutIcon 
+} from 'lucide-react';
 import { useAuth } from '../../auth/login/hooks/useAuth';
 import { IconoUsuario } from '../ui/IconoUsuario';
 
@@ -27,12 +38,11 @@ const NavLink = ({
         }`
       }
     >
-      <div className='flex-shrink-0'>{icon}</div>
+      <div className='flex-shrink-0 w-5 h-5'>{icon}</div>
       <span className='truncate'>{label}</span>
     </RouterNavLink>
   );
 };
-
 interface SidebarProps {
   isOpen: boolean;
   setOpen: (isOpen: boolean) => void;
@@ -41,17 +51,17 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); //
 
   useEffect(() => {
-    setOpen(false); 
-  }, [location.pathname, setOpen]); 
+    setOpen(false);
+  }, [location.pathname, setOpen]);
 
   return (
     <>
       <div
         className={`fixed inset-0 bg-black/50 z-20 transition-opacity lg:hidden ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none' //
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setOpen(false)}
       />
@@ -59,8 +69,8 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
         className={`
           fixed top-0 left-0 w-64 lg:w-72 h-screen bg-principal-700 text-blanco flex flex-col p-4 shadow-lg
           transform transition-transform duration-300 ease-in-out z-30
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'} // Control de visibilidad móvil
-          ${isDesktopVisible ? 'lg:translate-x-0' : 'lg:-translate-x-full'} // NUEVO: Control de visibilidad escritorio
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${isDesktopVisible ? 'lg:translate-x-0' : 'lg:-translate-x-full'}
         `}
       >
         <div className="flex items-center justify-between pt-6 pb-6 lg:pb-10 flex-shrink-0">
@@ -87,45 +97,50 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-grow flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar">
-          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+        <nav className="flex-grow flex flex-col gap-1.5 overflow-y-auto pr-1 custom-scrollbar">
+          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-2 mb-1"> 
             Principal
           </p>
           <NavLink to="/dashboard" icon={<DashboardIcon />} label="Dashboard" onClick={() => setOpen(false)} />
-          
-          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+
+          {/* ----- Gestión de la Olimpiada ----- */}
+          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-3 mb-1"> 
             Gestión de la Olimpiada
           </p>
-          <NavLink to="/areas" icon={<UsersIcon />} label="Areas" onClick={() => setOpen(false)} />
-          <NavLink to="/niveles" icon={<UsersIcon />} label="Niveles" onClick={() => setOpen(false)} />
-          <NavLink to="/asignarNiveles" icon={<UsersIcon />} label="Asignar Niveles a Areas" onClick={() => setOpen(false)} />
-          
-          <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+          <NavLink to="/areas" icon={<LayoutGrid />} label="Áreas" onClick={() => setOpen(false)} /> 
+          <NavLink to="/niveles" icon={<Network />} label="Niveles" onClick={() => setOpen(false)} /> 
+          <NavLink to="/asignarNiveles" icon={<Link2 />} label="Asignar Niveles a Áreas" onClick={() => setOpen(false)} /> 
+
+          {/* ----- Gestión de Usuarios ----- */}
+          <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Gestión de Usuarios
           </p>
-          <NavLink to="/responsables" icon={<UsersIcon />} label="Responsables de Area" onClick={() => setOpen(false)} />
-          <NavLink to="/evaluadores" icon={<UsersIcon />} label="Evaluadores" onClick={() => setOpen(false)} />
-          
-          <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+          <NavLink to="/responsables" icon={<UserCheck />} label="Responsables de Área" onClick={() => setOpen(false)} />
+          <NavLink to="/evaluadores" icon={<UserSquare />} label="Evaluadores" onClick={() => setOpen(false)} />
+
+          {/* ----- Gestión de Competidores ----- */}
+          <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Gestión de Competidores
           </p>
-          <NavLink to="/competidores" icon={<UsersIcon />} label="Competidores" onClick={() => setOpen(false)} />
-          <NavLink to="/listaCompetidores" icon={<UsersIcon />} label="Lista de competidores" onClick={() => setOpen(false)} />
-          
-          <p className="px-3 mt-4 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+          <NavLink to="/competidores" icon={<UserPlus />} label="Registrar Competidores" onClick={() => setOpen(false)} />
+          <NavLink to="/listaCompetidores" icon={<ListChecks />} label="Lista de Competidores" onClick={() => setOpen(false)} />
+
+          {/* ----- Evaluación y Clasificación ----- */}
+          <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Evaluación y Clasificación
           </p>
-          <NavLink to="/parametrosCalificaciones" icon={<ClipboardIcon />} label="Parametros de Calificacion" onClick={() => setOpen(false)} />
+          <NavLink to="/parametrosCalificaciones" icon={<SlidersHorizontal />} label="Parámetros de Calificación" onClick={() => setOpen(false)} />
         </nav>
 
+        {/* Footer */}
         <footer className="flex-shrink-0 border-t border-principal-600 pt-4 mt-4">
           <div className="flex items-center gap-3 px-3">
             <div className="h-10 w-10 rounded-full bg-principal-600 flex items-center justify-center flex-shrink-0">
-              <IconoUsuario /> {/* */}
+              <IconoUsuario />
             </div>
             <div className='overflow-hidden whitespace-nowrap'>
-              <p className="font-semibold text-blanco truncate w-full">{user?.nombre || 'Usuario'}</p> {/* */}
-              <p className="text-sm text-principal-200 capitalize truncate w-full">{user?.role || 'Rol'}</p> {/* */}
+              <p className="font-semibold text-blanco truncate w-full">{user?.nombre || 'Usuario'}</p>
+              <p className="text-sm text-principal-200 capitalize truncate w-full">{user?.role || 'Rol'}</p>
             </div>
           </div>
           <button
@@ -142,7 +157,6 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.3); border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.5); }
-        /* Para Firefox */
         .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) transparent; }
       `}</style>
     </>
