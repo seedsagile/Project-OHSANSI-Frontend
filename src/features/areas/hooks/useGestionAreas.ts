@@ -101,26 +101,29 @@ export function useGestionAreas() {
     onSuccess: (nuevaArea) => {
       queryClient.invalidateQueries({ queryKey: ['areas'] });
 
-      // Obtener el nombre del área guardada (de la respuesta o del estado temporal)
       const nombreMostrar = nuevaArea?.nombre || nombreAreaGuardada;
+      console.log('Área guardada:', nuevaArea);
 
-      console.log('Área guardada:', nuevaArea); // Para debug
+      // 🔹 Primero cierra el modal de creación
+      setModalCrearAbierto(false);
 
-      // Validación 14: Mensaje de confirmación exitoso
-      setConfirmationModal({
-        isOpen: true,
-        title: '¡Registro Exitoso!',
-        message: `El área "${nombreMostrar}" ha sido registrado correctamente.`,
-        type: 'success',
-      });
-
-      // Validación 17 y 18: Cerrar modales después del éxito
+      // 🔹 Luego, tras un pequeño retraso, muestra el modal de confirmación
       setTimeout(() => {
-        setConfirmationModal(initialConfirmationState);
-        setModalCrearAbierto(false);
-        setNombreAreaGuardada('');
-      }, 2000);
+        setConfirmationModal({
+          isOpen: true,
+          title: '¡Registro Exitoso!',
+          message: `El área "${nombreMostrar}" ha sido registrada correctamente.`,
+          type: 'success',
+        });
+
+        // 🔹 Después de unos segundos, cierra la confirmación
+        setTimeout(() => {
+          setConfirmationModal(initialConfirmationState);
+          setNombreAreaGuardada('');
+        }, 2000);
+      }, 250); // le da tiempo al modal anterior de desaparecer visualmente
     },
+
     onError: (error) => {
       // Validación 15: Error si el nombre ya existe
       if (error.message.toLowerCase().includes('existe')) {

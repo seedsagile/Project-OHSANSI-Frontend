@@ -41,7 +41,7 @@ export function ModalConfirmacion({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      className="fixed bg-negro/70 inset-0 flex items-center justify-center z-50 p-4"
       onClick={type === 'success' ? undefined : onClose}
       role="dialog"
       aria-modal="true"
