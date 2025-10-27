@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { areasService } from '../../areas/services/areasService';
 import { nivelesService } from '../../niveles/services/nivelesService';
 import { asignacionesService } from '../services/asignarServices';
 import type { AsignacionPayload } from '../types';
@@ -29,81 +28,116 @@ export function useAsignarNiveles() {
   const [nivelesOriginales, setNivelesOriginales] = useState<Set<number>>(new Set());
   const modalTimerRef = useRef<number | undefined>(undefined);
 
-  const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({
-    queryKey: ['areas'],
-    queryFn: areasService.obtenerAreas,
+  // Cargar áreas con sus niveles asignados
+  const { data: areasConNiveles = [], isLoading: isLoadingAreas } = useQuery({
+    queryKey: ['areas-con-niveles'],
+    queryFn: asignacionesService.obtenerAreasConNiveles,
   });
+
+  // Cargar nombres de áreas permitidas
+  const { data: areasPermitidas = {}, isLoading: isLoadingAreasPermitidas } = useQuery({
+    queryKey: ['areas-nombres'],
+    queryFn: asignacionesService.obtenerAreasNombres,
+  });
+
+  // Cargar todos los niveles disponibles
   const { data: todosLosNiveles = [], isLoading: isLoadingNiveles } = useQuery({
     queryKey: ['niveles'],
     queryFn: nivelesService.obtenerNiveles,
   });
 
-  const areasOrdenadas = useMemo(
-    () => [...todasLasAreas].sort((a, b) => a.nombre.localeCompare(b.nombre)),
-    [todasLasAreas]
-  );
+  // Filtrar y ordenar las áreas que están en la lista de áreas permitidas
+  const areasOrdenadas = useMemo(() => {
+    const areasFiltradas = areasConNiveles.filter(
+      (area) => areasPermitidas[area.id_area] !== undefined
+    );
+    return areasFiltradas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [areasConNiveles, areasPermitidas]);
 
   const nivelesOrdenados = useMemo(
     () => [...todosLosNiveles].sort((a, b) => a.nombre.localeCompare(b.nombre)),
     [todosLosNiveles]
   );
 
-  const {
-    data: nivelesAsignados = [],
-    isLoading: isLoadingAsignados,
-    isFetched,
-  } = useQuery({
-    queryKey: ['asignaciones', areaSeleccionadaId],
-    queryFn: () => asignacionesService.obtenerNivelesPorArea(areaSeleccionadaId!),
-    enabled: !!areaSeleccionadaId,
-  });
+  // Obtener el área seleccionada y sus niveles asignados
+  const areaActual = useMemo(
+    () => areasOrdenadas.find((area) => area.id_area === areaSeleccionadaId),
+    [areasOrdenadas, areaSeleccionadaId]
+  );
 
+  // Sincronizar niveles seleccionados cuando cambia el área
   useEffect(() => {
-    if (isFetched && nivelesAsignados) {
-      const idsActivos = new Set(nivelesAsignados.filter((a) => a.activo).map((a) => a.id_nivel));
-      setNivelesSeleccionados(idsActivos);
-      setNivelesOriginales(idsActivos);
-    } else if (!areaSeleccionadaId) {
+    if (areaActual) {
+      const nivelesActivosIds = new Set(
+        areaActual.niveles
+          .filter((nivel) => nivel.asignado_activo)
+          .map((nivel) => nivel.id_nivel)
+      );
+      setNivelesSeleccionados(nivelesActivosIds);
+      setNivelesOriginales(nivelesActivosIds);
+    } else {
       setNivelesSeleccionados(new Set());
       setNivelesOriginales(new Set());
     }
-  }, [nivelesAsignados, isFetched, areaSeleccionadaId]);
+  }, [areaActual]);
 
   const closeModal = () => {
+    // Si el modal es de tipo info (advertencia de error), limpiar niveles seleccionados
+    if (modalState.type === 'info' && modalState.title.includes('Advertencia')) {
+      setNivelesSeleccionados(nivelesOriginales);
+    }
     setModalState(initialModalState);
     clearTimeout(modalTimerRef.current);
   };
 
+  // Mutación para guardar asignaciones
   const { mutate: guardarAsignaciones, isPending: isSaving } = useMutation({
-    mutationFn: async ({
-      paraCrear,
-      paraActualizar,
-    }: {
-      paraCrear: AsignacionPayload[];
-      paraActualizar: AsignacionPayload[];
-    }) => {
-      const promises = [];
-      if (paraCrear.length > 0)
-        promises.push(asignacionesService.crearAsignacionesDeArea(paraCrear));
-      if (paraActualizar.length > 0)
-        promises.push(
-          asignacionesService.actualizarNivelesDeArea(areaSeleccionadaId!, paraActualizar)
-        );
-      return Promise.all(promises);
+    mutationFn: async (payload: AsignacionPayload[]) => {
+      return asignacionesService.crearAsignacionesDeArea(payload);
     },
-    onSuccess: () => {
-      const areaActual = todasLasAreas.find((area) => area.id_area === areaSeleccionadaId);
+    onSuccess: (response) => {
       const nombreArea = areaActual ? areaActual.nombre : '';
+      
+      // Validar si realmente se guardó algo
+      if (response.success_count === 0 || response.created_count === 0) {
+        // No se guardó nada, mostrar advertencia
+        const erroresDetalle = response.errors && response.errors.length > 0 
+          ? response.errors.join('\n\n') 
+          : 'No se pudieron crear las asignaciones.';
+        
+        setModalState({ 
+          isOpen: true, 
+          type: 'info', 
+          title: '⚠️ Advertencia', 
+          message: erroresDetalle,
+          onConfirm: () => {
+            // Solo limpiar los niveles seleccionados (mantener área)
+            setNivelesSeleccionados(nivelesOriginales);
+            closeModal();
+          }
+        });
+        return;
+      }
+      
+      // Éxito: se guardó al menos una asignación
       const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
       setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
-      queryClient.invalidateQueries({ queryKey: ['asignaciones', areaSeleccionadaId] });
+      
+      // Invalida la query para refrescar los datos
+      queryClient.invalidateQueries({ queryKey: ['areas-con-niveles'] });
+      
       clearTimeout(modalTimerRef.current);
       modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
     },
     onError: (error: AxiosError<ApiErrorResponse>) => {
       clearTimeout(modalTimerRef.current);
       const errorMessage = error.response?.data?.message || 'No se pudieron guardar los cambios.';
-      setModalState({ isOpen: true, type: 'error', title: 'Error', message: errorMessage });
+      setModalState({ 
+        isOpen: true, 
+        type: 'error', 
+        title: 'Error de Conexión', 
+        message: errorMessage
+      });
     },
   });
 
@@ -112,7 +146,7 @@ export function useAsignarNiveles() {
   }, []);
 
   const handleGuardar = () => {
-    if (!areaSeleccionadaId || !todosLosNiveles) return;
+    if (!areaSeleccionadaId) return;
 
     if (nivelesSeleccionados.size === 0) {
       setModalState({
@@ -124,29 +158,8 @@ export function useAsignarNiveles() {
       return;
     }
 
-    const asignacionesOriginalesMap = new Map(nivelesAsignados.map((a) => [a.id_nivel, a]));
-    const paraCrear: AsignacionPayload[] = [];
-    const paraActualizar: AsignacionPayload[] = [];
-
-    todosLosNiveles.forEach((nivel) => {
-      const yaExiste = asignacionesOriginalesMap.has(nivel.id_nivel);
-      const estaSeleccionado = nivelesSeleccionados.has(nivel.id_nivel);
-
-      if (yaExiste) {
-        const asignacionOriginal = asignacionesOriginalesMap.get(nivel.id_nivel)!;
-        if (asignacionOriginal.activo !== estaSeleccionado) {
-          paraActualizar.push({
-            id_area: areaSeleccionadaId,
-            id_nivel: nivel.id_nivel,
-            activo: estaSeleccionado,
-          });
-        }
-      } else if (estaSeleccionado) {
-        paraCrear.push({ id_area: areaSeleccionadaId, id_nivel: nivel.id_nivel, activo: true });
-      }
-    });
-
-    if (paraCrear.length === 0 && paraActualizar.length === 0) {
+    // Verificar si hay cambios
+    if (isEqual(new Set(nivelesOriginales), new Set(nivelesSeleccionados))) {
       setModalState({
         isOpen: true,
         type: 'info',
@@ -158,10 +171,34 @@ export function useAsignarNiveles() {
       return;
     }
 
-    guardarAsignaciones({ paraCrear, paraActualizar });
+    // Crear payload solo con los niveles nuevos (no originales)
+    const nivelesNuevos = Array.from(nivelesSeleccionados).filter(
+      (id) => !nivelesOriginales.has(id)
+    );
+
+    if (nivelesNuevos.length === 0) {
+      setModalState({
+        isOpen: true,
+        type: 'info',
+        title: 'Sin Cambios',
+        message: 'No se han agregado nuevos niveles.',
+      });
+      clearTimeout(modalTimerRef.current);
+      modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
+      return;
+    }
+
+    const payload: AsignacionPayload[] = nivelesNuevos.map((id_nivel) => ({
+      id_area: areaSeleccionadaId,
+      id_nivel,
+      activo: true,
+    }));
+
+    guardarAsignaciones(payload);
   };
 
   const handleToggleNivel = (id_nivel: number) => {
+    // No permitir cambiar niveles que ya estaban asignados originalmente
     if (nivelesOriginales.has(id_nivel)) {
       return;
     }
@@ -212,7 +249,7 @@ export function useAsignarNiveles() {
     nivelesSeleccionados,
     handleToggleNivel,
     handleGuardar,
-    isLoading: isLoadingAreas || isLoadingNiveles || isLoadingAsignados,
+    isLoading: isLoadingAreas || isLoadingNiveles || isLoadingAreasPermitidas,
     isSaving,
     modalState,
     closeModal,

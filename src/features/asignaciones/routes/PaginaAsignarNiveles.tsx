@@ -11,6 +11,7 @@ export function PaginaAsignarNiveles() {
     todosLosNiveles,
     areaSeleccionadaId,
     nivelesSeleccionados,
+    nivelesOriginales,
     handleToggleNivel,
     handleGuardar,
     isLoading,
@@ -35,9 +36,14 @@ export function PaginaAsignarNiveles() {
     <>
       <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex justify-center items-center">
         <main className="bg-blanco w-full max-w-2xl rounded-xl shadow-sombra-3 p-6 md:p-8">
-          <header className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-              Asignar Niveles a un Área
+          <header className="mb-10">
+            <div className="text-right mb-2">
+              <p className="text-sm font-semibold text-negro tracking-wider">
+                Gestión 2025
+              </p>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter text-center">
+              Asignar Niveles a Área
             </h1>
           </header>
 
@@ -108,24 +114,34 @@ export function PaginaAsignarNiveles() {
                       </td>
                     </tr>
                   ) : (
-                    todosLosNiveles.map((nivel: Nivel, index: number) => (
-                      <tr
-                        key={nivel.id_nivel}
-                        className="even:bg-neutro-100 hover:bg-principal-50 transition-colors"
-                      >
-                        <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
-                        <td className="p-4 text-neutro-700 text-left">{nivel.nombre}</td>
-                        <td className="p-4 text-neutro-700 text-center">
-                          <input
-                            type="checkbox"
-                            aria-label={`Asignar el nivel: ${nivel.nombre}`}
-                            className="h-5 w-5 rounded border-gray-400 text-principal-600 focus:ring-principal-500 cursor-pointer"
-                            checked={nivelesSeleccionados.has(nivel.id_nivel)}
-                            onChange={() => handleToggleNivel(nivel.id_nivel)}
-                          />
-                        </td>
-                      </tr>
-                    ))
+                    todosLosNiveles.map((nivel: Nivel, index: number) => {
+                      const esNivelOriginal = nivelesOriginales.has(nivel.id_nivel);
+                      const estaSeleccionado = nivelesSeleccionados.has(nivel.id_nivel);
+                      
+                      return (
+                        <tr
+                          key={nivel.id_nivel}
+                          className="even:bg-neutro-100 hover:bg-principal-50 transition-colors"
+                        >
+                          <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
+                          <td className="p-4 text-neutro-700 text-left">{nivel.nombre}</td>
+                          <td className="p-4 text-neutro-700 text-center">
+                            <input
+                              type="checkbox"
+                              aria-label={`Asignar el nivel: ${nivel.nombre}`}
+                              className={`h-5 w-5 rounded border-gray-400 text-principal-600 focus:ring-principal-500 ${
+                                esNivelOriginal 
+                                  ? 'cursor-not-allowed opacity-60' 
+                                  : 'cursor-pointer'
+                              }`}
+                              checked={estaSeleccionado}
+                              onChange={() => handleToggleNivel(nivel.id_nivel)}
+                              disabled={esNivelOriginal}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
