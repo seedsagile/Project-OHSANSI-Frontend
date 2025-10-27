@@ -10,7 +10,8 @@ import {
   UserPlus,
   ListChecks,
   SlidersHorizontal,
-  LogOut as LogoutIcon 
+  LogOut as LogoutIcon,
+  Cog as SettingsIcon 
 } from 'lucide-react';
 import { useAuth } from '../../auth/login/hooks/useAuth';
 import { IconoUsuario } from '../ui/IconoUsuario';
@@ -130,6 +131,13 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             Evaluación y Clasificación
           </p>
           <NavLink to="/parametrosCalificaciones" icon={<SlidersHorizontal />} label="Parámetros de Calificación" onClick={() => setOpen(false)} />
+        
+          {/* ----- Configuraciones ----- */}
+          <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
+            Configuraciones
+          </p>
+          <NavLink to="/configuracion_gestestion_olimpiada" icon={<SettingsIcon /> } label="Configuración de la Olimpiada" onClick={() => setOpen(false)} />
+        
         </nav>
 
         {/* Footer */}

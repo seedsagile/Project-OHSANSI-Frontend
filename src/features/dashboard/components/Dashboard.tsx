@@ -6,6 +6,7 @@ import {
   UserPlus,
   ListChecks,
   SlidersHorizontal,
+  Cog as SettingsIcon,
 } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -76,6 +77,12 @@ export function Dashboard() {
       title: 'Parámetros de Calificación',
       description: 'Define los criterios de clasificación (notas mínimas, máximas, cupos) por área y nivel.',
       linkTo: '/parametrosCalificaciones',
+    },
+    {
+      icon: SettingsIcon,
+      title: 'Configuración de la Olimpiada',
+      description: 'Ajusta las configuraciones generales de la gestión de la olimpiada.',
+      linkTo: '/configuracion_gestestion_olimpiada',
     },
   ];
 

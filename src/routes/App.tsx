@@ -45,6 +45,7 @@ const router = createBrowserRouter([
       { path: 'asignarNiveles', element: <PaginaAsignarNiveles /> },
       { path: 'listaCompetidores', element: <ListaCompetidores /> },
       { path: 'parametrosCalificaciones', element: <Parametro /> },
+      { path: 'configuracion_gestestion_olimpiada', element: <Navigate to="/dashboard" replace /> },
     ],
   },
 ]);
