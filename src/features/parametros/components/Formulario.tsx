@@ -196,7 +196,7 @@ export const Formulario: React.FC<FormularioProps> = ({
 
         <div>
           <label className="block mb-1 font-medium text-black">
-            Cantidad máxima de competidores
+            Cantidad máxima de clasificados
           </label>
           <input
             {...register('cantidadMaxCompetidores')}
