@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useVerificacionResponsable } from './useVerificacionResponsable';
 import { useFormularioPrincipalResponsable } from './useFormularioPrincipalResponsable';
 import { useSeleccionAreasResponsable } from './useSeleccionAreasResponsable';
-import type { PasoRegistroResponsable, ModalFeedbackState, ResponsableCreado, DatosPersonaVerificada } from '../types';
+import type { PasoRegistroResponsable, ModalFeedbackState, ResponsableCreado, ResponsableActualizado, DatosPersonaVerificada } from '../types'; // Importar ResponsableActualizado
 
 const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
 
@@ -19,6 +19,7 @@ export function useGestionResponsable() {
 
   const modalTimerRef = useRef<number | undefined>(undefined);
     useEffect(() => {
+        // Limpiar temporizador al desmontar
         return () => clearTimeout(modalTimerRef.current);
     }, []);
 
@@ -27,13 +28,14 @@ export function useGestionResponsable() {
         clearTimeout(modalTimerRef.current);
     }, []);
 
+  // --- Callback de Verificación (CORREGIDO: parámetro 'ci' eliminado) ---
   const handleVerificationComplete = useCallback((
       data: DatosPersonaVerificada | null,
-      ci: string,
+      // ci: string, // <-- Eliminado ya que no se usaba aquí
       isAlreadyAssigned: boolean,
       initialAreas: number[]
   ) => {
-      console.log("[useGestionResponsable] Verification Complete Callback:", { data, ci, isAlreadyAssigned, initialAreas });
+      // console.log("[useGestionResponsable] Verification Complete Callback:", { data, isAlreadyAssigned, initialAreas }); // Mantenemos el log sin 'ci'
       setDatosPersona(data);
       setIsAssignedToCurrentGestion(isAlreadyAssigned);
       setInitialAreasReadOnly(initialAreas);
@@ -50,47 +52,82 @@ export function useGestionResponsable() {
     formMethodsVerificacion,
     handleVerificarCISubmit,
     resetVerification,
-    ciVerificado,
+    ciVerificado, // <-- Necesitamos este valor para las queries
   } = useVerificacionResponsable(handleVerificationComplete, handleVerificationError);
 
-  const handleFormSubmitSuccess = useCallback((data: ResponsableCreado) => {
-      setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message: data.message || `Responsable registrado.` });
-      queryClient.invalidateQueries({ queryKey: ['responsables'] });
-      modalTimerRef.current = window.setTimeout(() => {
-          closeModalFeedback();
-          if (handleCancelar) {
-              handleCancelar();
-          }
-          navigate('/dashboard');
-      }, 2000);
-  }, [queryClient, closeModalFeedback, navigate]);
-
-  const handleFormSubmitError = useCallback((message: string) => {
-      setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
-      setPasoActual(isAssignedToCurrentGestion ? 'READ_ONLY' : 'FORMULARIO_DATOS');
-  }, [isAssignedToCurrentGestion]);
+  const handleCancelarCallbackRef = useRef<() => void>(undefined); // Usamos ref para evitar dependencia circular
 
   const {
     formMethodsPrincipal,
     gestionesPasadas,
     areasDisponiblesQuery,
     isLoadingGestiones,
-    isCreatingResponsable,
+    isSaving, // <-- Usar el estado combinado del hook
     onSubmitFormularioPrincipal,
     handleGestionSelect,
     gestionPasadaSeleccionadaId,
-    gestionPasadaSeleccionadaAnio,
+    gestionPasadaSeleccionadaAnio, // <-- Variable necesaria declarada aquí
     primerInputRef,
-    resetFormularioPrincipal,
+    resetFormularioPrincipal, // <-- Obtenemos la función de reset
   } = useFormularioPrincipalResponsable({
       ciVerificado,
       datosPersonaVerificada: datosPersona,
       isReadOnly: isAssignedToCurrentGestion,
       initialAreas: initialAreasReadOnly,
-      onFormSubmitSuccess: handleFormSubmitSuccess,
-      onFormSubmitError: handleFormSubmitError,
+      // Pasamos la función onSucess definida más abajo
+      onFormSubmitSuccess: (data, esActualizacion) => {
+          handleFormSubmitSuccess(data, esActualizacion);
+      },
+      onFormSubmitError: (message) => {
+         handleFormSubmitError(message);
+      }
   });
 
+   // --- Definir handleCancelar AHORA que tenemos resetFormularioPrincipal ---
+   const handleCancelar = useCallback(() => {
+      resetVerification();
+      resetFormularioPrincipal(true); // resetToDefault = true
+      setDatosPersona(null);
+      setIsAssignedToCurrentGestion(false);
+      setInitialAreasReadOnly([]);
+      setPasoActual('VERIFICACION_CI');
+      closeModalFeedback();
+    }, [resetVerification, resetFormularioPrincipal, closeModalFeedback]);
+
+    // Asignar al ref para usar en onSuccess
+    handleCancelarCallbackRef.current = handleCancelar;
+
+
+  // --- Callback onSuccess (CORREGIDO: Dependencias ajustadas) ---
+   const handleFormSubmitSuccess = useCallback((data: ResponsableCreado | ResponsableActualizado, esActualizacion: boolean) => {
+      const message = data.message || (esActualizacion ? 'Responsable actualizado.' : 'Responsable registrado.');
+      setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message });
+
+      queryClient.invalidateQueries({ queryKey: ['responsables'] });
+      // Usar gestionPasadaSeleccionadaAnio de las props del hook, que ya está en scope
+      if (gestionPasadaSeleccionadaAnio) {
+        queryClient.invalidateQueries({ queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['gestionesPasadas', ciVerificado] });
+
+      modalTimerRef.current = window.setTimeout(() => {
+          closeModalFeedback();
+          // Usar la función desde el ref
+          if (handleCancelarCallbackRef.current) {
+            handleCancelarCallbackRef.current();
+          }
+          navigate('/dashboard');
+      }, 2000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClient, closeModalFeedback, navigate, ciVerificado, gestionPasadaSeleccionadaAnio]); // gestionPasadaSeleccionadaAnio ahora está en scope aquí
+
+
+  const handleFormSubmitError = useCallback((message: string) => {
+      setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
+      // Mantener el paso actual
+  }, []);
+
+  // --- Hook Selección Áreas (sin cambios necesarios aquí) ---
   const {
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
@@ -99,31 +136,17 @@ export function useGestionResponsable() {
   } = useSeleccionAreasResponsable({
       formMethods: formMethodsPrincipal,
       ciVerificado,
-      gestionPasadaSeleccionadaAnio,
+      gestionPasadaSeleccionadaAnio, // <-- Pasarlo aquí está bien
       initialAreas: initialAreasReadOnly,
       isReadOnly: isAssignedToCurrentGestion,
       areasDisponiblesQuery,
   });
 
-  const handleCancelar = useCallback(() => {
-    resetVerification();
-    resetFormularioPrincipal(true);
-    setDatosPersona(null);
-    setIsAssignedToCurrentGestion(false);
-    setInitialAreasReadOnly([]);
-    setPasoActual('VERIFICACION_CI');
-    closeModalFeedback();
-  }, [resetVerification, resetFormularioPrincipal, closeModalFeedback]);
-
-  useEffect(() => {
-      handleFormSubmitSuccess;
-    }, [handleFormSubmitSuccess, handleCancelar]);
-
-
+  // --- Recálculo de isLoading y isProcessing (sin cambios) ---
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingGestiones || isLoadingAreas;
-  const isProcessing = isVerifying || isCreatingResponsable;
+  const isProcessing = isVerifying || isSaving; // <-- Usar isSaving combinado
   const pasoActualUI = isVerifying ? 'CARGANDO_VERIFICACION'
-        : isCreatingResponsable ? 'CARGANDO_GUARDADO'
+        : isSaving ? 'CARGANDO_GUARDADO' // <-- Usar isSaving combinado
         : isAssignedToCurrentGestion ? 'READ_ONLY'
         : pasoActual;
 
@@ -148,7 +171,7 @@ export function useGestionResponsable() {
     handleToggleSeleccionarTodas,
     handleGestionSelect,
     onSubmitFormularioPrincipal,
-    handleCancelar,
+    handleCancelar, // <-- Devolver la función definida
     closeModalFeedback,
   };
 }
