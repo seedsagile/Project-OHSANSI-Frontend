@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react'; // Import React
+import { type ReactNode, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Info, XCircle, X, Check, LoaderCircle } from 'lucide-react';
 
 export type ModalType = 'success' | 'error' | 'warning' | 'info' | 'confirmation';
@@ -13,6 +13,7 @@ interface ModalProps {
   loading?: boolean;
   confirmText?: string;
   cancelText?: string;
+  understoodText?: string;
 }
 
 const typeConfig = {
@@ -53,6 +54,7 @@ export function Modal1({
   loading = false,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
+  understoodText = 'Entendido',
 }: ModalProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -75,20 +77,23 @@ export function Modal1({
   }
 
   const { icon: IconComponent, className, buttonClass } = typeConfig[type];
-  const needsActionButtons = type === 'confirmation';
-  const needsUnderstoodButton = !needsActionButtons && type !== 'success';
+
+  // Determine which button(s) to show
+  const needsConfirmationButtons = type === 'confirmation';
+  // Show single button for success, error, warning, info
+  const needsSingleActionButton = !needsConfirmationButtons;
 
   return (
     <div
       className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
-      onClick={onClose}
+      onClick={onClose} // Allow closing by clicking outside
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
         className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-6 sm:p-8 text-center animate-scaleIn"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
       >
         <IconComponent className={`h-16 w-16 mx-auto ${className}`} aria-hidden="true" />
 
@@ -96,43 +101,49 @@ export function Modal1({
           {title}
         </h2>
 
-        <div className="text-neutro-600 mt-2 text-sm sm:text-base leading-relaxed">{children}</div>
+        <div className="text-neutro-600 mt-2 text-sm sm:text-base leading-relaxed whitespace-pre-line">{children}</div>
 
-        {needsActionButtons && (
-          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+        {/* --- Render Buttons Conditionally --- */}
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+          {needsConfirmationButtons && (
+            <>
+              {/* Cancel Button (for confirmation) */}
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="w-full sm:w-auto order-2 sm:order-1 flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X className="h-5 w-5" />
+                <span>{cancelText}</span>
+              </button>
+              {/* Confirm Button (for confirmation) */}
+              <button
+                onClick={onConfirm}
+                disabled={loading}
+                className={`w-full sm:w-auto order-1 sm:order-2 flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors min-w-[140px] ${buttonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {loading ? (
+                  <LoaderCircle className="animate-spin h-5 w-5" />
+                ) : (
+                  <Check className="h-5 w-5" />
+                )}
+                <span>{loading ? 'Procesando...' : confirmText}</span>
+              </button>
+            </>
+          )}
+
+          {needsSingleActionButton && (
+            // Single Action Button (Entendido/Aceptar for success, error, warning, info)
             <button
               onClick={onClose}
-              disabled={loading}
-              className="w-full sm:w-auto order-2 sm:order-1 flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              // Add disabled={loading} if these modals might also show a loading state
+              className={`w-full sm:w-auto font-semibold py-2.5 px-8 rounded-lg text-blanco transition-colors ${buttonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              <X className="h-5 w-5" />
-              <span>{cancelText}</span>
+              {understoodText}
             </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              className={`w-full sm:w-auto order-1 sm:order-2 flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors min-w-[140px] ${buttonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {loading ? (
-                <LoaderCircle className="animate-spin h-5 w-5" />
-              ) : (
-                <Check className="h-5 w-5" />
-              )}
-              <span>{loading ? 'Procesando...' : confirmText}</span>
-            </button>
-          </div>
-        )}
-
-        {needsUnderstoodButton && (
-          <div className="mt-6 sm:mt-8 flex justify-center">
-            <button
-            onClick={onClose}
-            className={`font-semibold py-2.5 px-8 rounded-lg text-blanco transition-colors ${buttonClass}`}
-            >
-              Entendido
-            </button>
-          </div>
-        )}
+          )}
+        </div>
+        {/* --- End Render Buttons --- */}
 
       </div>
       <style>{`
