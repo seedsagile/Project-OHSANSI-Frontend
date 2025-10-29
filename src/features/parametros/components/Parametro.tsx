@@ -110,7 +110,7 @@ export const Parametro = () => {
 
   const handleSelectArea = async (id: number) => {
     setAreaSeleccionada(id);
-    setNivelSeleccionado(null);
+    // setNivelSeleccionado(null);
     setValoresCopiadosManualmente(false);
     setLoading(true);
 
