@@ -54,9 +54,9 @@ export const crearAreaEsquema = z.object({
         'El campo Nombre del Área contiene caracteres no permitidos. Solo se permiten letras y espacios.',
     })
     // Validación 3 y 4: Mínimo 4 caracteres
-    .refine((val) => val.trim().length >= 4, {
-      message: 'El Nombre del Área requiere un mínimo de 4 caracteres.',
-    })
+    // .refine((val) => val.trim().length >= 4, {
+    //   message: 'El Nombre del Área requiere un mínimo de 4 caracteres.',
+    // })
     // Validación 5: Máximo 30 caracteres
     .refine((val) => val.trim().length <= 30, {
       message: 'El Nombre del Área no puede tener más de 30 caracteres.',
