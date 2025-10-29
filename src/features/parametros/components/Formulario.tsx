@@ -49,6 +49,7 @@ interface FormularioProps {
   };
   valoresCopiadosManualmente?: boolean;
   onLimpiarSeleccion?: () => void;
+  onSuccess?: () => void;
 }
 
 export const Formulario: React.FC<FormularioProps> = ({
@@ -59,6 +60,7 @@ export const Formulario: React.FC<FormularioProps> = ({
   valoresCopiados,
   valoresCopiadosManualmente,
   onLimpiarSeleccion,
+  onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
   const [modalExito, setModalExito] = useState(false);
@@ -133,11 +135,9 @@ export const Formulario: React.FC<FormularioProps> = ({
       if (onLimpiarSeleccion) onLimpiarSeleccion();
 
       setModalExito(true);
-      setTimeout(() => {
-        setModalExito(false);
-        onMarcarEnviado(nivel!.id, idArea);
-        onCerrar();
-      }, 3000);
+      if (onSuccess) onSuccess();
+      onMarcarEnviado(nivel!.id, idArea);
+      onCerrar();
     } catch (error: any) {
       console.error('Error al enviar parámetro:', error);
       alert(error.response?.data?.message || 'Error al guardar el parámetro');
@@ -247,7 +247,7 @@ export const Formulario: React.FC<FormularioProps> = ({
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />
             </svg>
-            Cancelar
+            Limpiar
           </button>
           <button
             type="submit"
@@ -279,9 +279,9 @@ export const Formulario: React.FC<FormularioProps> = ({
         </div>
       </form>
 
-      {modalExito && (
+      {/* {modalExito && (
         <p className="text-green-600 text-center mt-4 font-semibold">¡Registro exitoso!</p>
-      )}
+      )} */}
     </div>
   );
 };

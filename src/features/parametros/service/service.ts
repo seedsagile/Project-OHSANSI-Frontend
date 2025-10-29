@@ -5,27 +5,35 @@ import type { Area, Nivel, ParametroClasificacion } from '../interface/interface
 // 🟩 Obtener todas las Áreas
 // ===============================
 export const obtenerAreasAPI = async (): Promise<Area[]> => {
-  const response = await apiClient.get('/area');
-  return response.data.map((a: { id_area: number; nombre: string }) => ({
-    id: a.id_area,
-    nombre: a.nombre,
+  const response = await apiClient.get('/areas-nombres');
+  const nombresAreas = response.data.data.nombres_areas;
+
+  // Convertir el objeto { "1": "Matemáticas", "2": "Física" } en un array de objetos
+  const areas = Object.entries(nombresAreas).map(([id, nombre]) => ({
+    id: Number(id),
+    nombre: nombre as string,
   }));
+
+  return areas;
 };
 
-// ===============================
-// 🟨 Obtener Niveles por Área
-// ===============================
-export const obtenerNivelesPorAreaAPI = async (id_area: number): Promise<Nivel[]> => {
+// ✅ Trae las áreas junto con sus niveles (endpoint: /areas-con-niveles)
+export const obtenerAreasConNivelesAPI = async (): Promise<Area[]> => {
   const response = await apiClient.get('/areas-con-niveles');
-  const areas = response.data.data;
 
-  const areaEncontrada = areas.find((a: { id_area: number }) => a.id_area === id_area);
-  if (!areaEncontrada) return [];
-
-  return areaEncontrada.niveles.map((n: { id_nivel: number; nombre: string }) => ({
-    id: n.id_nivel,
-    nombre: n.nombre,
+  const areas = response.data.data.map((a: any) => ({
+    id: a.id_area,
+    nombre: a.nombre,
+    niveles: Array.isArray(a.niveles)
+      ? a.niveles.map((n: any) => ({
+          id: n.id_nivel, // <-- convertir correctamente
+          nombre: n.nombre,
+          asignado_activo: n.asignado_activo, // opcional si lo necesitas luego
+        }))
+      : [],
   }));
+
+  return areas;
 };
 
 // ===============================
