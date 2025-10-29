@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Nivel } from '../interface/interface';
 import apiClient from '../../../api/ApiPhp';
-import { Modal } from '../../../components/ui/Modal';
 
 const limpiarEspacios = (val: string) => val.trim().replace(/\s+/g, '');
 
@@ -14,16 +13,16 @@ const esquemaNotas = z.object({
     .refine((val) => limpiarEspacios(val) !== '', {
       message: 'El campo Nota mínima es obligatorio.',
     })
-    .refine((val) => /^(\d+(,\d+)?)$/.test(limpiarEspacios(val)), {
-      message: 'Solo se permiten números y coma en Nota mínima.',
+    .refine((val) => /^(\d+(.\d+)?)$/.test(limpiarEspacios(val)), {
+      message: 'Solo se permiten números y punto en Nota mínima.',
     }),
   notaMaxima: z
     .string()
     .refine((val) => limpiarEspacios(val) !== '', {
       message: 'El campo Nota máxima es obligatorio.',
     })
-    .refine((val) => /^(\d+(,\d+)?)$/.test(limpiarEspacios(val)), {
-      message: 'Solo se permiten números y coma en Nota máxima.',
+    .refine((val) => /^(\d+(.\d+)?)$/.test(limpiarEspacios(val)), {
+      message: 'Solo se permiten números y punto en Nota máxima.',
     }),
   cantidadMaxCompetidores: z
     .string()
@@ -162,8 +161,8 @@ export const Formulario: React.FC<FormularioProps> = ({
             onInput={(e) => {
               // Solo permitir dígitos y una coma opcional
               e.currentTarget.value = e.currentTarget.value
-                .replace(/[^0-9,]/g, '') // quita todo excepto números y coma
-                .replace(/(,.*),/g, '$1'); // permite solo una coma
+                .replace(/[^0-9.]/g, '') // quita todo excepto números y coma
+                .replace(/(..*),/g, '$1'); // permite solo una coma
             }}
             disabled={formularioBloqueado}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
@@ -181,8 +180,8 @@ export const Formulario: React.FC<FormularioProps> = ({
             {...register('notaMaxima')}
             onInput={(e) => {
               e.currentTarget.value = e.currentTarget.value
-                .replace(/[^0-9,]/g, '')
-                .replace(/(,.*),/g, '$1');
+                .replace(/[^0-9.]/g, '')
+                .replace(/(..*),/g, '$1');
             }}
             disabled={formularioBloqueado}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
@@ -225,7 +224,7 @@ export const Formulario: React.FC<FormularioProps> = ({
                 cantidadMaxCompetidores: '',
               });
               if (onLimpiarSeleccion) onLimpiarSeleccion(); // si quieres limpiar el checkbox también
-              onCerrar();
+              // onCerrar();
             }}
             disabled={formularioBloqueado}
             className={`px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center ${

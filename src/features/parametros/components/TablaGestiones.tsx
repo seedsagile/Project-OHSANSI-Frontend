@@ -34,7 +34,7 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
   useEffect(() => {
     const fetchParametros = async () => {
       try {
-        const data = await obtenerParametrosPorOlimpiadaAPI(3);
+        const data = await obtenerParametrosPorOlimpiadaAPI();
         setParametros(data);
       } catch (error) {
         console.error('Error al obtener parámetros:', error);
