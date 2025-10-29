@@ -8,8 +8,8 @@ interface AreaNiveles {
 
 interface AccordionNivelProps {
   data: AreaNiveles[];
-  selectedNiveles: number[];
-  onChangeSelected?: (niveles: number[]) => void;
+  selectedNiveles: { [areaNombre: string]: number | null };
+  onChangeSelected?: (niveles: { [areaNombre: string]: number | null }) => void;
 }
 
 export const AccordionNivel: React.FC<AccordionNivelProps> = ({
@@ -18,20 +18,21 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
   onChangeSelected,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [localSelectedNiveles, setLocalSelectedNiveles] = useState<number[]>([]);
+  const [localSelected, setLocalSelected] = useState<{ [areaNombre: string]: number | null }>({});
 
   const toggleAccordion = () => setIsOpen((prev) => !prev);
 
   useEffect(() => {
-    setLocalSelectedNiveles(selectedNiveles);
+    setLocalSelected(selectedNiveles);
   }, [selectedNiveles]);
 
-  const handleCheckboxChange = (nivelId: number) => {
-    const newSelected = localSelectedNiveles.includes(nivelId)
-      ? localSelectedNiveles.filter((id) => id !== nivelId)
-      : [...localSelectedNiveles, nivelId];
+  const handleCheckboxChange = (areaNombre: string, nivelId: number) => {
+    const newSelected = {
+      ...localSelected,
+      [areaNombre]: localSelected[areaNombre] === nivelId ? null : nivelId,
+    };
 
-    setLocalSelectedNiveles(newSelected);
+    setLocalSelected(newSelected);
     onChangeSelected?.(newSelected);
   };
 
@@ -83,7 +84,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
                 {niveles.length > 0 ? (
                   <div className="space-y-2">
                     {niveles.map((nivel) => {
-                      const isChecked = localSelectedNiveles.includes(nivel.id_nivel);
+                      const isChecked = localSelected[areaNombre] === nivel.id_nivel;
                       return (
                         <label
                           key={nivel.id_nivel}
@@ -97,7 +98,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            onChange={() => handleCheckboxChange(nivel.id_nivel)}
+                            onChange={() => handleCheckboxChange(areaNombre, nivel.id_nivel)}
                             className="accent-principal-500 w-4 h-4"
                           />
                         </label>
