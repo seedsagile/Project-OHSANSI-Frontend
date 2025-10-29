@@ -30,6 +30,7 @@ export function PaginaRegistrarResponsable() {
     isReadOnly,
     handleToggleSeleccionarTodas,
     areasLoadedFromPast,
+    finalizeSuccessAction,
   } = useGestionResponsable();
 
   const mostrarCargaPagina = isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
@@ -161,11 +162,14 @@ export function PaginaRegistrarResponsable() {
       {/* Modal Feedback */}
       <Modal1
         isOpen={modalFeedback.isOpen}
-        onClose={closeModalFeedback}
+        // Si es éxito, el cierre (botón Entendido) ejecuta finalizeSuccessAction
+        // Si no es éxito, solo cierra visualmente con closeModalFeedback
+        onClose={modalFeedback.type === 'success' ? finalizeSuccessAction : closeModalFeedback}
         title={modalFeedback.title}
         type={modalFeedback.type}
-      >
-        {modalFeedback.message}
+        // No necesita onConfirm para 'success'
+      > 
+      {modalFeedback.message}
       </Modal1>
     </>
   );

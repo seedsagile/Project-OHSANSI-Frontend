@@ -1,7 +1,7 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Search, LoaderCircle } from 'lucide-react';
-import type { VerificacionCIForm } from '../utils/validations';
+import { CI_MAX_LENGTH, type VerificacionCIForm } from '../utils/validations';
 
 type VerificacionCIProps = {
   onSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>;
@@ -21,9 +21,7 @@ export function VerificacionCI({ onSubmit }: VerificacionCIProps) {
         </label>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <input
-            id="ci-verificacion"
-            type="text"
-            placeholder="Ej: 7912324, 7912324A"
+            id="ci-verificacion" type="text" placeholder="Ej: 7912324, 7912324A" maxLength={CI_MAX_LENGTH}
             autoFocus
             disabled={isSubmitting}
             className={`flex-grow w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${

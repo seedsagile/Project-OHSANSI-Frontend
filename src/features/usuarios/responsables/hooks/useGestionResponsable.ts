@@ -20,7 +20,6 @@ export function useGestionResponsable() {
 
   const modalTimerRef = useRef<number | undefined>(undefined);
     useEffect(() => {
-        // Limpiar temporizador al desmontar
         return () => clearTimeout(modalTimerRef.current);
     }, []);
 
@@ -29,19 +28,26 @@ export function useGestionResponsable() {
         clearTimeout(modalTimerRef.current);
     }, []);
 
-  // --- Callback de Verificación (CORREGIDO: parámetro 'ci' eliminado) ---
   const handleVerificationComplete = useCallback((
       data: DatosPersonaVerificada | null,
-      // ci: string, // <-- Eliminado ya que no se usaba aquí
       isAlreadyAssigned: boolean,
       initialAreas: number[]
   ) => {
-      // console.log("[useGestionResponsable] Verification Complete Callback:", { data, isAlreadyAssigned, initialAreas }); // Mantenemos el log sin 'ci'
       setDatosPersona(data);
       setIsAssignedToCurrentGestion(isAlreadyAssigned);
       setInitialAreasReadOnly(initialAreas);
       setPasoActual(isAlreadyAssigned ? 'READ_ONLY' : 'FORMULARIO_DATOS');
   }, []);
+
+  const finalizeSuccessAction = useCallback(() => {
+    closeModalFeedback();
+    if (handleCancelarCallbackRef.current) {
+      handleCancelarCallbackRef.current();
+    } else {
+      navigate('/responsables');
+    }
+    clearTimeout(modalTimerRef.current);
+  }, [closeModalFeedback, navigate]);
 
   const handleVerificationError = useCallback((message: string) => {
       setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message });
@@ -53,114 +59,99 @@ export function useGestionResponsable() {
     formMethodsVerificacion,
     handleVerificarCISubmit,
     resetVerification,
-    ciVerificado, // <-- Necesitamos este valor para las queries
+    ciVerificado,
   } = useVerificacionResponsable(handleVerificationComplete, handleVerificationError);
 
-  const handleCancelarCallbackRef = useRef<() => void>(undefined); // Usamos ref para evitar dependencia circular
+  const handleCancelarCallbackRef = useRef<() => void>(undefined);
 
   const {
     formMethodsPrincipal,
     gestionesPasadas,
     areasDisponiblesQuery,
     isLoadingGestiones,
-    isSaving, // <-- Usar el estado combinado del hook
+    isSaving,
     onSubmitFormularioPrincipal,
     handleGestionSelect,
     gestionPasadaSeleccionadaId,
-    gestionPasadaSeleccionadaAnio, // <-- Variable necesaria declarada aquí
+    gestionPasadaSeleccionadaAnio,
     primerInputRef,
-    resetFormularioPrincipal, // <-- Obtenemos la función de reset
+    resetFormularioPrincipal,
   } = useFormularioPrincipalResponsable({
       ciVerificado,
       datosPersonaVerificada: datosPersona,
       isReadOnly: isAssignedToCurrentGestion,
       initialAreas: initialAreasReadOnly,
-      // Pasamos la función onSucess definida más abajo
       onFormSubmitSuccess: (data, esActualizacion) => {
           handleFormSubmitSuccess(data, esActualizacion);
       },
       onFormSubmitError: (message) => {
-         handleFormSubmitError(message);
+          handleFormSubmitError(message);
       }
   });
 
-   // --- Definir handleCancelar AHORA que tenemos resetFormularioPrincipal ---
-   const handleCancelar = useCallback(() => {
-    // Si está en modo ReadOnly, simplemente navega
+  const handleCancelar = useCallback(() => {
     if (isAssignedToCurrentGestion) {
         navigate('/responsables');
     } else {
-        // Si NO está en ReadOnly (es Cancelar normal), resetea todo
         resetVerification();
-        resetFormularioPrincipal(true); // resetToDefault = true
+        resetFormularioPrincipal(true);
         setDatosPersona(null);
         setIsAssignedToCurrentGestion(false);
         setInitialAreasReadOnly([]);
         setPasoActual('VERIFICACION_CI');
         closeModalFeedback();
     }
-    // Asegúrate de incluir navigate y isAssignedToCurrentGestion en las dependencias
   }, [isAssignedToCurrentGestion, navigate, resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
-    // Asignar al ref para usar en onSuccess
-    handleCancelarCallbackRef.current = handleCancelar;
+  handleCancelarCallbackRef.current = handleCancelar;
 
+  const handleFormSubmitSuccess = useCallback((data: ResponsableCreado | ResponsableActualizado, esActualizacion: boolean) => {
+    
+    const message = data.message || (esActualizacion ? '¡Responsable Asignado en nueva gestion!' : '¡Registro Exitoso!');
 
-  // --- Callback onSuccess (CORREGIDO: Dependencias ajustadas) ---
-   const handleFormSubmitSuccess = useCallback((data: ResponsableCreado | ResponsableActualizado, esActualizacion: boolean) => {
-      const message = data.message || (esActualizacion ? 'Responsable actualizado.' : 'Responsable registrado.');
-      setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message });
+    setModalFeedback({
+        isOpen: true,
+        type: 'success',
+        title: '¡Éxito!',
+        message
+    });
 
-      // Invalidaciones existentes
-      queryClient.invalidateQueries({ queryKey: ['responsables'] });
-      if (gestionPasadaSeleccionadaAnio) {
-        queryClient.invalidateQueries({ queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado] });
-      }
-      queryClient.invalidateQueries({ queryKey: ['gestionesPasadas', ciVerificado] });
+    queryClient.invalidateQueries({ queryKey: ['responsables'] });
+    if (gestionPasadaSeleccionadaAnio) {
+      queryClient.invalidateQueries({ queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado] });
+    }
+    queryClient.invalidateQueries({ queryKey: ['gestionesPasadas', ciVerificado] });
+    if (esActualizacion && ciVerificado) {
+      queryClient.invalidateQueries({ queryKey: ['areasPasadas', GESTION_ACTUAL_ANIO, ciVerificado] });
+    }
 
-      // --- AÑADIR ESTA INVALIDACIÓN ---
-      if (esActualizacion && ciVerificado) {
-        queryClient.invalidateQueries({ queryKey: ['areasPasadas', GESTION_ACTUAL_ANIO, ciVerificado] }); // Invalidar caché de áreas actuales
-      }
-      // --- FIN DE LA ADICIÓN ---
+    clearTimeout(modalTimerRef.current);
+    modalTimerRef.current = window.setTimeout(finalizeSuccessAction, 5000);
 
-
-      modalTimerRef.current = window.setTimeout(() => {
-          closeModalFeedback();
-          if (handleCancelarCallbackRef.current) {
-            handleCancelarCallbackRef.current();
-          }
-          navigate('/responsables');
-      }, 2000);
-  // Asegúrate de incluir GESTION_ACTUAL_ANIO en las dependencias si lo usas directamente
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryClient, closeModalFeedback, navigate, ciVerificado, gestionPasadaSeleccionadaAnio]); // Añadir GESTION_ACTUAL_ANIO si es necesario
+  }, [queryClient, ciVerificado, gestionPasadaSeleccionadaAnio, finalizeSuccessAction]);
 
   const handleFormSubmitError = useCallback((message: string) => {
-      setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
-      // Mantener el paso actual
+      setModalFeedback({ isOpen: true, type: 'error', title: '¡Ups! Algo salió mal', message });
   }, []);
 
-  // --- Hook Selección Áreas (sin cambios necesarios aquí) ---
   const {
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
     isLoadingAreas,
     areasLoadedFromPast,
   } = useSeleccionAreasResponsable({
-      formMethods: formMethodsPrincipal,
-      ciVerificado,
-      gestionPasadaSeleccionadaAnio, // <-- Pasarlo aquí está bien
-      initialAreas: initialAreasReadOnly,
-      isReadOnly: isAssignedToCurrentGestion,
-      areasDisponiblesQuery,
+    formMethods: formMethodsPrincipal,
+    ciVerificado,
+    gestionPasadaSeleccionadaAnio,
+    initialAreas: initialAreasReadOnly,
+    isReadOnly: isAssignedToCurrentGestion,
+    areasDisponiblesQuery,
   });
 
-  // --- Recálculo de isLoading y isProcessing (sin cambios) ---
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingGestiones || isLoadingAreas;
-  const isProcessing = isVerifying || isSaving; // <-- Usar isSaving combinado
+  const isProcessing = isVerifying || isSaving;
   const pasoActualUI = isVerifying ? 'CARGANDO_VERIFICACION'
-        : isSaving ? 'CARGANDO_GUARDADO' // <-- Usar isSaving combinado
+        : isSaving ? 'CARGANDO_GUARDADO'
         : isAssignedToCurrentGestion ? 'READ_ONLY'
         : pasoActual;
 
@@ -185,7 +176,8 @@ export function useGestionResponsable() {
     handleToggleSeleccionarTodas,
     handleGestionSelect,
     onSubmitFormularioPrincipal,
-    handleCancelar, // <-- Devolver la función definida
+    handleCancelar,
     closeModalFeedback,
+    finalizeSuccessAction
   };
 }

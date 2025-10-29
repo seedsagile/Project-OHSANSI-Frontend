@@ -1,7 +1,6 @@
-// responsabless/types/index.ts
-import type { Area as AreaGeneral } from '@/features/areas/types'; //
+import type { Area as AreaGeneral } from '@/features/areas/types';
 
-export type DatosPersonaVerificada = { //
+export type DatosPersonaVerificada = {
   Id_usuario: number;
   Nombres: string;
   Apellidos: string;
@@ -14,12 +13,12 @@ export type DatosPersonaVerificada = { //
   };
 };
 
-export type Gestion = { //
+export type Gestion = {
   Id_olimpiada: number;
   gestion: string;
 };
 
-export type AreaPasadaResponse = { //
+export type AreaPasadaResponse = {
   id_responsable_area: number;
   Area: {
     Id_area: number;
@@ -28,50 +27,48 @@ export type AreaPasadaResponse = { //
 };
 
 // Payload para Crear (POST)
-export type CrearResponsablePayload = { //
+export type CrearResponsablePayload = {
   nombre: string;
   apellido: string;
   ci: string;
   email: string;
-  password?: string; // Password es opcional al crear (backend puede generarlo)
+  password?: string;
   telefono: string;
-  id_olimpiada?: number; // Puede ser opcional si el backend usa uno por defecto
+  id_olimpiada?: number;
   areas: number[];
 };
 
-// Payload para Actualizar (PUT) - Ajustado a la nueva estructura simple
 export type ActualizarResponsablePayload = { //
-  id_olimpiada: number; // ID de la olimpiada actual
-  areas: number[];      // Lista completa de áreas asignadas
+  id_olimpiada: number;
+  areas: number[];
 };
 
 // Respuesta de Crear (POST)
-export type ResponsableCreado = { //
+export type ResponsableCreado = {
   message: string;
-  [key: string]: any; // Permite campos adicionales que pueda devolver la API
+  [key: string]: any;
 };
 
 // Respuesta de Actualizar (PUT) - Puede ser similar a la de Crear
-export type ResponsableActualizado = { //
+export type ResponsableActualizado = {
   message: string;
-  [key: string]: any; // Permite campos adicionales
+  [key: string]: any;
 };
 
 // Estados del flujo de registro/edición
 export type PasoRegistroResponsable = //
   | 'VERIFICACION_CI'
   | 'CARGANDO_VERIFICACION'
-  | 'FORMULARIO_DATOS' // Representa tanto creación como edición
-  | 'CARGANDO_GUARDADO' // Representa creación o actualización en progreso
-  | 'READ_ONLY'; // Estado cuando el usuario ya está asignado
+  | 'FORMULARIO_DATOS'
+  | 'CARGANDO_GUARDADO'
+  | 'READ_ONLY';
 
 // Estado para el modal de feedback
-export type ModalFeedbackState = { //
+export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
   message: string;
   type: 'success' | 'error' | 'info';
 };
 
-// Re-exporta el tipo Area general para uso dentro de esta feature
 export type { AreaGeneral as Area }; //

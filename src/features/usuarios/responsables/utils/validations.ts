@@ -30,8 +30,8 @@ const REGEX_CORREO_INVALID_CHARS = /[^a-zA-Z0-9._\-@]/;
  * 2. Reduce espacios múltiples internos a uno solo.
  */
 const sanitizeSpaces = (str: string): string => {
-  if (!str) return '';
-  return str.trim().replace(/\s+/g, ' ');
+    if (!str) return '';
+    return str.trim().replace(/\s+/g, ' ');
 };
 
 /**
@@ -39,13 +39,13 @@ const sanitizeSpaces = (str: string): string => {
  * Asume que los espacios ya están sanitizados.
  */
 const toTitleCase = (str: string): string => {
-  if (!str) return '';
-  // No se convierte a minúsculas primero para respetar mayúsculas intencionales si las hubiera,
-  // aunque la validación de Nombres/Apellidos podría restringir esto.
-  // Se capitaliza después de sanitizar espacios.
-  return str.split(' ').map(word =>
-    word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
-  ).join(' ');
+    if (!str) return '';
+    // No se convierte a minúsculas primero para respetar mayúsculas intencionales si las hubiera,
+    // aunque la validación de Nombres/Apellidos podría restringir esto.
+    // Se capitaliza después de sanitizar espacios.
+    return str.split(' ').map(word =>
+        word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
+    ).join(' ');
 };
 
 /**

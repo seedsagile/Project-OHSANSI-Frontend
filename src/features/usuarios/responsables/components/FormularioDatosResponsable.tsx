@@ -2,7 +2,7 @@ import { forwardRef, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { Info, Mail, Smartphone, User, Hash } from 'lucide-react';
-import type { ResponsableFormData } from '../utils/validations';
+import { APELLIDO_MAX_LENGTH, CELULAR_MAX_LENGTH, CORREO_MAX_LENGTH, NOMBRE_MAX_LENGTH, type ResponsableFormData } from '../utils/validations';
 import type { DatosPersonaVerificada, Gestion } from '../types/index';
 
 type FormularioDatosResponsableProps = {
@@ -109,7 +109,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
                   ref={nombresRef}
-                  id="nombres" type="text" placeholder="Ej: Juan José"
+                  id="nombres" type="text" placeholder="Ej: Juan José" maxLength={NOMBRE_MAX_LENGTH}
                   disabled={disablePersonalFields}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
                     errors.nombres ? inputErrorClass : esUsuarioExistente ? inputPrefilledClass : inputNormalClass
@@ -136,7 +136,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
               <div className="relative">
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
-                  id="apellidos" type="text" placeholder="Ej: Pérez García"
+                  id="apellidos" type="text" placeholder="Ej: Pérez García" maxLength={APELLIDO_MAX_LENGTH}
                   disabled={disablePersonalFields}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
                     errors.apellidos ? inputErrorClass : esUsuarioExistente ? inputPrefilledClass : inputNormalClass
@@ -164,7 +164,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
                   ref={correoRef}
-                  id="correo" type="email" placeholder="Ej: juan.perez@example.com"
+                  id="correo" type="email" placeholder="Ej: juan.perez@example.com" maxLength={CORREO_MAX_LENGTH}
                   disabled={disableCorreoField}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
                     errors.correo ? inputErrorClass : esUsuarioExistente ? inputPrefilledClass : inputNormalClass
@@ -207,7 +207,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
               <div className="relative">
                 <Smartphone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
-                  id="celular" type="tel" placeholder="Ej: 79123245" maxLength={8}
+                  id="celular" type="tel" placeholder="Ej: 79123245" maxLength={CELULAR_MAX_LENGTH}
                   disabled={disablePersonalFields}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
                     errors.celular ? inputErrorClass : esUsuarioExistente ? inputPrefilledClass : inputNormalClass

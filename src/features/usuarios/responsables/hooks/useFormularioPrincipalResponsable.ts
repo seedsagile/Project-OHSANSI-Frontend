@@ -53,8 +53,10 @@ export function useFormularioPrincipalResponsable({
 
     const formMethodsPrincipal = useForm<ResponsableFormData, any, ResponsableFormInput>({
         resolver: zodResolver(datosResponsableSchema),
-        mode: 'onChange',
+        mode: 'all',
         defaultValues: defaultFormValues,
+        shouldFocusError: true, // Enfoca el primer error al enviar (buen UX)
+        delayError: 400, // Retraso leve antes de mostrar errores mientras se escribe
     });
     const { reset: resetPrincipalForm, setError, setFocus } = formMethodsPrincipal;
 
