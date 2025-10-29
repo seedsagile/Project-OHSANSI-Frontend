@@ -5,6 +5,7 @@ import { useVerificacionResponsable } from './useVerificacionResponsable';
 import { useFormularioPrincipalResponsable } from './useFormularioPrincipalResponsable';
 import { useSeleccionAreasResponsable } from './useSeleccionAreasResponsable';
 import type { PasoRegistroResponsable, ModalFeedbackState, ResponsableCreado, ResponsableActualizado, DatosPersonaVerificada } from '../types'; // Importar ResponsableActualizado
+import { GESTION_ACTUAL_ANIO } from '../utils/constants';
 
 const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
 
@@ -85,14 +86,21 @@ export function useGestionResponsable() {
 
    // --- Definir handleCancelar AHORA que tenemos resetFormularioPrincipal ---
    const handleCancelar = useCallback(() => {
-      resetVerification();
-      resetFormularioPrincipal(true); // resetToDefault = true
-      setDatosPersona(null);
-      setIsAssignedToCurrentGestion(false);
-      setInitialAreasReadOnly([]);
-      setPasoActual('VERIFICACION_CI');
-      closeModalFeedback();
-    }, [resetVerification, resetFormularioPrincipal, closeModalFeedback]);
+    // Si está en modo ReadOnly, simplemente navega
+    if (isAssignedToCurrentGestion) {
+        navigate('/responsables');
+    } else {
+        // Si NO está en ReadOnly (es Cancelar normal), resetea todo
+        resetVerification();
+        resetFormularioPrincipal(true); // resetToDefault = true
+        setDatosPersona(null);
+        setIsAssignedToCurrentGestion(false);
+        setInitialAreasReadOnly([]);
+        setPasoActual('VERIFICACION_CI');
+        closeModalFeedback();
+    }
+    // Asegúrate de incluir navigate y isAssignedToCurrentGestion en las dependencias
+  }, [isAssignedToCurrentGestion, navigate, resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
     // Asignar al ref para usar en onSuccess
     handleCancelarCallbackRef.current = handleCancelar;
@@ -103,24 +111,30 @@ export function useGestionResponsable() {
       const message = data.message || (esActualizacion ? 'Responsable actualizado.' : 'Responsable registrado.');
       setModalFeedback({ isOpen: true, type: 'success', title: '¡Éxito!', message });
 
+      // Invalidaciones existentes
       queryClient.invalidateQueries({ queryKey: ['responsables'] });
-      // Usar gestionPasadaSeleccionadaAnio de las props del hook, que ya está en scope
       if (gestionPasadaSeleccionadaAnio) {
         queryClient.invalidateQueries({ queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado] });
       }
       queryClient.invalidateQueries({ queryKey: ['gestionesPasadas', ciVerificado] });
 
+      // --- AÑADIR ESTA INVALIDACIÓN ---
+      if (esActualizacion && ciVerificado) {
+        queryClient.invalidateQueries({ queryKey: ['areasPasadas', GESTION_ACTUAL_ANIO, ciVerificado] }); // Invalidar caché de áreas actuales
+      }
+      // --- FIN DE LA ADICIÓN ---
+
+
       modalTimerRef.current = window.setTimeout(() => {
           closeModalFeedback();
-          // Usar la función desde el ref
           if (handleCancelarCallbackRef.current) {
             handleCancelarCallbackRef.current();
           }
-          navigate('/dashboard');
+          navigate('/responsables');
       }, 2000);
+  // Asegúrate de incluir GESTION_ACTUAL_ANIO en las dependencias si lo usas directamente
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryClient, closeModalFeedback, navigate, ciVerificado, gestionPasadaSeleccionadaAnio]); // gestionPasadaSeleccionadaAnio ahora está en scope aquí
-
+  }, [queryClient, closeModalFeedback, navigate, ciVerificado, gestionPasadaSeleccionadaAnio]); // Añadir GESTION_ACTUAL_ANIO si es necesario
 
   const handleFormSubmitError = useCallback((message: string) => {
       setModalFeedback({ isOpen: true, type: 'error', title: 'Error Guardado', message });
