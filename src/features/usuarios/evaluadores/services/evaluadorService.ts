@@ -91,7 +91,7 @@ export const obtenerAreasPasadas = async (gestion: string, ci: string): Promise<
   try {
     // Llama al endpoint GET para obtener las áreas de una gestión
     const response = await apiClient.get<AreaPasadaResponse[] | { message: string, data: [] }>( //
-      `/evaludores/ci/${ci}/gestion/${gestion}/areas`
+      `/evaluadores/ci/${ci}/gestion/${gestion}/areas`
     ); //
     const responseData = response.data;
     // Maneja respuestas donde 'data' es un array o está anidado
