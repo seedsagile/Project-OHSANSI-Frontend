@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
-  obtenerNivelesPorAreaAPI,
-  obtenerAreasAPI,
   obtenerParametrosGestionActualAPI,
+  obtenerAreasAPI,
+  obtenerAreasConNivelesAPI,
 } from '../service/service';
 import type { Area, Nivel, ParametroGestionAPI } from '../interface/interface';
 import { Formulario } from './Formulario';
 import { TablaGestiones } from './TablaGestiones';
+import { Modal } from '@/components/ui/Modal';
 
 export const Parametro = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,11 +17,19 @@ export const Parametro = () => {
   const [loading, setLoading] = useState(false);
   const [nivelSeleccionado, setNivelSeleccionado] = useState<Nivel | null>(null);
   const [valoresCopiadosManualmente, setValoresCopiadosManualmente] = useState(false);
-
-  // niveles que ya tienen parámetros creados
   const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, number[]>>({});
-
   const [gestionSeleccionada, setGestionSeleccionada] = useState<number | null>(null);
+  // Dentro de Parametro
+  const [modalSuccessOpen, setModalSuccessOpen] = useState(false);
+
+  useEffect(() => {
+    if (modalSuccessOpen) {
+      const timer = setTimeout(() => {
+        setModalSuccessOpen(false);
+      }, 3000); // Se cierra solo en 3 segundos
+      return () => clearTimeout(timer);
+    }
+  }, [modalSuccessOpen]);
 
   const [valoresCopiados, setValoresCopiados] = useState<{
     notaMinima: number | '';
@@ -31,8 +40,6 @@ export const Parametro = () => {
     notaMaxima: '',
     cantidadMaxima: '',
   });
-
-  //const usuarioActual = localStorage.getItem('usuarioActual') || 'defaultUser';
 
   const copiarValores = (valores: {
     notaMinima: number;
@@ -49,12 +56,12 @@ export const Parametro = () => {
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  // Obtener Áreas
+  // ✅ PRIMER USEEFFECT - obtener solo nombres de áreas
   useEffect(() => {
     const fetchAreas = async () => {
       try {
         const data = await obtenerAreasAPI();
-        setAreas(data);
+        console.log('Áreas (solo nombres):', data);
       } catch (error) {
         console.error('Error al obtener áreas:', error);
       }
@@ -62,20 +69,30 @@ export const Parametro = () => {
     fetchAreas();
   }, []);
 
+  // ✅ SEGUNDO USEEFFECT - obtener áreas con sus niveles
+  useEffect(() => {
+    const fetchAreasConNiveles = async () => {
+      try {
+        const data = await obtenerAreasConNivelesAPI();
+        setAreas(data);
+        console.log('Áreas con niveles:', data);
+      } catch (error) {
+        console.error('Error al obtener áreas con niveles:', error);
+      }
+    };
+    fetchAreasConNiveles();
+  }, []);
+
   // Obtener parámetros existentes para gestión actual
   useEffect(() => {
     const fetchParametros = async () => {
       try {
         const parametros = await obtenerParametrosGestionActualAPI();
-        // Agrupar por id_area
         const nivelesMap: Record<number, number[]> = {};
         parametros.forEach((p: ParametroGestionAPI) => {
-          // Buscar área y nivel
           const area = areas.find((a) => a.nombre === p.area);
           if (!area) return;
-          const nivelId = parseInt(
-            p.nivel.match(/\d+/)?.[0] || '0' // tomar el número del nivel si está en string "1ro de Secundaria"
-          );
+          const nivelId = parseInt(p.nivel.match(/\d+/)?.[0] || '0');
           if (!nivelesMap[area.id]) nivelesMap[area.id] = [];
           nivelesMap[area.id].push(nivelId);
         });
@@ -86,21 +103,20 @@ export const Parametro = () => {
     };
     fetchParametros();
   }, [areas]);
-  // En Parametro.tsx
+
   const limpiarGestionSeleccionada = () => {
-    setGestionSeleccionada(null); // ✅ Esto desmarca el checkbox
+    setGestionSeleccionada(null);
   };
 
-  // Manejar selección de área
   const handleSelectArea = async (id: number) => {
     setAreaSeleccionada(id);
     setNivelSeleccionado(null);
     setValoresCopiadosManualmente(false);
     setLoading(true);
-    setNiveles([]);
+
     try {
-      const nivelesData = await obtenerNivelesPorAreaAPI(id);
-      setNiveles(nivelesData);
+      const areaSeleccionadaObj = areas.find((a) => a.id === id);
+      setNiveles(areaSeleccionadaObj?.niveles || []);
     } catch (error) {
       console.error('Error al obtener niveles por área:', error);
       setNiveles([]);
@@ -111,7 +127,6 @@ export const Parametro = () => {
   };
 
   const handleFilaClick = (nivel: Nivel) => {
-    // Si ya tiene parámetros, no abrir formulario
     if (areaSeleccionada && nivelesConParametros[areaSeleccionada]?.includes(nivel.id)) return;
     setNivelSeleccionado(nivel);
     setValoresCopiadosManualmente(false);
@@ -148,7 +163,7 @@ export const Parametro = () => {
               >
                 <span>
                   {areaSeleccionada
-                    ? `Seleccionar Area: ${areas.find((a) => a.id === areaSeleccionada)?.nombre}`
+                    ? `Seleccionar Área: ${areas.find((a) => a.id === areaSeleccionada)?.nombre}`
                     : 'Seleccionar Área'}
                 </span>
                 <svg
@@ -193,9 +208,12 @@ export const Parametro = () => {
             {/* TABLA DE NIVELES */}
             <div className="relative z-10">
               <h2 className="text-lg font-bold text-negro mb-3">Lista de niveles</h2>
-              <div className="overflow-hidden rounded-lg border border-neutro-300">
+              <div
+                className="overflow-hidden rounded-lg border border-neutro-300"
+                style={{ maxHeight: '200px', overflowY: 'auto' }} // 👈 Aquí el scroll interno
+              >
                 <table className="w-full border-collapse">
-                  <thead className="bg-principal-500 text-blanco">
+                  <thead className="bg-principal-500 text-blanco sticky top-0 z-10">
                     <tr>
                       <th className="py-2 px-4 text-left w-16">NRO</th>
                       <th className="py-2 px-4 text-left w-10">NIVEL</th>
@@ -262,6 +280,7 @@ export const Parametro = () => {
               valoresCopiados={valoresCopiados}
               valoresCopiadosManualmente={valoresCopiadosManualmente}
               onLimpiarSeleccion={limpiarGestionSeleccionada}
+              onSuccess={() => setModalSuccessOpen(true)}
             />
           </div>
         </div>
@@ -273,6 +292,14 @@ export const Parametro = () => {
           onCopiarValores={copiarValores}
         />
       </main>
+      <Modal
+        isOpen={modalSuccessOpen}
+        onClose={() => setModalSuccessOpen(false)}
+        title="¡Registro exitoso!"
+        type="success"
+      >
+        Los parámetros se registraron correctamente.
+      </Modal>
     </div>
   );
 };
