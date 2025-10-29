@@ -19,7 +19,7 @@ export type Gestion = {
 };
 
 export type AreaPasadaResponse = {
-  id_evaluador: number;
+  id_evaluador_area: number;
   Area: {
     Id_area: number;
     Nombre: string;
