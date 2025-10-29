@@ -90,17 +90,14 @@ export function useGestionResponsable() {
   });
 
   const handleCancelar = useCallback(() => {
-    if (isAssignedToCurrentGestion) {
-        navigate('/responsables');
-    } else {
-        resetVerification();
-        resetFormularioPrincipal(true);
-        setDatosPersona(null);
-        setIsAssignedToCurrentGestion(false);
-        setInitialAreasReadOnly([]);
-        setPasoActual('VERIFICACION_CI');
-        closeModalFeedback();
-    }
+    resetVerification();
+    resetFormularioPrincipal(true);
+    setDatosPersona(null);
+    setIsAssignedToCurrentGestion(false);
+    setInitialAreasReadOnly([]);
+    setPasoActual('VERIFICACION_CI');
+    closeModalFeedback();
+    navigate('/responsables');
   }, [isAssignedToCurrentGestion, navigate, resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
   handleCancelarCallbackRef.current = handleCancelar;

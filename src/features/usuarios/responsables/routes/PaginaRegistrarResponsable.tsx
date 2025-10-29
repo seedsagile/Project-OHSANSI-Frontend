@@ -162,14 +162,11 @@ export function PaginaRegistrarResponsable() {
       {/* Modal Feedback */}
       <Modal1
         isOpen={modalFeedback.isOpen}
-        // Si es éxito, el cierre (botón Entendido) ejecuta finalizeSuccessAction
-        // Si no es éxito, solo cierra visualmente con closeModalFeedback
         onClose={modalFeedback.type === 'success' ? finalizeSuccessAction : closeModalFeedback}
         title={modalFeedback.title}
         type={modalFeedback.type}
-        // No necesita onConfirm para 'success'
       > 
-      {modalFeedback.message}
+        {modalFeedback.message}
       </Modal1>
     </>
   );

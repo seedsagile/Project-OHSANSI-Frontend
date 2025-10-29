@@ -177,12 +177,11 @@ export const datosResponsableSchema = z.object({
     ci: z.string().trim().min(1, 'El CI es requerido (debe venir de la verificación).'),
 
     celular: z
-        .string({ message: 'El número de celular es obligatorio.' })
+        .string({ message: 'El campo de Celular es obligatorio.' })
         .transform(sanitizeCelularForValidation)
         .pipe(z.string()
-            .min(1, 'El número de celular es obligatorio.')
-            .length(CELULAR_MIN_LENGTH, `El celular debe tener ${CELULAR_MIN_LENGTH} dígitos.`)
-            .regex(REGEX_CELULAR_BOLIVIA, 'Número inválido (debe empezar con 6 o 7 y tener 8 dígitos).')
+            .min(1, 'El campo de Celular es obligatorio.')
+            .regex(REGEX_CELULAR_BOLIVIA, `El campo Celular (debe empezar con 6 o 7, ser numérico y tener ${CELULAR_MIN_LENGTH} dígitos).`)
         ),
 
     areas: z

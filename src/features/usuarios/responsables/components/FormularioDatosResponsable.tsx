@@ -207,7 +207,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
               <div className="relative">
                 <Smartphone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400 pointer-events-none" aria-hidden="true" />
                 <input
-                  id="celular" type="tel" placeholder="Ej: 79123245" maxLength={CELULAR_MAX_LENGTH}
+                  id="celular" type="tel" placeholder="7xxxxxxx o 6xxxxxxx" maxLength={CELULAR_MAX_LENGTH}
                   disabled={disablePersonalFields}
                   className={`${inputBaseClass} ${inputWithIconClass} ${
                     errors.celular ? inputErrorClass : esUsuarioExistente ? inputPrefilledClass : inputNormalClass
@@ -223,7 +223,6 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
                     </span>
                 )}
               </div>
-              {!errors.celular && <p id="celular-hint" className="mt-1 text-xs text-neutro-500">Número de 8 dígitos (ej: 7xxxxxxx o 6xxxxxxx).</p>}
               {errors.celular?.message && <p id="celular-error" role="alert" className="mt-1 text-xs text-acento-600">{errors.celular.message}</p>}
             </div>
 
