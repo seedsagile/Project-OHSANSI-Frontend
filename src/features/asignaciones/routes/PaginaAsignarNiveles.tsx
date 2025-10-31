@@ -38,7 +38,7 @@ export function PaginaAsignarNiveles() {
         <main className="bg-blanco w-full max-w-2xl rounded-xl shadow-sombra-3 p-6 md:p-8">
           <header className="mb-10">
             <div className="text-right mb-2">
-              <p className="text-sm font-semibold text-negro tracking-wider">
+              <p className="text-sm md:text-3xl font-semibold text-negro tracking-wider">
                 Gestión 2025
               </p>
             </div>
