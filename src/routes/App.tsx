@@ -6,13 +6,13 @@ import { AuthInitializer } from '../auth/login/components/auth/AuthInitializer';
 import { LoginForm } from '../auth/login/components/auth/LoginForm';
 import { ProtectedRoute } from '../auth/login/components/auth/ProtectedRoute';
 import { useAuth } from '../auth/login/hooks/useAuth';
-import { PaginaAsignarEvaluador } from '../features/usuarios/evaluadores/routes/PaginaAsignarEvaluador';
 import { PaginaNiveles } from '../features/niveles/routes/PaginaNiveles';
 import { PaginaAsignarNiveles } from '../features/asignaciones/routes/PaginaAsignarNiveles';
 import { ListaCompetidores } from '../features/listaCompetidores/components/ListaCompetidores';
 import { Parametro } from '../features/parametros/components/Parametro';
 import { PaginaRegistrarResponsable } from '@/features/usuarios/responsables/routes/PaginaRegistrarResponsable';
 import { Dashboard } from '@/features/dashboard/components/Dashboard';
+import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador';
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -39,7 +39,7 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'competidores', element: <PaginaImportarCompetidores /> },
       { path: 'responsables', element: <PaginaRegistrarResponsable /> },
-      { path: 'evaluadores', element: <PaginaAsignarEvaluador /> },
+      { path: 'evaluadores', element: <PaginaRegistrarEvaluador /> },
       { path: 'areas', element: <PaginaAreas /> },
       { path: 'niveles', element: <PaginaNiveles /> },
       { path: 'asignarNiveles', element: <PaginaAsignarNiveles /> },

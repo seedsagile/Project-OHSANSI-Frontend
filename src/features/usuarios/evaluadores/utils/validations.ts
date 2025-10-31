@@ -108,7 +108,7 @@ export const verificacionCISchema = z.object({
 
 export type VerificacionCIForm = z.infer<typeof verificacionCISchema>;
 
-export const datosResponsableSchema = z.object({
+export const datosEvaluadorSchema = z.object({
     nombres: z
         .string({ message: 'El campo Nombres es obligatorio.' })
         .transform(sanitizeSpaces)
@@ -189,8 +189,8 @@ export const datosResponsableSchema = z.object({
         .min(1, { message: 'Debe asignar al menos un área.' }),
 });
 
-export type ResponsableFormData = z.infer<typeof datosResponsableSchema>;
+export type EvaluadorFormData = z.infer<typeof datosEvaluadorSchema>;
 
-export type ResponsableFormInput = ResponsableFormData & {
+export type EvaluadorFormInput = EvaluadorFormData & {
     gestionPasadaId?: string | number | null;
 };

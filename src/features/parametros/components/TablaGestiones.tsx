@@ -34,7 +34,7 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
   useEffect(() => {
     const fetchParametros = async () => {
       try {
-        const data = await obtenerParametrosPorOlimpiadaAPI(2);
+        const data = await obtenerParametrosPorOlimpiadaAPI();
         setParametros(data);
       } catch (error) {
         console.error('Error al obtener parámetros:', error);
@@ -61,8 +61,8 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
             <thead className="bg-principal-500 text-blanco sticky top-0 z-10">
               <tr>
                 <th className="py-2 px-4 text-left w-[10%]">Gestión</th>
-                {/* <th className="py-2 px-4 text-left w-[20%]">Área</th>
-                <th className="py-2 px-4 text-left w-[20%]">Nivel</th> */}
+                <th className="py-2 px-4 text-left w-[20%]">Área</th>
+                <th className="py-2 px-4 text-left w-[20%]">Nivel</th>
                 <th className="py-2 px-4 text-center w-[10%]">Nota mínima</th>
                 <th className="py-2 px-4 text-center w-[10%]">Nota máxima</th>
                 <th className="py-2 px-4 text-center w-[15%]">Cant. máx. Estudiantes</th>
@@ -84,8 +84,8 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                     className="border-t border-neutro-200 hover:bg-neutro-100 transition"
                   >
                     <td className="py-2 px-4">{p.gestion}</td>
-                    {/* <td className="py-2 px-4">{p.area}</td>
-                    <td className="py-2 px-4">{p.nivel}</td> */}
+                    <td className="py-2 px-4">{p.area}</td>
+                    <td className="py-2 px-4">{p.nivel}</td>
                     <td className="py-2 px-4 text-center">{p.notaMinima}</td>
                     <td className="py-2 px-4 text-center">{p.notaMaxima}</td>
                     <td className="py-2 px-4 text-center">{p.cantidadMaxima}</td>

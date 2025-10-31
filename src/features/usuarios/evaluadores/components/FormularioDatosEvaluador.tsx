@@ -2,10 +2,10 @@ import { forwardRef, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { Info, Mail, Smartphone, User, Hash } from 'lucide-react';
-import { APELLIDO_MAX_LENGTH, CELULAR_MAX_LENGTH, CORREO_MAX_LENGTH, NOMBRE_MAX_LENGTH, type ResponsableFormData } from '../utils/validations';
+import { APELLIDO_MAX_LENGTH, CELULAR_MAX_LENGTH, CORREO_MAX_LENGTH, NOMBRE_MAX_LENGTH, type EvaluadorFormData } from '../utils/validations';
 import type { DatosPersonaVerificada, Gestion } from '../types/index';
 
-type FormularioDatosResponsableProps = {
+type FormularioDatosEvaluadorProps = {
   gestiones: Gestion[];
   personaVerificada: DatosPersonaVerificada | null;
   isLoading?: boolean;
@@ -15,7 +15,7 @@ type FormularioDatosResponsableProps = {
   gestionPasadaSeleccionadaId: number | null;
 };
 
-export const FormularioDatosResponsable = forwardRef<HTMLInputElement, FormularioDatosResponsableProps>(
+export const FormularioDatosEvaluador = forwardRef<HTMLInputElement, FormularioDatosEvaluadorProps>(
   (
     {
       gestiones,
@@ -32,7 +32,7 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
       register,
       formState: { errors, isSubmitting },
       watch,
-    } = useFormContext<ResponsableFormData>();
+    } = useFormContext<EvaluadorFormData>();
 
     const ciValue = watch('ci');
 
@@ -252,4 +252,4 @@ export const FormularioDatosResponsable = forwardRef<HTMLInputElement, Formulari
   }
 );
 
-FormularioDatosResponsable.displayName = 'FormularioDatosResponsable';
+FormularioDatosEvaluador.displayName = 'FormularioDatosEvaluador';

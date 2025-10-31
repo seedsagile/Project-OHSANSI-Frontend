@@ -1,18 +1,18 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useVerificacionResponsable } from './useVerificacionResponsable';
-import { useFormularioPrincipalResponsable } from './useFormularioPrincipalResponsable';
-import { useSeleccionAreasResponsable } from './useSeleccionAreasResponsable';
-import type { PasoRegistroResponsable, ModalFeedbackState, ResponsableCreado, ResponsableActualizado, DatosPersonaVerificada } from '../types'; // Importar ResponsableActualizado
+import { useVerificacionEvaluador } from './useVerificacionEvaludor';
+import { useFormularioPrincipalEvaluador } from './useFormularioPrincipalEvaluador';
+import { useSeleccionAreasEvaluador } from './useSeleccionAreasEvaluador';
+import type { PasoRegistroEvaluador, ModalFeedbackState, EvaluadorCreado, EvaluadorActualizado, DatosPersonaVerificada } from '../types';
 import { GESTION_ACTUAL_ANIO } from '../utils/constants';
 
 const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
 
-export function useGestionResponsable() {
+export function useGestionEvaluador() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [pasoActual, setPasoActual] = useState<PasoRegistroResponsable>('VERIFICACION_CI');
+  const [pasoActual, setPasoActual] = useState<PasoRegistroEvaluador>('VERIFICACION_CI');
   const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>(initialModalState);
   const [datosPersona, setDatosPersona] = useState<DatosPersonaVerificada | null>(null);
   const [isAssignedToCurrentGestion, setIsAssignedToCurrentGestion] = useState(false);
@@ -44,7 +44,7 @@ export function useGestionResponsable() {
     if (handleCancelarCallbackRef.current) {
       handleCancelarCallbackRef.current();
     } else {
-      navigate('/responsables');
+      navigate('/evaluadores');
     }
     clearTimeout(modalTimerRef.current);
   }, [closeModalFeedback, navigate]);
@@ -60,7 +60,7 @@ export function useGestionResponsable() {
     handleVerificarCISubmit,
     resetVerification,
     ciVerificado,
-  } = useVerificacionResponsable(handleVerificationComplete, handleVerificationError);
+  } = useVerificacionEvaluador(handleVerificationComplete, handleVerificationError);
 
   const handleCancelarCallbackRef = useRef<() => void>(undefined);
 
@@ -76,7 +76,7 @@ export function useGestionResponsable() {
     gestionPasadaSeleccionadaAnio,
     primerInputRef,
     resetFormularioPrincipal,
-  } = useFormularioPrincipalResponsable({
+  } = useFormularioPrincipalEvaluador({
       ciVerificado,
       datosPersonaVerificada: datosPersona,
       isReadOnly: isAssignedToCurrentGestion,
@@ -97,14 +97,14 @@ export function useGestionResponsable() {
     setInitialAreasReadOnly([]);
     setPasoActual('VERIFICACION_CI');
     closeModalFeedback();
-    navigate('/responsables');
+    navigate('/evaluadores');
   }, [isAssignedToCurrentGestion, navigate, resetVerification, resetFormularioPrincipal, closeModalFeedback]);
 
   handleCancelarCallbackRef.current = handleCancelar;
 
-  const handleFormSubmitSuccess = useCallback((data: ResponsableCreado | ResponsableActualizado, esActualizacion: boolean) => {
+  const handleFormSubmitSuccess = useCallback((data: EvaluadorCreado | EvaluadorActualizado, esActualizacion: boolean) => {
     
-    const message = data.message || (esActualizacion ? '¡Responsable Asignado en nueva gestion!' : '¡Registro Exitoso!');
+    const message = data.message || (esActualizacion ? '¡Evaluador Asignado en nueva gestion!' : '¡Registro Exitoso!');
 
     setModalFeedback({
         isOpen: true,
@@ -113,7 +113,7 @@ export function useGestionResponsable() {
         message
     });
 
-    queryClient.invalidateQueries({ queryKey: ['responsables'] });
+    queryClient.invalidateQueries({ queryKey: ['evaluadores'] });
     if (gestionPasadaSeleccionadaAnio) {
       queryClient.invalidateQueries({ queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado] });
     }
@@ -136,7 +136,7 @@ export function useGestionResponsable() {
     handleToggleSeleccionarTodas,
     isLoadingAreas,
     areasLoadedFromPast,
-  } = useSeleccionAreasResponsable({
+  } = useSeleccionAreasEvaluador({
     formMethods: formMethodsPrincipal,
     ciVerificado,
     gestionPasadaSeleccionadaAnio,

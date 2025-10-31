@@ -1,13 +1,13 @@
 import { FormProvider } from 'react-hook-form';
 import { LoaderCircle, X, Save, Check } from 'lucide-react';
-import { useGestionResponsable } from '../hooks/useGestionResponsable';
+import { useGestionEvaluador } from '../hooks/useGestionEvaluador';
 import { VerificacionCI } from '../components/VerificacionCI';
-import { FormularioDatosResponsable } from '../components/FormularioDatosResponsable';
+import { FormularioDatosEvaluador } from '../components/FormularioDatosEvaluador';
 import { TablaAsignacionAreas } from '../components/TablaAsignacionAreas';
 import { Modal1 } from '@/components/ui/Modal1';
 import { Alert } from '@/components/ui/Alert';
 
-export function PaginaRegistrarResponsable() {
+export function PaginaRegistrarEvaluador() {
   const {
     pasoActual,
     formMethodsVerificacion,
@@ -31,7 +31,7 @@ export function PaginaRegistrarResponsable() {
     handleToggleSeleccionarTodas,
     areasLoadedFromPast,
     finalizeSuccessAction,
-  } = useGestionResponsable();
+  } = useGestionEvaluador();
 
   const mostrarCargaPagina = isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
 
@@ -49,7 +49,7 @@ export function PaginaRegistrarResponsable() {
               <LoaderCircle className="animate-spin h-12 w-12 text-principal-500" />
               <p className="mt-4 text-neutro-600 font-semibold">
                 {pasoActual === 'CARGANDO_VERIFICACION' && 'Verificando CI...'}
-                {pasoActual === 'CARGANDO_GUARDADO' && 'Guardando responsable...'}
+                {pasoActual === 'CARGANDO_GUARDADO' && 'Guardando Evaluador...'}
                 {mostrarCargaPagina && 'Cargando datos iniciales...'}
               </p>
             </div>
@@ -57,7 +57,7 @@ export function PaginaRegistrarResponsable() {
 
           <header className="text-center mb-6">
             <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter">
-              Registrar Responsable de Área
+              Registrar Evaluador
             </h1>
           </header>
 
@@ -99,11 +99,11 @@ export function PaginaRegistrarResponsable() {
                   {isReadOnly && (
                     <Alert
                       type="warning"
-                      message={`Este responsable ya se encuentra registrado y asignado para la gestión actual. Los datos no son editables.`}
+                      message={`Este Evaluador ya se encuentra registrado y asignado para la gestión actual. Los datos no son editables.`}
                     />
                   )}
 
-                  <FormularioDatosResponsable
+                  <FormularioDatosEvaluador
                     ref={primerInputRef}
                     gestiones={gestionesPasadas}
                     personaVerificada={datosPersona}

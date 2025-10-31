@@ -14,3 +14,6 @@ export const DEPARTAMENTOS_VALIDOS = [
 
 export const DEFAULT_FECHA_NAC = '2000-01-01';
 export const DEFAULT_GRADO_ESCOLAR = 'No especificado';
+export const GESTION_ACTUAL_ANIO = '2025';
+
+export const ID_OLIMPIADA_ACTUAL = 1;
