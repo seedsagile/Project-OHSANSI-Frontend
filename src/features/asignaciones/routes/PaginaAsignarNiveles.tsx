@@ -1,6 +1,7 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
 import { Save, LoaderCircle, X } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
+import { ModalGrados } from '../components/ModalGrados';
 import type { Nivel } from '../../niveles/types';
 import { useNavigate } from 'react-router-dom';
 import { CustomDropdown } from '../../../components/ui/CustomDropdown';
@@ -19,6 +20,10 @@ export function PaginaAsignarNiveles() {
     modalState,
     closeModal,
     handleChangeArea,
+    handleAbrirModalGrados,
+    handleCerrarModalGrados,
+    handleGuardarGrados,
+    modalGradosState,
   } = useAsignarNiveles();
 
   const navigate = useNavigate();
@@ -32,13 +37,36 @@ export function PaginaAsignarNiveles() {
     label: area.nombre,
   }));
 
+  const handleCheckboxClick = (nivel: Nivel) => {
+    const esNivelOriginal = nivelesOriginales.has(nivel.id_nivel);
+    const estaSeleccionado = nivelesSeleccionados.has(nivel.id_nivel);
+    
+    // Si el nivel ya estaba asignado originalmente, no hacer nada
+    if (esNivelOriginal) {
+      return;
+    }
+
+    // Si el nivel ya estaba seleccionado (desmarcarlo)
+    if (estaSeleccionado) {
+      handleToggleNivel(nivel.id_nivel);
+      return;
+    }
+
+    // Si no estaba seleccionado, marcarlo y abrir modal de grados
+    handleToggleNivel(nivel.id_nivel);
+    // Pequeño delay para que se actualice el estado antes de abrir el modal
+    setTimeout(() => {
+      handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
+    }, 100);
+  };
+
   return (
     <>
       <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex justify-center items-center">
         <main className="bg-blanco w-full max-w-2xl rounded-xl shadow-sombra-3 p-6 md:p-8">
           <header className="mb-10">
             <div className="text-right mb-2">
-              <p className="text-sm md:text-3xl font-semibold text-negro tracking-wider">
+              <p className="text-sm font-semibold text-negro tracking-wider">
                 Gestión 2025
               </p>
             </div>
@@ -135,7 +163,7 @@ export function PaginaAsignarNiveles() {
                                   : 'cursor-pointer'
                               }`}
                               checked={estaSeleccionado}
-                              onChange={() => handleToggleNivel(nivel.id_nivel)}
+                              onChange={() => handleCheckboxClick(nivel)}
                               disabled={esNivelOriginal}
                             />
                           </td>
@@ -188,6 +216,16 @@ export function PaginaAsignarNiveles() {
       >
         {modalState.message}
       </Modal>
+
+      <ModalGrados
+        isOpen={modalGradosState.isOpen}
+        onClose={handleCerrarModalGrados}
+        onSave={handleGuardarGrados}
+        niveles={modalGradosState.grados}
+        gradosSeleccionados={modalGradosState.gradosSeleccionados}
+        nombreNivel={modalGradosState.nombreNivel}
+        isLoading={modalGradosState.isLoading}
+      />
     </>
   );
 }

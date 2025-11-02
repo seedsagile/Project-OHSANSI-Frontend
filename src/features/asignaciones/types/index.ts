@@ -35,3 +35,15 @@ export type AsignacionPayload = {
   id_nivel: number;
   activo: boolean;
 };
+
+// Nuevo tipo para Grado de Escolaridad
+export type Grado = {
+  id_grado: number;
+  nombre: string;
+  id_nivel: number;
+};
+
+// Tipo para almacenar grados seleccionados por nivel
+export type GradosPorNivel = {
+  [id_nivel: number]: Set<number>; // id_nivel -> Set de id_grados
+};
