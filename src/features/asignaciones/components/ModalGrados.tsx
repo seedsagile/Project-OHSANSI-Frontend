@@ -29,13 +29,13 @@ export function ModalGrados({
     }
   }, [isOpen, gradosSeleccionados]);
 
-  const handleToggle = (id_grado: number) => {
+  const handleToggle = (id_grado_escolaridad: number) => {
     setGradosTemp((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(id_grado)) {
-        newSet.delete(id_grado);
+      if (newSet.has(id_grado_escolaridad)) {
+        newSet.delete(id_grado_escolaridad);
       } else {
-        newSet.add(id_grado);
+        newSet.add(id_grado_escolaridad);
       }
       return newSet;
     });
@@ -103,11 +103,11 @@ export function ModalGrados({
                   </tr>
                 ) : (
                   niveles.map((grado: Grado, index: number) => {
-                    const estaSeleccionado = gradosTemp.has(grado.id_grado);
+                    const estaSeleccionado = gradosTemp.has(grado.id_grado_escolaridad);
 
                     return (
                       <tr
-                        key={grado.id_grado}
+                        key={grado.id_grado_escolaridad}
                         className="even:bg-neutro-100 hover:bg-principal-50 transition-colors"
                       >
                         <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
@@ -118,7 +118,7 @@ export function ModalGrados({
                             aria-label={`Seleccionar el grado: ${grado.nombre}`}
                             className="h-5 w-5 rounded border-gray-400 text-principal-600 focus:ring-principal-500 cursor-pointer"
                             checked={estaSeleccionado}
-                            onChange={() => handleToggle(grado.id_grado)}
+                            onChange={() => handleToggle(grado.id_grado_escolaridad)}
                           />
                         </td>
                       </tr>

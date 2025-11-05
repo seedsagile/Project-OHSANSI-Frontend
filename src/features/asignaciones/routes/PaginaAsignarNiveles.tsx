@@ -2,7 +2,7 @@ import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
 import { Save, LoaderCircle, X } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import { ModalGrados } from '../components/ModalGrados';
-import type { Nivel } from '../../niveles/types';
+import type { Nivel } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { CustomDropdown } from '../../../components/ui/CustomDropdown';
 
