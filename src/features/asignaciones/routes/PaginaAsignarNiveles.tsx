@@ -48,7 +48,7 @@ export function PaginaAsignarNiveles() {
 
     // Si el nivel ya estaba seleccionado (desmarcarlo)
     if (estaSeleccionado) {
-      handleToggleNivel(nivel.id_nivel);
+      handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
       return;
     }
 

@@ -17,9 +17,9 @@ type GradosResponse = {
 
 export const asignacionesService = {
   // GET /api/area - Obtener todas las áreas
-  async obtenerAreas(): Promise<Area[]> {
-    const response = await apiClient.get<Area[]>('/area');
-    return response.data;
+  async obtenerAreas(gestion: string): Promise<Area[]> {
+    const response = await apiClient.get<{ message: string; data: Area[] }>(`/area/${gestion}`);
+    return response.data.data; // ← Cambio aquí: agregamos .data para acceder al array
   },
 
   // GET /api/niveles - Obtener todos los niveles

@@ -50,8 +50,8 @@ export function useAsignarNiveles() {
 
   // Cargar áreas
   const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({
-    queryKey: ['areas'],
-    queryFn: asignacionesService.obtenerAreas,
+    queryKey: ['areas', GESTION_ACTUAL],
+    queryFn: () => asignacionesService.obtenerAreas(GESTION_ACTUAL),
   });
 
   // Cargar niveles
@@ -143,10 +143,27 @@ export function useAsignarNiveles() {
 
   const handleGuardarGrados = (gradosSeleccionados: Set<number>) => {
     if (modalGradosState.nivelId !== null) {
-      setGradosPorNivel((prev) => ({
-        ...prev,
-        [modalGradosState.nivelId!]: gradosSeleccionados,
-      }));
+      // Si no hay grados seleccionados, desmarcar el nivel completamente
+      if (gradosSeleccionados.size === 0) {
+        setNivelesSeleccionados((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(modalGradosState.nivelId!);
+          return newSet;
+        });
+        
+        // Eliminar los grados del nivel
+        setGradosPorNivel((prev) => {
+          const newGrados = { ...prev };
+          delete newGrados[modalGradosState.nivelId!];
+          return newGrados;
+        });
+      } else {
+        // Si hay grados seleccionados, actualizar los grados
+        setGradosPorNivel((prev) => ({
+          ...prev,
+          [modalGradosState.nivelId!]: gradosSeleccionados,
+        }));
+      }
     }
     handleCerrarModalGrados();
   };

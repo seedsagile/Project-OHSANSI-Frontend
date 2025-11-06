@@ -42,10 +42,11 @@ export function ModalGrados({
   };
 
   const handleSave = () => {
-    if (gradosTemp.size === 0) {
+    /*if (gradosTemp.size === 0) {
       alert('Debe seleccionar al menos un grado de escolaridad.');
       return;
-    }
+    }*/
+   //permite guardar incluso sin grados seleccionados
     onSave(gradosTemp);
   };
 
