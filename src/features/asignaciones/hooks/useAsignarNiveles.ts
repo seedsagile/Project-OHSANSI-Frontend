@@ -168,7 +168,7 @@ export function useAsignarNiveles() {
     handleCerrarModalGrados();
   };
 
-  // ACTUALIZADO: Mutación con refetch
+  // ACTUALIZADO: Mutación con mensaje personalizado del frontend
   const { mutate: guardarAsignaciones, isPending: isSaving } = useMutation({
     mutationFn: async (payload: AsignacionPayload[]) => {
       return asignacionesService.crearAsignacionesDeArea(payload);
@@ -176,6 +176,7 @@ export function useAsignarNiveles() {
     onSuccess: (response) => {
       const nombreArea = areaActual ? areaActual.nombre : '';
       
+      // Verificar si hubo errores
       if (response.success_count === 0 || response.created_count === 0) {
         const erroresDetalle = response.errors && response.errors.length > 0 
           ? response.errors.join('\n\n') 
@@ -189,9 +190,16 @@ export function useAsignarNiveles() {
         });
         return;
       }
+    
+      // Mensaje de éxito personalizado del frontend
+      const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
       
-      const mensajeExito = response.message || `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
-      setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
+      setModalState({ 
+        isOpen: true, 
+        type: 'success', 
+        title: '¡Guardado!', 
+        message: mensajeExito 
+      });
       
       // Refrescar datos asignados
       refetchAsignados();
