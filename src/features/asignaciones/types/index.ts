@@ -28,22 +28,67 @@ export type ApiResponse<T> = {
   created_count?: number;
   error_count?: number;
   errors?: string[];
+  distribucion?: Record<string, number>;
 };
 
+// ACTUALIZADO: Payload con id_grado_escolaridad
 export type AsignacionPayload = {
   id_area: number;
   id_nivel: number;
+  id_grado_escolaridad: number;
   activo: boolean;
 };
 
-// Nuevo tipo para Grado de Escolaridad
-export type Grado = {
-  id_grado: number;
+export type Area = {
+  id_area: number;
   nombre: string;
-  id_nivel: number;
+  created_at: string | null;
+  updated_at: string | null;
 };
 
-// Tipo para almacenar grados seleccionados por nivel
+export type Nivel = {
+  id_nivel: number;
+  nombre: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Grado = {
+  id_grado_escolaridad: number;
+  nombre: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type GradosPorNivel = {
-  [id_nivel: number]: Set<number>; // id_nivel -> Set de id_grados
+  [id_nivel: number]: Set<number>;
+};
+
+// NUEVO: Tipos para el GET de niveles y grados asignados
+export type NivelConGrados = {
+  id_nivel: number;
+  nombre_nivel: string;
+  grados: {
+    id_grado_escolaridad: number;
+    nombre: string;
+  }[];
+};
+
+export type AreaNivelesResponse = {
+  success: boolean;
+  data: {
+    area: {
+      id_area: number;
+      nombre: string;
+    };
+    olimpiada: {
+      id_olimpiada: number;
+      gestion: string;
+      nombre: string;
+    };
+    niveles_con_grados_agrupados: NivelConGrados[];
+    total_relaciones: number;
+    total_niveles: number;
+  };
+  message: string;
 };

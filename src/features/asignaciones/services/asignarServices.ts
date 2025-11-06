@@ -6,7 +6,8 @@ import type {
   AsignacionPayload,
   Area,
   Nivel,
-  Grado
+  Grado,
+  AreaNivelesResponse
 } from '../types';
 
 type GradosResponse = {
@@ -33,25 +34,31 @@ export const asignacionesService = {
     return response.data.data;
   },
 
-  // Obtener áreas con sus niveles asignados
-  async obtenerAreasConNiveles(): Promise<AreaConNiveles[]> {
-    const response = await apiClient.get<ApiResponse<AreaConNiveles[]>>('/areas-con-niveles');
-    return response.data.data;
+  // NUEVO: GET /api/area-nivel/gestion/{gestion}/area/{id_area}
+  async obtenerNivelesYGradosAsignados(gestion: string, id_area: number): Promise<AreaNivelesResponse> {
+    const response = await apiClient.get<AreaNivelesResponse>(
+      `/area-nivel/gestion/${gestion}/area/${id_area}`
+    );
+    return response.data;
   },
 
-  // Crear nuevas asignaciones
+  // POST /api/area-niveles - Crear asignaciones (ACTUALIZADO con grados)
   async crearAsignacionesDeArea(payload: AsignacionPayload[]): Promise<ApiResponse<AreaNivel[]>> {
     const response = await apiClient.post<ApiResponse<AreaNivel[]>>('/area-niveles', payload);
     return response.data;
   },
 
-  // Obtener niveles por área
+  // Mantener APIs antiguas
+  async obtenerAreasConNiveles(): Promise<AreaConNiveles[]> {
+    const response = await apiClient.get<ApiResponse<AreaConNiveles[]>>('/areas-con-niveles');
+    return response.data.data;
+  },
+
   async obtenerNivelesPorArea(id_area: number): Promise<AreaNivel[]> {
     const response = await apiClient.get<ApiResponse<AreaNivel[]>>(`/area-niveles/${id_area}`);
     return response.data.data;
   },
 
-  // Actualizar niveles de área
   async actualizarNivelesDeArea(
     id_area: number,
     payload: AsignacionPayload[]
