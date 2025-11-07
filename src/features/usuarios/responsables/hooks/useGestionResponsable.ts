@@ -16,17 +16,26 @@ import type {
 } from '../types';
 import { GESTION_ACTUAL_ANIO } from '../utils/constants';
 
-const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
+const initialModalState: ModalFeedbackState = {
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'info',
+};
 
 export function useGestionResponsable() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
-  const [pasoActual, setPasoActual] = useState<PasoRegistroResponsable>('VERIFICACION_CI');
-  const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>(initialModalState);
-  
-  const [datosPersona, setDatosPersona] = useState<DatosPersonaVerificada | null>(null);
-  const [isAssignedToCurrentGestion, setIsAssignedToCurrentGestion] = useState(false);
+
+  const [pasoActual, setPasoActual] =
+    useState<PasoRegistroResponsable>('VERIFICACION_CI');
+  const [modalFeedback, setModalFeedback] =
+    useState<ModalFeedbackState>(initialModalState);
+
+  const [datosPersona, setDatosPersona] =
+    useState<DatosPersonaVerificada | null>(null);
+  const [isAssignedToCurrentGestion, setIsAssignedToCurrentGestion] =
+    useState(false);
   const [initialAreasReadOnly, setInitialAreasReadOnly] = useState<number[]>([]);
   const [gestionesPasadas, setGestionesPasadas] = useState<Gestion[]>([]);
   const [rolesPorGestion, setRolesPorGestion] = useState<ApiGestionRoles[]>([]);
@@ -57,7 +66,6 @@ export function useGestionResponsable() {
         setGestionesPasadas([]);
         setRolesPorGestion([]);
       }
-      
       setPasoActual('FORMULARIO_DATOS');
     },
     []
@@ -74,7 +82,14 @@ export function useGestionResponsable() {
   }, [closeModalFeedback, navigate]);
 
   const handleVerificationError = useCallback((message: string) => {
-    setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message });
+    setModalFeedback({
+      isOpen: true,
+      type: 'error',
+      title: 'Error de Verificación',
+      message:
+        message ||
+        'No se pudo completar la verificación. Revise su conexión o intente más tarde.',
+    });
     setPasoActual('VERIFICACION_CI');
   }, []);
 
@@ -84,7 +99,10 @@ export function useGestionResponsable() {
     handleVerificarCISubmit,
     resetVerification,
     ciVerificado,
-  } = useVerificacionResponsable(handleVerificationComplete, handleVerificationError);
+  } = useVerificacionResponsable(
+    handleVerificationComplete,
+    handleVerificationError
+  );
 
   const handleCancelarCallbackRef = useRef<() => void>(undefined);
 
@@ -111,6 +129,38 @@ export function useGestionResponsable() {
       handleFormSubmitError(message);
     },
   });
+
+  useEffect(() => {
+    if (areasDisponiblesQuery.isError) {
+      setModalFeedback({
+        isOpen: true,
+        type: 'error',
+        title: 'Error Crítico',
+        message: 'Error crítico: No se pudieron cargar las áreas. Recargue la página.',
+      });
+    }
+  }, [areasDisponiblesQuery.isError]);
+
+  const preAsignadasSet = useMemo(() => {
+    return isAssignedToCurrentGestion
+      ? new Set(initialAreasReadOnly)
+      : new Set<number>();
+  }, [isAssignedToCurrentGestion, initialAreasReadOnly]);
+
+  const {
+    handleSeleccionarArea,
+    handleToggleSeleccionarTodas,
+    isLoadingAreas,
+    areasLoadedFromPast,
+  } = useSeleccionAreasResponsable({
+    formMethods: formMethodsPrincipal,
+    gestionPasadaSeleccionadaAnio,
+    isReadOnly: false,
+    preAsignadas: preAsignadasSet,
+    areasDisponiblesQuery,
+    rolesPorGestion: rolesPorGestion,
+  });
+
 
   const handleCancelar = useCallback(() => {
     resetVerification();
@@ -158,32 +208,22 @@ export function useGestionResponsable() {
       clearTimeout(modalTimerRef.current);
       modalTimerRef.current = window.setTimeout(finalizeSuccessAction, 5000);
     },
-    [queryClient, ciVerificado, gestionPasadaSeleccionadaAnio, finalizeSuccessAction]
+    [
+      queryClient,
+      ciVerificado,
+      gestionPasadaSeleccionadaAnio,
+      finalizeSuccessAction,
+    ]
   );
 
   const handleFormSubmitError = useCallback((message: string) => {
-    setModalFeedback({ isOpen: true, type: 'error', title: '¡Ups! Algo salió mal', message });
+    setModalFeedback({
+      isOpen: true,
+      type: 'error',
+      title: '¡Ups! Algo salió mal',
+      message,
+    });
   }, []);
-
-  const preAsignadasSet = useMemo(() => {
-    return isAssignedToCurrentGestion
-      ? new Set(initialAreasReadOnly)
-      : new Set<number>();
-  }, [isAssignedToCurrentGestion, initialAreasReadOnly]);
-
-  const {
-    handleSeleccionarArea,
-    handleToggleSeleccionarTodas,
-    isLoadingAreas,
-    areasLoadedFromPast,
-  } = useSeleccionAreasResponsable({
-    formMethods: formMethodsPrincipal,
-    gestionPasadaSeleccionadaAnio,
-    isReadOnly: !!datosPersona,
-    preAsignadas: preAsignadasSet,
-    areasDisponiblesQuery,
-    rolesPorGestion: rolesPorGestion,
-  });
 
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingAreas;
   const isProcessing = isVerifying || isSaving;
@@ -207,7 +247,7 @@ export function useGestionResponsable() {
     gestionPasadaSeleccionadaId,
     areasLoadedFromPast,
     isLoading,
-    isLoadingGestiones: false,
+    isLoadingGestiones: isProcessing,
     isProcessing,
     formMethodsVerificacion,
     formMethodsPrincipal,

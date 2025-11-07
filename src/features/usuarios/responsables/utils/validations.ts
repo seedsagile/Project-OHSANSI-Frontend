@@ -81,7 +81,7 @@ export const verificacionCISchema = z.object({
         .transform(sanitizeCI)
         .pipe(z.string()
             .min(1, 'El campo Verificar carnet de identidad es obligatorio.')
-            .min(CI_MIN_LENGTH, { message: `Mínimo ${CI_MIN_LENGTH} caracteres.` })
+            .min(CI_MIN_LENGTH, { message: `Formato no válido` })
             .max(CI_MAX_LENGTH, { message: `Máximo ${CI_MAX_LENGTH} caracteres.` })
             .superRefine((val, ctx) => {
                 if (REGEX_CI_CARACTERES_INVALIDOS.test(val)) {

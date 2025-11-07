@@ -37,13 +37,17 @@ export function PaginaRegistrarResponsable() {
     finalizeSuccessAction,
   } = useGestionResponsable();
 
+  const { formState } = formMethodsPrincipal;
+
   const mostrarCargaPagina =
-    isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
+    isLoading &&
+    (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
   const pasoVerificacionActivo =
     pasoActual.startsWith('VERIFICACION') || pasoActual === 'CARGANDO_VERIFICACION';
   const pasoFormularioActivo =
     pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO';
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
+
   const preAsignadasSet = useMemo(() => {
     return isAssignedToCurrentGestion
       ? new Set(initialAreasReadOnly)
@@ -52,7 +56,8 @@ export function PaginaRegistrarResponsable() {
 
   const falloCargaAreas = areasDisponiblesQuery.isError;
 
-  const botonGuardarDeshabilitado = isLoading || isProcessing || falloCargaAreas;
+  const botonGuardarDeshabilitado =
+    !formState.isValid || isLoading || isProcessing || falloCargaAreas;
 
   return (
     <>
@@ -125,21 +130,16 @@ export function PaginaRegistrarResponsable() {
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
-                  
-                  {falloCargaAreas && (
-                    <Alert
-                      type="error"
-                      message="Error crítico: No se pudieron cargar las áreas disponibles. El guardado está deshabilitado. Por favor, recargue la página."
-                    />
-                  )}
 
-                  {datosPersona?.Id_usuario && !isAssignedToCurrentGestion && !falloCargaAreas && (
-                    <Alert
-                      type="info"
-                      message={`Se encontraron datos existentes. Los datos personales no son editables. Por favor, asigne las áreas para la gestión actual.`}
-                    />
-                  )}
-                  
+                  {datosPersona?.Id_usuario &&
+                    !isAssignedToCurrentGestion &&
+                    !falloCargaAreas && (
+                      <Alert
+                        type="info"
+                        message={`Se encontraron datos existentes. Los datos personales no son editables. Por favor, asigne las áreas para la gestión actual.`}
+                      />
+                    )}
+
                   {isAssignedToCurrentGestion && !falloCargaAreas && (
                     <Alert
                       type="warning"
@@ -154,6 +154,7 @@ export function PaginaRegistrarResponsable() {
                     isLoading={isLoading}
                     isLoadingGestiones={isLoadingGestiones}
                     isReadOnly={isDataFormReadOnly}
+                    isAssignedToCurrentGestion={isAssignedToCurrentGestion}
                     onGestionSelect={handleGestionSelect}
                     gestionPasadaSeleccionadaId={gestionPasadaSeleccionadaId}
                   />
@@ -196,7 +197,11 @@ export function PaginaRegistrarResponsable() {
                       ) : (
                         <Save size={20} strokeWidth={2.5} />
                       )}
-                      <span>{pasoActual === 'CARGANDO_GUARDADO' ? 'Guardando...' : 'Guardar'}</span>
+                      <span>
+                        {pasoActual === 'CARGANDO_GUARDADO'
+                          ? 'Guardando...'
+                          : 'Guardar'}
+                      </span>
                     </button>
                   </footer>
                 </form>
@@ -208,7 +213,11 @@ export function PaginaRegistrarResponsable() {
 
       <Modal1
         isOpen={modalFeedback.isOpen}
-        onClose={modalFeedback.type === 'success' ? finalizeSuccessAction : closeModalFeedback}
+        onClose={
+          modalFeedback.type === 'success'
+            ? finalizeSuccessAction
+            : closeModalFeedback
+        }
         title={modalFeedback.title}
         type={modalFeedback.type}
       >
