@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { nivelesService } from '../../niveles/services/nivelesService';
 import { asignacionesService } from '../services/asignarServices';
-import type { AsignacionPayload } from '../types';
+import type { AsignacionPayload, Grado, GradosPorNivel } from '../types';
 import isEqual from 'lodash.isequal';
 
 type ApiErrorResponse = {
@@ -18,7 +17,26 @@ type ModalState = {
   onConfirm?: () => void;
 };
 
+type ModalGradosState = {
+  isOpen: boolean;
+  nivelId: number | null;
+  nombreNivel: string;
+  grados: Grado[];
+  gradosSeleccionados: Set<number>;
+  isLoading: boolean;
+};
+
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
+const initialModalGradosState: ModalGradosState = {
+  isOpen: false,
+  nivelId: null,
+  nombreNivel: '',
+  grados: [],
+  gradosSeleccionados: new Set(),
+  isLoading: false,
+};
+
+const GESTION_ACTUAL = '2025';
 
 export function useAsignarNiveles() {
   const queryClient = useQueryClient();
@@ -26,63 +44,81 @@ export function useAsignarNiveles() {
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Set<number>>(new Set());
   const [modalState, setModalState] = useState<ModalState>(initialModalState);
   const [nivelesOriginales, setNivelesOriginales] = useState<Set<number>>(new Set());
+  const [gradosPorNivel, setGradosPorNivel] = useState<GradosPorNivel>({});
+  const [modalGradosState, setModalGradosState] = useState<ModalGradosState>(initialModalGradosState);
   const modalTimerRef = useRef<number | undefined>(undefined);
 
-  // Cargar áreas con sus niveles asignados
-  const { data: areasConNiveles = [], isLoading: isLoadingAreas } = useQuery({
-    queryKey: ['areas-con-niveles'],
-    queryFn: asignacionesService.obtenerAreasConNiveles,
+  // Cargar áreas
+  const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({
+    queryKey: ['areas', GESTION_ACTUAL],
+    queryFn: () => asignacionesService.obtenerAreas(GESTION_ACTUAL),
   });
 
-  // Cargar nombres de áreas permitidas
-  const { data: areasPermitidas = {}, isLoading: isLoadingAreasPermitidas } = useQuery({
-    queryKey: ['areas-nombres'],
-    queryFn: asignacionesService.obtenerAreasNombres,
-  });
-
-  // Cargar todos los niveles disponibles
+  // Cargar niveles
   const { data: todosLosNiveles = [], isLoading: isLoadingNiveles } = useQuery({
     queryKey: ['niveles'],
-    queryFn: nivelesService.obtenerNiveles,
+    queryFn: asignacionesService.obtenerNiveles,
   });
 
-  // Filtrar y ordenar las áreas que están en la lista de áreas permitidas
-  const areasOrdenadas = useMemo(() => {
-    const areasFiltradas = areasConNiveles.filter(
-      (area) => areasPermitidas[area.id_area] !== undefined
-    );
-    return areasFiltradas.sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [areasConNiveles, areasPermitidas]);
+  // Cargar grados
+  const { data: gradosEscolaridad = [], isLoading: isLoadingGrados } = useQuery({
+    queryKey: ['grados-escolaridad'],
+    queryFn: asignacionesService.obtenerGradosEscolaridad,
+  });
+
+  // NUEVO: Cargar niveles y grados ya asignados al área seleccionada
+  const { data: datosAsignados, refetch: refetchAsignados } = useQuery({
+    queryKey: ['area-niveles-grados', areaSeleccionadaId, GESTION_ACTUAL],
+    queryFn: () => 
+      areaSeleccionadaId 
+        ? asignacionesService.obtenerNivelesYGradosAsignados(GESTION_ACTUAL, areaSeleccionadaId)
+        : Promise.resolve(null),
+    enabled: !!areaSeleccionadaId,
+  });
+
+  const areasOrdenadas = useMemo(
+    () => [...todasLasAreas].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    [todasLasAreas]
+  );
 
   const nivelesOrdenados = useMemo(
     () => [...todosLosNiveles].sort((a, b) => a.nombre.localeCompare(b.nombre)),
     [todosLosNiveles]
   );
 
-  // Obtener el área seleccionada y sus niveles asignados
   const areaActual = useMemo(
     () => areasOrdenadas.find((area) => area.id_area === areaSeleccionadaId),
     [areasOrdenadas, areaSeleccionadaId]
   );
 
-  // Sincronizar niveles seleccionados cuando cambia el área
+  // ACTUALIZADO: Sincronizar niveles y grados asignados
   useEffect(() => {
-    if (areaActual) {
-      const nivelesActivosIds = new Set(
-        areaActual.niveles
-          .filter((nivel) => nivel.asignado_activo)
-          .map((nivel) => nivel.id_nivel)
-      );
-      setNivelesSeleccionados(nivelesActivosIds);
-      setNivelesOriginales(nivelesActivosIds);
+    if (areaSeleccionadaId && datosAsignados?.data) {
+      const nivelesAsignados = new Set<number>();
+      const gradosPorNivelAsignados: GradosPorNivel = {};
+
+      datosAsignados.data.niveles_con_grados_agrupados.forEach((nivelData) => {
+        nivelesAsignados.add(nivelData.id_nivel);
+        gradosPorNivelAsignados[nivelData.id_nivel] = new Set(
+          nivelData.grados.map(g => g.id_grado_escolaridad)
+        );
+      });
+
+      setNivelesSeleccionados(nivelesAsignados);
+      setNivelesOriginales(nivelesAsignados);
+      setGradosPorNivel(gradosPorNivelAsignados);
+    } else if (areaSeleccionadaId) {
+      setNivelesSeleccionados(new Set());
+      setNivelesOriginales(new Set());
+      setGradosPorNivel({});
     } else {
       setNivelesSeleccionados(new Set());
       setNivelesOriginales(new Set());
+      setGradosPorNivel({});
     }
-  }, [areaActual]);
+  }, [areaSeleccionadaId, datosAsignados]);
 
   const closeModal = () => {
-    // Si el modal es de tipo info (advertencia de error), limpiar niveles seleccionados
     if (modalState.type === 'info' && modalState.title.includes('Advertencia')) {
       setNivelesSeleccionados(nivelesOriginales);
     }
@@ -90,7 +126,49 @@ export function useAsignarNiveles() {
     clearTimeout(modalTimerRef.current);
   };
 
-  // Mutación para guardar asignaciones
+  const handleAbrirModalGrados = (nivelId: number, nombreNivel: string) => {
+    setModalGradosState({
+      isOpen: true,
+      nivelId,
+      nombreNivel,
+      grados: gradosEscolaridad,
+      gradosSeleccionados: gradosPorNivel[nivelId] || new Set(),
+      isLoading: false,
+    });
+  };
+
+  const handleCerrarModalGrados = () => {
+    setModalGradosState(initialModalGradosState);
+  };
+
+  const handleGuardarGrados = (gradosSeleccionados: Set<number>) => {
+    if (modalGradosState.nivelId !== null) {
+      // Si no hay grados seleccionados, desmarcar el nivel completamente
+      if (gradosSeleccionados.size === 0) {
+        setNivelesSeleccionados((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(modalGradosState.nivelId!);
+          return newSet;
+        });
+        
+        // Eliminar los grados del nivel
+        setGradosPorNivel((prev) => {
+          const newGrados = { ...prev };
+          delete newGrados[modalGradosState.nivelId!];
+          return newGrados;
+        });
+      } else {
+        // Si hay grados seleccionados, actualizar los grados
+        setGradosPorNivel((prev) => ({
+          ...prev,
+          [modalGradosState.nivelId!]: gradosSeleccionados,
+        }));
+      }
+    }
+    handleCerrarModalGrados();
+  };
+
+  // ACTUALIZADO: Mutación con refetch
   const { mutate: guardarAsignaciones, isPending: isSaving } = useMutation({
     mutationFn: async (payload: AsignacionPayload[]) => {
       return asignacionesService.crearAsignacionesDeArea(payload);
@@ -98,9 +176,7 @@ export function useAsignarNiveles() {
     onSuccess: (response) => {
       const nombreArea = areaActual ? areaActual.nombre : '';
       
-      // Validar si realmente se guardó algo
       if (response.success_count === 0 || response.created_count === 0) {
-        // No se guardó nada, mostrar advertencia
         const erroresDetalle = response.errors && response.errors.length > 0 
           ? response.errors.join('\n\n') 
           : 'No se pudieron crear las asignaciones.';
@@ -110,24 +186,18 @@ export function useAsignarNiveles() {
           type: 'info', 
           title: '⚠️ Advertencia', 
           message: erroresDetalle,
-          onConfirm: () => {
-            // Solo limpiar los niveles seleccionados (mantener área)
-            setNivelesSeleccionados(nivelesOriginales);
-            closeModal();
-          }
         });
         return;
       }
       
-      // Éxito: se guardó al menos una asignación
-      const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
+      const mensajeExito = response.message || `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
       setModalState({ isOpen: true, type: 'success', title: '¡Guardado!', message: mensajeExito });
       
-      // Invalida la query para refrescar los datos
-      queryClient.invalidateQueries({ queryKey: ['areas-con-niveles'] });
+      // Refrescar datos asignados
+      refetchAsignados();
       
       clearTimeout(modalTimerRef.current);
-      modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
+      modalTimerRef.current = window.setTimeout(() => closeModal(), 2000);
     },
     onError: (error: AxiosError<ApiErrorResponse>) => {
       clearTimeout(modalTimerRef.current);
@@ -145,6 +215,7 @@ export function useAsignarNiveles() {
     return () => clearTimeout(modalTimerRef.current);
   }, []);
 
+  // ACTUALIZADO: handleGuardar con validación de grados y payload correcto
   const handleGuardar = () => {
     if (!areaSeleccionadaId) return;
 
@@ -158,20 +229,6 @@ export function useAsignarNiveles() {
       return;
     }
 
-    // Verificar si hay cambios
-    if (isEqual(new Set(nivelesOriginales), new Set(nivelesSeleccionados))) {
-      setModalState({
-        isOpen: true,
-        type: 'info',
-        title: 'Sin Cambios',
-        message: 'No se ha realizado ninguna modificación.',
-      });
-      clearTimeout(modalTimerRef.current);
-      modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
-      return;
-    }
-
-    // Crear payload solo con los niveles nuevos (no originales)
     const nivelesNuevos = Array.from(nivelesSeleccionados).filter(
       (id) => !nivelesOriginales.has(id)
     );
@@ -188,17 +245,43 @@ export function useAsignarNiveles() {
       return;
     }
 
-    const payload: AsignacionPayload[] = nivelesNuevos.map((id_nivel) => ({
-      id_area: areaSeleccionadaId,
-      id_nivel,
-      activo: true,
-    }));
+    // Validar que todos los niveles nuevos tengan grados
+    const nivelesSinGrados = nivelesNuevos.filter(
+      (id) => !gradosPorNivel[id] || gradosPorNivel[id].size === 0
+    );
+
+    if (nivelesSinGrados.length > 0) {
+      const nombreNivel = todosLosNiveles.find((n) => n.id_nivel === nivelesSinGrados[0])?.nombre;
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: 'Grados Requeridos',
+        message: `Debe seleccionar grados para todos los niveles. Falta: ${nombreNivel}`,
+      });
+      return;
+    }
+
+    // Crear payload: un registro por cada combinación nivel-grado
+    const payload: AsignacionPayload[] = [];
+    
+    nivelesNuevos.forEach((id_nivel) => {
+      const gradosDelNivel = gradosPorNivel[id_nivel];
+      if (gradosDelNivel) {
+        gradosDelNivel.forEach((id_grado_escolaridad) => {
+          payload.push({
+            id_area: areaSeleccionadaId,
+            id_nivel,
+            id_grado_escolaridad,
+            activo: true,
+          });
+        });
+      }
+    });
 
     guardarAsignaciones(payload);
   };
 
   const handleToggleNivel = (id_nivel: number) => {
-    // No permitir cambiar niveles que ya estaban asignados originalmente
     if (nivelesOriginales.has(id_nivel)) {
       return;
     }
@@ -207,6 +290,11 @@ export function useAsignarNiveles() {
       const newSet = new Set(prev);
       if (newSet.has(id_nivel)) {
         newSet.delete(id_nivel);
+        setGradosPorNivel((prevGrados) => {
+          const newGrados = { ...prevGrados };
+          delete newGrados[id_nivel];
+          return newGrados;
+        });
       } else {
         newSet.add(id_nivel);
       }
@@ -216,6 +304,7 @@ export function useAsignarNiveles() {
 
   const handleCancelarCambios = () => {
     setNivelesSeleccionados(nivelesOriginales);
+    setGradosPorNivel({});
   };
 
   const handleChangeArea = (nuevaAreaId: number | undefined) => {
@@ -233,11 +322,13 @@ export function useAsignarNiveles() {
           'Tienes cambios sin guardar. ¿Estás seguro de que quieres cambiar de área y perderlos?',
         onConfirm: () => {
           setAreaSeleccionadaId(nuevaAreaId);
+          setGradosPorNivel({});
           closeModal();
         },
       });
     } else {
       setAreaSeleccionadaId(nuevaAreaId);
+      setGradosPorNivel({});
     }
   };
 
@@ -247,14 +338,19 @@ export function useAsignarNiveles() {
     nivelesOriginales,
     areaSeleccionadaId,
     nivelesSeleccionados,
+    gradosPorNivel,
     handleToggleNivel,
     handleGuardar,
-    isLoading: isLoadingAreas || isLoadingNiveles || isLoadingAreasPermitidas,
+    isLoading: isLoadingAreas || isLoadingNiveles || isLoadingGrados,
     isSaving,
     modalState,
     closeModal,
     handleCancelarCambios,
     handleChangeArea,
     setAreaSeleccionadaId,
+    handleAbrirModalGrados,
+    handleCerrarModalGrados,
+    handleGuardarGrados,
+    modalGradosState,
   };
 }

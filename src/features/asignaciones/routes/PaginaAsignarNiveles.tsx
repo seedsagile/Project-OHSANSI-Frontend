@@ -1,7 +1,8 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
 import { Save, LoaderCircle, X } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
-import type { Nivel } from '../../niveles/types';
+import { ModalGrados } from '../components/ModalGrados';
+import type { Nivel } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { CustomDropdown } from '../../../components/ui/CustomDropdown';
 
@@ -19,6 +20,10 @@ export function PaginaAsignarNiveles() {
     modalState,
     closeModal,
     handleChangeArea,
+    handleAbrirModalGrados,
+    handleCerrarModalGrados,
+    handleGuardarGrados,
+    modalGradosState,
   } = useAsignarNiveles();
 
   const navigate = useNavigate();
@@ -31,6 +36,29 @@ export function PaginaAsignarNiveles() {
     value: area.id_area,
     label: area.nombre,
   }));
+
+  const handleCheckboxClick = (nivel: Nivel) => {
+    const esNivelOriginal = nivelesOriginales.has(nivel.id_nivel);
+    const estaSeleccionado = nivelesSeleccionados.has(nivel.id_nivel);
+    
+    // Si el nivel ya estaba asignado originalmente, no hacer nada
+    if (esNivelOriginal) {
+      return;
+    }
+
+    // Si el nivel ya estaba seleccionado (desmarcarlo)
+    if (estaSeleccionado) {
+      handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
+      return;
+    }
+
+    // Si no estaba seleccionado, marcarlo y abrir modal de grados
+    handleToggleNivel(nivel.id_nivel);
+    // Pequeño delay para que se actualice el estado antes de abrir el modal
+    setTimeout(() => {
+      handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
+    }, 100);
+  };
 
   return (
     <>
@@ -135,7 +163,7 @@ export function PaginaAsignarNiveles() {
                                   : 'cursor-pointer'
                               }`}
                               checked={estaSeleccionado}
-                              onChange={() => handleToggleNivel(nivel.id_nivel)}
+                              onChange={() => handleCheckboxClick(nivel)}
                               disabled={esNivelOriginal}
                             />
                           </td>
@@ -188,6 +216,16 @@ export function PaginaAsignarNiveles() {
       >
         {modalState.message}
       </Modal>
+
+      <ModalGrados
+        isOpen={modalGradosState.isOpen}
+        onClose={handleCerrarModalGrados}
+        onSave={handleGuardarGrados}
+        niveles={modalGradosState.grados}
+        gradosSeleccionados={modalGradosState.gradosSeleccionados}
+        nombreNivel={modalGradosState.nombreNivel}
+        isLoading={modalGradosState.isLoading}
+      />
     </>
   );
 }
