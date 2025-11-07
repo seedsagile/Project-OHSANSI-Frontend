@@ -1,39 +1,25 @@
 import apiClient from '../../../api/ApiPhp';
 import type { Area, Nivel, ParametroClasificacion } from '../interface/interface';
 
-// ===============================
-// 🟩 Obtener todas las Áreas
-// ===============================
 export const obtenerAreasAPI = async (): Promise<Area[]> => {
-  const response = await apiClient.get('/areas-nombres');
-  const nombresAreas = response.data.data.nombres_areas;
+  try {
+    const response = await apiClient.get('/area/gestion/2025');
+    const data = response.data.data;
 
-  // Convertir el objeto { "1": "Matemáticas", "2": "Física" } en un array de objetos
-  const areas = Object.entries(nombresAreas).map(([id, nombre]) => ({
-    id: Number(id),
-    nombre: nombre as string,
-  }));
+    if (!Array.isArray(data)) {
+      console.error('Formato inesperado de áreas:', data);
+      return [];
+    }
 
-  return areas;
-};
-
-// ✅ Trae las áreas junto con sus niveles (endpoint: /areas-con-niveles)
-export const obtenerAreasConNivelesAPI = async (): Promise<Area[]> => {
-  const response = await apiClient.get('/areas-con-niveles');
-
-  const areas = response.data.data.map((a: any) => ({
-    id: a.id_area,
-    nombre: a.nombre,
-    niveles: Array.isArray(a.niveles)
-      ? a.niveles.map((n: any) => ({
-          id: n.id_nivel, // <-- convertir correctamente
-          nombre: n.nombre,
-          asignado_activo: n.asignado_activo, // opcional si lo necesitas luego
-        }))
-      : [],
-  }));
-
-  return areas;
+    // Convertimos cada objeto del backend al tipo Area esperado
+    return data.map((a: any) => ({
+      id: a.id_area,
+      nombre: a.nombre,
+    }));
+  } catch (error) {
+    console.error('Error al obtener áreas:', error);
+    throw error;
+  }
 };
 
 // ===============================
@@ -42,6 +28,31 @@ export const obtenerAreasConNivelesAPI = async (): Promise<Area[]> => {
 export const crearParametroAPI = async (payload: ParametroClasificacion) => {
   const response = await apiClient.post('/parametros', payload);
   return response.data;
+};
+
+// ===============================
+// 🟨 Obtener niveles por área seleccionada
+// ===============================
+export const obtenerNivelesPorAreaAPI = async (id_area: number): Promise<Nivel[]> => {
+  try {
+    const response = await apiClient.get(`/area-nivel/gestion/2025/area/${id_area}`);
+    const nivelesAgrupados = response.data.data.niveles_con_grados_agrupados;
+
+    // Transformamos los datos a un arreglo de objetos Nivel
+    const niveles: Nivel[] = nivelesAgrupados.map((nivel: any) => ({
+      id: nivel.id_nivel,
+      nombre: nivel.nombre_nivel,
+      grados: nivel.grados.map((g: any) => ({
+        id: g.id_grado_escolaridad,
+        nombre: g.nombre,
+      })),
+    }));
+
+    return niveles;
+  } catch (error) {
+    console.error('Error al obtener niveles por área:', error);
+    throw error;
+  }
 };
 
 // ===============================
@@ -67,34 +78,4 @@ export const obtenerParametrosPorOlimpiadaAPI = async () => {
   );
 
   return parametrosFormateados;
-};
-
-// ===============================
-// 🟩 Obtener parámetros de la gestión actual
-// ===============================
-export const obtenerParametrosGestionActualAPI = async () => {
-  const response = await apiClient.get('/parametros/gestion-actual');
-  return response.data.data.map((p: any) => ({
-    id: p.id_parametro,
-    gestion: p.area_nivel.olimpiada.gestion,
-    area: p.area_nivel.area.nombre,
-    nivel: p.area_nivel.nivel.nombre,
-    notaMinima: p.nota_min_clasif,
-    notaMaxima: p.nota_max_clasif,
-    cantidadMaxima: p.cantidad_max_apro,
-  }));
-};
-// ===============================
-// 🟩 Obtener Áreas por Gestión
-// ===============================
-export const obtenerAreasPorGestionAPI = async (gestion: string): Promise<Area[]> => {
-  const response = await apiClient.get(`/area-nivel/gestion/${gestion}`);
-  return response.data.data.map((a: any) => ({
-    id: a.id_area,
-    nombre: a.nombre,
-    niveles: a.niveles.map((n: any) => ({
-      id: n.id_nivel,
-      nombre: n.nombre,
-    })),
-  }));
 };
