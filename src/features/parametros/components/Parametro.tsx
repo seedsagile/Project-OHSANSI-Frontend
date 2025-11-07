@@ -4,7 +4,7 @@ import {
   obtenerNivelesPorAreaAPI,
   obtenerParametrosGestionActualAPI,
 } from '../service/service';
-import type { Area, Nivel, ParametroGestionAPI } from '../interface/interface';
+import type { Area, Nivel } from '../interface/interface';
 import { Formulario } from './Formulario';
 import { TablaGestiones } from './TablaGestiones';
 import { Modal } from '@/components/ui/Modal';
