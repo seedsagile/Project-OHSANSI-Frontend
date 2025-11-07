@@ -36,17 +36,28 @@ export const crearParametroAPI = async (payload: ParametroClasificacion) => {
 export const obtenerNivelesPorAreaAPI = async (id_area: number): Promise<Nivel[]> => {
   try {
     const response = await apiClient.get(`/area-nivel/gestion/2025/area/${id_area}`);
-    const nivelesAgrupados = response.data.data.niveles_con_grados_agrupados;
 
-    // Transformamos los datos a un arreglo de objetos Nivel
-    const niveles: Nivel[] = nivelesAgrupados.map((nivel: any) => ({
-      id: nivel.id_nivel,
-      nombre: nivel.nombre_nivel,
-      grados: nivel.grados.map((g: any) => ({
-        id: g.id_grado_escolaridad,
-        nombre: g.nombre,
-      })),
-    }));
+    const nivelesAgrupados = response.data.data.niveles_con_grados_agrupados;
+    const nivelesIndividuales = response.data.data.niveles_individuales;
+
+    // Agregamos el id_area_nivel correspondiente por nombre
+    const niveles: Nivel[] = nivelesAgrupados.map((nivel: any) => {
+      // Buscar coincidencias en niveles_individuales según el nombre
+      const coincidencias = nivelesIndividuales.filter(
+        (n: any) => n.nivel.nombre === nivel.nombre_nivel
+      );
+
+      // Retornar los grados y los ids de área_nivel que coinciden
+      return {
+        id: nivel.id_nivel,
+        nombre: nivel.nombre_nivel,
+        grados: nivel.grados.map((g: any) => ({
+          id: g.id_grado_escolaridad,
+          nombre: g.nombre,
+        })),
+        areaNiveles: coincidencias.map((n: any) => n.id_area_nivel), // 🔹 aquí guardamos los ids
+      };
+    });
 
     return niveles;
   } catch (error) {
@@ -78,4 +89,17 @@ export const obtenerParametrosPorOlimpiadaAPI = async () => {
   );
 
   return parametrosFormateados;
+};
+
+// ===============================
+// 🟩 Obtener parámetros de la gestión actual
+// ===============================
+export const obtenerParametrosGestionActualAPI = async () => {
+  try {
+    const response = await apiClient.get(`/parametros/gestion-actual`);
+    return response.data.data; // contiene los parámetros ya registrados
+  } catch (error) {
+    console.error('Error al obtener parámetros de la gestión actual:', error);
+    throw error;
+  }
 };

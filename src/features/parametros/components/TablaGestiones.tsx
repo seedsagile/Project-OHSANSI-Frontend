@@ -68,8 +68,8 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
             <thead className="bg-principal-500 text-blanco sticky top-0 z-10">
               <tr>
                 <th className="py-2 px-4 text-left w-[12%]">Gestión</th>
-                <th className="py-2 px-4 text-left w-[20%]">Área</th>
-                <th className="py-2 px-4 text-left w-[18%]">Nivel</th>
+                {/* <th className="py-2 px-4 text-left w-[20%]">Área</th>
+                <th className="py-2 px-4 text-left w-[18%]">Nivel</th> */}
                 <th className="py-2 px-4 text-center w-[12%]">Nota mínima</th>
                 <th className="py-2 px-4 text-center w-[20%]">Cantidad máxima de clasificados</th>
                 <th className="py-2 px-4 text-center w-[8%]">Seleccionar</th>
@@ -102,7 +102,10 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                     <React.Fragment key={nivel.id}>
                       {/* fila separadora con el nombre del nivel */}
                       <tr className="bg-principal-100 border-t border-principal-300">
-                        <td colSpan={6} className="py-2 px-4 font-semibold text-principal-800">
+                        <td
+                          colSpan={6}
+                          className="py-2 px-4 font-semibold text-principal-800 text-center"
+                        >
                           Nivel: {nivel.nombre}
                         </td>
                       </tr>
@@ -115,8 +118,8 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                             className="border-t border-neutro-200 hover:bg-neutro-100 transition"
                           >
                             <td className="py-2 px-4">{p.gestion}</td>
-                            <td className="py-2 px-4">{p.area}</td>
-                            <td className="py-2 px-4">{p.nivel}</td>
+                            {/* <td className="py-2 px-4">{p.area}</td>
+                            <td className="py-2 px-4">{p.nivel}</td> */}
                             <td className="py-2 px-4 text-center">{p.notaMinima}</td>
                             <td className="py-2 px-4 text-center">{p.cantidadMaxima}</td>
                             <td className="py-2 px-4 text-center">

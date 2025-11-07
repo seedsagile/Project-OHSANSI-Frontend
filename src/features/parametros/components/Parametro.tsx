@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   obtenerAreasAPI,
   obtenerNivelesPorAreaAPI,
-  obtenerParametrosPorOlimpiadaAPI,
+  obtenerParametrosGestionActualAPI,
 } from '../service/service';
 import type { Area, Nivel, ParametroGestionAPI } from '../interface/interface';
 import { Formulario } from './Formulario';
@@ -78,36 +78,35 @@ export const Parametro = () => {
     fetchAreas();
   }, []);
 
-  // Obtener parámetros existentes para gestión actual
+  // ✅ Obtener parámetros existentes para gestión actual
   useEffect(() => {
-    const fetchParametros = async () => {
+    const fetchParametrosActuales = async () => {
       try {
-        const parametros = await obtenerParametrosPorOlimpiadaAPI();
+        const parametrosActuales = await obtenerParametrosGestionActualAPI();
 
-        // 🔹 Filtrar solo los parámetros de la gestión actual
-        const gestionActual = '2025'; // puedes traerlo dinámicamente si prefieres
-        const parametrosGestionActual = parametros.filter(
-          (p: ParametroGestionAPI) => p.gestion === gestionActual
-        );
-
+        // Mapeamos los parámetros por área y nombre de nivel
         const nivelesMap: Record<number, string[]> = {};
 
-        parametrosGestionActual.forEach((p: ParametroGestionAPI) => {
-          const area = areas.find((a) => a.nombre === p.area);
+        parametrosActuales.forEach((p: any) => {
+          const areaNombre = p.area_nivel.area.nombre;
+          const nivelNombre = p.area_nivel.nivel.nombre;
+
+          const area = areas.find((a) => a.nombre === areaNombre);
           if (!area) return;
 
-          // Usamos el nombre completo del nivel, no un número
           if (!nivelesMap[area.id]) nivelesMap[area.id] = [];
-          nivelesMap[area.id].push(p.nivel.trim());
+          nivelesMap[area.id].push(nivelNombre.trim());
         });
 
         setNivelesConParametros(nivelesMap);
+        toast.success('Niveles con parámetros cargados');
       } catch (error) {
         console.error('Error al obtener parámetros gestión actual:', error);
         toast.error('Error al obtener parámetros');
       }
     };
-    fetchParametros();
+
+    fetchParametrosActuales();
   }, [areas]);
 
   const limpiarGestionSeleccionada = () => {
