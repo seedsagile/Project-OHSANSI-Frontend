@@ -52,15 +52,13 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
 
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="22"
-          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-10 h-10 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -68,12 +66,8 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
 
       {isOpen && (
         <div
-          className="absolute left-0 top-full z-20 w-full bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto transition-all duration-300"
-          style={{
-            maxHeight: '200px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#a3a3a3 #f5f5f5',
-          }}
+          className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
+          style={{ maxHeight: '200px' }}
         >
           {sanitizedData.length === 0 ? (
             <p className="text-neutro-700 text-sm text-center">No hay niveles disponibles.</p>

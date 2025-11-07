@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AccordionArea } from './AccordionArea';
 import { AccordionNivel } from './AccordionNivel';
+import { AccordionGrado } from './AccordionGrado';
+import { AccordionDepartamento } from './AccordionDepartamento';
+import { AccordionGenero } from './AccordionGenero';
 import {
   getAreasPorResponsableAPI,
   getNivelesPorAreaAPI,
@@ -21,18 +24,18 @@ export const ListaCompetidores = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [competidores, setCompetidores] = useState<Competidor[]>([]);
   const [areaNiveles, setAreaNiveles] = useState<{ areaNombre: string; niveles: Nivel[] }[]>([]);
-
   const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
   const [selectedNiveles, setSelectedNiveles] = useState<{ [areaNombre: string]: number | null }>(
     {}
   );
-
   const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingCompetidores, setLoadingCompetidores] = useState(true);
 
   const responsableId = 4;
 
-  /** 🔹 Cargar Áreas del responsable */
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Cargar Áreas
   useEffect(() => {
     const fetchAreas = async () => {
       try {
@@ -47,7 +50,7 @@ export const ListaCompetidores = () => {
     fetchAreas();
   }, []);
 
-  /** 🔹 Cargar competidores */
+  // Cargar competidores
   const fetchCompetidores = async (id_area = 0, id_nivel = 0) => {
     try {
       setLoadingCompetidores(true);
@@ -65,7 +68,7 @@ export const ListaCompetidores = () => {
     fetchCompetidores();
   }, []);
 
-  /** 🔹 Manejar selección de áreas */
+  // Manejar selección de áreas
   const handleSelectedAreas = async (selected: Area[]) => {
     setSelectedAreas(selected);
 
@@ -76,7 +79,6 @@ export const ListaCompetidores = () => {
       return;
     }
 
-    // Cargar niveles de todas las áreas seleccionadas
     const nivelesPorArea = await Promise.all(
       selected.map(async (area) => {
         const niveles = await getNivelesPorAreaAPI(area.id_area);
@@ -85,7 +87,6 @@ export const ListaCompetidores = () => {
     );
     setAreaNiveles(nivelesPorArea);
 
-    // 🔹 Mostrar competidores de todas las áreas seleccionadas
     let todos: Competidor[] = [];
     for (const area of selected) {
       const data = await getCompetidoresAPI(responsableId, area.id_area, 0);
@@ -94,14 +95,13 @@ export const ListaCompetidores = () => {
     setCompetidores(todos);
   };
 
-  /** 🔹 Manejar selección de niveles */
+  // Manejar selección de niveles
   const handleSelectedNiveles = async (niveles: { [areaNombre: string]: number | null }) => {
     setSelectedNiveles(niveles);
 
     if (selectedAreas.length === 0) return;
 
     let todos: Competidor[] = [];
-
     for (const area of selectedAreas) {
       const nivelId = niveles[area.nombre];
       if (nivelId) {
@@ -109,11 +109,9 @@ export const ListaCompetidores = () => {
         todos = todos.concat(data.original || []);
       }
     }
-
     setCompetidores(todos);
   };
 
-  /** 🔹 Mostrar todos los competidores */
   const handleMostrarTodo = () => {
     setSelectedAreas([]);
     setSelectedNiveles({});
@@ -121,40 +119,91 @@ export const ListaCompetidores = () => {
     fetchCompetidores(0, 0);
   };
 
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({
+        left: direction === 'left' ? -200 : 200,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
     <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-      <main className="bg-blanco w-full max-w-5xl rounded-xl shadow-sombra-3 p-8">
+      <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-8">
         <header className="flex flex-col mb-10">
           <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center mb-8">
             Listar competidores
           </h1>
 
-          <div className="flex justify-end items-start gap-4 mb-6">
+          {/* 🔹 Carrusel con todos los botones */}
+          <div className="relative mb-6 flex items-center">
             <button
-              onClick={handleMostrarTodo}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
+              onClick={() => scrollCarousel('left')}
+              className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-principal-500 text-blanco hover:bg-principal-600 transition-colors"
             >
-              Mostrar Todo
+              &#8249;
             </button>
 
-            {loadingAreas ? (
-              <span>Cargando áreas...</span>
-            ) : (
-              <AccordionArea
-                areas={areas}
-                selectedAreas={selectedAreas}
-                onChangeSelected={handleSelectedAreas}
-              />
-            )}
+            <div
+              ref={carouselRef}
+              className="flex gap-4 overflow-x-auto scrollbar-none scroll-smooth py-1 relative"
+            >
+              {/* Botón Mostrar Todo */}
+              <div className="flex-shrink-0 relative z-0">
+                <button
+                  onClick={handleMostrarTodo}
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
+                >
+                  Mostrar Todo
+                </button>
+              </div>
 
-            <AccordionNivel
-              data={areaNiveles}
-              selectedNiveles={selectedNiveles}
-              onChangeSelected={handleSelectedNiveles}
-            />
+              {/* Acordeones dentro del carrusel */}
+              <div className="flex-shrink-0 relative z-0">
+                {loadingAreas ? (
+                  <span>Cargando áreas...</span>
+                ) : (
+                  <AccordionArea
+                    areas={areas}
+                    selectedAreas={selectedAreas}
+                    onChangeSelected={handleSelectedAreas}
+                    className="absolute top-0 left-0 z-10" // desplegable encima
+                  />
+                )}
+              </div>
+
+              <div className="flex-shrink-0 relative z-0">
+                <AccordionNivel
+                  data={areaNiveles}
+                  selectedNiveles={selectedNiveles}
+                  onChangeSelected={handleSelectedNiveles}
+                  className="absolute top-0 left-0 z-10"
+                />
+              </div>
+
+              <div className="flex-shrink-0 relative z-0">
+                <AccordionGrado className="absolute top-0 left-0 z-10" />
+              </div>
+
+              <div className="flex-shrink-0 relative z-0">
+                <AccordionDepartamento className="absolute top-0 left-0 z-10" />
+              </div>
+
+              <div className="flex-shrink-0 relative z-0">
+                <AccordionGenero className="absolute top-0 left-0 z-10" />
+              </div>
+            </div>
+
+            <button
+              onClick={() => scrollCarousel('right')}
+              className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-principal-500 text-blanco hover:bg-principal-600 transition-colors"
+            >
+              &#8250;
+            </button>
           </div>
 
-          {/* Tabla */}
+          {/* 🔹 Tabla de competidores */}
           <div className="w-full overflow-x-auto">
             <div className="max-h-[950px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent rounded-lg border border-gray-200">
               <table className="w-full border-collapse">
