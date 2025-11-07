@@ -1,164 +1,125 @@
-// responsabless/services/responsablesService.ts
 import { AxiosError } from 'axios';
-import apiClient from '@/api/ApiPhp'; //
+import apiClient from '@/api/ApiPhp';
 import {
-    mapApiUserDataToPersonaVerificada,
-    mapApiGestionToGestion,
-    mapApiResponsableCreado // Se asume que la respuesta PUT tiene una estructura similar a POST para el mensaje
-} from '../utils/apiMappers'; //
-import { GESTION_ACTUAL_ANIO, ID_OLIMPIADA_ACTUAL } from '../utils/constants'; //
+  mapApiUsuarioToVerificacionCompleta,
+  mapApiResponsableCreado,
+} from '../utils/apiMappers';
+import { GESTION_ACTUAL_ANIO, ID_OLIMPIADA_ACTUAL } from '../utils/constants';
 import type {
-  DatosPersonaVerificada, //
-  Gestion, //
-  CrearResponsablePayload, //
-  ResponsableCreado, //
-  AreaPasadaResponse, //
-  Area as AreaGeneral, //
-  // Tipos para Actualización (PUT)
-  ActualizarResponsablePayload, //
-  ResponsableActualizado //
-} from '../types/index'; //
+  VerificacionUsuarioCompleta,
+  ApiUsuarioResponse,
+  //Gestion,
+  CrearResponsablePayload,
+  ResponsableCreado,
+  Area as AreaGeneral,
+  AsignarResponsablePayload,
+  ResponsableAsignado,
+} from '../types/index';
 
-// Define el tipo Area localmente si es necesario, o usa el importado
 type Area = AreaGeneral;
 
-// Tipo para la respuesta de error de la API
 type ApiErrorResponse = {
   message?: string;
-  errors?: Record<string, string[]>; // Para errores de validación
+  errors?: Record<string, string[]>;
 };
 
 /**
- * Verifica si un CI ya existe en el sistema.
+ * Verifica un CI y devuelve todos los datos de la persona, roles y gestiones.
  * @param ci Carnet de Identidad a verificar.
- * @returns Los datos de la persona si existe, o null si no existe (404). Lanza error en otros casos.
+ * @returns Un objeto 'VerificacionUsuarioCompleta' si se encuentra (200 OK).
+ * @returns 'null' si el usuario no se encuentra (404 - Escenario 1).
  */
-export const verificarCI = async (ci: string): Promise<DatosPersonaVerificada | null> => { //
+export const verificarCI = async (
+  ci: string
+): Promise<VerificacionUsuarioCompleta | null> => {
   try {
-    // Llama al endpoint GET para verificar el CI
-    const response = await apiClient.get<{ data: any }>(`/usuarios/ci/${ci}`); //
+    const response = await apiClient.get<{ data: ApiUsuarioResponse }>(
+      `/usuarios/ci/${ci}`
+    );
 
-    // Mapea la respuesta de la API a la estructura de datos del frontend
-    const personaVerificada = mapApiUserDataToPersonaVerificada(response.data?.data); //
-    return personaVerificada;
-
+    const verificacionCompleta = mapApiUsuarioToVerificacionCompleta(
+      response.data.data
+    );
+    return verificacionCompleta;
   } catch (error) {
     const axiosError = error as AxiosError;
-    // Si la API devuelve 404, significa que el CI no existe, devolvemos null
     if (axiosError.response?.status === 404) {
       return null;
     }
-    // Para otros errores, loguea y lanza un error más descriptivo
     console.error('Error al verificar CI:', error);
     const apiError = axiosError.response?.data as ApiErrorResponse;
-    throw new Error(apiError?.message || axiosError.message || 'Error de red al verificar CI.');
+    throw new Error(
+      apiError?.message || axiosError.message || 'Error de red al verificar CI.'
+    );
   }
 };
 
 /**
- * Obtiene las gestiones pasadas en las que participó un responsable.
- * @param ci Carnet de Identidad del responsable.
- * @returns Un array de objetos Gestion. Devuelve array vacío si no hay datos o el CI es inválido.
+ * (OBSOLETO) Reemplazado por la lógica dentro de 'verificarCI'.
+ * @deprecated La información de gestiones pasadas ahora viene de 'verificarCI'.
  */
-export const obtenerGestionesPasadas = async (ci: string): Promise<Gestion[]> => { //
-  if (!ci) return []; // No hacer la llamada si no hay CI
-  try {
-    // Llama al endpoint GET para obtener las gestiones
-    const response = await apiClient.get<any[]>(`/responsables/ci/${ci}/gestiones`); //
-
-    // Mapea la respuesta de la API
-    const gestiones = mapApiGestionToGestion(response.data); //
-    return gestiones;
-
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    // Si es 404, significa que no tiene gestiones pasadas
-    if (axiosError.response?.status === 404) {
-      return [];
-    }
-    console.error(`Error al obtener gestiones pasadas para CI ${ci}:`, error);
-    const apiError = axiosError.response?.data as ApiErrorResponse;
-    throw new Error(apiError?.message || axiosError.message || 'Error de red al obtener gestiones.');
-  }
-};
+/*export const obtenerGestionesPasadas = async (ci: string): Promise<Gestion[]> => {
+  console.warn(
+    'OBSOLETO: La llamada a "obtenerGestionesPasadas" ya no es necesaria y ha sido deprecada.'
+  );
+  return Promise.resolve([]);
+};*/
 
 /**
- * Obtiene los IDs de las áreas asignadas a un responsable en una gestión específica.
- * @param gestion Año de la gestión (ej: "2024").
- * @param ci Carnet de Identidad del responsable.
- * @returns Un array de IDs numéricos de las áreas. Devuelve array vacío si no hay datos o los parámetros son inválidos.
+ * (OBSOLETO) Reemplazado por la lógica dentro de 'verificarCI'.
+ * @deprecated La información de áreas pasadas ahora viene de 'verificarCI'.
  */
-export const obtenerAreasPasadas = async (gestion: string, ci: string): Promise<number[]> => { //
-  if (!gestion || !ci) return []; // No hacer la llamada si faltan parámetros
-  try {
-    // Llama al endpoint GET para obtener las áreas de una gestión
-    const response = await apiClient.get<AreaPasadaResponse[] | { message: string, data: [] }>( //
-      `/responsables/ci/${ci}/gestion/${gestion}/areas`
-    ); //
-    const responseData = response.data;
-    // Maneja respuestas donde 'data' es un array o está anidado
-    const areasData = Array.isArray(responseData) ? responseData : responseData?.data;
-
-    // Verifica que areasData sea realmente un array antes de mapear
-    if (!Array.isArray(areasData)) {
-        console.warn(`Respuesta inesperada para áreas pasadas (gestión ${gestion}, CI ${ci}):`, responseData);
-        return [];
-    }
-
-    // Extrae y filtra solo los IDs numéricos válidos de las áreas
-    return areasData
-            .map(item => item?.Area?.Id_area) // Obtiene el ID del área
-            .filter((id): id is number => typeof id === 'number'); // Asegura que solo sean números
-
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    // Si es 404, no hay áreas asignadas para esa gestión/CI
-    if (axiosError.response?.status === 404) {
-      return [];
-    }
-    console.error(`Error al obtener áreas pasadas para gestión ${gestion} y CI ${ci}:`, error);
-    const apiError = axiosError.response?.data as ApiErrorResponse;
-    throw new Error(apiError?.message || axiosError.message || 'Error de red al obtener áreas pasadas.');
-  }
+/*export const obtenerAreasPasadas = async (
+  gestion: string,
+  ci: string
+): Promise<number[]> => {
+  console.warn(
+    'OBSOLETO: La llamada a "obtenerAreasPasadas" ya no es necesaria y ha sido deprecada.'
+  );
+  return Promise.resolve([]);
 };
+*/
 
 /**
- * Obtiene todas las áreas disponibles para la gestión actual.
+ * (SIN CAMBIOS)
+ * Obtiene todas las áreas disponibles para la gestión actual (API 5).
  * @returns Un array de objetos Area.
  */
-export const obtenerAreasActuales = async (): Promise<Area[]> => { //
+export const obtenerAreasActuales = async (): Promise<Area[]> => {
   try {
-    // Llama al endpoint GET usando la constante del año actual
-    const response = await apiClient.get<{ data: Array<{ id_area: number; nombre: string }> }>(
-      `/olimpiadas/${GESTION_ACTUAL_ANIO}/areas` //
-    ); //
-    // Mapea la respuesta de la API a la interfaz Area del frontend
-    return response.data?.data?.map((itemApi): Area => ({
-      id_area: itemApi.id_area,
-      nombre: itemApi.nombre,
-      // Añade valores por defecto para propiedades que podrían faltar en la API
-      activo: 1, // Asume activo por defecto
-      created_at: '', // Valor por defecto o null
-      update_ad: '', // Valor por defecto o null
-    })) || []; // Devuelve array vacío si no hay datos
+    const response = await apiClient.get<{
+      data: Array<{ id_area: number; nombre: string }>;
+    }>(`/olimpiadas/${GESTION_ACTUAL_ANIO}/areas`);
 
+    return (
+      response.data?.data?.map(
+        (itemApi): Area => ({
+          id_area: itemApi.id_area,
+          nombre: itemApi.nombre,
+          activo: 1,
+          created_at: '',
+          update_ad: '',
+        })
+      ) || []
+    );
   } catch (error) {
     const axiosError = error as AxiosError;
-    console.error(`Error al obtener áreas para la gestión ${GESTION_ACTUAL_ANIO}:`, error); //
+    console.error(`Error al obtener áreas para la gestión ${GESTION_ACTUAL_ANIO}:`, error);
     const apiError = axiosError.response?.data as ApiErrorResponse;
-    throw new Error(apiError?.message || axiosError.message || 'Error de red al obtener áreas actuales.');
+    throw new Error(
+      apiError?.message || axiosError.message || 'Error de red al obtener áreas actuales.'
+    );
   }
 };
 
 /**
- * Registra un nuevo responsable de área (POST).
- * @param payload Datos del nuevo responsable.
+ * Registra un nuevo responsable de área (POST - Escenario 1) (API 1).
+ * @param payload Datos completos del nuevo responsable (personales + áreas).
  * @returns La respuesta de la API tras la creación.
  */
-export const crearResponsable = async ( //
-  payload: CrearResponsablePayload //
-): Promise<ResponsableCreado> => { //
-  // Construye el objeto a enviar a la API
+export const crearResponsable = async (
+  payload: CrearResponsablePayload
+): Promise<ResponsableCreado> => {
   const apiPayload = {
     nombre: payload.nombre,
     apellido: payload.apellido,
@@ -166,89 +127,84 @@ export const crearResponsable = async ( //
     email: payload.email,
     telefono: payload.telefono,
     areas: payload.areas,
-    // La contraseña podría ser generada por el backend, aquí se envía una por defecto si no viene
     password: payload.password || 'password_predeterminado',
-    // Usa el ID de olimpiada actual por defecto si no se especifica
-    id_olimpiada: payload.id_olimpiada ?? ID_OLIMPIADA_ACTUAL, //
+    id_olimpiada: payload.id_olimpiada ?? ID_OLIMPIADA_ACTUAL,
   };
 
   try {
-    console.log("Enviando payload a POST /responsables:", apiPayload);
-    // Llama al endpoint POST
-    const response = await apiClient.post<any>('/responsables', apiPayload); //
-
-    // Mapea la respuesta
-    const responsableCreado = mapApiResponsableCreado(response.data); //
+    console.log(
+      'Enviando payload a POST /responsables (Creación - Escenario 1):',
+      apiPayload
+    );
+    const response = await apiClient.post<any>('/responsables', apiPayload);
+    const responsableCreado = mapApiResponsableCreado(response.data);
     return responsableCreado;
-
   } catch (error) {
-    // Manejo de errores detallado
     const axiosError = error as AxiosError<ApiErrorResponse>;
-    console.error('Error al crear responsable:', axiosError.response?.data || error);
+    console.error('Error al crear responsable (Escenario 1):', axiosError.response?.data || error);
     let errorMessage = 'No se pudo registrar al responsable.';
-
     if (axiosError.response?.data) {
-        const apiError = axiosError.response.data;
-        if (apiError.message) {
-            errorMessage = apiError.message;
-        } else if (apiError.errors) {
-            // Concatena errores de validación si existen
-            const validationErrors = Object.values(apiError.errors).flat().join(' ');
-            if (validationErrors) errorMessage = validationErrors;
-        }
-    } else if (axiosError.request) { // Error de red o sin respuesta
-        errorMessage = 'No se recibió respuesta del servidor al intentar crear el responsable.';
-    } else { // Otro tipo de error (configuración, etc.)
-        errorMessage = axiosError.message || errorMessage;
+      const apiError = axiosError.response.data;
+      if (apiError.message) {
+        errorMessage = apiError.message;
+      } else if (apiError.errors) {
+        const validationErrors = Object.values(apiError.errors)
+          .flat()
+          .join(' ');
+        if (validationErrors) errorMessage = validationErrors;
+      }
+    } else if (axiosError.request) {
+      errorMessage =
+        'No se recibió respuesta del servidor al intentar crear el responsable.';
+    } else {
+      errorMessage = axiosError.message || errorMessage;
     }
-    // Lanza un nuevo error con el mensaje procesado
     throw new Error(errorMessage);
   }
 };
 
 /**
- * Actualiza las áreas asignadas a un responsable existente (PUT).
- * @param ci Carnet de Identidad del responsable a actualizar (usado en la URL).
- * @param payload Objeto que contiene id_olimpiada y la lista de areas.
- * @returns La respuesta de la API tras la actualización.
+ * @param ci El CI del usuario (para la URL).
+ * @param payload Payload simplificado { id_olimpiada, areas }.
+ * @returns La respuesta de la API tras la asignación.
  */
-export const actualizarResponsable = async ( //
-  ci: string, // CI va en la URL
-  payload: ActualizarResponsablePayload // Payload simplificado { id_olimpiada, areas }
-): Promise<ResponsableActualizado> => { //
-
-  // El payload ya tiene la estructura { id_olimpiada, areas }
+export const asignarResponsable = async (
+  ci: string,
+  payload: AsignarResponsablePayload
+): Promise<ResponsableAsignado> => {
+  
   const apiPayload = payload;
 
   try {
-    console.log(`Enviando payload a PUT /responsables/ci/${ci}:`, apiPayload);
-    // Llama al endpoint PUT usando el CI en la URL
-    const response = await apiClient.put<any>(`/responsables/ci/${ci}`, apiPayload); //
+    console.log(
+      `Enviando payload a POST /responsables/ci/${ci}/areas (Asignación - Escenarios 2/3):`,
+      apiPayload
+    );
+    const response = await apiClient.post<any>(
+      `/responsables/ci/${ci}/areas`,
+      apiPayload
+    );
 
-    // Asume respuesta similar a POST para el mensaje, usa el mismo mapper
-    // Si la respuesta PUT fuera distinta, se necesitaría un mapApiResponsableActualizado
-    const responsableActualizado = mapApiResponsableCreado(response.data); //
-    return responsableActualizado;
-
+    const responsableAsignado = mapApiResponsableCreado(response.data);
+    return responsableAsignado;
   } catch (error) {
-    // Manejo de errores similar a crearResponsable
     const axiosError = error as AxiosError<ApiErrorResponse>;
-    console.error(`Error al actualizar responsable con CI ${ci}:`, axiosError.response?.data || error);
-    let errorMessage = 'No se pudo actualizar al responsable.';
-
+    console.error(`Error al asignar responsable con CI ${ci} (Escenarios 2/3):`, axiosError.response?.data || error);
+    let errorMessage = 'No se pudo asignar al responsable.';
     if (axiosError.response?.data) {
-        const apiError = axiosError.response.data;
-        if (apiError.message) {
-            errorMessage = apiError.message;
-        } else if (apiError.errors) {
-            // Podría haber errores si, por ejemplo, un ID de área no existe
-            const validationErrors = Object.values(apiError.errors).flat().join(' ');
-            if (validationErrors) errorMessage = validationErrors;
-        }
+      const apiError = axiosError.response.data;
+      if (apiError.message) {
+        errorMessage = apiError.message;
+      } else if (apiError.errors) {
+        const validationErrors = Object.values(apiError.errors)
+          .flat()
+          .join(' ');
+        if (validationErrors) errorMessage = validationErrors;
+      }
     } else if (axiosError.request) {
-        errorMessage = 'No se recibió respuesta del servidor al intentar actualizar.';
+      errorMessage = 'No se recibió respuesta del servidor al intentar asignar.';
     } else {
-        errorMessage = axiosError.message || errorMessage;
+      errorMessage = axiosError.message || errorMessage;
     }
     throw new Error(errorMessage);
   }

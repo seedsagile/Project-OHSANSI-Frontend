@@ -6,6 +6,7 @@ import { FormularioDatosResponsable } from '../components/FormularioDatosRespons
 import { TablaAsignacionAreas } from '../components/TablaAsignacionAreas';
 import { Modal1 } from '@/components/ui/Modal1';
 import { Alert } from '@/components/ui/Alert';
+import { useMemo } from 'react';
 
 export function PaginaRegistrarResponsable() {
   const {
@@ -13,6 +14,7 @@ export function PaginaRegistrarResponsable() {
     formMethodsVerificacion,
     formMethodsPrincipal,
     areasDisponibles,
+    areasDisponiblesQuery,
     gestionesPasadas,
     datosPersona,
     isLoading,
@@ -27,18 +29,30 @@ export function PaginaRegistrarResponsable() {
     primerInputRef,
     handleGestionSelect,
     gestionPasadaSeleccionadaId,
-    isReadOnly,
+    isReadOnly: isDataFormReadOnly,
+    isAssignedToCurrentGestion,
+    initialAreasReadOnly,
     handleToggleSeleccionarTodas,
     areasLoadedFromPast,
     finalizeSuccessAction,
   } = useGestionResponsable();
 
-  const mostrarCargaPagina = isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
-
-  const pasoVerificacionActivo = pasoActual.startsWith('VERIFICACION') || pasoActual === 'CARGANDO_VERIFICACION';
-  const pasoFormularioActivo = pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO' || pasoActual === 'READ_ONLY';
+  const mostrarCargaPagina =
+    isLoading && (pasoActual === 'VERIFICACION_CI' || pasoActual === 'CARGANDO_VERIFICACION');
+  const pasoVerificacionActivo =
+    pasoActual.startsWith('VERIFICACION') || pasoActual === 'CARGANDO_VERIFICACION';
+  const pasoFormularioActivo =
+    pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO';
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
+  const preAsignadasSet = useMemo(() => {
+    return isAssignedToCurrentGestion
+      ? new Set(initialAreasReadOnly)
+      : new Set<number>();
+  }, [isAssignedToCurrentGestion, initialAreasReadOnly]);
 
+  const falloCargaAreas = areasDisponiblesQuery.isError;
+
+  const botonGuardarDeshabilitado = isLoading || isProcessing || falloCargaAreas;
 
   return (
     <>
@@ -61,23 +75,44 @@ export function PaginaRegistrarResponsable() {
             </h1>
           </header>
 
-          {/* Stepper */}
           <div className="flex justify-center items-center space-x-2 sm:space-x-4 mb-8 text-sm sm:text-base">
-              <span className={`flex items-center gap-2 font-semibold ${pasoVerificacionActivo ? 'text-principal-600' : 'text-neutro-500'}`}>
-                <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
-                  pasoVerificacionCompletado ? 'border-principal-600 bg-principal-600 text-white' :
-                  pasoVerificacionActivo ? 'border-principal-600 bg-principal-600 text-white' :
-                  'border-neutro-400'
-                }`}>
-                  {pasoVerificacionCompletado ? <Check size={16} /> : '1'}
-                </span>
-                Verificar CI
+            <span
+              className={`flex items-center gap-2 font-semibold ${
+                pasoVerificacionActivo ? 'text-principal-600' : 'text-neutro-500'
+              }`}
+            >
+              <span
+                className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
+                  pasoVerificacionCompletado
+                    ? 'border-principal-600 bg-principal-600 text-white'
+                    : pasoVerificacionActivo
+                      ? 'border-principal-600 bg-principal-600 text-white'
+                      : 'border-neutro-400'
+                }`}
+              >
+                {pasoVerificacionCompletado ? <Check size={16} /> : '1'}
               </span>
-              <span className={`h-1 w-8 sm:w-12 rounded ${pasoFormularioActivo ? 'bg-principal-500' : 'bg-neutro-300'}`}></span>
-              <span className={`flex items-center gap-2 font-semibold ${pasoFormularioActivo ? 'text-principal-600' : 'text-neutro-400'}`}>
-                <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${pasoFormularioActivo ? 'border-principal-600 bg-principal-600 text-white' : 'border-neutro-400'}`}>2</span>
-                Completar Datos
+              Verificar CI
+            </span>
+            <span
+              className={`h-1 w-8 sm:w-12 rounded ${
+                pasoFormularioActivo ? 'bg-principal-500' : 'bg-neutro-300'
+              }`}
+            ></span>
+            <span
+              className={`flex items-center gap-2 font-semibold ${
+                pasoFormularioActivo ? 'text-principal-600' : 'text-neutro-400'
+              }`}
+            >
+              <span
+                className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
+                  pasoFormularioActivo ? 'border-principal-600 bg-principal-600 text-white' : 'border-neutro-400'
+                }`}
+              >
+                2
               </span>
+              Completar Datos
+            </span>
           </div>
 
           <div className="transition-opacity duration-300 ease-in-out">
@@ -90,16 +125,25 @@ export function PaginaRegistrarResponsable() {
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
-                  {datosPersona?.Id_usuario && !isReadOnly && (
-                      <Alert
-                        type="info"
-                        message={`Se encontraron datos existentes para el CI ingresado. Por favor, revise y complete la información.`}
-                      />
+                  
+                  {falloCargaAreas && (
+                    <Alert
+                      type="error"
+                      message="Error crítico: No se pudieron cargar las áreas disponibles. El guardado está deshabilitado. Por favor, recargue la página."
+                    />
                   )}
-                  {isReadOnly && (
+
+                  {datosPersona?.Id_usuario && !isAssignedToCurrentGestion && !falloCargaAreas && (
+                    <Alert
+                      type="info"
+                      message={`Se encontraron datos existentes. Los datos personales no son editables. Por favor, asigne las áreas para la gestión actual.`}
+                    />
+                  )}
+                  
+                  {isAssignedToCurrentGestion && !falloCargaAreas && (
                     <Alert
                       type="warning"
-                      message={`Este responsable ya se encuentra registrado y asignado para la gestión actual. Los datos no son editables.`}
+                      message={`Este responsable ya se encuentra asignado. Las áreas asignadas (marcadas con 🔒) no son editables, pero puede añadir nuevas.`}
                     />
                   )}
 
@@ -109,7 +153,7 @@ export function PaginaRegistrarResponsable() {
                     personaVerificada={datosPersona}
                     isLoading={isLoading}
                     isLoadingGestiones={isLoadingGestiones}
-                    isReadOnly={isReadOnly}
+                    isReadOnly={isDataFormReadOnly}
                     onGestionSelect={handleGestionSelect}
                     gestionPasadaSeleccionadaId={gestionPasadaSeleccionadaId}
                   />
@@ -121,7 +165,8 @@ export function PaginaRegistrarResponsable() {
                     onSeleccionarArea={handleSeleccionarArea}
                     onToggleSeleccionarTodas={handleToggleSeleccionarTodas}
                     isLoading={isLoading}
-                    isReadOnly={isReadOnly}
+                    isReadOnly={isLoading || isProcessing}
+                    preAsignadas={preAsignadasSet}
                     areasFromPastGestion={areasLoadedFromPast}
                     gestionPasadaId={gestionPasadaSeleccionadaId}
                   />
@@ -131,26 +176,28 @@ export function PaginaRegistrarResponsable() {
                       type="button"
                       onClick={handleCancelar}
                       disabled={isProcessing}
-                      className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center gap-2 font-semibold py-2.5 
+                      px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300
+                      transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <X size={20} strokeWidth={2.5}/>
-                      <span>{isReadOnly ? 'Volver' : 'Cancelar'}</span>
+                      <X size={20} strokeWidth={2.5} />
+                      <span>{isAssignedToCurrentGestion ? 'Volver' : 'Cancelar'}</span>
                     </button>
 
-                    {!isReadOnly && (
-                      <button
-                        type="submit"
-                        disabled={isLoading || isProcessing}
-                        className="flex items-center justify-center gap-2 min-w-[150px] font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
-                      >
-                        {pasoActual === 'CARGANDO_GUARDADO' ? (
-                          <LoaderCircle size={20} className="animate-spin" />
-                        ) : (
-                          <Save size={20} strokeWidth={2.5}/>
-                        )}
-                        <span>{pasoActual === 'CARGANDO_GUARDADO' ? 'Guardando...' : 'Guardar'}</span>
-                      </button>
-                    )}
+                    <button
+                      type="submit"
+                      disabled={botonGuardarDeshabilitado}
+                      className="flex items-center justify-center gap-2 min-w-[150px] font-semibold 
+                      py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 
+                      transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
+                    >
+                      {pasoActual === 'CARGANDO_GUARDADO' ? (
+                        <LoaderCircle size={20} className="animate-spin" />
+                      ) : (
+                        <Save size={20} strokeWidth={2.5} />
+                      )}
+                      <span>{pasoActual === 'CARGANDO_GUARDADO' ? 'Guardando...' : 'Guardar'}</span>
+                    </button>
                   </footer>
                 </form>
               </FormProvider>
@@ -159,13 +206,12 @@ export function PaginaRegistrarResponsable() {
         </main>
       </div>
 
-      {/* Modal Feedback */}
       <Modal1
         isOpen={modalFeedback.isOpen}
         onClose={modalFeedback.type === 'success' ? finalizeSuccessAction : closeModalFeedback}
         title={modalFeedback.title}
         type={modalFeedback.type}
-      > 
+      >
         {modalFeedback.message}
       </Modal1>
     </>

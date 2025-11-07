@@ -40,9 +40,6 @@ const sanitizeSpaces = (str: string): string => {
  */
 const toTitleCase = (str: string): string => {
     if (!str) return '';
-    // No se convierte a minúsculas primero para respetar mayúsculas intencionales si las hubiera,
-    // aunque la validación de Nombres/Apellidos podría restringir esto.
-    // Se capitaliza después de sanitizar espacios.
     return str.split(' ').map(word =>
         word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
     ).join(' ');
@@ -66,7 +63,6 @@ const sanitizeEmail = (str: string): string => {
 
 /**
  * Sanitiza Celular: Elimina espacios y prefijos (+591 o 591) para validar solo los 8 dígitos.
- * NOTA: Esta sanitización es para VALIDACIÓN. Al guardar, podrías querer mantener el prefijo si existe.
  */
 const sanitizeCelularForValidation = (str: string): string => {
     if (!str) return '';
@@ -79,8 +75,6 @@ const sanitizeCelularForValidation = (str: string): string => {
     return sanitized.replace(/\D/g, '');
 }
 
-
-// --- Esquemas de Validación Zod de CI ---
 export const verificacionCISchema = z.object({
     ci: z
         .string({ message: 'El campo Verificar carnet de identidad es obligatorio.' })
@@ -185,8 +179,9 @@ export const datosResponsableSchema = z.object({
         ),
 
     areas: z
-        .array(z.number())
-        .min(1, { message: 'Debe asignar al menos un área.' }),
+        .array(
+            z.number()
+        ),
 });
 
 export type ResponsableFormData = z.infer<typeof datosResponsableSchema>;
