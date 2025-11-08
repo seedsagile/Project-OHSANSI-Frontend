@@ -1,114 +1,146 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
 import isEqual from 'lodash.isequal';
-import * as responsableService from '../services/responsablesService';
-import type { Area } from '../types';
+import type { Area, ApiGestionRoles } from '../types';
 import type { ResponsableFormData, ResponsableFormInput } from '../utils/validations';
 
 interface UseSeleccionAreasProps {
   formMethods: UseFormReturn<ResponsableFormData, any, ResponsableFormInput>;
-  ciVerificado: string | null;
   gestionPasadaSeleccionadaAnio: string | null;
-  initialAreas?: number[];
   isReadOnly: boolean;
   areasDisponiblesQuery: {
-      data: Area[] | undefined;
-      isLoading: boolean;
+    data: Area[] | undefined;
+    isLoading: boolean;
   };
+  preAsignadas: Set<number>;
+  rolesPorGestion: ApiGestionRoles[];
 }
 
 export function useSeleccionAreasResponsable({
   formMethods,
-  ciVerificado,
   gestionPasadaSeleccionadaAnio,
-  initialAreas = [],
   isReadOnly,
   areasDisponiblesQuery,
+  preAsignadas = new Set(),
+  rolesPorGestion = [],
 }: UseSeleccionAreasProps) {
   const { setValue, getValues, control } = formMethods;
-  const { data: areasDisponibles = [], isLoading: isLoadingAreasActuales } = areasDisponiblesQuery;
-  const [areasLoadedFromPast, setAreasLoadedFromPast] = useState<Set<number>>(new Set());
-  const watchedAreas = useWatch({ control, name: 'areas', defaultValue: initialAreas });
-
-  const { data: areasPasadasIds = [], isLoading: isLoadingAreasPasadas, isFetching: isFetchingAreasPasadas } = useQuery<number[], Error>({
-      queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado],
-      queryFn: () => responsableService.obtenerAreasPasadas(gestionPasadaSeleccionadaAnio!, ciVerificado!),
-      enabled: !!ciVerificado && !!gestionPasadaSeleccionadaAnio && !isReadOnly,
-      staleTime: 1000 * 60 * 5,
-      refetchOnWindowFocus: false,
-  });
-
-  const prevAreasPasadasIdsRef = useRef<number[] | undefined>(undefined);
+  const { data: areasDisponibles = [], isLoading: isLoadingAreasActuales } =
+    areasDisponiblesQuery;
+  const [areasLoadedFromPast, setAreasLoadedFromPast] = useState<Set<number>>(
+    new Set()
+  );
+  const watchedAreas = useWatch({ control, name: 'areas', defaultValue: [] });
+  const prevGestionAnioRef = useRef<string | null>(undefined);
   const prevAreasDisponiblesRef = useRef<Area[] | undefined>(undefined);
 
   useEffect(() => {
-    const areasPasadasChanged = !isEqual(prevAreasPasadasIdsRef.current, areasPasadasIds);
-    const areasDisponiblesChanged = !isEqual(prevAreasDisponiblesRef.current, areasDisponibles);
+    const gestionAnioChanged =
+      prevGestionAnioRef.current !== gestionPasadaSeleccionadaAnio;
+    const areasDisponiblesChanged = !isEqual(
+      prevAreasDisponiblesRef.current,
+      areasDisponibles
+    );
 
-    prevAreasPasadasIdsRef.current = areasPasadasIds;
+    prevGestionAnioRef.current = gestionPasadaSeleccionadaAnio;
     prevAreasDisponiblesRef.current = areasDisponibles;
 
-    if (gestionPasadaSeleccionadaAnio && !isLoadingAreasPasadas && !isFetchingAreasPasadas && areasPasadasIds.length > 0 && areasDisponibles.length > 0) {
-      const idsAreasActualesSet = new Set(areasDisponibles.map((a) => a.id_area));
-      const idsComunes = areasPasadasIds.filter((idPasada) => idsAreasActualesSet.has(idPasada));
-      const newAreasLoadedFromPast = new Set(idsComunes);
+    const idsPreAsignados = Array.from(preAsignadas);
 
-      if (areasPasadasChanged || areasDisponiblesChanged || !isEqual(areasLoadedFromPast, newAreasLoadedFromPast)) {
-          setAreasLoadedFromPast(newAreasLoadedFromPast);
-          const currentFormAreas = getValues('areas') || [];
-          if (!isEqual(new Set(currentFormAreas), newAreasLoadedFromPast)) {
-              setValue('areas', idsComunes, { shouldValidate: true, shouldDirty: true });
-          }
+    if (
+      gestionPasadaSeleccionadaAnio &&
+      rolesPorGestion.length > 0 &&
+      areasDisponibles.length > 0
+    ) {
+      const gestionPasadaData = rolesPorGestion.find(
+        (g) => g.gestion === gestionPasadaSeleccionadaAnio
+      );
+
+      let areasPasadasIds: number[] = [];
+      if (gestionPasadaData) {
+        const rolResponsable = gestionPasadaData.roles.find(
+          (r) => r.rol === 'Responsable Area'
+        );
+        if (rolResponsable && rolResponsable.detalles?.areas_responsable) {
+          areasPasadasIds =
+            rolResponsable.detalles.areas_responsable.map((a) => a.id_area);
+        }
+      }
+
+      const idsAreasActualesSet = new Set(areasDisponibles.map((a) => a.id_area));
+      const idsComunesCargables = areasPasadasIds.filter(
+        (idPasada) =>
+          idsAreasActualesSet.has(idPasada) && !preAsignadas.has(idPasada)
+      );
+      const newAreasLoadedFromPast = new Set(idsComunesCargables);
+
+      if (
+        gestionAnioChanged ||
+        areasDisponiblesChanged ||
+        !isEqual(areasLoadedFromPast, newAreasLoadedFromPast)
+      ) {
+        setAreasLoadedFromPast(newAreasLoadedFromPast);
+
+        const newValue = [...new Set([...idsPreAsignados, ...idsComunesCargables])];
+        const currentFormAreas = getValues('areas') || [];
+
+        if (!isEqual(new Set(currentFormAreas), new Set(newValue))) {
+          setValue('areas', newValue, { shouldValidate: true, shouldDirty: true });
+        }
       }
 
     } else if (!gestionPasadaSeleccionadaAnio && !isReadOnly) {
       if (areasLoadedFromPast.size > 0) {
         setAreasLoadedFromPast(new Set());
       }
+      const currentFormAreas = getValues('areas') || [];
+      if (!isEqual(new Set(currentFormAreas), preAsignadas)) {
+        setValue('areas', idsPreAsignados, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
     }
+
   }, [
     gestionPasadaSeleccionadaAnio,
-    isLoadingAreasPasadas,
-    isFetchingAreasPasadas,
-    areasPasadasIds,
+    rolesPorGestion,
     areasDisponibles,
     isReadOnly,
     setValue,
     getValues,
-    areasLoadedFromPast
+    areasLoadedFromPast,
+    preAsignadas,
   ]);
 
-  useEffect(() => {
-    if (isReadOnly && initialAreas.length > 0) {
-        const currentFormAreas = getValues('areas') || [];
-        if(!isEqual(new Set(currentFormAreas), new Set(initialAreas))) {
-            setValue('areas', initialAreas, { shouldValidate: true });
-        }
-    }
-  }, [isReadOnly, initialAreas, setValue, getValues]);
+  const handleSeleccionarArea = useCallback(
+    (areaId: number, seleccionado: boolean) => {
+      if (isReadOnly || preAsignadas.has(areaId)) return;
 
-  const handleSeleccionarArea = useCallback((areaId: number, seleccionado: boolean) => {
-    if (isReadOnly) return;
-    const currentAreas = watchedAreas || [];
-    const nuevasAreas = seleccionado
+      const currentAreas = watchedAreas || [];
+      const nuevasAreas = seleccionado
         ? [...currentAreas, areaId]
-        : currentAreas.filter(id => id !== areaId);
-    setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
-  }, [isReadOnly, setValue, watchedAreas]);
+        : currentAreas.filter((id) => id !== areaId);
+      setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
+    },
+    [isReadOnly, setValue, watchedAreas, preAsignadas]
+  );
 
-  const handleToggleSeleccionarTodas = useCallback((seleccionar: boolean) => {
-    if (isReadOnly || isLoadingAreasActuales) return;
-    const todosLosIds = seleccionar ? areasDisponibles.map(area => area.id_area) : [];
-    setValue('areas', todosLosIds, { shouldValidate: true, shouldDirty: true });
-  }, [areasDisponibles, isReadOnly, isLoadingAreasActuales, setValue]);
+  const handleToggleSeleccionarTodas = useCallback(
+    (nuevasAreas: number[]) => {
+      if (isReadOnly || isLoadingAreasActuales) return;
+      setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
+    },
+    [isReadOnly, isLoadingAreasActuales, setValue]
+  );
 
+  const isLoadingAreas = isLoadingAreasActuales;
 
   return {
     areasSeleccionadas: watchedAreas || [],
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
-    isLoadingAreas: isLoadingAreasActuales || isLoadingAreasPasadas || isFetchingAreasPasadas,
+    isLoadingAreas,
     areasLoadedFromPast,
   };
 }

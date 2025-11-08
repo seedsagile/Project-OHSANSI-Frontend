@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
-  obtenerParametrosGestionActualAPI,
   obtenerAreasAPI,
-  obtenerAreasConNivelesAPI,
+  obtenerNivelesPorAreaAPI,
+  obtenerParametrosGestionActualAPI,
 } from '../service/service';
-import type { Area, Nivel, ParametroGestionAPI } from '../interface/interface';
+import type { Area, Nivel } from '../interface/interface';
 import { Formulario } from './Formulario';
 import { TablaGestiones } from './TablaGestiones';
 import { Modal } from '@/components/ui/Modal';
+import { Toaster, toast } from 'sonner';
 
 export const Parametro = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,18 +16,23 @@ export const Parametro = () => {
   const [niveles, setNiveles] = useState<Nivel[]>([]);
   const [areaSeleccionada, setAreaSeleccionada] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [nivelSeleccionado, setNivelSeleccionado] = useState<Nivel | null>(null);
+  const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Nivel[]>([]);
   const [valoresCopiadosManualmente, setValoresCopiadosManualmente] = useState(false);
-  const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, number[]>>({});
+  const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, string[]>>([]);
   const [gestionSeleccionada, setGestionSeleccionada] = useState<number | null>(null);
-  // Dentro de Parametro
   const [modalSuccessOpen, setModalSuccessOpen] = useState(false);
+  const [hoveredGrado, setHoveredGrado] = useState<{
+    visible: boolean;
+    grados?: { id: number; nombre: string }[];
+    x: number;
+    y: number;
+  }>({ visible: false, grados: [], x: 0, y: 0 });
 
   useEffect(() => {
     if (modalSuccessOpen) {
       const timer = setTimeout(() => {
         setModalSuccessOpen(false);
-      }, 3000); // Se cierra solo en 3 segundos
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [modalSuccessOpen]);
@@ -52,56 +58,55 @@ export const Parametro = () => {
       cantidadMaxima: valores.cantidadMaxima,
     });
     setValoresCopiadosManualmente(true);
+    toast.success('Valores copiados correctamente');
   };
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  // ✅ PRIMER USEEFFECT - obtener solo nombres de áreas
+  // ✅ Obtener áreas disponibles
   useEffect(() => {
     const fetchAreas = async () => {
       try {
         const data = await obtenerAreasAPI();
-        console.log('Áreas (solo nombres):', data);
+        setAreas(data);
+        toast.success('Áreas cargadas correctamente');
       } catch (error) {
         console.error('Error al obtener áreas:', error);
+        toast.error('Error al obtener áreas');
       }
     };
     fetchAreas();
   }, []);
 
-  // ✅ SEGUNDO USEEFFECT - obtener áreas con sus niveles
+  // ✅ Obtener parámetros existentes para gestión actual
   useEffect(() => {
-    const fetchAreasConNiveles = async () => {
+    const fetchParametrosActuales = async () => {
       try {
-        const data = await obtenerAreasConNivelesAPI();
-        setAreas(data);
-        console.log('Áreas con niveles:', data);
-      } catch (error) {
-        console.error('Error al obtener áreas con niveles:', error);
-      }
-    };
-    fetchAreasConNiveles();
-  }, []);
+        const parametrosActuales = await obtenerParametrosGestionActualAPI();
 
-  // Obtener parámetros existentes para gestión actual
-  useEffect(() => {
-    const fetchParametros = async () => {
-      try {
-        const parametros = await obtenerParametrosGestionActualAPI();
-        const nivelesMap: Record<number, number[]> = {};
-        parametros.forEach((p: ParametroGestionAPI) => {
-          const area = areas.find((a) => a.nombre === p.area);
+        // Mapeamos los parámetros por área y nombre de nivel
+        const nivelesMap: Record<number, string[]> = {};
+
+        parametrosActuales.forEach((p: any) => {
+          const areaNombre = p.area_nivel.area.nombre;
+          const nivelNombre = p.area_nivel.nivel.nombre;
+
+          const area = areas.find((a) => a.nombre === areaNombre);
           if (!area) return;
-          const nivelId = parseInt(p.nivel.match(/\d+/)?.[0] || '0');
+
           if (!nivelesMap[area.id]) nivelesMap[area.id] = [];
-          nivelesMap[area.id].push(nivelId);
+          nivelesMap[area.id].push(nivelNombre.trim());
         });
+
         setNivelesConParametros(nivelesMap);
+        toast.success('Niveles con parámetros cargados');
       } catch (error) {
         console.error('Error al obtener parámetros gestión actual:', error);
+        toast.error('Error al obtener parámetros');
       }
     };
-    fetchParametros();
+
+    fetchParametrosActuales();
   }, [areas]);
 
   const limpiarGestionSeleccionada = () => {
@@ -110,15 +115,17 @@ export const Parametro = () => {
 
   const handleSelectArea = async (id: number) => {
     setAreaSeleccionada(id);
-    // setNivelSeleccionado(null);
     setValoresCopiadosManualmente(false);
     setLoading(true);
+    setNivelesSeleccionados([]); // limpiar selección al cambiar área
 
     try {
-      const areaSeleccionadaObj = areas.find((a) => a.id === id);
-      setNiveles(areaSeleccionadaObj?.niveles || []);
+      const nivelesData = await obtenerNivelesPorAreaAPI(id);
+      setNiveles(nivelesData);
+      toast.success('Niveles cargados correctamente');
     } catch (error) {
       console.error('Error al obtener niveles por área:', error);
+      toast.error('Error al obtener niveles');
       setNiveles([]);
     } finally {
       setLoading(false);
@@ -126,26 +133,50 @@ export const Parametro = () => {
     }
   };
 
-  const handleFilaClick = (nivel: Nivel) => {
-    if (areaSeleccionada && nivelesConParametros[areaSeleccionada]?.includes(nivel.id)) return;
-    setNivelSeleccionado(nivel);
-    setValoresCopiadosManualmente(false);
+  const handleCheckboxChange = (nivel: Nivel, checked: boolean) => {
+    setNivelesSeleccionados((prev) => {
+      if (checked) {
+        return [...prev, nivel];
+      } else {
+        return prev.filter((n) => n.id !== nivel.id);
+      }
+    });
   };
 
-  const handleCerrarModal = () => setNivelSeleccionado(null);
+  const handleCerrarModal = () => setNivelesSeleccionados([]);
 
-  const marcarNivelEnviado = (idNivel: number, idArea: number) => {
+  const marcarNivelEnviado = (nombreNivel: string, idArea: number) => {
     setNivelesConParametros((prev) => {
       const actualizados = {
         ...prev,
-        [idArea]: [...(prev[idArea] || []), idNivel],
+        [idArea]: [...(prev[idArea] || []), nombreNivel.trim()],
       };
       return actualizados;
     });
+    toast.success('Parámetro registrado correctamente');
+  };
+
+  // Mostrar tooltip al pasar el mouse sobre los grados
+  const handleMouseEnter = (
+    e: React.MouseEvent<HTMLTableCellElement>,
+    grados: { id: number; nombre: string }[]
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredGrado({
+      visible: true,
+      grados,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredGrado({ visible: false, grados: [], x: 0, y: 0 });
   };
 
   return (
     <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-6 font-display relative">
+      <Toaster position="top-right" richColors />
       <main className="bg-blanco w-full max-w-6xl rounded-2xl shadow-sombra-3 p-10 border border-neutro-200 relative">
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-negro tracking-tight">
@@ -209,18 +240,18 @@ export const Parametro = () => {
             <div className="relative z-10">
               <h2 className="text-lg font-bold text-negro mb-3">Lista de niveles</h2>
               <div
-                className="overflow-hidden rounded-lg border border-neutro-300"
-                style={{ maxHeight: '200px', overflowY: 'auto' }} // 👈 Aquí el scroll interno
+                className="rounded-lg border border-neutro-300 relative"
+                style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'visible' }}
               >
                 <table className="w-full border-collapse">
                   <thead className="bg-principal-500 text-blanco sticky top-0 z-10">
                     <tr>
                       <th className="py-2 px-4 text-left w-16">NRO</th>
                       <th className="py-2 px-4 text-left w-10">NIVEL</th>
-                      <th className="py-2 px-4 text-center w-24">TIENE</th>
+                      <th className="py-2 px-4 text-center w-24">SELECCIONAR</th>
                     </tr>
                   </thead>
-                  <tbody className="text-neutro-800">
+                  <tbody className="text-neutro-800 ">
                     {loading ? (
                       <tr>
                         <td colSpan={3} className="text-center py-4 text-neutro-600">
@@ -239,26 +270,42 @@ export const Parametro = () => {
                       niveles.map((nivel, index) => (
                         <tr
                           key={nivel.id}
-                          className={`border-t border-neutro-200 transition cursor-pointer ${
-                            nivelSeleccionado?.id === nivel.id
-                              ? 'bg-principal-100 text-principal-700 font-semibold'
-                              : 'hover:bg-neutro-100'
-                          }`}
-                          onClick={() => handleFilaClick(nivel)}
+                          className={`group border-t border-neutro-200 transition cursor-pointer hover:bg-neutro-100`}
                         >
                           <td className="py-2 px-4">{index + 1}</td>
-                          <td className="py-2 px-4">{nivel.nombre}</td>
+                          <td
+                            className="py-2 px-4 relative"
+                            onMouseEnter={(e) =>
+                              nivel.grados && nivel.grados.length > 0
+                                ? handleMouseEnter(e, nivel.grados)
+                                : null
+                            }
+                            onMouseLeave={handleMouseLeave}
+                          >
+                            {nivel.nombre}
+                          </td>
                           <td className="py-2 px-4 text-center">
                             <input
                               type="checkbox"
                               className="w-5 h-5 accent-principal-500"
                               checked={
+                                nivelesSeleccionados.some((n) => n.id === nivel.id) ||
                                 !!(
                                   areaSeleccionada &&
-                                  nivelesConParametros[areaSeleccionada]?.includes(nivel.id)
+                                  nivelesConParametros[areaSeleccionada]?.includes(
+                                    nivel.nombre.trim()
+                                  )
                                 )
                               }
-                              readOnly
+                              onChange={(e) => handleCheckboxChange(nivel, e.target.checked)}
+                              disabled={
+                                !!(
+                                  areaSeleccionada &&
+                                  nivelesConParametros[areaSeleccionada]?.includes(
+                                    nivel.nombre.trim()
+                                  )
+                                )
+                              }
                             />
                           </td>
                         </tr>
@@ -273,7 +320,7 @@ export const Parametro = () => {
           {/* FORMULARIO DERECHA */}
           <div className="flex-1 border-l border-neutro-300 pl-6">
             <Formulario
-              nivel={nivelSeleccionado}
+              nivelesSeleccionados={nivelesSeleccionados}
               idArea={areaSeleccionada ?? 0}
               onCerrar={handleCerrarModal}
               onMarcarEnviado={marcarNivelEnviado}
@@ -285,13 +332,36 @@ export const Parametro = () => {
           </div>
         </div>
 
+        {/* antes o donde lo tengas */}
         <TablaGestiones
           gestionSeleccionada={gestionSeleccionada}
           onSelectGestion={(id) => setGestionSeleccionada(id)}
-          formularioHabilitado={!!nivelSeleccionado}
+          formularioHabilitado={nivelesSeleccionados.length > 0}
           onCopiarValores={copiarValores}
+          nivelesSeleccionados={nivelesSeleccionados} // nuevo
+          areaSeleccionadaNombre={areas.find((a) => a.id === areaSeleccionada)?.nombre ?? null} // nuevo
         />
       </main>
+
+      {/* Tooltip Mejorado */}
+      {hoveredGrado.visible && hoveredGrado.grados && hoveredGrado.grados.length > 0 && (
+        <div
+          className="fixed z-[9999] bg-gray-900 text-white text-sm rounded-lg shadow-lg p-3 transition-opacity duration-200"
+          style={{
+            top: hoveredGrado.y,
+            left: hoveredGrado.x,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <p className="font-semibold mb-1">Grados:</p>
+          <ul className="list-disc pl-4 space-y-1">
+            {hoveredGrado.grados.map((grado) => (
+              <li key={grado.id}>{grado.nombre}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Modal
         isOpen={modalSuccessOpen}
         onClose={() => setModalSuccessOpen(false)}

@@ -1,19 +1,20 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import * as responsableService from '../services/responsablesService';
 import { datosResponsableSchema } from '../utils/validations';
-import { ID_OLIMPIADA_ACTUAL } from '../utils/constants'; // Asegúrate que ID_OLIMPIADA_ACTUAL esté exportada
+import { ID_OLIMPIADA_ACTUAL } from '../utils/constants';
+import { z } from 'zod';
 import type {
     Gestion,
     Area,
     DatosPersonaVerificada,
     CrearResponsablePayload,
-    ActualizarResponsablePayload, // <--- Añadir tipo PUT Payload
+    AsignarResponsablePayload,
     ResponsableCreado,
-    ResponsableActualizado, // <--- Añadir tipo PUT Response
+    ResponsableAsignado,
 } from '../types';
 import type {
     ResponsableFormData,
@@ -29,8 +30,9 @@ interface UseFormularioPrincipalProps {
     ciVerificado: string | null;
     datosPersonaVerificada: DatosPersonaVerificada | null;
     isReadOnly: boolean;
-    initialAreas?: number[];
-    onFormSubmitSuccess: (data: ResponsableCreado | ResponsableActualizado, esActualizacion: boolean) => void; // Modificado para indicar si fue PUT
+    initialAreas: number[];
+    gestionesPasadas: Gestion[];
+    onFormSubmitSuccess: (data: ResponsableCreado | ResponsableAsignado, esActualizacion: boolean) => void;
     onFormSubmitError: (message: string) => void;
 }
 
@@ -44,6 +46,7 @@ export function useFormularioPrincipalResponsable({
     datosPersonaVerificada,
     isReadOnly,
     initialAreas = [],
+    gestionesPasadas = [],
     onFormSubmitSuccess,
     onFormSubmitError,
 }: UseFormularioPrincipalProps) {
@@ -51,23 +54,41 @@ export function useFormularioPrincipalResponsable({
     const [gestionPasadaSeleccionadaAnio, setGestionPasadaSeleccionadaAnio] = useState<string | null>(null);
     const primerInputRef = useRef<HTMLInputElement>(null);
 
+    const dynamicSchema = useMemo(() => {
+        const initialAreaCount = initialAreas.length;
+        const esCaso3 = initialAreaCount > 0;
+
+        return datosResponsableSchema.extend({
+            areas: z.array(z.number()).superRefine((selectedAreaIDs, ctx) => {
+                if (esCaso3) {
+                    if (selectedAreaIDs.length <= initialAreaCount) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: 'Debe seleccionar al menos una *nueva* área para guardar.',
+                        });
+                    }
+                } else {
+                    if (selectedAreaIDs.length === 0) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: 'Debe asignar al menos un área.',
+                        });
+                    }
+                }
+            }),
+        });
+    }, [initialAreas]);
+
     const formMethodsPrincipal = useForm<ResponsableFormData, any, ResponsableFormInput>({
-        resolver: zodResolver(datosResponsableSchema),
+        resolver: zodResolver(dynamicSchema),
         mode: 'all',
         defaultValues: defaultFormValues,
-        shouldFocusError: true, // Enfoca el primer error al enviar (buen UX)
-        delayError: 400, // Retraso leve antes de mostrar errores mientras se escribe
+        shouldFocusError: true,
+        delayError: 400,
     });
     const { reset: resetPrincipalForm, setError, setFocus } = formMethodsPrincipal;
 
-    // --- Queries (sin cambios) ---
-    const { data: gestionesPasadas = [], isLoading: isLoadingGestiones } = useQuery<Gestion[], Error>({
-        queryKey: ['gestionesPasadas', ciVerificado],
-        queryFn: () => responsableService.obtenerGestionesPasadas(ciVerificado!),
-        enabled: !!ciVerificado && !!datosPersonaVerificada && !isReadOnly,
-        staleTime: 1000 * 60 * 5,
-        refetchOnWindowFocus: false,
-    });
+    const isLoadingGestiones = false;
 
     const areasDisponiblesQuery = useQuery<Area[], Error>({
         queryKey: ['areasActuales'],
@@ -77,11 +98,11 @@ export function useFormularioPrincipalResponsable({
         enabled: true,
     });
 
-    // --- useEffect para resetear (sin cambios) ---
     useEffect(() => {
             const resetValuesBase: ResponsableFormInput = {
                 ...defaultFormValues,
                 ci: ciVerificado ?? '',
+                areas: [],
             };
 
             if (isReadOnly && datosPersonaVerificada) {
@@ -95,36 +116,19 @@ export function useFormularioPrincipalResponsable({
                 });
                 setGestionPasadaSeleccionadaId(null);
                 setGestionPasadaSeleccionadaAnio(null);
-            } else if (datosPersonaVerificada) {
-                // Escenario 2: Usuario existente pero NO read-only
-                resetPrincipalForm({
-                    nombres: datosPersonaVerificada.Nombres || '',
-                    apellidos: datosPersonaVerificada.Apellidos || '',
-                    celular: datosPersonaVerificada.Teléfono || '',
-                    correo: datosPersonaVerificada.Correo || '',
-                    ci: ciVerificado ?? '',
-                    areas: [], // Las áreas se cargarán si selecciona gestión pasada
-                });
-                setGestionPasadaSeleccionadaId(null);
-                setGestionPasadaSeleccionadaAnio(null);
-                 // No enfocar aquí, los campos están deshabilitados
             } else if (ciVerificado) {
-                // Escenario 1: Usuario nuevo
                 resetPrincipalForm(resetValuesBase);
                 setGestionPasadaSeleccionadaId(null);
                 setGestionPasadaSeleccionadaAnio(null);
                 setTimeout(() => primerInputRef.current?.focus(), 100);
             } else {
-                 // Estado inicial sin CI verificado
                 resetPrincipalForm(defaultFormValues);
                 setGestionPasadaSeleccionadaId(null);
                 setGestionPasadaSeleccionadaAnio(null);
             }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]); // Mantener deps originales si funcionan
+    
+    }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]);
 
-
-    // --- Función genérica para manejo de errores de mutación ---
     const handleMutationError = (error: AxiosError<BackendValidationError>) => {
         let errorMessage = 'No se pudo guardar.';
         const errorData = error.response?.data;
@@ -135,9 +139,7 @@ export function useFormularioPrincipalResponsable({
                 const fieldName = field as keyof ResponsableFormData;
                 if (messages.length > 0) {
                     setError(fieldName, { type: 'backend', message: messages[0] });
-                    if (!firstFieldWithError) {
-                        firstFieldWithError = fieldName;
-                    }
+                    if (!firstFieldWithError) firstFieldWithError = fieldName;
                 }
             });
             if (firstFieldWithError) {
@@ -156,7 +158,6 @@ export function useFormularioPrincipalResponsable({
         onFormSubmitError(errorMessage);
     }
 
-    // --- Mutación POST (Crear) ---
     const { mutate: crearResponsable, isPending: isCreatingResponsable } = useMutation<
         ResponsableCreado,
         AxiosError<BackendValidationError>,
@@ -164,27 +165,23 @@ export function useFormularioPrincipalResponsable({
     >({
         mutationFn: responsableService.crearResponsable,
         onSuccess: (data) => {
-            onFormSubmitSuccess(data, false); // false indica que no fue actualización
+            onFormSubmitSuccess(data, false);
         },
         onError: handleMutationError,
     });
 
-    // --- Mutación PUT (Actualizar) --- NUEVA ---
-    const { mutate: actualizarResponsable, isPending: isUpdatingResponsable } = useMutation<
-        ResponsableActualizado,
+    const { mutate: asignarResponsable, isPending: isAsigningResponsable } = useMutation<
+        ResponsableAsignado,
         AxiosError<BackendValidationError>,
-        { ci: string; payload: ActualizarResponsablePayload } // Ajustar tipo de variables
+        { ci: string; payload: AsignarResponsablePayload }
     >({
-        // Usar mutationFn que acepte un objeto con 'ci' y 'payload'
-        mutationFn: ({ ci, payload }) => responsableService.actualizarResponsable(ci, payload),
+        mutationFn: ({ ci, payload }) => responsableService.asignarResponsable(ci, payload),
         onSuccess: (data) => {
-            onFormSubmitSuccess(data, true); // true indica que fue actualización
+            onFormSubmitSuccess(data, true);
         },
         onError: handleMutationError,
     });
 
-
-    // --- Callback para cambio de gestión pasada (sin cambios) ---
     const handleGestionSelect = useCallback((selectedValue: string | number | null) => {
         const id = typeof selectedValue === 'number' ? selectedValue : (selectedValue === '' ? null : (selectedValue ? parseInt(String(selectedValue), 10) : null));
         const anio = id ? gestionesPasadas.find(g => g.Id_olimpiada === id)?.gestion ?? null : null;
@@ -192,26 +189,20 @@ export function useFormularioPrincipalResponsable({
         setGestionPasadaSeleccionadaAnio(anio);
     }, [gestionesPasadas]);
 
-
-    // --- Handler onSubmit MODIFICADO ---
     const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback((formData) => {
-        if (isReadOnly) return;
-
-        // Decidir si es CREAR (POST) o ACTUALIZAR (PUT)
-        if (datosPersonaVerificada && !isReadOnly) {
-            // Escenario 2: Usuario existente, NO read-only -> PUT
+        
+        if (datosPersonaVerificada) {
             if (!ciVerificado) {
-                onFormSubmitError("Error: No se encontró el CI para actualizar.");
+                onFormSubmitError("Error: No se encontró el CI para asignar.");
                 return;
             }
-            const payload: ActualizarResponsablePayload = {
-                id_olimpiada: ID_OLIMPIADA_ACTUAL, // Usar constante
+            const payload: AsignarResponsablePayload = {
+                id_olimpiada: ID_OLIMPIADA_ACTUAL,
                 areas: formData.areas,
             };
-            actualizarResponsable({ ci: ciVerificado, payload });
+            asignarResponsable({ ci: ciVerificado, payload });
 
-        } else if (!datosPersonaVerificada) {
-            // Escenario 1: Usuario nuevo -> POST
+        } else {
             const payload: CrearResponsablePayload = {
                 nombre: formData.nombres,
                 apellido: formData.apellidos,
@@ -219,18 +210,12 @@ export function useFormularioPrincipalResponsable({
                 email: formData.correo,
                 telefono: formData.celular,
                 areas: formData.areas,
-                 // id_olimpiada y password usarán defaults del servicio
             };
             crearResponsable(payload);
-        } else {
-             // Caso inesperado o ReadOnly (ya cubierto por isReadOnly)
-             console.warn("Intento de guardado en estado inesperado.");
         }
 
-    }, [isReadOnly, datosPersonaVerificada, ciVerificado, crearResponsable, actualizarResponsable, onFormSubmitError]);
+    }, [datosPersonaVerificada, ciVerificado, crearResponsable, asignarResponsable, onFormSubmitError]);
 
-
-    // --- Reset Hook (sin cambios) ---
     const resetFormularioPrincipalHook = useCallback((resetToDefault = false) => {
         setGestionPasadaSeleccionadaId(null);
         setGestionPasadaSeleccionadaAnio(null);
@@ -239,15 +224,14 @@ export function useFormularioPrincipalResponsable({
         }
     }, [resetPrincipalForm]);
 
-    // Indicar si alguna mutación está en progreso
-    const isSaving = isCreatingResponsable || isUpdatingResponsable;
+    const isSaving = isCreatingResponsable || isAsigningResponsable;
 
     return {
         formMethodsPrincipal,
         gestionesPasadas,
         areasDisponiblesQuery,
         isLoadingGestiones,
-        isSaving, // <--- Usar este estado combinado
+        isSaving,
         onSubmitFormularioPrincipal: formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
         handleGestionSelect,
         gestionPasadaSeleccionadaId,
