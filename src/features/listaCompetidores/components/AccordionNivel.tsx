@@ -10,12 +10,14 @@ interface AccordionNivelProps {
   data: AreaNiveles[];
   selectedNiveles: { [areaNombre: string]: number | null };
   onChangeSelected?: (niveles: { [areaNombre: string]: number | null }) => void;
+  className?: string;
 }
 
 export const AccordionNivel: React.FC<AccordionNivelProps> = ({
   data,
   selectedNiveles,
   onChangeSelected,
+  className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [localSelected, setLocalSelected] = useState<{ [areaNombre: string]: number | null }>({});
@@ -31,7 +33,6 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
       ...localSelected,
       [areaNombre]: localSelected[areaNombre] === nivelId ? null : nivelId,
     };
-
     setLocalSelected(newSelected);
     onChangeSelected?.(newSelected);
   };
@@ -42,14 +43,13 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
   }));
 
   return (
-    <div className="relative w-60">
+    <div className={`relative w-60 ${className || ''}`}>
       <button
         type="button"
         onClick={toggleAccordion}
         className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
       >
         <span>Seleccionar Nivel</span>
-
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -58,7 +58,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`w-10 h-10 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -66,8 +66,12 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
 
       {isOpen && (
         <div
-          className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
-          style={{ maxHeight: '200px' }}
+          className="absolute z-[9999] w-60 bg-white px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-2xl backdrop-blur-sm"
+          style={{
+            maxHeight: '220px',
+            overflowY: 'auto',
+            transform: 'translateY(10px)',
+          }}
         >
           {sanitizedData.length === 0 ? (
             <p className="text-neutro-700 text-sm text-center">No hay niveles disponibles.</p>
@@ -85,7 +89,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
                           className={`flex justify-between items-center w-full px-2 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
                             isChecked
                               ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
-                              : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
+                              : 'bg-white hover:bg-neutro-100 border-neutro-200'
                           }`}
                         >
                           <span className="text-negro">{nivel.nombre}</span>

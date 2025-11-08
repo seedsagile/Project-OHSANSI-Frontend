@@ -33,7 +33,7 @@ export const AccordionGenero: React.FC = () => {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`w-10 h-10 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>

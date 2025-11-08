@@ -1,15 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import { getAreasPorResponsableAPI, getCompetidoresAPI } from '../service/service';
+import type { Area } from '../interface/interface';
 import { AccordionArea } from './AccordionArea';
 import { AccordionNivel } from './AccordionNivel';
 import { AccordionGrado } from './AccordionGrado';
 import { AccordionDepartamento } from './AccordionDepartamento';
 import { AccordionGenero } from './AccordionGenero';
-import {
-  getAreasPorResponsableAPI,
-  getNivelesPorAreaAPI,
-  getCompetidoresAPI,
-} from '../service/service';
-import type { Nivel, Area } from '../interface/interface';
 
 interface Competidor {
   nombre: string;
@@ -18,31 +14,32 @@ interface Competidor {
   nivel: string;
   grado: string;
   ci: string;
+  Genero?: string;
+  Departamento?: string;
+  Colegio?: string;
 }
 
 export const ListaCompetidores = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [competidores, setCompetidores] = useState<Competidor[]>([]);
-  const [areaNiveles, setAreaNiveles] = useState<{ areaNombre: string; niveles: Nivel[] }[]>([]);
-  const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
-  const [selectedNiveles, setSelectedNiveles] = useState<{ [areaNombre: string]: number | null }>(
-    {}
-  );
   const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingCompetidores, setLoadingCompetidores] = useState(true);
+  const [nivelesSeleccionados, setNivelesSeleccionados] = useState<{
+    [area: string]: number | null;
+  }>({});
 
   const responsableId = 4;
 
-  const carouselRef = useRef<HTMLDivElement>(null);
-
-  // Cargar Áreas
   useEffect(() => {
     const fetchAreas = async () => {
       try {
         const data = await getAreasPorResponsableAPI(responsableId);
-        setAreas(data);
+        if (Array.isArray(data)) setAreas(data);
+        else if (Array.isArray(data.areas)) setAreas(data.areas);
+        else setAreas([]);
       } catch (error) {
         console.error('Error al obtener áreas:', error);
+        setAreas([]);
       } finally {
         setLoadingAreas(false);
       }
@@ -50,7 +47,6 @@ export const ListaCompetidores = () => {
     fetchAreas();
   }, []);
 
-  // Cargar competidores
   const fetchCompetidores = async (id_area = 0, id_nivel = 0) => {
     try {
       setLoadingCompetidores(true);
@@ -68,182 +64,123 @@ export const ListaCompetidores = () => {
     fetchCompetidores();
   }, []);
 
-  // Manejar selección de áreas
-  const handleSelectedAreas = async (selected: Area[]) => {
-    setSelectedAreas(selected);
-
-    if (selected.length === 0) {
-      setAreaNiveles([]);
-      setSelectedNiveles({});
-      await fetchCompetidores(0, 0);
-      return;
-    }
-
-    const nivelesPorArea = await Promise.all(
-      selected.map(async (area) => {
-        const niveles = await getNivelesPorAreaAPI(area.id_area);
-        return { areaNombre: area.nombre, niveles };
-      })
-    );
-    setAreaNiveles(nivelesPorArea);
-
-    let todos: Competidor[] = [];
-    for (const area of selected) {
-      const data = await getCompetidoresAPI(responsableId, area.id_area, 0);
-      todos = todos.concat(data.original || []);
-    }
-    setCompetidores(todos);
-  };
-
-  // Manejar selección de niveles
-  const handleSelectedNiveles = async (niveles: { [areaNombre: string]: number | null }) => {
-    setSelectedNiveles(niveles);
-
-    if (selectedAreas.length === 0) return;
-
-    let todos: Competidor[] = [];
-    for (const area of selectedAreas) {
-      const nivelId = niveles[area.nombre];
-      if (nivelId) {
-        const data = await getCompetidoresAPI(responsableId, area.id_area, nivelId);
-        todos = todos.concat(data.original || []);
-      }
-    }
-    setCompetidores(todos);
-  };
-
-  const handleMostrarTodo = () => {
-    setSelectedAreas([]);
-    setSelectedNiveles({});
-    setAreaNiveles([]);
-    fetchCompetidores(0, 0);
-  };
-
-  const scrollCarousel = (direction: 'left' | 'right') => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({
-        left: direction === 'left' ? -200 : 200,
-        behavior: 'smooth',
-      });
-    }
-  };
+  const handleMostrarTodo = () => fetchCompetidores(0, 0);
 
   return (
-    <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-      <main className="bg-blanco w-full max-w-6xl rounded-xl shadow-sombra-3 p-8">
-        <header className="flex flex-col mb-10">
-          <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center mb-8">
-            Listar competidores
+    <div className="bg-gradient-to-b from-principal-100 via-blanco to-principal-50 min-h-screen flex items-center justify-center p-4 font-display">
+      <main className="bg-blanco w-full max-w-7xl rounded-2xl shadow-lg p-6 md:p-10">
+        <header className="flex flex-col mb-8">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-principal-800 tracking-tight text-center mb-6 animate-fade-in">
+            Listado de Competidores
           </h1>
 
-          {/* 🔹 Carrusel con todos los botones */}
-          <div className="relative mb-6 flex items-center">
-            <button
-              onClick={() => scrollCarousel('left')}
-              className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-principal-500 text-blanco hover:bg-principal-600 transition-colors"
-            >
-              &#8249;
-            </button>
+          <div className="flex flex-col md:flex-row gap-6 mb-8">
+            {/* 🔹 Acordeones a la izquierda */}
+            <div className="flex flex-col space-y-4 w-60">
+              <button
+                onClick={handleMostrarTodo}
+                className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
+              >
+                <span>Mostrar Todo</span>
+              </button>
+              <AccordionArea
+                areas={areas}
+                loading={loadingAreas}
+                onSelectArea={(id_area) => fetchCompetidores(id_area, 0)}
+              />
+              <AccordionNivel
+                data={areas.map((area) => ({
+                  areaNombre: area.nombre,
+                  niveles: area.niveles || [],
+                }))}
+                selectedNiveles={nivelesSeleccionados}
+                onChangeSelected={(newSelected) => {
+                  setNivelesSeleccionados(newSelected);
+                  const primerArea = Object.keys(newSelected)[0];
+                  const nivelId = newSelected[primerArea] || 0;
+                  const areaId = areas.find((a) => a.nombre === primerArea)?.id_area || 0;
+                  fetchCompetidores(areaId, nivelId);
+                }}
+              />
+              <AccordionGrado />
+              <AccordionDepartamento />
+              <AccordionGenero />
 
-            <div
-              ref={carouselRef}
-              className="flex gap-4 overflow-x-auto scrollbar-none scroll-smooth py-1 relative"
-            >
-              {/* Botón Mostrar Todo */}
-              <div className="flex-shrink-0 relative z-0">
-                <button
-                  onClick={handleMostrarTodo}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
-                >
-                  Mostrar Todo
+              <button className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors">
+                <span>Descargar PDF</span>
+              </button>
+              <button className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors">
+                <span>Descargar EXCEL</span>
+              </button>
+            </div>
+
+            {/* 🔹 Tabla y buscador a la derecha */}
+            <div className="flex-1 flex flex-col gap-4">
+              {/* Buscador alineado a la derecha */}
+              <div className="flex justify-end gap-2">
+                <input
+                  type="text"
+                  placeholder="Buscar: nombre, apellido, colegio"
+                  className="px-4 py-2 rounded-xl border-2 border-principal-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-300 transition w-72"
+                />
+                <button className="px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors">
+                  Buscar
                 </button>
               </div>
 
-              {/* Acordeones dentro del carrusel */}
-              <div className="flex-shrink-0 relative z-0">
-                {loadingAreas ? (
-                  <span>Cargando áreas...</span>
-                ) : (
-                  <AccordionArea
-                    areas={areas}
-                    selectedAreas={selectedAreas}
-                    onChangeSelected={handleSelectedAreas}
-                    className="absolute top-0 left-0 z-10" // desplegable encima
-                  />
-                )}
-              </div>
-
-              <div className="flex-shrink-0 relative z-0">
-                <AccordionNivel
-                  data={areaNiveles}
-                  selectedNiveles={selectedNiveles}
-                  onChangeSelected={handleSelectedNiveles}
-                  className="absolute top-0 left-0 z-10"
-                />
-              </div>
-
-              <div className="flex-shrink-0 relative z-0">
-                <AccordionGrado className="absolute top-0 left-0 z-10" />
-              </div>
-
-              <div className="flex-shrink-0 relative z-0">
-                <AccordionDepartamento className="absolute top-0 left-0 z-10" />
-              </div>
-
-              <div className="flex-shrink-0 relative z-0">
-                <AccordionGenero className="absolute top-0 left-0 z-10" />
-              </div>
-            </div>
-
-            <button
-              onClick={() => scrollCarousel('right')}
-              className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-principal-500 text-blanco hover:bg-principal-600 transition-colors"
-            >
-              &#8250;
-            </button>
-          </div>
-
-          {/* 🔹 Tabla de competidores */}
-          <div className="w-full overflow-x-auto">
-            <div className="max-h-[950px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent rounded-lg border border-gray-200">
-              <table className="w-full border-collapse">
-                <thead className="bg-principal-500 text-blanco text-left sticky top-0 z-10">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">Nombre</th>
-                    <th className="px-6 py-3 font-semibold">Apellido</th>
-                    <th className="px-6 py-3 font-semibold">Nivel</th>
-                    <th className="px-6 py-3 font-semibold">Área</th>
-                    <th className="px-6 py-3 font-semibold">CI</th>
-                    <th className="px-6 py-3 font-semibold">Grado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loadingCompetidores ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-3 text-center">
-                        Cargando competidores...
-                      </td>
-                    </tr>
-                  ) : competidores.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-3 text-center">
-                        No hay competidores registrados
-                      </td>
-                    </tr>
-                  ) : (
-                    competidores.map((c, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="px-6 py-3">{c.nombre}</td>
-                        <td className="px-6 py-3">{c.apellido}</td>
-                        <td className="px-6 py-3">{c.nivel}</td>
-                        <td className="px-6 py-3">{c.area}</td>
-                        <td className="px-6 py-3">{c.ci}</td>
-                        <td className="px-6 py-3">{c.grado}</td>
+              <div className="overflow-x-auto">
+                <div className="max-h-[1000px] overflow-y-auto scrollbar-thin scrollbar-thumb-principal-300 scrollbar-track-transparent rounded-lg border border-principal-200 shadow-inner">
+                  <table className="w-full border-collapse text-sm md:text-base min-w-[900px]">
+                    <thead className="bg-principal-500 text-white sticky top-0 z-10">
+                      <tr>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Apellido</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Nombre</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Género</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Departamento</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Colegio</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">CI</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Área</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Nivel</th>
+                        <th className="px-4 py-3 md:px-6 text-left font-semibold">Grado</th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {loadingCompetidores ? (
+                        <tr>
+                          <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                            Cargando competidores...
+                          </td>
+                        </tr>
+                      ) : competidores.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                            No hay competidores registrados
+                          </td>
+                        </tr>
+                      ) : (
+                        competidores.map((c, i) => (
+                          <tr
+                            key={i}
+                            className={`border-b transition-colors ${
+                              i % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                            } hover:bg-principal-100/50`}
+                          >
+                            <td className="px-4 py-3 md:px-6">{c.apellido}</td>
+                            <td className="px-4 py-3 md:px-6">{c.nombre}</td>
+                            <td className="px-4 py-3 md:px-6">{c.Genero || '-'}</td>
+                            <td className="px-4 py-3 md:px-6">{c.Departamento || '-'}</td>
+                            <td className="px-4 py-3 md:px-6">{c.Colegio || '-'}</td>
+                            <td className="px-4 py-3 md:px-6">{c.ci}</td>
+                            <td className="px-4 py-3 md:px-6">{c.area}</td>
+                            <td className="px-4 py-3 md:px-6">{c.nivel}</td>
+                            <td className="px-4 py-3 md:px-6">{c.grado}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </header>

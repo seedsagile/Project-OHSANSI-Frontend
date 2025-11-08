@@ -31,7 +31,7 @@ export const AccordionDepartamento: React.FC = () => {
       <button
         type="button"
         onClick={toggleAccordion}
-        className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors "
+        className="flex items-center justify-between w-full h-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors "
       >
         <span>Seleccionar Departamento</span>
 
@@ -43,7 +43,7 @@ export const AccordionDepartamento: React.FC = () => {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`w-10 h-10 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
