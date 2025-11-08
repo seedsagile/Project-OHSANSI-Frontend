@@ -11,6 +11,11 @@ import { AccordionGrado } from './AccordionGrado';
 import { AccordionDepartamento } from './AccordionDepartamento';
 import { AccordionGenero } from './AccordionGenero';
 
+import jsPDF from 'jspdf';
+import autotable, { autoTable } from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
 interface Competidor {
   apellido: string;
   nombre: string;
@@ -33,9 +38,15 @@ export const ListaCompetidores = () => {
   const [gradoSeleccionado, setGradoSeleccionado] = useState<number | null>(null);
   const [generoSeleccionado, setGeneroSeleccionado] = useState<string | null>(null);
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
 
   const responsableId = Number(localStorage.getItem('id_responsable')) || 4;
   console.log('ID del responsable logueado:', responsableId);
+
+  const [orden, setOrden] = useState<{ columna: string; ascendente: boolean }>({
+    columna: '',
+    ascendente: true,
+  });
 
   // Cargar competidores al montar el componente
   useEffect(() => {
@@ -59,17 +70,15 @@ export const ListaCompetidores = () => {
   const handleMostrarTodo = async () => {
     try {
       setLoadingCompetidores(true);
-
-      // 🔹 Obtener todos los competidores sin filtros
       const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
       setCompetidores(data.data?.competidores || []);
 
-      // 🔹 Resetear todos los filtros
       setAreasSeleccionadas([]);
       setNivelesSeleccionados({});
       setGradoSeleccionado(null);
       setGeneroSeleccionado(null);
       setDepartamentoSeleccionado(null);
+      setBusqueda('');
     } catch (error) {
       console.error('Error al obtener competidores:', error);
       setCompetidores([]);
@@ -78,12 +87,11 @@ export const ListaCompetidores = () => {
     }
   };
 
-  // Función para actualizar competidores según filtros
+  // Actualizar competidores según filtros
   const actualizarCompetidores = async () => {
     try {
       setLoadingCompetidores(true);
 
-      // 🔹 Si hay áreas seleccionadas
       if (areasSeleccionadas.length > 0) {
         const resultadosPorArea = await Promise.all(
           areasSeleccionadas.map(async (area) => {
@@ -109,7 +117,6 @@ export const ListaCompetidores = () => {
         return;
       }
 
-      // 🔹 Si NO hay áreas seleccionadas, filtrar solo por grado, genero y departamento
       const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
       let filtrados = data.data?.competidores || [];
 
@@ -134,9 +141,14 @@ export const ListaCompetidores = () => {
     }
   };
 
-  // 🔹 Llamar automáticamente a actualizarCompetidores cuando cambian los filtros
+  // Llamar a actualizarCompetidores cuando cambian los filtros
   useEffect(() => {
-    if (areasSeleccionadas.length > 0) {
+    if (
+      areasSeleccionadas.length > 0 ||
+      gradoSeleccionado ||
+      generoSeleccionado ||
+      departamentoSeleccionado
+    ) {
       actualizarCompetidores();
     }
   }, [
@@ -147,8 +159,121 @@ export const ListaCompetidores = () => {
     departamentoSeleccionado,
   ]);
 
+  // Función de búsqueda local
+  const filtrarCompetidores = () => {
+    if (!busqueda) return competidores;
+    const texto = busqueda.toLowerCase();
+    return competidores.filter(
+      (c) =>
+        c.nombre.toLowerCase().includes(texto) ||
+        c.apellido.toLowerCase().includes(texto) ||
+        c.colegio.toLowerCase().includes(texto)
+    );
+  };
+
+  // Función para descargar PDF
+  const descargarPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    doc.setFontSize(18);
+    doc.text('Listado de Competidores', 40, 40);
+
+    const columns = [
+      'Apellido',
+      'Nombre',
+      'Género',
+      'Departamento',
+      'Colegio',
+      'CI',
+      'Área',
+      'Nivel',
+      'Grado',
+    ];
+
+    const rows = filtrarCompetidores().map((c) => [
+      c.apellido,
+      c.nombre,
+      c.genero || '-',
+      c.departamento || '-',
+      c.colegio || '-',
+      c.ci,
+      c.area,
+      c.nivel,
+      c.grado,
+    ]);
+
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 60,
+      styles: {
+        fontSize: 10,
+        cellPadding: 5,
+        halign: 'left',
+        valign: 'middle',
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+      theme: 'grid',
+    });
+
+    doc.save('competidores.pdf');
+  };
+
+  const descargarExcel = () => {
+    const data = filtrarCompetidores().map((c) => ({
+      Apellido: c.apellido,
+      Nombre: c.nombre,
+      Género: c.genero || '-',
+      Departamento: c.departamento || '-',
+      Colegio: c.colegio || '-',
+      CI: c.ci,
+      Área: c.area,
+      Nivel: c.nivel,
+      Grado: c.grado,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Competidores');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(blob, 'competidores.xlsx');
+  };
+
+  const ordenarPorColumna = (columna: keyof Competidor) => {
+    const ascendente = orden.columna === columna ? !orden.ascendente : true;
+    const competidoresOrdenados = [...competidores].sort((a, b) => {
+      const valorA = a[columna] ?? '';
+      const valorB = b[columna] ?? '';
+
+      if (!isNaN(Number(valorA)) && !isNaN(Number(valorB))) {
+        // Orden numérico
+        return ascendente ? Number(valorA) - Number(valorB) : Number(valorB) - Number(valorA);
+      } else {
+        // Orden alfabético
+        return ascendente
+          ? String(valorA).localeCompare(String(valorB))
+          : String(valorB).localeCompare(String(valorA));
+      }
+    });
+
+    setCompetidores(competidoresOrdenados);
+    setOrden({ columna, ascendente });
+  };
+
   return (
-    <div className="min-h-screen flex items-start justify-center  font-display">
+    <div className="min-h-screen flex items-start justify-center font-display">
       <main className="bg-blanco w-full max-w-8xl rounded-2xl shadow-lg p-6 md:p-10">
         <header className="flex flex-col mb-8">
           <h1 className="text-3xl md:text-4xl font-extrabold text-principal-800 tracking-tight text-center mb-6 animate-fade-in">
@@ -156,7 +281,6 @@ export const ListaCompetidores = () => {
           </h1>
 
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Panel izquierdo: Filtros y botones */}
             <div className="flex flex-col space-y-4 ">
               <button
                 onClick={handleMostrarTodo}
@@ -192,55 +316,91 @@ export const ListaCompetidores = () => {
                 onChangeSelected={setDepartamentoSeleccionado}
               />
 
-              <button className="w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors">
+              <button
+                onClick={descargarPDF}
+                className="w-full hover:bg-acento-400 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold  transition-colors"
+              >
                 Descargar PDF
               </button>
 
-              <button className="w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors">
+              <button
+                onClick={descargarExcel}
+                className="w-full hover:bg-acento-400 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold  transition-colors"
+              >
                 Descargar EXCEL
               </button>
             </div>
 
-            {/* Panel derecho: Buscador + Tabla con scroll interno */}
             <div className="flex-1 flex flex-col gap-4 min-w-0">
               {/* Buscador */}
               <div className="flex flex-col sm:flex-row justify-end gap-2">
                 <input
                   type="text"
                   placeholder="Buscar: nombre, apellido, colegio"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
                   className="w-full sm:w-72 px-4 py-2 rounded-xl border-2 border-principal-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-300 transition"
                 />
-                <button className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap">
+                <button
+                  onClick={() => {}}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
+                >
                   Buscar
                 </button>
               </div>
 
-              {/* Tabla con scroll interno elegante */}
               <div className="relative overflow-hidden rounded-lg border border-principal-200 shadow-inner bg-white">
                 <div className="overflow-auto max-h-[600px] scrollbar-thin scrollbar-thumb-principal-400 scrollbar-track-principal-100">
                   <table className="w-full min-w-[900px] table-auto border-collapse text-sm md:text-base">
                     <thead className="bg-principal-500 text-white sticky top-0 z-10 shadow-md">
                       <tr>
                         {[
-                          'Apellido',
-                          'Nombre',
-                          'Género',
-                          'Departamento',
-                          'Colegio',
-                          'CI',
-                          'Área',
-                          'Nivel',
-                          'Grado',
+                          'apellido',
+                          'nombre',
+                          'genero',
+                          'departamento',
+                          'colegio',
+                          'ci',
+                          'area',
+                          'nivel',
+                          'grado',
                         ].map((header) => (
                           <th
                             key={header}
-                            className="px-3 py-3 text-left font-semibold border-r border-principal-400 last:border-r-0 whitespace-nowrap"
+                            onClick={() => ordenarPorColumna(header as keyof Competidor)}
+                            className="px-3 hover:bg-acento-400 py-3 text-left font-semibold border-r border-principal-400 last:border-r-0 whitespace-nowrap cursor-pointer select-none"
                           >
-                            {header}
+                            <div className="flex items-center justify-between">
+                              <span>{header.charAt(0).toUpperCase() + header.slice(1)}</span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`ml-2 transition-transform ${
+                                  orden.columna === header
+                                    ? orden.ascendente
+                                      ? 'rotate-180'
+                                      : ''
+                                    : ''
+                                }`}
+                              >
+                                <path d="m21 16-4 4-4-4" />
+                                <path d="M17 20V4" />
+                                <path d="m3 8 4-4 4 4" />
+                                <path d="M7 4v16" />
+                              </svg>
+                            </div>
                           </th>
                         ))}
                       </tr>
                     </thead>
+
                     <tbody>
                       {loadingCompetidores ? (
                         <tr>
@@ -251,14 +411,14 @@ export const ListaCompetidores = () => {
                             </div>
                           </td>
                         </tr>
-                      ) : competidores.length === 0 ? (
+                      ) : filtrarCompetidores().length === 0 ? (
                         <tr>
                           <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                             No hay competidores registrados
                           </td>
                         </tr>
                       ) : (
-                        competidores.map((c, i) => (
+                        filtrarCompetidores().map((c, i) => (
                           <tr
                             key={i}
                             className={`border-b border-principal-100 transition-colors ${
@@ -290,7 +450,6 @@ export const ListaCompetidores = () => {
                 </div>
               </div>
 
-              {/* Indicador de scroll horizontal en móviles */}
               <div className="block lg:hidden text-center text-xs text-gray-500 mt-2">
                 ← Desliza para ver más columnas →
               </div>
