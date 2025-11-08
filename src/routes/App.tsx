@@ -29,12 +29,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <ListaCompetidores />,
-    // (
-    //   <ProtectedRoute>
-    //     <RootLayout />
-    //   </ProtectedRoute>
-    // ),
+    element: (
+      <ProtectedRoute>
+        <RootLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },

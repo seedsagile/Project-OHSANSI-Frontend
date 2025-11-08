@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import type { Nivel } from '../interface/interface';
+// src/features/listaCompetidores/components/AccordionNivel.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import apiClient from '../../../api/ApiPhp';
+import type { Nivel, Area } from '../interface/interface';
+import { getNivelesPorAreaAPI } from '../service/service';
 
 interface AreaNiveles {
   areaNombre: string;
@@ -7,26 +10,61 @@ interface AreaNiveles {
 }
 
 interface AccordionNivelProps {
-  data: AreaNiveles[];
+  selectedAreas: Area[]; // 🔹 áreas seleccionadas desde AccordionArea
   selectedNiveles: { [areaNombre: string]: number | null };
   onChangeSelected?: (niveles: { [areaNombre: string]: number | null }) => void;
   className?: string;
 }
 
 export const AccordionNivel: React.FC<AccordionNivelProps> = ({
-  data,
+  selectedAreas,
   selectedNiveles,
   onChangeSelected,
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [localSelected, setLocalSelected] = useState<{ [areaNombre: string]: number | null }>({});
+  const [nivelesData, setNivelesData] = useState<AreaNiveles[]>([]);
+  const [loading, setLoading] = useState(false);
+  const accordionRef = useRef<HTMLDivElement>(null);
 
   const toggleAccordion = () => setIsOpen((prev) => !prev);
 
+  // Sincronizar selección externa
   useEffect(() => {
     setLocalSelected(selectedNiveles);
   }, [selectedNiveles]);
+
+  // 🔹 useEffect que carga los niveles de las áreas seleccionadas
+  useEffect(() => {
+    if (!selectedAreas || selectedAreas.length === 0) {
+      setNivelesData([]);
+      return;
+    }
+
+    const fetchNiveles = async () => {
+      try {
+        setLoading(true);
+        const results: AreaNiveles[] = [];
+
+        for (const area of selectedAreas) {
+          const niveles = await getNivelesPorAreaAPI(area.id_area);
+          console.log('📘 Niveles recibidos para área:', area.nombre, niveles);
+
+          results.push({ areaNombre: area.nombre, niveles });
+        }
+
+        setNivelesData(results);
+      } catch (error) {
+        console.error('Error al obtener niveles:', error);
+        setNivelesData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNiveles();
+  }, [selectedAreas]);
 
   const handleCheckboxChange = (areaNombre: string, nivelId: number) => {
     const newSelected = {
@@ -37,13 +75,20 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
     onChangeSelected?.(newSelected);
   };
 
-  const sanitizedData = data.map((area) => ({
-    ...area,
-    niveles: Array.isArray(area.niveles) ? area.niveles : [],
-  }));
+  // Cerrar acordeón al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div className={`relative w-60 ${className || ''}`}>
+    <div ref={accordionRef} className={`relative w-60 ${className || ''}`}>
       <button
         type="button"
         onClick={toggleAccordion}
@@ -73,10 +118,14 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
             transform: 'translateY(10px)',
           }}
         >
-          {sanitizedData.length === 0 ? (
-            <p className="text-neutro-700 text-sm text-center">No hay niveles disponibles.</p>
+          {loading ? (
+            <p className="text-neutro-700 text-sm text-center">Cargando niveles...</p>
+          ) : nivelesData.length === 0 ? (
+            <p className="text-neutro-700 text-sm text-center">
+              Selecciona un área para ver sus niveles.
+            </p>
           ) : (
-            sanitizedData.map(({ areaNombre, niveles }) => (
+            nivelesData.map(({ areaNombre, niveles }) => (
               <div key={areaNombre} className="mb-3">
                 <h3 className="font-semibold text-principal-700 mb-2">{areaNombre}</h3>
                 {niveles.length > 0 ? (

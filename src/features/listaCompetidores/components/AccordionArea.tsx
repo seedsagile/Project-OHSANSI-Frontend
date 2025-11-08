@@ -1,25 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import apiClient from '../../../api/ApiPhp';
 import type { Area } from '../interface/interface';
 
 interface AccordionAreaProps {
-  areas: Area[];
+  responsableId: number;
   selectedAreas: Area[];
   onChangeSelected?: (selected: Area[]) => void;
 }
 
 export const AccordionArea: React.FC<AccordionAreaProps> = ({
-  areas,
+  responsableId,
   selectedAreas,
   onChangeSelected,
 }) => {
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [localSelectedAreas, setLocalSelectedAreas] = useState<Area[]>([]);
+  const accordionRef = useRef<HTMLDivElement>(null); // <- ref para detectar clicks fuera
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
   useEffect(() => {
     setLocalSelectedAreas(selectedAreas);
   }, [selectedAreas]);
+
+  // Fetch interno de áreas
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get(`/responsable/${responsableId}`);
+        setAreas(response.data.data.areas || []);
+      } catch (error) {
+        console.error('Error al obtener áreas:', error);
+        setAreas([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAreas();
+  }, [responsableId]);
 
   const handleCheckboxChange = (area: Area) => {
     const isSelected = localSelectedAreas.some((a) => a.id_area === area.id_area);
@@ -31,15 +53,28 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
     onChangeSelected?.(newSelected);
   };
 
+  // Cerrar acordeón al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="relative w-60">
+    <div ref={accordionRef} className="relative w-60">
       <button
         type="button"
         onClick={toggleAccordion}
         className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
       >
         <span>Seleccionar Área</span>
-
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -59,7 +94,9 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
           className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
           style={{ maxHeight: '200px' }}
         >
-          {areas.length === 0 ? (
+          {loading ? (
+            <p className="text-neutro-700 text-sm text-center">Cargando áreas...</p>
+          ) : areas.length === 0 ? (
             <p className="text-neutro-700 text-sm text-center">No hay áreas disponibles.</p>
           ) : (
             <div className="space-y-2">
