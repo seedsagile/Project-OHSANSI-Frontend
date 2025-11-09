@@ -8,6 +8,7 @@ import {
   UserCheck,
   UserSquare,
   UserPlus,
+  Medal,//calu añadio
   ListChecks,
   SlidersHorizontal,
   LogOut as LogoutIcon,
@@ -132,6 +133,7 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           </p>
           <NavLink to="/evaluaciones"  icon={<UserCheck />} label="Registrar Evaluación" onClick={() => setOpen(false)} />
           <NavLink to="/parametrosCalificaciones" icon={<SlidersHorizontal />} label="Parámetros de Calificación" onClick={() => setOpen(false)} />
+          <NavLink to="/medallero" icon={<Medal />} label="Parametrizar Medallero" onClick={() => setOpen(false)} />
 
         
           {/* ----- Configuraciones ----- */}
