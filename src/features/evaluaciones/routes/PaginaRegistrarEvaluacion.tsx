@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 
 // ============ TYPES ============
-// types/evaluacion.types.ts
 interface Competidor {
   nro: number;
   nombres: string;
@@ -56,7 +55,6 @@ const mockCompetidores: Competidor[] = [
 ];
 
 // ============ COMPONENTS ============
-// components/AreaNivelSelector.tsx
 const AreaNivelSelector = ({ 
   selectedArea, 
   selectedNivel, 
@@ -111,7 +109,6 @@ const AreaNivelSelector = ({
   );
 };
 
-// components/SearchBar.tsx
 const SearchBar = ({ 
   searchTerm, 
   onSearchChange 
@@ -138,7 +135,6 @@ const SearchBar = ({
   );
 };
 
-// components/CalificacionModal.tsx
 const CalificacionModal = ({ 
   competidor, 
   onClose, 
@@ -224,7 +220,6 @@ const CalificacionModal = ({
   );
 };
 
-// components/CompetidoresTable.tsx
 const CompetidoresTable = ({ 
   competidores, 
   onCalificar 
@@ -277,7 +272,6 @@ const CompetidoresTable = ({
 };
 
 // ============ MAIN COMPONENT ============
-// routes/PaginaRegistrarEvaluacion.tsx
 export function PaginaRegistrarEvaluacion() {
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedNivel, setSelectedNivel] = useState('');
