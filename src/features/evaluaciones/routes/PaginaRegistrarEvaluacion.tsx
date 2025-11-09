@@ -1,0 +1,152 @@
+// src/features/evaluaciones/routes/PaginaRegistrarEvaluacion.tsx
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/auth/login/hooks/useAuth';
+import { useEvaluaciones } from '../hooks/useEvaluaciones';
+import { AreaNivelSelector } from '../components/AreaNivelSelector';
+import { SearchBar } from '../components/SearchBar';
+import { CompetidoresTable } from '../components/CompetidoresTable';
+import { CalificacionModal } from '../components/CalificacionModal';
+import type { Competidor } from '../types/evaluacion.types';
+import { formatearNombreCompleto } from '../utils/validations';
+
+export function PaginaRegistrarEvaluacion() {
+  const { user} = useAuth();
+  const {
+    areas,
+    competidores,
+    loading,
+    loadingCompetidores,
+    cargarCompetidores,
+    guardarEvaluacion,
+  } = useEvaluaciones();
+
+  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedNivel, setSelectedNivel] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
+  const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
+
+  // Verificar que el usuario sea evaluador
+  const isEvaluador = user?.role === 'evaluador';
+
+  // Filtrar competidores por búsqueda
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCompetidores(competidores);
+      return;
+    }
+
+    const filtered = competidores.filter((c) => {
+      const nombreCompleto = formatearNombreCompleto(c.nombres, c.apellidos).toLowerCase();
+      return nombreCompleto.includes(searchTerm.toLowerCase());
+    });
+
+    setFilteredCompetidores(filtered);
+  }, [competidores, searchTerm]);
+
+  // Cargar competidores cuando se selecciona área y nivel
+  const handleBuscar = () => {
+    if (!selectedArea || !selectedNivel) {
+      return;
+    }
+
+    cargarCompetidores(parseInt(selectedArea), parseInt(selectedNivel));
+  };
+
+  // Auto-buscar cuando se selecciona área y nivel
+  useEffect(() => {
+    if (selectedArea && selectedNivel) {
+      handleBuscar();
+    }
+  }, [selectedArea, selectedNivel]);
+
+  // Si no es evaluador, mostrar mensaje de acceso denegado
+  if (!isEvaluador) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Acceso Denegado</h2>
+          <p className="text-red-600">
+            No tienes permisos para acceder a esta sección. Solo los evaluadores pueden
+            registrar evaluaciones.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si está cargando las áreas iniciales
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="ml-4 text-gray-500">Cargando áreas y niveles asignados...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no tiene áreas asignadas
+  if (areas.length === 0) {
+    return (
+      <div className="p-6">
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">Registrar Evaluación</h1>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-bold text-yellow-800 mb-2">
+            No tienes áreas asignadas
+          </h2>
+          <p className="text-yellow-600">
+            Contacta al administrador para que te asigne áreas y niveles para evaluar.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-gray-900">Registrar Evaluación</h1>
+        <p className="text-gray-600 mt-2">
+          Evaluador: <span className="font-semibold">{user?.nombre} {user?.apellido}</span>
+        </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Selección de Área y Nivel</h2>
+
+        <AreaNivelSelector
+          areas={areas}
+          selectedArea={selectedArea}
+          selectedNivel={selectedNivel}
+          onAreaChange={setSelectedArea}
+          onNivelChange={setSelectedNivel}
+          disabled={loading}
+        />
+
+        <SearchBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onSearch={handleBuscar}
+          disabled={!selectedArea || !selectedNivel || loadingCompetidores}
+        />
+      </div>
+
+      <CompetidoresTable
+        competidores={filteredCompetidores}
+        onCalificar={setSelectedCompetidor}
+        loading={loadingCompetidores}
+      />
+
+      {selectedCompetidor && (
+        <CalificacionModal
+          competidor={selectedCompetidor}
+          onClose={() => setSelectedCompetidor(null)}
+          onSave={guardarEvaluacion}
+        />
+      )}
+    </div>
+  );
+}

@@ -13,6 +13,7 @@ import { Parametro } from '../features/parametros/components/Parametro';
 import { PaginaRegistrarResponsable } from '@/features/usuarios/responsables/routes/PaginaRegistrarResponsable';
 import { Dashboard } from '@/features/dashboard/components/Dashboard';
 import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador';
+import { PaginaRegistrarEvaluacion } from '@/features/evaluaciones/routes/PaginaRegistrarEvaluacion';
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
       { path: 'niveles', element: <PaginaNiveles /> },
       { path: 'asignarNiveles', element: <PaginaAsignarNiveles /> },
       { path: 'listaCompetidores', element: <ListaCompetidores /> },
+      { path: 'evaluaciones', element: <PaginaRegistrarEvaluacion /> },
       { path: 'parametrosCalificaciones', element: <Parametro /> },
       { path: 'configuracion_gestestion_olimpiada', element: <Navigate to="/dashboard" replace /> },
     ],

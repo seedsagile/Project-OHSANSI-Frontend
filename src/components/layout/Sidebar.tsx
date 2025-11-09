@@ -130,7 +130,9 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Evaluación y Clasificación
           </p>
+          <NavLink to="/evaluaciones"  icon={<UserCheck />} label="Registrar Evaluación" onClick={() => setOpen(false)} />
           <NavLink to="/parametrosCalificaciones" icon={<SlidersHorizontal />} label="Parámetros de Calificación" onClick={() => setOpen(false)} />
+
         
           {/* ----- Configuraciones ----- */}
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
