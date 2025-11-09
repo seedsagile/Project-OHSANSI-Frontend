@@ -28,7 +28,7 @@ export const getAreasPorResponsableAPI = async (id_responsable: number) => {
 // src/features/service/service.ts
 export const getNivelesPorAreaAPI = async (idArea: number): Promise<Nivel[]> => {
   try {
-    const response = await apiClient.get(`/niveles/${idArea}`);
+    const response = await apiClient.get(`/niveles/${idArea}/area`);
     const data = response.data?.data;
 
     if (!data) return [];
