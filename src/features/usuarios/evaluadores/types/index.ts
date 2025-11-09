@@ -1,4 +1,37 @@
-import type { Area as AreaGeneral } from '@/features/areas/types';
+export type ApiAsignacionDetalle = {
+  id_area_nivel: number;
+  nombre_area: string;
+  nombre_nivel: string;
+  nombre_grado: string;
+};
+
+export type ApiRolDetalle = {
+  asignaciones_evaluador?: ApiAsignacionDetalle[];
+  [key: string]: any;
+};
+
+export type ApiRolPorGestion = {
+  rol: string;
+  detalles: ApiRolDetalle | null;
+};
+
+export type ApiGestionRoles = {
+  id_olimpiada: number;
+  gestion: string;
+  roles: ApiRolPorGestion[];
+};
+
+export type ApiUsuarioResponse = {
+  id_usuario: number;
+  nombre: string;
+  apellido: string;
+  ci: string;
+  email: string;
+  telefono: string;
+  created_at: string;
+  updated_at: string;
+  roles_por_gestion: ApiGestionRoles[];
+};
 
 export type DatosPersonaVerificada = {
   Id_usuario: number;
@@ -7,10 +40,6 @@ export type DatosPersonaVerificada = {
   Correo: string;
   Ci: string;
   Teléfono: string;
-  Rol?: {
-    Id_rol: number;
-    Nombre_rol: string;
-  };
 };
 
 export type Gestion = {
@@ -18,52 +47,58 @@ export type Gestion = {
   gestion: string;
 };
 
-export type AreaPasadaResponse = {
-  id_evaluador_area: number;
-  Area: {
-    Id_area: number;
-    Nombre: string;
-  };
+export type VerificacionUsuarioCompleta = {
+  datosPersona: DatosPersonaVerificada;
+  isAssignedToCurrentGestion: boolean;
+  initialAsignaciones: ApiAsignacionDetalle[];
+  gestionesPasadas: Gestion[];
+  rolesPorGestion: ApiGestionRoles[];
 };
 
-// Payload para Crear (POST)
+export type NivelParaAsignar = {
+  id_area_nivel: number;
+  id_nivel: number;
+  nombre: string;
+};
+
+export type AreaParaAsignar = {
+  id_area: number;
+  area: string;
+  niveles: NivelParaAsignar[];
+};
+
 export type CrearEvaluadorPayload = {
   nombre: string;
   apellido: string;
   ci: string;
   email: string;
-  password?: string;
   telefono: string;
+  password?: string;
   id_olimpiada?: number;
-  areas: number[];
+  area_nivel_ids: number[];
 };
 
-export type ActualizarEvaluadorPayload = { //
+export type AsignarEvaluadorPayload = {
   id_olimpiada: number;
-  areas: number[];
+  area_nivel_ids: number[];
 };
 
-// Respuesta de Crear (POST)
 export type EvaluadorCreado = {
   message: string;
   [key: string]: any;
 };
 
-// Respuesta de Actualizar (PUT) - Puede ser similar a la de Crear
-export type EvaluadorActualizado = {
+export type EvaluadorAsignado = {
   message: string;
   [key: string]: any;
 };
 
-// Estados del flujo de registro/edición
-export type PasoRegistroEvaluador = //
+export type PasoRegistroEvaluador =
   | 'VERIFICACION_CI'
   | 'CARGANDO_VERIFICACION'
   | 'FORMULARIO_DATOS'
-  | 'CARGANDO_GUARDADO'
-  | 'READ_ONLY';
+  | 'CARGANDO_GUARDADO';
 
-// Estado para el modal de feedback
 export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
@@ -71,4 +106,7 @@ export type ModalFeedbackState = {
   type: 'success' | 'error' | 'info';
 };
 
-export type { AreaGeneral as Area }; //
+export type { AreaParaAsignar as Area };
+export type { NivelParaAsignar as Nivel };
+
+export type EvaluadorActualizado = EvaluadorAsignado;
