@@ -10,6 +10,7 @@ export const useAuth = () => {
 
   return {
     user,
+    userId: user?.id_usuario, // editado por clau
     loading,
     isAuthenticated,
     logout,

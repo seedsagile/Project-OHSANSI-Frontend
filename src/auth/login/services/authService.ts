@@ -5,6 +5,7 @@ interface LoginApiResponse {
   access_token: string;
   token_type: string;
   user: {
+    id_usuario: number; //editado por clau
     nombre: string;
     apellido: string;
     email: string;
@@ -52,6 +53,7 @@ const _mapApiUserToFrontendUser = (apiUser: UserApiResponse): User => {
   }
 
   const user: User = {
+    id_usuario: apiUser.id_usuario, //editado por clau
     email: apiUser.email,
     nombre: apiUser.nombre,
     apellido: apiUser.apellido,
