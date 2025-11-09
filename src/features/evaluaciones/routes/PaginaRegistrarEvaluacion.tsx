@@ -11,7 +11,7 @@ import type { Competidor } from '../types/evaluacion.types';
 import { formatearNombreCompleto } from '../utils/validations';
 
 export function PaginaRegistrarEvaluacion() {
-  const { user, userId } = useAuth();
+  const { user} = useAuth();
   const {
     areas,
     competidores,

@@ -1,7 +1,7 @@
 // src/features/evaluaciones/components/CompetidoresTable.tsx
 
 import type { Competidor } from '../types/evaluacion.types';
-import { formatearNombreCompleto } from '../utils/validations';
+//import { formatearNombreCompleto } from '../utils/validations';
 
 interface CompetidoresTableProps {
   competidores: Competidor[];

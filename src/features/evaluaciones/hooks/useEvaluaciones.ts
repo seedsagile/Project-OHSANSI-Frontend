@@ -45,7 +45,7 @@ export const useEvaluaciones = () => {
         toast.success(`Se encontraron ${response.data.competidores.length} competidores`);
       } else {
         setCompetidores([]);
-        toast.info(response.message || 'No se encontraron competidores');
+        toast.success(response.message || 'No se encontraron competidores');
       }
     } catch (error) {
       console.error('Error al cargar competidores:', error);
@@ -61,11 +61,11 @@ export const useEvaluaciones = () => {
     idCompetidor: number,
     nota: number,
     observaciones?: string
-  ) => {
+  ):Promise<void> => {
     try {
       // TODO: Verificar con backend qué ID debe ir en la URL (idCompetencia)
       // Por ahora usamos 1 como placeholder
-      const idCompetencia = 1;
+      const idCompetencia = 1;//fase me dijo ariel
       
       // TODO: Verificar qué es id_evaluadorAN
       // Por ahora usamos 1 como placeholder
@@ -73,11 +73,11 @@ export const useEvaluaciones = () => {
         nota,
         observaciones: observaciones || '',
         id_competidor: idCompetidor,
-        id_evaluadorAN: 1,
+        id_evaluadorAN: 1,//PREGUNTAR A ARIEL
         estado: false,
       };
 
-      const response = await evaluacionService.guardarEvaluacion(idCompetencia, data);
+      await evaluacionService.guardarEvaluacion(idCompetencia, data);
       
       // Actualizar el estado del competidor en la lista
       setCompetidores(prev =>
@@ -89,7 +89,7 @@ export const useEvaluaciones = () => {
       );
 
       toast.success('Evaluación guardada exitosamente');
-      return response;
+      //return response;
     } catch (error) {
       console.error('Error al guardar evaluación:', error);
       toast.error('Error al guardar la evaluación');
