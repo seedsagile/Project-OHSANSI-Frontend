@@ -17,7 +17,7 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [localSelectedAreas, setLocalSelectedAreas] = useState<Area[]>([]);
-  const accordionRef = useRef<HTMLDivElement>(null); // <- ref para detectar clicks fuera
+  const accordionRef = useRef<HTMLDivElement>(null);
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
@@ -52,6 +52,16 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
     setLocalSelectedAreas(newSelected);
     onChangeSelected?.(newSelected);
   };
+
+  // 🔹 Función para marcar o desmarcar todo
+  const handleSelectAll = () => {
+    const allSelected = localSelectedAreas.length === areas.length;
+    const newSelected = allSelected ? [] : areas;
+    setLocalSelectedAreas(newSelected);
+    onChangeSelected?.(newSelected);
+  };
+
+  const isAllSelected = areas.length > 0 && localSelectedAreas.length === areas.length;
 
   // Cerrar acordeón al hacer click fuera
   useEffect(() => {
@@ -100,6 +110,24 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
             <p className="text-neutro-700 text-sm text-center">No hay áreas disponibles.</p>
           ) : (
             <div className="space-y-2">
+              {/* 🔹 Opción de marcar todo */}
+              <label
+                className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                  isAllSelected
+                    ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                    : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
+                }`}
+              >
+                <span className="text-principal-500">Marcar todo</span>
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleSelectAll}
+                  className="accent-principal-500 w-4 h-4"
+                />
+              </label>
+
+              {/* 🔹 Listado de áreas */}
               {areas.map((area) => {
                 const isChecked = localSelectedAreas.some((a) => a.id_area === area.id_area);
                 return (

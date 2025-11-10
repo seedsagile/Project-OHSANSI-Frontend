@@ -1,18 +1,18 @@
 // src/features/listaCompetidores/components/AccordionNivel.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import apiClient from '../../../api/ApiPhp';
 import type { Nivel, Area } from '../interface/interface';
 import { getNivelesPorAreaAPI } from '../service/service';
 
 interface AreaNiveles {
+  areaId: number;
   areaNombre: string;
   niveles: Nivel[];
 }
 
 interface AccordionNivelProps {
-  selectedAreas: Area[]; // 🔹 áreas seleccionadas desde AccordionArea
-  selectedNiveles: { [areaNombre: string]: number | null };
-  onChangeSelected?: (niveles: { [areaNombre: string]: number | null }) => void;
+  selectedAreas: Area[];
+  selectedNiveles: { [areaId: number]: number[] }; // usar number como clave
+  onChangeSelected?: (niveles: { [areaId: number]: number[] }) => void;
   className?: string;
 }
 
@@ -23,7 +23,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [localSelected, setLocalSelected] = useState<{ [areaNombre: string]: number | null }>({});
+  const [localSelected, setLocalSelected] = useState<{ [areaId: number]: number[] }>({});
   const [nivelesData, setNivelesData] = useState<AreaNiveles[]>([]);
   const [loading, setLoading] = useState(false);
   const accordionRef = useRef<HTMLDivElement>(null);
@@ -51,7 +51,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
           const niveles = await getNivelesPorAreaAPI(area.id_area);
           console.log('📘 Niveles recibidos para área:', area.nombre, niveles);
 
-          results.push({ areaNombre: area.nombre, niveles });
+          results.push({ areaId: area.id_area, areaNombre: area.nombre, niveles });
         }
 
         setNivelesData(results);
@@ -66,14 +66,35 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
     fetchNiveles();
   }, [selectedAreas]);
 
-  const handleCheckboxChange = (areaNombre: string, nivelId: number) => {
+  // ✅ Manejar check individual
+  const handleCheckboxChange = (areaId: number, nivelId: number) => {
+    const current = localSelected[areaId] || [];
+    const isSelected = current.includes(nivelId);
+
     const newSelected = {
       ...localSelected,
-      [areaNombre]: localSelected[areaNombre] === nivelId ? null : nivelId,
+      [areaId]: isSelected ? current.filter((id) => id !== nivelId) : [...current, nivelId],
     };
+
     setLocalSelected(newSelected);
     onChangeSelected?.(newSelected);
   };
+
+  // ✅ Marcar / desmarcar todo dentro de un área
+  const handleSelectAll = (areaId: number, niveles: Nivel[]) => {
+    const allSelected = localSelected[areaId]?.length === niveles.length && niveles.length > 0;
+
+    const newSelected = {
+      ...localSelected,
+      [areaId]: allSelected ? [] : niveles.map((n) => n.id_nivel),
+    };
+
+    setLocalSelected(newSelected);
+    onChangeSelected?.(newSelected);
+  };
+
+  const isAllSelected = (areaId: number, niveles: Nivel[]) =>
+    niveles.length > 0 && localSelected[areaId]?.length === niveles.length;
 
   // Cerrar acordeón al hacer click fuera
   useEffect(() => {
@@ -125,13 +146,33 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
               Selecciona un área para ver sus niveles.
             </p>
           ) : (
-            nivelesData.map(({ areaNombre, niveles }) => (
+            nivelesData.map(({ areaId, areaNombre, niveles }) => (
               <div key={areaNombre} className="mb-3">
                 <h3 className="font-semibold text-principal-700 mb-2">{areaNombre}</h3>
+
+                {/* 🔹 Checkbox de "Marcar todo" */}
+                {niveles.length > 0 && (
+                  <label
+                    className={`flex justify-between items-center w-full px-2 py-2 rounded-md border transition-all duration-150 cursor-pointer mb-2 ${
+                      isAllSelected(areaId, niveles)
+                        ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                        : 'bg-white hover:bg-neutro-100 border-neutro-200'
+                    }`}
+                  >
+                    <span className="text-principal-500">Marcar todo</span>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected(areaId, niveles)}
+                      onChange={() => handleSelectAll(areaId, niveles)}
+                      className="accent-principal-500 w-4 h-4"
+                    />
+                  </label>
+                )}
+
                 {niveles.length > 0 ? (
                   <div className="space-y-2">
                     {niveles.map((nivel) => {
-                      const isChecked = localSelected[areaNombre] === nivel.id_nivel;
+                      const isChecked = localSelected[areaId]?.includes(nivel.id_nivel) || false;
                       return (
                         <label
                           key={nivel.id_nivel}
@@ -145,7 +186,7 @@ export const AccordionNivel: React.FC<AccordionNivelProps> = ({
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            onChange={() => handleCheckboxChange(areaNombre, nivel.id_nivel)}
+                            onChange={() => handleCheckboxChange(areaId, nivel.id_nivel)}
                             className="accent-principal-500 w-4 h-4"
                           />
                         </label>

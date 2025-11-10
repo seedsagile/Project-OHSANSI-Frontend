@@ -99,7 +99,7 @@ export const getGenerosAPI = async () => {
 export const getCompetidoresFiltradosAPI = async (
   id_responsable: number,
   idAreas: string = '0', // <- cambiar a string
-  idNivel: number = 0,
+  idNivel: number | number[] = 0,
   idGrado: number = 0,
   genero?: string,
   departamento?: string
