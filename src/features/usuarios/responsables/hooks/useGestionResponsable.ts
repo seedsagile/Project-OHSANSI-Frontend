@@ -63,7 +63,6 @@ export function useGestionResponsable() {
   const modalTimerRef = useRef<number | undefined>(undefined);
   const handleCancelarCallbackRef = useRef<(() => void) | undefined>(undefined);
 
-  // 🔽 (FIX ts(2554)) Inicializar el Ref con 'null'
   const crearResponsableMutateRef = useRef<
     | UseMutateFunction<
         ResponsableCreado,
@@ -73,6 +72,7 @@ export function useGestionResponsable() {
     | undefined
   >(undefined);
 
+  // Limpieza de timers al desmontar (previene bucles o memory leaks)
   useEffect(() => {
     return () => clearTimeout(modalTimerRef.current);
   }, []);
@@ -83,9 +83,36 @@ export function useGestionResponsable() {
     clearTimeout(modalTimerRef.current);
   }, []);
 
+  // 🔽 === INICIO DE LA MODIFICACIÓN === 🔽
   const handleVerificationComplete = useCallback(
     (data: VerificacionUsuarioCompleta | null) => {
-      // CA: Modal "Usuario ya existente como evaluador" (al Verificar)
+      // 1. LÓGICA DE SETEO DE ESTADO (Flujo normal - Escenario 1, 2, 3)
+      // Se mueven los setters de estado fuera del modal.
+      // Esto asegura que la UI se actualice con los datos (Nombres, Gestiones)
+      // inmediatamente, incluso si se debe mostrar el modal de confirmación.
+      if (data) {
+        // Escenario 2 o 3 (o caso borde Evaluador)
+        setDatosPersona(data.datosPersona);
+        setIsAssignedToCurrentGestion(data.isAssignedToCurrentGestion);
+        setInitialAreasReadOnly(data.initialAreas);
+        setGestionesPasadas(data.gestionesPasadas);
+        setRolesPorGestion(data.rolesPorGestion);
+      } else {
+        // Escenario 1: Usuario nuevo
+        setDatosPersona(null);
+        setIsAssignedToCurrentGestion(false);
+        setInitialAreasReadOnly([]);
+        setGestionesPasadas([]);
+        setRolesPorGestion([]);
+      }
+
+      // 2. TRANSICIÓN DE UI
+      // Siempre se avanza al paso 2, ya que los datos están listos.
+      setPasoActual('FORMULARIO_DATOS');
+
+      // 3. LÓGICA DE CASO DE BORDE (Augmentación)
+      // Si ADEMÁS es un evaluador (CA 37), se muestra el modal de confirmación
+      // pero sin bloquear la carga de datos que ya ocurrió.
       if (data && data.esEvaluadorExistente && !data.esResponsableExistente) {
         setModalFeedback({
           isOpen: true,
@@ -94,61 +121,44 @@ export function useGestionResponsable() {
           message:
             'Ya existe el usuario ingresado como evaluador. ¿Desea registrarlo también como Responsable de área?',
           onConfirm: () => {
-            // Lógica de "Sí" se define inline
-            setDatosPersona(data.datosPersona);
-            setIsAssignedToCurrentGestion(data.isAssignedToCurrentGestion);
-            setInitialAreasReadOnly(data.initialAreas);
-            setGestionesPasadas(data.gestionesPasadas);
-            setRolesPorGestion(data.rolesPorGestion);
-            setPasoActual('FORMULARIO_DATOS');
+            // El 'onConfirm' ahora solo cierra el modal.
+            // La lógica de 'force_create_role' se maneja al Guardar (ya está bien).
             closeModalFeedback();
           },
           confirmText: 'Sí',
           cancelText: 'No',
         });
-        return;
+        // IMPORTANTE: No hay 'return' aquí. El flujo continúa.
       }
-
-      // --- Flujo normal ---
-      if (data) {
-        setDatosPersona(data.datosPersona);
-        setIsAssignedToCurrentGestion(data.isAssignedToCurrentGestion);
-        setInitialAreasReadOnly(data.initialAreas);
-        setGestionesPasadas(data.gestionesPasadas);
-        setRolesPorGestion(data.rolesPorGestion);
-      } else {
-        setDatosPersona(null);
-        setIsAssignedToCurrentGestion(false);
-        setInitialAreasReadOnly([]);
-        setGestionesPasadas([]);
-        setRolesPorGestion([]);
-      }
-      setPasoActual('FORMULARIO_DATOS');
     },
-    [closeModalFeedback]
+    [closeModalFeedback] // Dependencia estable, sin riesgo de bucle.
   );
+  // 🔼 === FIN DE LA MODIFICACIÓN === 🔼
 
-  const handleVerificationError = useCallback((message: string) => {
-    // (FIX BUG CA #8)
-    let finalMessage: string;
-    const isNetworkError =
-      !message || message === 'Network Error' || message.includes('Failed to fetch');
+  const handleVerificationError = useCallback(
+    (message: string) => {
+      // (FIX BUG CA #8)
+      let finalMessage: string;
+      const isNetworkError =
+        !message || message === 'Network Error' || message.includes('Failed to fetch');
 
-    if (isNetworkError) {
-      finalMessage =
-        'No se pudo completar la verificación. Revise su conexión o intente más tarde.';
-    } else {
-      finalMessage = message;
-    }
+      if (isNetworkError) {
+        finalMessage =
+          'No se pudo completar la verificación. Revise su conexión o intente más tarde.';
+      } else {
+        finalMessage = message;
+      }
 
-    setModalFeedback({
-      isOpen: true,
-      type: 'error',
-      title: 'Error de Verificación',
-      message: finalMessage,
-    });
-    setPasoActual('VERIFICACION_CI');
-  }, []);
+      setModalFeedback({
+        isOpen: true,
+        type: 'error',
+        title: 'Error de Verificación',
+        message: finalMessage,
+      });
+      setPasoActual('VERIFICACION_CI');
+    },
+    [] // Dependencias vacías, es estable.
+  );
 
   // --- 3. Hook de Verificación (Paso 1) ---
   const {
@@ -163,6 +173,8 @@ export function useGestionResponsable() {
   );
 
   // --- 4. Hook de Formulario (Paso 2) ---
+  // Este hook depende de `pasoActual` para habilitar/deshabilitar la query
+  // de `areasDisponiblesQuery`, evitando llamadas innecesarias.
   const {
     formMethodsPrincipal,
     areasDisponiblesQuery,
@@ -177,8 +189,8 @@ export function useGestionResponsable() {
     isReadOnly: !!datosPersona,
     initialAreas: initialAreasReadOnly,
     gestionesPasadas: gestionesPasadas,
-    onFormSubmit: (formData) => handleFormSubmit(formData), // `handleFormSubmit` se define más abajo
-    pasoActual: pasoActual,
+    onFormSubmit: (formData) => handleFormSubmit(formData),
+    pasoActual: pasoActual, // Pasa el estado actual para controlar la query
   });
 
   // --- 5. Callbacks de Cancelación y Éxito ---
@@ -193,7 +205,12 @@ export function useGestionResponsable() {
     setPasoActual('VERIFICACION_CI');
     closeModalFeedback();
     navigate('/responsables');
-  }, [navigate, resetVerification, resetFormularioPrincipal, closeModalFeedback]);
+  }, [
+    navigate,
+    resetVerification,
+    resetFormularioPrincipal,
+    closeModalFeedback,
+  ]);
 
   handleCancelarCallbackRef.current = handleCancelar;
 
@@ -201,7 +218,7 @@ export function useGestionResponsable() {
     if (handleCancelarCallbackRef.current) {
       handleCancelarCallbackRef.current();
     }
-  }, []);
+  }, [handleCancelar]); // Depende de handleCancelar, que es estable.
 
   const handleFormSubmitSuccess = useCallback(
     (data: ResponsableCreado | ResponsableAsignado, esActualizacion: boolean) => {
@@ -270,9 +287,8 @@ export function useGestionResponsable() {
               email: formData.correo,
               telefono: formData.celular,
               areas: formData.areas,
-              force_create_role: true,
+              force_create_role: true, // Forzar creación de rol
             };
-            // (FIX) Llama a la función mutate desde el Ref
             if (crearResponsableMutateRef.current) {
               crearResponsableMutateRef.current(payload);
             }
@@ -306,7 +322,6 @@ export function useGestionResponsable() {
       } else if (errorData?.message) {
         errorMessage = errorData.message;
       } else if (error.request) {
-        // (FIX BUG) Este es el caso del video "carga infinita".
         errorMessage =
           'No se pudo guardar el responsable. Por favor, intente de nuevo.';
       }
@@ -348,7 +363,8 @@ export function useGestionResponsable() {
       onError: handleMutationError,
     });
 
-  // 🔽 (FIX) Guardar la función 'mutate' en el ref
+  // Asigna la función de mutación al ref.
+  // Esto es estable y no causa bucles.
   useEffect(() => {
     crearResponsableMutateRef.current = crearResponsable;
   }, [crearResponsable]);
@@ -357,9 +373,9 @@ export function useGestionResponsable() {
 
   const handleFormSubmit = useCallback(
     (formData: ResponsableFormData) => {
-      // (FIX BUG) Usar 'datosPersona' (el estado) para determinar el flujo,
-      // no 'isAssignedToCurrentGestion'
+      // Usar 'datosPersona' (el estado) para determinar el flujo
       if (datosPersona) {
+        // Escenario 2 o 3 (o caso borde Evaluador) -> Asignar
         if (!ciVerificado) {
           handleMutationError(
             new AxiosError('Error: No se encontró el CI para asignar.') as any
@@ -372,6 +388,7 @@ export function useGestionResponsable() {
         };
         asignarResponsable({ ci: ciVerificado, payload });
       } else {
+        // Escenario 1 -> Crear
         const payload: CrearResponsablePayload = {
           nombre: formData.nombres,
           apellido: formData.apellidos,
@@ -385,15 +402,16 @@ export function useGestionResponsable() {
       }
     },
     [
-      datosPersona, // ⬅️ (FIX BUG) Esta es la dependencia clave
+      datosPersona,
       ciVerificado,
       asignarResponsable,
       crearResponsable,
       handleMutationError,
-    ]
+    ] // Dependencias estables.
   );
 
   // --- 7. Hook de Tabla de Áreas ---
+  // Revisa si la query de áreas falla y muestra un modal crítico
   useEffect(() => {
     if (areasDisponiblesQuery.isError && pasoActual === 'FORMULARIO_DATOS') {
       setModalFeedback({
@@ -404,7 +422,7 @@ export function useGestionResponsable() {
           'Error crítico: No se pudieron cargar las áreas. Recargue la página.',
       });
     }
-  }, [areasDisponiblesQuery.isError, pasoActual]);
+  }, [areasDisponiblesQuery.isError, pasoActual]); // Dependencias seguras.
 
   const preAsignadasSet = useMemo(() => {
     return isAssignedToCurrentGestion
