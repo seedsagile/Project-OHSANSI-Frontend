@@ -7,6 +7,7 @@ export interface MedalData {
   plata: number;
   bronce: number;
   menciones: number;
+  ya_parametrizado?: boolean;
 }
 
 export interface Area {
@@ -20,6 +21,11 @@ export interface Nivel {
   id_nivel: number;
   nombre_nivel: string;
   gestion: string;
+  oro?: number;
+  plata?: number;
+  bronce?: number;
+  menciones?: number;
+  ya_parametrizado?: boolean;
 }
 
 export interface AreasResponse {

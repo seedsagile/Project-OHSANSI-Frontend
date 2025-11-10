@@ -1,7 +1,6 @@
 // src/features/medallero/components/AreaSelector.tsx
 
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { Area } from '../types/medallero.types';
 
 interface AreaSelectorProps {
@@ -22,7 +21,7 @@ export const AreaSelector = ({
   return (
     <div className="mb-6">
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        Seleccione un Área
+        Seleccione una Área
       </label>
       <div className="relative">
         <button
@@ -33,7 +32,9 @@ export const AreaSelector = ({
           <span className="font-medium">
             {selectedArea ? selectedArea.nombre : 'Seleccionar Área'}
           </span>
-          <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <svg className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
         
         {isOpen && (

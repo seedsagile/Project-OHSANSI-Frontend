@@ -12,6 +12,7 @@ export const useMedallero = (userId: number | undefined) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isParametrized, setIsParametrized] = useState(false);
 
   const loadAreas = async () => {
     if (!userId) return;
@@ -21,7 +22,11 @@ export const useMedallero = (userId: number | undefined) => {
     try {
       const response = await medalleroService.getAreasByResponsable(userId);
       if (response.success && response.data.areas.length > 0) {
-        setAreas(response.data.areas);
+        // Ordenar áreas alfabéticamente (A-Z)
+        const sortedAreas = response.data.areas.sort((a, b) => 
+          a.nombre.localeCompare(b.nombre)
+        );
+        setAreas(sortedAreas);
       } else {
         setError('No tienes áreas asignadas');
       }
@@ -39,7 +44,7 @@ export const useMedallero = (userId: number | undefined) => {
     try {
       const response = await medalleroService.getNivelesByArea(areaId);
       if (response.success) {
-        // Agrupar niveles duplicados y crear estructura inicial
+        // Agrupar niveles duplicados
         const nivelesMap = new Map<string, typeof response.data.niveles[0]>();
         response.data.niveles.forEach(nivel => {
           if (!nivelesMap.has(nivel.nombre_nivel)) {
@@ -47,13 +52,27 @@ export const useMedallero = (userId: number | undefined) => {
           }
         });
 
-        const initialData: MedalData[] = Array.from(nivelesMap.values()).map(nivel => ({
+        // Ordenar niveles alfabéticamente (A-Z)
+        const sortedNiveles = Array.from(nivelesMap.values()).sort((a, b) => 
+          a.nombre_nivel.localeCompare(b.nombre_nivel)
+        );
+
+        // Verificar si ya está parametrizado
+        const yaParametrizado = sortedNiveles.some(nivel => 
+          nivel.ya_parametrizado === true || 
+          (nivel.oro !== undefined && nivel.oro !== null)
+        );
+
+        setIsParametrized(yaParametrizado);
+
+        const initialData: MedalData[] = sortedNiveles.map(nivel => ({
           id_area_nivel: nivel.id_area_nivel,
           nombre_nivel: nivel.nombre_nivel,
-          oro: 1,
-          plata: 1,
-          bronce: 1,
-          menciones: 3,
+          oro: nivel.oro ?? 1,
+          plata: nivel.plata ?? 1,
+          bronce: nivel.bronce ?? 1,
+          menciones: nivel.menciones ?? 0,
+          ya_parametrizado: yaParametrizado,
         }));
 
         setMedalData(initialData);
@@ -68,27 +87,46 @@ export const useMedallero = (userId: number | undefined) => {
 
   const handleAreaSelect = (area: Area) => {
     setSelectedArea(area);
+    setMedalData([]);
+    setIsParametrized(false);
     loadNiveles(area.id_area);
   };
 
-  const updateMedalValue = (index: number, field: keyof Omit<MedalData, 'id_area_nivel' | 'nombre_nivel'>, value: string) => {
-    if (!validators.isPositiveInteger(value)) return;
+  const updateMedalValue = (
+    index: number, 
+    field: keyof Omit<MedalData, 'id_area_nivel' | 'nombre_nivel' | 'ya_parametrizado'>, 
+    value: string
+  ) => {
+    // Validar según el campo
+    let isValid = false;
+    switch (field) {
+      case 'oro':
+      case 'plata':
+      case 'bronce':
+        isValid = validators.isValidNumber(value, 0, 10);
+        break;
+      case 'menciones':
+        isValid = validators.isValidNumber(value, 0, 20);
+        break;
+    }
+
+    if (!isValid) return;
     
     const newData = [...medalData];
-    newData[index] = { ...newData[index], [field]: parseInt(value) || 0 };
+    newData[index] = { ...newData[index], [field]: value === '' ? 0 : parseInt(value) };
     setMedalData(newData);
   };
 
   const saveMedallero = async () => {
     if (!selectedArea) {
       setError('Debe seleccionar un área');
-      return;
+      return false;
     }
 
     const validationError = validators.validateMedalData(medalData);
     if (validationError) {
       setError(validationError);
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -105,24 +143,22 @@ export const useMedallero = (userId: number | undefined) => {
       const response = await medalleroService.saveMedallero(dataToSave);
       
       if (response.success) {
-        alert('✅ Configuración del medallero guardada exitosamente');
+        setIsParametrized(true);
+        const updatedData = medalData.map(item => ({
+          ...item,
+          ya_parametrizado: true
+        }));
+        setMedalData(updatedData);
+        return true;
       }
+      return false;
     } catch (err) {
       setError('Error al guardar la configuración');
       console.error(err);
+      return false;
     } finally {
       setSaving(false);
     }
-  };
-
-  const resetData = () => {
-    setMedalData(medalData.map(item => ({
-      ...item,
-      oro: 1,
-      plata: 1,
-      bronce: 1,
-      menciones: 3,
-    })));
   };
 
   return {
@@ -132,10 +168,10 @@ export const useMedallero = (userId: number | undefined) => {
     loading,
     error,
     saving,
+    isParametrized,
     loadAreas,
     handleAreaSelect,
     updateMedalValue,
     saveMedallero,
-    resetData,
   };
 };
