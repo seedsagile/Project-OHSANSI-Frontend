@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Save } from 'lucide-react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
 import { useMedallero } from '../hooks/useMedallero';
 import { AreaSelector } from '../components/AreaSelector';
@@ -42,7 +43,6 @@ export const PaginaMedallero = () => {
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        // NO redirigir, solo cerrar el modal
       }, 3000);
     }
   };
@@ -107,9 +107,7 @@ export const PaginaMedallero = () => {
                   disabled={saving || !selectedArea || isParametrized}
                   className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+                  <Save className="w-5 h-5" />
                   {saving ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
