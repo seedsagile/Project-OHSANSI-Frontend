@@ -46,7 +46,6 @@ export function useGestionResponsable() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // --- 1. Estados y Refs ---
   const [pasoActual, setPasoActual] =
     useState<PasoRegistroResponsable>('VERIFICACION_CI');
   const [modalFeedback, setModalFeedback] =
@@ -72,33 +71,24 @@ export function useGestionResponsable() {
     | undefined
   >(undefined);
 
-  // Limpieza de timers al desmontar (previene bucles o memory leaks)
   useEffect(() => {
     return () => clearTimeout(modalTimerRef.current);
   }, []);
 
-  // --- 2. Callbacks Estables (Definidos primero) ---
   const closeModalFeedback = useCallback(() => {
     setModalFeedback(initialModalState);
     clearTimeout(modalTimerRef.current);
   }, []);
 
-  // 🔽 === INICIO DE LA MODIFICACIÓN === 🔽
   const handleVerificationComplete = useCallback(
     (data: VerificacionUsuarioCompleta | null) => {
-      // 1. LÓGICA DE SETEO DE ESTADO (Flujo normal - Escenario 1, 2, 3)
-      // Se mueven los setters de estado fuera del modal.
-      // Esto asegura que la UI se actualice con los datos (Nombres, Gestiones)
-      // inmediatamente, incluso si se debe mostrar el modal de confirmación.
       if (data) {
-        // Escenario 2 o 3 (o caso borde Evaluador)
         setDatosPersona(data.datosPersona);
         setIsAssignedToCurrentGestion(data.isAssignedToCurrentGestion);
         setInitialAreasReadOnly(data.initialAreas);
         setGestionesPasadas(data.gestionesPasadas);
         setRolesPorGestion(data.rolesPorGestion);
       } else {
-        // Escenario 1: Usuario nuevo
         setDatosPersona(null);
         setIsAssignedToCurrentGestion(false);
         setInitialAreasReadOnly([]);
@@ -106,13 +96,8 @@ export function useGestionResponsable() {
         setRolesPorGestion([]);
       }
 
-      // 2. TRANSICIÓN DE UI
-      // Siempre se avanza al paso 2, ya que los datos están listos.
       setPasoActual('FORMULARIO_DATOS');
 
-      // 3. LÓGICA DE CASO DE BORDE (Augmentación)
-      // Si ADEMÁS es un evaluador (CA 37), se muestra el modal de confirmación
-      // pero sin bloquear la carga de datos que ya ocurrió.
       if (data && data.esEvaluadorExistente && !data.esResponsableExistente) {
         setModalFeedback({
           isOpen: true,
@@ -121,23 +106,18 @@ export function useGestionResponsable() {
           message:
             'Ya existe el usuario ingresado como evaluador. ¿Desea registrarlo también como Responsable de área?',
           onConfirm: () => {
-            // El 'onConfirm' ahora solo cierra el modal.
-            // La lógica de 'force_create_role' se maneja al Guardar (ya está bien).
             closeModalFeedback();
           },
           confirmText: 'Sí',
           cancelText: 'No',
         });
-        // IMPORTANTE: No hay 'return' aquí. El flujo continúa.
       }
     },
-    [closeModalFeedback] // Dependencia estable, sin riesgo de bucle.
+    [closeModalFeedback]
   );
-  // 🔼 === FIN DE LA MODIFICACIÓN === 🔼
 
   const handleVerificationError = useCallback(
     (message: string) => {
-      // (FIX BUG CA #8)
       let finalMessage: string;
       const isNetworkError =
         !message || message === 'Network Error' || message.includes('Failed to fetch');
@@ -157,10 +137,9 @@ export function useGestionResponsable() {
       });
       setPasoActual('VERIFICACION_CI');
     },
-    [] // Dependencias vacías, es estable.
+    []
   );
 
-  // --- 3. Hook de Verificación (Paso 1) ---
   const {
     isVerifying,
     formMethodsVerificacion,
@@ -172,9 +151,6 @@ export function useGestionResponsable() {
     handleVerificationError
   );
 
-  // --- 4. Hook de Formulario (Paso 2) ---
-  // Este hook depende de `pasoActual` para habilitar/deshabilitar la query
-  // de `areasDisponiblesQuery`, evitando llamadas innecesarias.
   const {
     formMethodsPrincipal,
     areasDisponiblesQuery,
@@ -190,10 +166,9 @@ export function useGestionResponsable() {
     initialAreas: initialAreasReadOnly,
     gestionesPasadas: gestionesPasadas,
     onFormSubmit: (formData) => handleFormSubmit(formData),
-    pasoActual: pasoActual, // Pasa el estado actual para controlar la query
+    pasoActual: pasoActual,
   });
 
-  // --- 5. Callbacks de Cancelación y Éxito ---
   const handleCancelar = useCallback(() => {
     resetVerification();
     resetFormularioPrincipal(true);
@@ -256,8 +231,6 @@ export function useGestionResponsable() {
     [queryClient, ciVerificado, finalizeSuccessAction]
   );
 
-  // --- 6. Mutaciones y Manejo de Errores ---
-
   const handleMutationError = useCallback(
     (error: AxiosError<BackendValidationError>) => {
       let errorMessage =
@@ -265,7 +238,6 @@ export function useGestionResponsable() {
       const errorData = error.response?.data;
       const { setError, setFocus, getValues } = formMethodsPrincipal;
 
-      // CA: Modal "Usuario ya existente como evaluador" (al Guardar)
       if (
         error.response?.status === 409 &&
         errorData?.message?.includes('evaluador')
@@ -287,7 +259,7 @@ export function useGestionResponsable() {
               email: formData.correo,
               telefono: formData.celular,
               areas: formData.areas,
-              force_create_role: true, // Forzar creación de rol
+              force_create_role: true,
             };
             if (crearResponsableMutateRef.current) {
               crearResponsableMutateRef.current(payload);
@@ -299,7 +271,6 @@ export function useGestionResponsable() {
         return;
       }
 
-      // CA: Error 3.1: Error de Validación de Backend (Error 422)
       if (error.response?.status === 422 && errorData?.errors) {
         let firstFieldWithError: keyof ResponsableFormData | null = null;
         Object.entries(errorData.errors).forEach(([field, messages]) => {
@@ -363,8 +334,6 @@ export function useGestionResponsable() {
       onError: handleMutationError,
     });
 
-  // Asigna la función de mutación al ref.
-  // Esto es estable y no causa bucles.
   useEffect(() => {
     crearResponsableMutateRef.current = crearResponsable;
   }, [crearResponsable]);
@@ -373,9 +342,7 @@ export function useGestionResponsable() {
 
   const handleFormSubmit = useCallback(
     (formData: ResponsableFormData) => {
-      // Usar 'datosPersona' (el estado) para determinar el flujo
       if (datosPersona) {
-        // Escenario 2 o 3 (o caso borde Evaluador) -> Asignar
         if (!ciVerificado) {
           handleMutationError(
             new AxiosError('Error: No se encontró el CI para asignar.') as any
@@ -388,7 +355,6 @@ export function useGestionResponsable() {
         };
         asignarResponsable({ ci: ciVerificado, payload });
       } else {
-        // Escenario 1 -> Crear
         const payload: CrearResponsablePayload = {
           nombre: formData.nombres,
           apellido: formData.apellidos,
@@ -407,11 +373,9 @@ export function useGestionResponsable() {
       asignarResponsable,
       crearResponsable,
       handleMutationError,
-    ] // Dependencias estables.
+    ]
   );
 
-  // --- 7. Hook de Tabla de Áreas ---
-  // Revisa si la query de áreas falla y muestra un modal crítico
   useEffect(() => {
     if (areasDisponiblesQuery.isError && pasoActual === 'FORMULARIO_DATOS') {
       setModalFeedback({
@@ -422,7 +386,7 @@ export function useGestionResponsable() {
           'Error crítico: No se pudieron cargar las áreas. Recargue la página.',
       });
     }
-  }, [areasDisponiblesQuery.isError, pasoActual]); // Dependencias seguras.
+  }, [areasDisponiblesQuery.isError, pasoActual]);
 
   const preAsignadasSet = useMemo(() => {
     return isAssignedToCurrentGestion
@@ -444,7 +408,6 @@ export function useGestionResponsable() {
     rolesPorGestion: rolesPorGestion,
   });
 
-  // --- 8. Estado Final de UI ---
   const isLoading = areasDisponiblesQuery.isLoading || isLoadingAreas;
   const isProcessing = isVerifying || isSaving;
 

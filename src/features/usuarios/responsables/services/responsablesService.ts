@@ -5,7 +5,6 @@ import {
   mapApiResponsableCreado,
 } from '../utils/apiMappers';
 import { GESTION_ACTUAL_ANIO, ID_OLIMPIADA_ACTUAL } from '../utils/constants';
-// 🔽 1. Importar la nueva función de utilidad
 import { generarPasswordUnica } from '../utils/security';
 import type {
   VerificacionUsuarioCompleta,
@@ -24,10 +23,6 @@ type ApiErrorResponse = {
   errors?: Record<string, string[]>;
 };
 
-/**
- * Verifica un CI y devuelve todos los datos de la persona, roles y gestiones.
- * (Sin cambios en esta función)
- */
 export const verificarCI = async (
   ci: string
 ): Promise<VerificacionUsuarioCompleta | null> => {
@@ -59,10 +54,6 @@ export const verificarCI = async (
   }
 };
 
-/**
- * Obtiene todas las áreas disponibles para la gestión actual (API 5).
- * (Sin cambios en esta función)
- */
 export const obtenerAreasActuales = async (): Promise<Area[]> => {
   try {
     const response = await apiClient.get<{
@@ -104,9 +95,6 @@ export const obtenerAreasActuales = async (): Promise<Area[]> => {
 export const crearResponsable = async (
   payload: CrearResponsablePayload
 ): Promise<ResponsableCreado> => {
-  // 🔽 2. Lógica de generación de contraseña
-  // Si el payload no trae una contraseña (Escenario 1), generamos una
-  // segura de 12 caracteres.
   const passwordSegura =
     payload.password ||
     generarPasswordUnica({
@@ -124,7 +112,7 @@ export const crearResponsable = async (
     email: payload.email,
     telefono: payload.telefono,
     areas: payload.areas,
-    password: passwordSegura, // ⬅️ 3. Usar la contraseña segura
+    password: passwordSegura,
     id_olimpiada: payload.id_olimpiada ?? ID_OLIMPIADA_ACTUAL,
     force_create_role: payload.force_create_role ?? false,
   };
@@ -138,10 +126,6 @@ export const crearResponsable = async (
   return mapApiResponsableCreado(response.data);
 };
 
-/**
- * Asigna áreas a un responsable existente (POST - Escenarios 2 y 3).
- * (Sin cambios en esta función)
- */
 export const asignarResponsable = async (
   ci: string,
   payload: AsignarResponsablePayload

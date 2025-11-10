@@ -1,5 +1,3 @@
-// Ruta: src/utils/security.ts
-
 /**
  * Opciones para la generación de la contraseña.
  * Todas las opciones booleanas por defecto son 'true'.

@@ -30,7 +30,6 @@ export const mapApiUsuarioToVerificacionCompleta = (
     throw new Error('Respuesta de verificación de CI inválida o incompleta.');
   }
 
-  // 1. Mapeo de datos personales (sin cambios)
   const datosPersona: DatosPersonaVerificada = {
     Id_usuario: apiData.id_usuario,
     Nombres: apiData.nombre ?? '',
@@ -40,7 +39,6 @@ export const mapApiUsuarioToVerificacionCompleta = (
     Teléfono: apiData.telefono ?? '',
   };
 
-  // 2. Mapeo de gestiones pasadas (sin cambios)
   const gestionesPasadas: Gestion[] = apiData.roles_por_gestion
     .filter((g) => g.gestion !== GESTION_ACTUAL_ANIO)
     .map((g) => ({
@@ -48,18 +46,17 @@ export const mapApiUsuarioToVerificacionCompleta = (
       gestion: g.gestion,
     }));
 
-  // 3. Lógica de roles de la gestión actual (ACTUALIZADA)
-  let isAssignedToCurrentGestion = false; // ¿Es Responsable Y tiene áreas? (Trigger Escenario 3)
+  let isAssignedToCurrentGestion = false;
   let initialAreas: number[] = [];
-  let esEvaluadorExistente = false; // 🔽 NUEVO: ¿Tiene el rol 'Evaluador'?
-  let esResponsableExistente = false; // 🔽 NUEVO: ¿Tiene el rol 'Responsable Area'?
+  let esEvaluadorExistente = false;
+  let esResponsableExistente = false;
 
   const gestionActual = apiData.roles_por_gestion.find(
     (g) => g.gestion === GESTION_ACTUAL_ANIO
   );
 
   if (gestionActual) {
-    // 🔽 Lógica de detección de roles mejorada
+
     const rolResponsable = gestionActual.roles.find(
       (r) => r.rol === 'Responsable Area'
     );
@@ -67,12 +64,9 @@ export const mapApiUsuarioToVerificacionCompleta = (
       (r) => r.rol === 'Evaluador'
     );
 
-    // 🔽 Asignar los nuevos flags
     esEvaluadorExistente = !!rolEvaluador;
     esResponsableExistente = !!rolResponsable;
 
-    // Lógica existente para Escenario 3 (sin cambios)
-    // Comprueba si ya es responsable Y tiene áreas asignadas
     if (rolResponsable && rolResponsable.detalles?.areas_responsable) {
       isAssignedToCurrentGestion = true;
       initialAreas = rolResponsable.detalles.areas_responsable.map(
@@ -81,22 +75,17 @@ export const mapApiUsuarioToVerificacionCompleta = (
     }
   }
 
-  // 4. Retornar el objeto de dominio completo
   return {
     datosPersona,
-    isAssignedToCurrentGestion, // ¿Ya asignado como Responsable? (Escenario 3)
+    isAssignedToCurrentGestion,
     initialAreas,
     gestionesPasadas,
     rolesPorGestion: apiData.roles_por_gestion,
-    esEvaluadorExistente, // 🔽 Nuevo flag
-    esResponsableExistente, // 🔽 Nuevo flag
+    esEvaluadorExistente,
+    esResponsableExistente,
   };
 };
 
-/**
- * Mapea la respuesta de creación/asignación.
- * (Sin cambios en esta función)
- */
 export const mapApiResponsableCreado = (
   apiData: ApiModificacionResponse | null | undefined
 ): ResponsableCreado => {

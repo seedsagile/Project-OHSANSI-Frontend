@@ -4,7 +4,7 @@ import { useGestionResponsable } from '../hooks/useGestionResponsable';
 import { VerificacionCI } from '../components/VerificacionCI';
 import { FormularioDatosResponsable } from '../components/FormularioDatosResponsable';
 import { TablaAsignacionAreas } from '../components/TablaAsignacionAreas';
-import { Modal1 } from '@/components/ui/Modal1'; // 🔽 CAMBIO: Usar Modal1 que soporta confirmación
+import { Modal1 } from '@/components/ui/Modal1';
 import { Alert } from '@/components/ui/Alert';
 import { useMemo } from 'react';
 
@@ -23,7 +23,7 @@ export function PaginaRegistrarResponsable() {
     modalFeedback,
     handleVerificarCISubmit,
     handleSeleccionarArea,
-    onSubmitFormularioPrincipal, // 🔽 Este onSubmit ahora viene del hook orquestador
+    onSubmitFormularioPrincipal,
     handleCancelar,
     closeModalFeedback,
     primerInputRef,
@@ -56,8 +56,6 @@ export function PaginaRegistrarResponsable() {
 
   const falloCargaAreas = areasDisponiblesQuery.isError;
 
-  // El botón ahora se deshabilita si el form no es válido (Zod)
-  // o si hay una operación de carga o procesamiento en curso.
   const botonGuardarDeshabilitado =
     !formState.isValid || isLoading || isProcessing || falloCargaAreas;
 
@@ -127,14 +125,12 @@ export function PaginaRegistrarResponsable() {
           </div>
 
           <div className="transition-opacity duration-300 ease-in-out">
-            {/* --- PASO 1: VERIFICACIÓN --- */}
             {pasoActual === 'VERIFICACION_CI' && (
               <FormProvider {...formMethodsVerificacion}>
                 <VerificacionCI onSubmit={handleVerificarCISubmit} />
               </FormProvider>
             )}
 
-            {/* --- PASO 2: FORMULARIO DE DATOS --- */}
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
@@ -148,7 +144,6 @@ export function PaginaRegistrarResponsable() {
                       />
                     )}
 
-                  {/* CA: Alerta Escenario 3 */}
                   {isAssignedToCurrentGestion && !falloCargaAreas && (
                     <Alert
                       type="warning"
@@ -175,13 +170,12 @@ export function PaginaRegistrarResponsable() {
                     onSeleccionarArea={handleSeleccionarArea}
                     onToggleSeleccionarTodas={handleToggleSeleccionarTodas}
                     isLoading={isLoading}
-                    isReadOnly={isLoading || isProcessing} // Bloquea la tabla si se está cargando o guardando
+                    isReadOnly={isLoading || isProcessing}
                     preAsignadas={preAsignadasSet}
                     areasFromPastGestion={areasLoadedFromPast}
                     gestionPasadaId={gestionPasadaSeleccionadaId}
                   />
 
-                  {/* --- Acciones del Formulario --- */}
                   <footer className="flex justify-end items-center gap-4 mt-12 border-t border-neutro-200 pt-6">
                     <button
                       type="button"
@@ -221,23 +215,20 @@ export function PaginaRegistrarResponsable() {
         </main>
       </div>
 
-      {/* --- Modal Centralizado --- */}
-      {/* 🔽 CAMBIO: Se usa Modal1 y se conectan las nuevas props */}
       <Modal1
         isOpen={modalFeedback.isOpen}
         onClose={
           modalFeedback.type === 'success'
-            ? finalizeSuccessAction // Cierre especial para éxito (con timer)
-            : closeModalFeedback // Cierre estándar para info/error/confirmación
+            ? finalizeSuccessAction
+            : closeModalFeedback
         }
         title={modalFeedback.title}
         type={modalFeedback.type}
-        onConfirm={modalFeedback.onConfirm} // ⬅️ Conectado para el "Sí"
-        loading={isProcessing} // ⬅️ Vinculado al estado de guardado/verificación
-        confirmText={modalFeedback.confirmText} // ⬅️ Texto dinámico para "Sí"
-        cancelText={modalFeedback.cancelText} // ⬅️ Texto dinámico para "No"
+        onConfirm={modalFeedback.onConfirm}
+        loading={isProcessing}
+        confirmText={modalFeedback.confirmText}
+        cancelText={modalFeedback.cancelText}
       >
-        {/* Renderiza el mensaje de error, éxito o confirmación */}
         {modalFeedback.message}
       </Modal1>
     </>

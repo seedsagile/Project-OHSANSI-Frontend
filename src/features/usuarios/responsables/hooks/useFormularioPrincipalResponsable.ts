@@ -9,7 +9,7 @@ import type {
   Gestion,
   Area,
   DatosPersonaVerificada,
-  PasoRegistroResponsable, // 🔽 Importar el tipo de Paso
+  PasoRegistroResponsable,
 } from '../types';
 import type { ResponsableFormData, ResponsableFormInput } from '../utils/validations';
 
@@ -29,14 +29,9 @@ interface UseFormularioPrincipalProps {
   initialAreas: number[];
   gestionesPasadas: Gestion[];
   onFormSubmit: (data: ResponsableFormData) => void;
-  // 🔽 (FIX) Prop 'isSaving' eliminada, se maneja en el padre
-  pasoActual: PasoRegistroResponsable; // 🔽 (FIX) Prop 'pasoActual' añadida
+  pasoActual: PasoRegistroResponsable;
 }
 
-/**
- * Hook enfocado únicamente en la lógica y estado del formulario principal
- * de datos del responsable (Paso 2).
- */
 export function useFormularioPrincipalResponsable({
   ciVerificado,
   datosPersonaVerificada,
@@ -44,7 +39,7 @@ export function useFormularioPrincipalResponsable({
   initialAreas = [],
   gestionesPasadas = [],
   onFormSubmit,
-  pasoActual, // 🔽 Recibe el paso actual
+  pasoActual,
 }: UseFormularioPrincipalProps) {
   const [gestionPasadaSeleccionadaId, setGestionPasadaSeleccionadaId] =
     useState<number | null>(null);
@@ -88,20 +83,14 @@ export function useFormularioPrincipalResponsable({
 
   const isLoadingGestiones = false;
 
-  // Query para obtener las áreas disponibles para asignar
   const areasDisponiblesQuery = useQuery<Area[], Error>({
     queryKey: ['areasActuales'],
     queryFn: responsableService.obtenerAreasActuales,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
-    // 🔽 (FIX BUG) La query solo se habilita cuando estamos en el Paso 2
     enabled: pasoActual === 'FORMULARIO_DATOS',
   });
 
-  /**
-   * Efecto para resetear y pre-llenar el formulario cuando cambia el usuario verificado.
-   * (Escenarios 1, 2 y 3).
-   */
   useEffect(() => {
     const resetValuesBase: ResponsableFormInput = {
       ...defaultFormValues,
@@ -132,9 +121,6 @@ export function useFormularioPrincipalResponsable({
     }
   }, [ciVerificado, datosPersonaVerificada, isReadOnly, initialAreas, resetPrincipalForm]);
 
-  /**
-   * Maneja la selección del dropdown de gestiones pasadas.
-   */
   const handleGestionSelect = useCallback(
     (selectedValue: string | number | null) => {
       const id =
@@ -154,9 +140,6 @@ export function useFormularioPrincipalResponsable({
     [gestionesPasadas]
   );
 
-  /**
-   * Wrapper del SubmitHandler que pasa los datos al hook padre.
-   */
   const onSubmitFormularioPrincipal: SubmitHandler<ResponsableFormData> = useCallback(
     (formData) => {
       onFormSubmit(formData);
@@ -164,9 +147,6 @@ export function useFormularioPrincipalResponsable({
     [onFormSubmit]
   );
 
-  /**
-   * Resetea el estado local de este hook (gestión pasada).
-   */
   const resetFormularioPrincipalHook = useCallback(
     (resetToDefault = false) => {
       setGestionPasadaSeleccionadaId(null);
@@ -183,7 +163,6 @@ export function useFormularioPrincipalResponsable({
     gestionesPasadas,
     areasDisponiblesQuery,
     isLoadingGestiones,
-    // 🔽 'isSaving' ya no se retorna desde aquí
     onSubmitFormularioPrincipal:
       formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
     handleGestionSelect,
