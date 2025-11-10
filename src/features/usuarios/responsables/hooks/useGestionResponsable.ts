@@ -60,11 +60,18 @@ export function useGestionResponsable() {
   const [gestionesPasadas, setGestionesPasadas] = useState<Gestion[]>([]);
   const [rolesPorGestion, setRolesPorGestion] = useState<ApiGestionRoles[]>([]);
 
-  // 🔽 (FIX ts(6133)) Estado intermedio 'pendingVerificationData' eliminado.
-  // const [pendingVerificationData, setPendingVerificationData] = ...
-
   const modalTimerRef = useRef<number | undefined>(undefined);
   const handleCancelarCallbackRef = useRef<(() => void) | undefined>(undefined);
+
+  // 🔽 (FIX ts(2554)) Inicializar el Ref con 'null'
+  const crearResponsableMutateRef = useRef<
+    | UseMutateFunction<
+        ResponsableCreado,
+        AxiosError<BackendValidationError>,
+        CrearResponsablePayload
+      >
+    | undefined
+  >(undefined);
 
   useEffect(() => {
     return () => clearTimeout(modalTimerRef.current);
@@ -87,14 +94,13 @@ export function useGestionResponsable() {
           message:
             'Ya existe el usuario ingresado como evaluador. ¿Desea registrarlo también como Responsable de área?',
           onConfirm: () => {
-            // (FIX) Lógica "Sí" usa 'data' del scope de useCallback
+            // Lógica de "Sí" se define inline
             setDatosPersona(data.datosPersona);
             setIsAssignedToCurrentGestion(data.isAssignedToCurrentGestion);
             setInitialAreasReadOnly(data.initialAreas);
             setGestionesPasadas(data.gestionesPasadas);
             setRolesPorGestion(data.rolesPorGestion);
             setPasoActual('FORMULARIO_DATOS');
-            // (FIX ts(6133)) Ya no se referencia a pendingVerificationData
             closeModalFeedback();
           },
           confirmText: 'Sí',
@@ -171,7 +177,7 @@ export function useGestionResponsable() {
     isReadOnly: !!datosPersona,
     initialAreas: initialAreasReadOnly,
     gestionesPasadas: gestionesPasadas,
-    onFormSubmit: (formData) => handleFormSubmit(formData),
+    onFormSubmit: (formData) => handleFormSubmit(formData), // `handleFormSubmit` se define más abajo
     pasoActual: pasoActual,
   });
 
@@ -235,53 +241,8 @@ export function useGestionResponsable() {
 
   // --- 6. Mutaciones y Manejo de Errores ---
 
-  // 🔽 (FIX ts(7022)) Declarar mutaciones SIN `onSuccess`/`onError`
-  const crearResponsableMutation = useMutation<
-    ResponsableCreado,
-    AxiosError<BackendValidationError>,
-    CrearResponsablePayload
-  >({
-    mutationFn: responsableService.crearResponsable,
-  });
-
-  const asignarResponsableMutation = useMutation<
-    ResponsableAsignado,
-    AxiosError<BackendValidationError>,
-    { ci: string; payload: AsignarResponsablePayload }
-  >({
-    mutationFn: ({ ci, payload }) =>
-      responsableService.asignarResponsable(ci, payload),
-  });
-
-  // Extraer funciones y estado de los resultados de la mutación
-  const {
-    mutate: crearResponsable,
-    isPending: isCreatingResponsable,
-    status: crearStatus,
-    error: crearError,
-    data: crearData,
-  } = crearResponsableMutation;
-
-  const {
-    mutate: asignarResponsable,
-    isPending: isAsigningResponsable,
-    status: asignarStatus,
-    error: asignarError,
-    data: asignarData,
-  } = asignarResponsableMutation;
-
-  const isSaving = isCreatingResponsable || isAsigningResponsable;
-
   const handleMutationError = useCallback(
-    (
-      error: AxiosError<BackendValidationError>,
-      // 🔽 (FIX) El tipo de la función mutate
-      crearResponsableFn: UseMutateFunction<
-        ResponsableCreado,
-        AxiosError<BackendValidationError>,
-        CrearResponsablePayload
-      >
-    ) => {
+    (error: AxiosError<BackendValidationError>) => {
       let errorMessage =
         'No se pudo guardar el responsable. Por favor, intente de nuevo.';
       const errorData = error.response?.data;
@@ -311,7 +272,10 @@ export function useGestionResponsable() {
               areas: formData.areas,
               force_create_role: true,
             };
-            crearResponsableFn(payload); // Llama a la función mutate
+            // (FIX) Llama a la función mutate desde el Ref
+            if (crearResponsableMutateRef.current) {
+              crearResponsableMutateRef.current(payload);
+            }
           },
           confirmText: 'Sí',
           cancelText: 'No',
@@ -342,6 +306,7 @@ export function useGestionResponsable() {
       } else if (errorData?.message) {
         errorMessage = errorData.message;
       } else if (error.request) {
+        // (FIX BUG) Este es el caso del video "carga infinita".
         errorMessage =
           'No se pudo guardar el responsable. Por favor, intente de nuevo.';
       }
@@ -353,49 +318,51 @@ export function useGestionResponsable() {
         message: errorMessage,
       });
     },
-    [formMethodsPrincipal, closeModalFeedback, crearResponsable] // Depende de la función `crearResponsable` (mutate)
+    [formMethodsPrincipal, closeModalFeedback]
   );
 
-  // 🔽 (FIX ts(7022/2339)) Usar useEffect para reaccionar a los cambios de estado
-  useEffect(() => {
-    if (crearStatus === 'success' && crearData) {
-      handleFormSubmitSuccess(crearData, false);
-    }
-    if (crearStatus === 'error' && crearError) {
-      handleMutationError(crearError, crearResponsable);
-    }
-  }, [
-    crearStatus,
-    crearData,
-    crearError,
-    handleFormSubmitSuccess,
-    handleMutationError,
-    crearResponsable,
-  ]);
+  const { mutate: crearResponsable, isPending: isCreatingResponsable } =
+    useMutation<
+      ResponsableCreado,
+      AxiosError<BackendValidationError>,
+      CrearResponsablePayload
+    >({
+      mutationFn: responsableService.crearResponsable,
+      onSuccess: (data) => {
+        handleFormSubmitSuccess(data, false);
+      },
+      onError: handleMutationError,
+    });
 
+  const { mutate: asignarResponsable, isPending: isAsigningResponsable } =
+    useMutation<
+      ResponsableAsignado,
+      AxiosError<BackendValidationError>,
+      { ci: string; payload: AsignarResponsablePayload }
+    >({
+      mutationFn: ({ ci, payload }) =>
+        responsableService.asignarResponsable(ci, payload),
+      onSuccess: (data) => {
+        handleFormSubmitSuccess(data, true);
+      },
+      onError: handleMutationError,
+    });
+
+  // 🔽 (FIX) Guardar la función 'mutate' en el ref
   useEffect(() => {
-    if (asignarStatus === 'success' && asignarData) {
-      handleFormSubmitSuccess(asignarData, true);
-    }
-    if (asignarStatus === 'error' && asignarError) {
-      handleMutationError(asignarError, crearResponsable);
-    }
-  }, [
-    asignarStatus,
-    asignarData,
-    asignarError,
-    handleFormSubmitSuccess,
-    handleMutationError,
-    crearResponsable,
-  ]);
+    crearResponsableMutateRef.current = crearResponsable;
+  }, [crearResponsable]);
+
+  const isSaving = isCreatingResponsable || isAsigningResponsable;
 
   const handleFormSubmit = useCallback(
     (formData: ResponsableFormData) => {
+      // (FIX BUG) Usar 'datosPersona' (el estado) para determinar el flujo,
+      // no 'isAssignedToCurrentGestion'
       if (datosPersona) {
         if (!ciVerificado) {
           handleMutationError(
-            new AxiosError('Error: No se encontró el CI para asignar.') as any,
-            crearResponsable
+            new AxiosError('Error: No se encontró el CI para asignar.') as any
           );
           return;
         }
@@ -418,7 +385,7 @@ export function useGestionResponsable() {
       }
     },
     [
-      datosPersona,
+      datosPersona, // ⬅️ (FIX BUG) Esta es la dependencia clave
       ciVerificado,
       asignarResponsable,
       crearResponsable,
