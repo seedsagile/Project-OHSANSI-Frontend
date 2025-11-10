@@ -7,7 +7,7 @@ export type UserRole =
   | 'desconocido';
 
 export interface User {
-  //id_usuario: string;//esto añadio Clau
+  id_usuario: number;  //editado por clau
   email: string;
   nombre: string;
   apellido: string;

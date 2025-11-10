@@ -1,3 +1,5 @@
+// src/features/medallero/hooks/useMedallero.ts
+
 import { useState } from 'react';
 import { Area, MedalData, MedalleroSaveData } from '../types/medallero.types';
 import { medalleroService } from '../services/medallero.service';
@@ -93,7 +95,6 @@ export const useMedallero = (userId: number | undefined) => {
     setError(null);
     try {
       const dataToSave: MedalleroSaveData[] = medalData.map(item => ({
-        id_area: selectedArea.id_area,
         id_area_nivel: item.id_area_nivel,
         oro: item.oro,
         plata: item.plata,
@@ -101,8 +102,11 @@ export const useMedallero = (userId: number | undefined) => {
         menciones: item.menciones,
       }));
 
-      await medalleroService.saveMedallero(dataToSave);
-      alert('Configuración del medallero guardada exitosamente');
+      const response = await medalleroService.saveMedallero(dataToSave);
+      
+      if (response.success) {
+        alert('✅ Configuración del medallero guardada exitosamente');
+      }
     } catch (err) {
       setError('Error al guardar la configuración');
       console.error(err);

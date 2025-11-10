@@ -1,3 +1,5 @@
+// src/features/medallero/routes/PaginaMedallero.tsx
+
 import { useEffect } from 'react';
 import { Medal, AlertCircle, X, Save } from 'lucide-react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
@@ -23,6 +25,7 @@ export const PaginaMedallero = () => {
     resetData,
   } = useMedallero(userId);
 
+  // Cargar áreas al montar
   useEffect(() => {
     loadAreas();
   }, []);
@@ -34,6 +37,7 @@ export const PaginaMedallero = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <Medal className="w-8 h-8 text-blue-600" />
           <h1 className="text-3xl font-bold text-gray-900">
@@ -41,6 +45,7 @@ export const PaginaMedallero = () => {
           </h1>
         </div>
 
+        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -51,6 +56,7 @@ export const PaginaMedallero = () => {
           </div>
         )}
 
+        {/* Area Selector */}
         <AreaSelector 
           areas={areas}
           selectedArea={selectedArea}
@@ -58,6 +64,7 @@ export const PaginaMedallero = () => {
           loading={loading}
         />
 
+        {/* Competition Type Info */}
         {selectedArea && (
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between">
@@ -73,6 +80,7 @@ export const PaginaMedallero = () => {
           </div>
         )}
 
+        {/* Medal Table */}
         {medalData.length > 0 ? (
           <>
             <MedalTable 
@@ -80,6 +88,7 @@ export const PaginaMedallero = () => {
               onUpdate={updateMedalValue}
             />
 
+            {/* Action Buttons */}
             <div className="flex justify-center gap-4 mt-8">
               <button
                 onClick={resetData}

@@ -1,3 +1,5 @@
+// src/features/medallero/services/medallero.service.ts
+
 import { AreasResponse, NivelesResponse, MedalleroSaveData } from '../types/medallero.types';
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
@@ -16,12 +18,12 @@ export const medalleroService = {
   },
 
   async saveMedallero(data: MedalleroSaveData[]): Promise<{ success: boolean }> {
-    const response = await fetch(`${BASE_URL}/medallero`, {
+    const response = await fetch(`${BASE_URL}/medallero/configuracion`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ niveles: data }),
     });
     if (!response.ok) throw new Error('Error al guardar medallero');
     return response.json();

@@ -1,3 +1,5 @@
+// src/features/medallero/types/medallero.types.ts
+
 export interface MedalData {
   id_area_nivel: number;
   nombre_nivel: string;
@@ -35,7 +37,6 @@ export interface NivelesResponse {
 }
 
 export interface MedalleroSaveData {
-  id_area: number;
   id_area_nivel: number;
   oro: number;
   plata: number;

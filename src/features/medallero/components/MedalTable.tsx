@@ -1,3 +1,5 @@
+// src/features/medallero/components/MedalTable.tsx
+
 import { MedalData } from '../types/medallero.types';
 
 interface MedalTableProps {
