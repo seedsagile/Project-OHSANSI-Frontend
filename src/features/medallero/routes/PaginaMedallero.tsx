@@ -42,7 +42,7 @@ export const PaginaMedallero = () => {
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        navigate('/dashboard');
+        // NO redirigir, solo cerrar el modal
       }, 3000);
     }
   };
