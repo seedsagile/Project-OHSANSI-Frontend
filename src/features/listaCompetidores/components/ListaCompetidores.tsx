@@ -489,12 +489,12 @@ export const ListaCompetidores = () => {
                   className="w-full sm:w-72 px-4 py-2 rounded-xl border-2 border-principal-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-300 transition"
                 />
 
-                <button
+                {/* <button
                   onClick={() => {}}
                   className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
                 >
                   Buscar
-                </button>
+                </button> */}
               </div>
 
               <div className="relative overflow-hidden rounded-lg border border-principal-200 shadow-inner bg-white">
