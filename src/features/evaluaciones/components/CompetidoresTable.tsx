@@ -63,10 +63,10 @@ export const CompetidoresTable = ({
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       competidor.estado === 'Calificado'
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-gray-200 text-gray-700'
                         : competidor.estado === 'En calificacion'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'bg-gray-200 text-gray-700'
                     }`}
                   >
                     {competidor.estado || 'Pendiente'}
@@ -76,12 +76,12 @@ export const CompetidoresTable = ({
                   {competidor.estado === 'Calificado' ? (
                     <button
                       onClick={() => onCalificar(competidor)}
-                      className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                      className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-gray-500 text-white hover:bg-gray-600"
                     >
-                      Calificar
+                      Calificado
                     </button>
                   ) : competidor.estado === 'En calificacion' ? (
-                    <span className="text-sm font-semibold text-yellow-600">
+                    <span className="text-sm font-semibold text-gray-600">
                       En proceso...
                     </span>
                   ) : (

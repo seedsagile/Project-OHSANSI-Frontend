@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/login/hooks/useAuth';
 import { evaluacionService } from '../services/evaluacionService';
 import type { Area, Competidor, CalificacionData } from '../types/evaluacion.types';
 import toast from 'react-hot-toast';
+import { ConcurrenciaLocal } from '../utils/concurrenciaLocal';
 
 export const useEvaluaciones = () => {
   const { userId, user } = useAuth();
@@ -62,70 +63,64 @@ export const useEvaluaciones = () => {
     }
   };
 
-  // Intentar bloquear un competidor antes de calificarlo
-  const intentarBloquear = async (ci: string): Promise<boolean> => {
-    if (!userId) return false;
+ // Modificar la función intentarBloquear:
+const intentarBloquear = async (ci: string): Promise<boolean> => {
+  if (!userId) return false;
 
-    try {
-      // Primero verificar si ya está bloqueado
-      const estadoBloqueo = await evaluacionService.verificarBloqueo(ci);
-      
-      if (estadoBloqueo.bloqueado_por && estadoBloqueo.bloqueado_por !== userId) {
-        toast.error('Este competidor está siendo calificado por otro evaluador');
-        return false;
-      }
+  try {
+    // Limpiar bloqueos vencidos primero
+    ConcurrenciaLocal.limpiarVencidos();
 
-      // Intentar bloquear
-      const resultado = await evaluacionService.bloquearCompetidor({
-        ci,
-        id_evaluador: userId,
-        accion: 'bloquear',
-      });
-
-      if (resultado.success) {
-        // Actualizar estado local
-        setCompetidores(prev =>
-          prev.map(c =>
-            c.ci === ci
-              ? { ...c, estado: 'En calificacion' as const, bloqueado_por: userId }
-              : c
-          )
-        );
-        return true;
-      } else {
-        toast.error(resultado.message || 'No se pudo bloquear el competidor');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error al intentar bloquear:', error);
-      toast.error('Error al verificar disponibilidad del competidor');
+    // Verificar bloqueo local
+    if (ConcurrenciaLocal.estaBloqueado(ci, userId)) {
+      toast.error('Este competidor está siendo calificado por otro evaluador');
       return false;
     }
-  };
 
-  // Desbloquear un competidor
-  const desbloquearCompetidor = async (ci: string) => {
-    if (!userId) return;
-
-    try {
-      await evaluacionService.bloquearCompetidor({
-        ci,
-        id_evaluador: userId,
-        accion: 'desbloquear',
-      });
-
-      // Actualizar estado local solo si no está calificado
-      setCompetidores(prev =>
-        prev.map(c =>
-          c.ci === ci && c.estado !== 'Calificado'
-            ? { ...c, estado: 'Pendiente' as const, bloqueado_por: undefined }
-            : c
-        )
-      );
-    } catch (error) {
-      console.error('Error al desbloquear:', error);
+    // Intentar bloquear localmente
+    const bloqueadoLocal = ConcurrenciaLocal.bloquear(ci, userId);
+    
+    if (!bloqueadoLocal) {
+      toast.error('Este competidor está siendo calificado por otro evaluador');
+      return false;
     }
-  };
+
+    // Actualizar estado local
+    setCompetidores(prev =>
+      prev.map(c =>
+        c.ci === ci
+          ? { ...c, estado: 'En calificacion' as const, bloqueado_por: userId }
+          : c
+      )
+    );
+    
+    return true;
+  } catch (error) {
+    console.error('Error al intentar bloquear:', error);
+    return false;
+  }
+};
+
+// Modificar desbloquearCompetidor:
+const desbloquearCompetidor = async (ci: string) => {
+  if (!userId) return;
+
+  try {
+    // Desbloquear localmente
+    ConcurrenciaLocal.desbloquear(ci);
+
+    // Actualizar estado local
+    setCompetidores(prev =>
+      prev.map(c =>
+        c.ci === ci && c.estado !== 'Calificado'
+          ? { ...c, estado: 'Pendiente' as const, bloqueado_por: undefined }
+          : c
+      )
+    );
+  } catch (error) {
+    console.error('Error al desbloquear:', error);
+  }
+};
 
   // Guardar evaluación
   const guardarEvaluacion = async (
