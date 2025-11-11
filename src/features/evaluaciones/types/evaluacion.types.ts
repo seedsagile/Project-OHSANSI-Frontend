@@ -1,7 +1,7 @@
 // src/features/evaluaciones/types/evaluacion.types.ts
 
 export interface Competidor {
-  id_competidor?: number; // Opcional porque el API no lo devuelve directamente
+  id_competidor?: number;
   apellido: string;
   nombre: string;
   genero: string;
@@ -11,9 +11,10 @@ export interface Competidor {
   area: string;
   nivel: string;
   grado: string;
-  estado?: 'Pendiente' | 'En calificacion' | 'Calificado'; // Agregado localmente
+  estado?: 'Pendiente' | 'En calificacion' | 'Calificado';
   calificacion?: number;
   observaciones?: string;
+  bloqueado_por?: number; // ID del evaluador que está calificando
 }
 
 export interface Area {
@@ -61,4 +62,16 @@ export interface CompetidoresResponse {
     competidores: Competidor[];
   };
   message: string;
+}
+
+export interface BloqueoCompetidorRequest {
+  ci: string;
+  id_evaluador: number;
+  accion: 'bloquear' | 'desbloquear';
+}
+
+export interface BloqueoCompetidorResponse {
+  success: boolean;
+  message: string;
+  bloqueado_por?: number;
 }

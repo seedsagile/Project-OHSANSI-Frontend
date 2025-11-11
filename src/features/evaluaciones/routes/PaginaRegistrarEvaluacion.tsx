@@ -9,6 +9,7 @@ import { CompetidoresTable } from '../components/CompetidoresTable';
 import { CalificacionModal } from '../components/CalificacionModal';
 import type { Competidor } from '../types/evaluacion.types';
 import { formatearNombreCompleto } from '../utils/validations';
+import toast from 'react-hot-toast';
 
 export function PaginaRegistrarEvaluacion() {
   const { user } = useAuth();
@@ -18,6 +19,8 @@ export function PaginaRegistrarEvaluacion() {
     loading,
     loadingCompetidores,
     cargarCompetidores,
+    intentarBloquear,
+    desbloquearCompetidor,
     guardarEvaluacion,
   } = useEvaluaciones();
 
@@ -26,6 +29,7 @@ export function PaginaRegistrarEvaluacion() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
+  const [bloqueando, setBloqueando] = useState(false);
 
   // Verificar que el usuario sea evaluador
   const isEvaluador = user?.role === 'evaluador';
@@ -67,6 +71,41 @@ export function PaginaRegistrarEvaluacion() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedArea, selectedNivel]);
+
+  // Manejar apertura del modal de calificación
+  const handleCalificar = async (competidor: Competidor) => {
+    // Si ya está calificado, permitir ver/editar directamente
+    if (competidor.estado === 'Calificado') {
+      setSelectedCompetidor(competidor);
+      return;
+    }
+
+    // Si está en calificación por otro evaluador, bloquear
+    if (competidor.estado === 'En calificacion') {
+      toast.error('Este competidor está siendo calificado por otro evaluador');
+      return;
+    }
+
+    // Intentar bloquear el competidor
+    setBloqueando(true);
+    const bloqueado = await intentarBloquear(competidor.ci);
+    setBloqueando(false);
+
+    if (bloqueado) {
+      setSelectedCompetidor(competidor);
+    }
+  };
+
+  // Manejar cierre del modal (cancelar)
+  const handleCloseModal = async () => {
+    if (selectedCompetidor) {
+      // Si no estaba calificado, desbloquear
+      if (selectedCompetidor.estado !== 'Calificado') {
+        await desbloquearCompetidor(selectedCompetidor.ci);
+      }
+    }
+    setSelectedCompetidor(null);
+  };
 
   // Si no es evaluador, mostrar mensaje de acceso denegado
   if (!isEvaluador) {
@@ -114,6 +153,14 @@ export function PaginaRegistrarEvaluacion() {
 
   return (
     <div className="p-6">
+      {/* Indicador de bloqueo en proceso */}
+      {bloqueando && (
+        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center z-50">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+          <span>Verificando disponibilidad...</span>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900">Registrar Evaluación</h1>
         <p className="text-gray-600 mt-2">
@@ -143,7 +190,7 @@ export function PaginaRegistrarEvaluacion() {
 
       <CompetidoresTable
         competidores={filteredCompetidores}
-        onCalificar={setSelectedCompetidor}
+        onCalificar={handleCalificar}
         loading={loadingCompetidores}
       />
 
@@ -152,7 +199,7 @@ export function PaginaRegistrarEvaluacion() {
           competidor={selectedCompetidor}
           areaSeleccionada={areaSeleccionada?.nombre_area || ''}
           nivelSeleccionado={nivelSeleccionado?.nombre || ''}
-          onClose={() => setSelectedCompetidor(null)}
+          onClose={handleCloseModal}
           onSave={guardarEvaluacion}
         />
       )}

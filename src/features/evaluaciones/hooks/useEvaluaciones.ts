@@ -41,11 +41,10 @@ export const useEvaluaciones = () => {
       const response = await evaluacionService.getCompetidoresByAreaNivel(idArea, idNivel);
       
       if (response.success && response.data.competidores.length > 0) {
-        // Mapear competidores y agregar estado "Pendiente" por defecto
         const competidoresMapeados = response.data.competidores.map((comp, index) => ({
           ...comp,
-          id_competidor: index + 1, // Generar ID temporal si no viene del backend
-          estado: comp.estado || ('Pendiente' as const), // Estado por defecto
+          id_competidor: index + 1,
+          estado: comp.estado || ('Pendiente' as const),
         }));
         
         setCompetidores(competidoresMapeados);
@@ -63,15 +62,69 @@ export const useEvaluaciones = () => {
     }
   };
 
-  // Marcar competidor como "En calificación"
-  const marcarEnCalificacion = (ci: string) => {
-    setCompetidores(prev =>
-      prev.map(c =>
-        c.ci === ci
-          ? { ...c, estado: 'En calificacion' as const }
-          : c
-      )
-    );
+  // Intentar bloquear un competidor antes de calificarlo
+  const intentarBloquear = async (ci: string): Promise<boolean> => {
+    if (!userId) return false;
+
+    try {
+      // Primero verificar si ya está bloqueado
+      const estadoBloqueo = await evaluacionService.verificarBloqueo(ci);
+      
+      if (estadoBloqueo.bloqueado_por && estadoBloqueo.bloqueado_por !== userId) {
+        toast.error('Este competidor está siendo calificado por otro evaluador');
+        return false;
+      }
+
+      // Intentar bloquear
+      const resultado = await evaluacionService.bloquearCompetidor({
+        ci,
+        id_evaluador: userId,
+        accion: 'bloquear',
+      });
+
+      if (resultado.success) {
+        // Actualizar estado local
+        setCompetidores(prev =>
+          prev.map(c =>
+            c.ci === ci
+              ? { ...c, estado: 'En calificacion' as const, bloqueado_por: userId }
+              : c
+          )
+        );
+        return true;
+      } else {
+        toast.error(resultado.message || 'No se pudo bloquear el competidor');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al intentar bloquear:', error);
+      toast.error('Error al verificar disponibilidad del competidor');
+      return false;
+    }
+  };
+
+  // Desbloquear un competidor
+  const desbloquearCompetidor = async (ci: string) => {
+    if (!userId) return;
+
+    try {
+      await evaluacionService.bloquearCompetidor({
+        ci,
+        id_evaluador: userId,
+        accion: 'desbloquear',
+      });
+
+      // Actualizar estado local solo si no está calificado
+      setCompetidores(prev =>
+        prev.map(c =>
+          c.ci === ci && c.estado !== 'Calificado'
+            ? { ...c, estado: 'Pendiente' as const, bloqueado_por: undefined }
+            : c
+        )
+      );
+    } catch (error) {
+      console.error('Error al desbloquear:', error);
+    }
   };
 
   // Guardar evaluación
@@ -81,59 +134,53 @@ export const useEvaluaciones = () => {
     observaciones?: string
   ): Promise<void> => {
     try {
-      const idFase = 1; // Fase 1 por defecto
+      const idFase = 1;
       
-      // Buscar el competidor por CI
       const competidor = competidores.find(c => c.ci === ci);
       if (!competidor) {
         throw new Error('Competidor no encontrado');
       }
 
-      // Verificar que no esté siendo calificado por otro evaluador
-      if (competidor.estado === 'En calificacion') {
+      // Verificar que esté bloqueado por este evaluador
+      if (competidor.bloqueado_por && competidor.bloqueado_por !== userId) {
         toast.error('Este competidor está siendo calificado por otro evaluador');
-        throw new Error('Competidor en proceso de calificación');
-      }
-
-      // Verificar que no esté ya calificado
-      if (competidor.estado === 'Calificado') {
-        toast.error('Este competidor ya ha sido calificado');
-        throw new Error('Competidor ya calificado');
+        throw new Error('Competidor bloqueado por otro evaluador');
       }
       
       const data: CalificacionData = {
         nota,
         observaciones: observaciones || '',
-        id_competidor: competidor.id_competidor || 0, // TODO: Verificar con backend
-        id_evaluadorAN: 1, // TODO: Verificar con backend
+        id_competidor: competidor.id_competidor || 0,
+        id_evaluadorAN: 1,
         estado: false,
       };
 
       await evaluacionService.guardarEvaluacion(idFase, data);
       
-      // Actualizar el estado del competidor a "Calificado"
+      // Actualizar a "Calificado" y desbloquear
       setCompetidores(prev =>
         prev.map(c =>
           c.ci === ci
-            ? { ...c, calificacion: nota, observaciones, estado: 'Calificado' as const }
+            ? { 
+                ...c, 
+                calificacion: nota, 
+                observaciones, 
+                estado: 'Calificado' as const,
+                bloqueado_por: undefined 
+              }
             : c
         )
       );
 
+      // Desbloquear en el backend
+      await desbloquearCompetidor(ci);
+
       toast.success('Evaluación guardada exitosamente');
     } catch (error) {
-      // Si hay error, volver el estado a "Pendiente"
-      setCompetidores(prev =>
-        prev.map(c =>
-          c.ci === ci
-            ? { ...c, estado: 'Pendiente' as const }
-            : c
-        )
-      );
-      
       console.error('Error al guardar evaluación:', error);
+      
       if (error instanceof Error) {
-        if (!error.message.includes('siendo calificado') && !error.message.includes('ya calificado')) {
+        if (!error.message.includes('bloqueado')) {
           toast.error('Error al guardar la evaluación');
         }
       }
@@ -149,7 +196,8 @@ export const useEvaluaciones = () => {
     loading,
     loadingCompetidores,
     cargarCompetidores,
-    marcarEnCalificacion,
+    intentarBloquear,
+    desbloquearCompetidor,
     guardarEvaluacion,
   };
 };

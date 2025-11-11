@@ -74,9 +74,12 @@ export const CompetidoresTable = ({
                 </td>
                 <td className="px-4 py-3 text-center">
                   {competidor.estado === 'Calificado' ? (
-                    <span className="text-sm font-semibold text-green-600">
-                      Calificado
-                    </span>
+                    <button
+                      onClick={() => onCalificar(competidor)}
+                      className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                    >
+                      Calificar
+                    </button>
                   ) : competidor.estado === 'En calificacion' ? (
                     <span className="text-sm font-semibold text-yellow-600">
                       En proceso...
