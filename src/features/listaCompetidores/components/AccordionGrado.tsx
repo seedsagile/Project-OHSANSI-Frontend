@@ -7,35 +7,44 @@ interface Grado {
 }
 
 interface AccordionGradoProps {
-  selectedGrado: number | null;
-  onChangeSelected: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedGrados: number[];
+  onChangeSelected: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 export const AccordionGrado: React.FC<AccordionGradoProps> = ({
-  selectedGrado,
+  selectedGrados,
   onChangeSelected,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [grados, setGrados] = useState<Grado[]>([]);
   const accordionRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
-  const [marcarTodo, setMarcarTodo] = useState(false); // ← Nuevo estado
+  const [marcarTodo, setMarcarTodo] = useState(false);
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
+  // ✅ Manejar selección individual
   const handleCheckboxChange = (id_grado_escolaridad: number) => {
-    onChangeSelected(selectedGrado === id_grado_escolaridad ? null : id_grado_escolaridad);
-    setMarcarTodo(false); // Si se elige uno, desactiva "Marcar todo"
+    if (selectedGrados.includes(id_grado_escolaridad)) {
+      onChangeSelected(selectedGrados.filter((id) => id !== id_grado_escolaridad));
+    } else {
+      onChangeSelected([...selectedGrados, id_grado_escolaridad]);
+    }
   };
 
-  // 🔹 Manejar "Marcar todo"
+  // ✅ Marcar/Deseleccionar todo
   const handleMarcarTodo = () => {
     const nuevoEstado = !marcarTodo;
     setMarcarTodo(nuevoEstado);
-    onChangeSelected(nuevoEstado ? 0 : null); // usamos 0 para indicar "todos los grados"
+    if (nuevoEstado) {
+      const todosLosIds = grados.map((g) => g.id_grado_escolaridad);
+      onChangeSelected(todosLosIds);
+    } else {
+      onChangeSelected([]);
+    }
   };
 
-  // 🔹 Obtener los grados desde la API al montar el componente
+  // ✅ Obtener grados desde API
   useEffect(() => {
     const fetchGrados = async () => {
       try {
@@ -51,7 +60,7 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
     fetchGrados();
   }, []);
 
-  // 🔹 Cerrar acordeón al hacer click fuera
+  // ✅ Cerrar acordeón al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
@@ -62,11 +71,14 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 🔹 Sincronizar "Marcar todo" con el valor actual del grado
+  // ✅ Sincronizar “Marcar todo”
   useEffect(() => {
-    if (selectedGrado === 0) setMarcarTodo(true);
-    else setMarcarTodo(false);
-  }, [selectedGrado]);
+    if (grados.length > 0 && selectedGrados.length === grados.length) {
+      setMarcarTodo(true);
+    } else {
+      setMarcarTodo(false);
+    }
+  }, [selectedGrados, grados]);
 
   return (
     <div ref={accordionRef} className="relative w-60">
@@ -122,7 +134,7 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
 
               {/* 🔹 Listado de grados */}
               {grados.map((grado) => {
-                const isChecked = selectedGrado === grado.id_grado_escolaridad;
+                const isChecked = selectedGrados.includes(grado.id_grado_escolaridad);
                 return (
                   <label
                     key={grado.id_grado_escolaridad}

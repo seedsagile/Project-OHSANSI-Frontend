@@ -35,7 +35,7 @@ export const ListaCompetidores = () => {
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<{
     [id_area: number]: number[];
   }>({});
-  const [gradoSeleccionado, setGradoSeleccionado] = useState<number | null>(null);
+  const [gradoSeleccionado, setGradoSeleccionado] = useState<number[]>([]);
   const [generoSeleccionado, setGeneroSeleccionado] = useState<string[]>([]);
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -77,7 +77,7 @@ export const ListaCompetidores = () => {
 
       setAreasSeleccionadas([]);
       setNivelesSeleccionados({});
-      setGradoSeleccionado(null);
+      setGradoSeleccionado([]);
       setGeneroSeleccionado([]);
       setDepartamentoSeleccionado([]);
       setBusqueda('');
@@ -114,7 +114,7 @@ export const ListaCompetidores = () => {
         // 🔹 Con áreas seleccionadas
         for (const area of areasSeleccionadas) {
           const niveles = nivelesSeleccionados[area.id_area] || [];
-          const idGrado = gradoSeleccionado || 0;
+          const idGrado = gradoSeleccionado.length > 0 ? gradoSeleccionado[0] : 0;
 
           if (hayAlgunNivelSeleccionado) {
             // ---------- CASO A: hay niveles seleccionados ----------
@@ -155,18 +155,20 @@ export const ListaCompetidores = () => {
         );
       } else {
         // ---------- CASO C: sin áreas seleccionadas ----------
-        const idGrado = gradoSeleccionado || 0;
+        const idGrados = gradoSeleccionado.length > 0 ? gradoSeleccionado : [0];
 
-        for (const dep of departamentos) {
-          const data = await getCompetidoresFiltradosAPI(
-            responsableId,
-            '0',
-            0,
-            idGrado,
-            generoParam,
-            dep ? dep.toLowerCase() : undefined
-          );
-          competidoresEncontrados.push(...(data.data?.competidores || []));
+        for (const idGrado of idGrados) {
+          for (const dep of departamentos) {
+            const data = await getCompetidoresFiltradosAPI(
+              responsableId,
+              '0',
+              0,
+              idGrado, // ✅ Aquí se pasa un solo número, no un array
+              generoParam,
+              dep ? dep.toLowerCase() : undefined
+            );
+            competidoresEncontrados.push(...(data.data?.competidores || []));
+          }
         }
       }
 
@@ -232,6 +234,7 @@ export const ListaCompetidores = () => {
   };
 
   // Función para descargar PDF
+  // ✅ Descargar PDF con filtros aplicados
   const descargarPDF = () => {
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -241,6 +244,27 @@ export const ListaCompetidores = () => {
 
     doc.setFontSize(18);
     doc.text('Listado de Competidores', 40, 40);
+
+    // 🟢 Preparar texto con los filtros aplicados
+    const filtrosTexto = [
+      `Áreas: ${
+        areasSeleccionadas.length > 0 ? areasSeleccionadas.map((a) => a.nombre).join(', ') : 'Todas'
+      }`,
+      `Niveles: ${
+        Object.values(nivelesSeleccionados).flat().length > 0
+          ? Object.values(nivelesSeleccionados).flat().join(', ')
+          : 'Todos'
+      }`,
+      `Grado: ${gradoSeleccionado ? gradoSeleccionado : 'Todos'}`,
+      `Género: ${generoSeleccionado.length > 0 ? generoSeleccionado.join(', ') : 'Todos'}`,
+      `Departamentos: ${
+        departamentoSeleccionado.length > 0 ? departamentoSeleccionado.join(', ') : 'Todos'
+      }`,
+    ].join(' | ');
+
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Filtros aplicados: ${filtrosTexto}`, 40, 60, { maxWidth: 750 });
 
     const columns = [
       'Apellido',
@@ -266,10 +290,11 @@ export const ListaCompetidores = () => {
       c.grado,
     ]);
 
+    // 📄 Ajustar posición de la tabla (debajo del texto de filtros)
     autoTable(doc, {
       head: [columns],
       body: rows,
-      startY: 60,
+      startY: 80,
       styles: {
         fontSize: 10,
         cellPadding: 5,
@@ -291,6 +316,24 @@ export const ListaCompetidores = () => {
   };
 
   const descargarExcel = () => {
+    // 🟢 Texto con los filtros aplicados (en una sola línea)
+    const filtrosTexto = [
+      `Áreas: ${
+        areasSeleccionadas.length > 0 ? areasSeleccionadas.map((a) => a.nombre).join(', ') : 'Todas'
+      }`,
+      `Niveles: ${
+        Object.values(nivelesSeleccionados).flat().length > 0
+          ? Object.values(nivelesSeleccionados).flat().join(', ')
+          : 'Todos'
+      }`,
+      `Grado: ${gradoSeleccionado.length > 0 ? gradoSeleccionado.join(', ') : 'Todos'}`,
+      `Género: ${generoSeleccionado.length > 0 ? generoSeleccionado.join(', ') : 'Todos'}`,
+      `Departamentos: ${
+        departamentoSeleccionado.length > 0 ? departamentoSeleccionado.join(', ') : 'Todos'
+      }`,
+    ].join(' | ');
+
+    // 🟡 Datos de la tabla
     const data = filtrarCompetidores().map((c) => ({
       Apellido: c.apellido,
       Nombre: c.nombre,
@@ -303,9 +346,27 @@ export const ListaCompetidores = () => {
       Grado: c.grado,
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    // 🧩 Crear la hoja Excel
+    const worksheet = XLSX.utils.json_to_sheet([]);
+
+    // 🔹 Escribir la fila de filtros en la primera fila (celda A1)
+    XLSX.utils.sheet_add_aoa(worksheet, [[`Filtros aplicados: ${filtrosTexto}`]], {
+      origin: 'A1',
+    });
+
+    // 🔹 Escribir los datos comenzando desde la fila 3 (dejamos una fila vacía)
+    XLSX.utils.sheet_add_json(worksheet, data, { origin: 'A3', skipHeader: false });
+
+    // 🟢 Ajustar ancho de columnas automáticamente
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length + 2, 15),
+    }));
+    worksheet['!cols'] = colWidths;
+
+    // 📘 Crear y guardar el libro
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Competidores');
+
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
     saveAs(blob, 'competidores.xlsx');
@@ -380,7 +441,7 @@ export const ListaCompetidores = () => {
               />
 
               <AccordionGrado
-                selectedGrado={gradoSeleccionado}
+                selectedGrados={gradoSeleccionado}
                 onChangeSelected={setGradoSeleccionado}
               />
 
