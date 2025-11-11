@@ -91,6 +91,14 @@ export function useAsignarNiveles() {
     [areasOrdenadas, areaSeleccionadaId]
   );
 
+  // NUEVO: Calcular si hay niveles nuevos seleccionados
+  const hayNivelesNuevos = useMemo(() => {
+    const nivelesNuevos = Array.from(nivelesSeleccionados).filter(
+      (id) => !nivelesOriginales.has(id)
+    );
+    return nivelesNuevos.length > 0;
+  }, [nivelesSeleccionados, nivelesOriginales]);
+
   // ACTUALIZADO: Sincronizar niveles y grados asignados
   useEffect(() => {
     if (areaSeleccionadaId && datosAsignados?.data) {
@@ -143,6 +151,29 @@ export function useAsignarNiveles() {
 
   const handleGuardarGrados = (gradosSeleccionados: Set<number>) => {
     if (modalGradosState.nivelId !== null) {
+      // Obtener los grados originales del nivel
+      const gradosOriginales = gradosPorNivel[modalGradosState.nivelId] || new Set();
+      
+      // Verificar si hubo cambios comparando los sets
+      const huboyCambios = !isEqual(
+        Array.from(gradosOriginales).sort(),
+        Array.from(gradosSeleccionados).sort()
+      );
+
+      // Si no hubo cambios, mostrar mensaje informativo
+      if (!huboyCambios) {
+        setModalState({
+          isOpen: true,
+          type: 'info',
+          title: 'Sin Cambios',
+          message: 'No se han marcado nuevos grados.',
+        });
+        clearTimeout(modalTimerRef.current);
+        modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
+        handleCerrarModalGrados();
+        return;
+      }
+
       // Si no hay grados seleccionados, desmarcar el nivel completamente
       if (gradosSeleccionados.size === 0) {
         setNivelesSeleccionados((prev) => {
@@ -192,7 +223,7 @@ export function useAsignarNiveles() {
       }
     
       // Mensaje de éxito personalizado del frontend
-      const mensajeExito = `Los niveles fueron asignados correctamente al área "${nombreArea}".`;
+      const mensajeExito = `Los niveles y grados fueron asignados correctamente al área "${nombreArea}".`;
       
       setModalState({ 
         isOpen: true, 
@@ -360,5 +391,6 @@ export function useAsignarNiveles() {
     handleCerrarModalGrados,
     handleGuardarGrados,
     modalGradosState,
+    hayNivelesNuevos, // NUEVO: exportar esta variable
   };
 }

@@ -24,6 +24,7 @@ export function PaginaAsignarNiveles() {
     handleCerrarModalGrados,
     handleGuardarGrados,
     modalGradosState,
+    hayNivelesNuevos, // NUEVO: recibir esta variable
   } = useAsignarNiveles();
 
   const navigate = useNavigate();
@@ -187,7 +188,7 @@ export function PaginaAsignarNiveles() {
 
             <button
               onClick={handleGuardar}
-              disabled={!areaSeleccionadaId || isSaving || isLoading}
+              disabled={!areaSeleccionadaId || isSaving || isLoading || !hayNivelesNuevos}
               className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]"
             >
               {isSaving ? (
