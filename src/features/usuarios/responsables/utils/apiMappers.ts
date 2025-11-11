@@ -1,90 +1,103 @@
-import type { DatosPersonaVerificada, ResponsableCreado, Gestion } from '../types';
+import type {
+  DatosPersonaVerificada,
+  ResponsableCreado,
+  Gestion,
+  ApiUsuarioResponse,
+  VerificacionUsuarioCompleta,
+} from '../types';
+import { GESTION_ACTUAL_ANIO } from '../utils/constants';
 
-interface ApiUserResponse {
-    Id_usuario: number;
-    Nombres: string | null;
-    Apellidos: string | null;
-    Correo: string | null;
-    Ci: string | null;
-    Teléfono: string | null;
-    Rol?: {
-        Id_rol: number;
-        Nombre_rol: string | null;
-    } | null;
+interface ApiModificacionResponse {
+  message: string;
+  [key: string]: any;
 }
 
-interface ApiResponsableCreadoResponse {
-    message: string;
-    responsable?: {
-        id_responsable: number;
-    };
-    persona?: {
-        id_persona: number;
-        nombre: string;
-        apellido: string;
-        email: string;
-    };
-    usuario?: {
-        id_usuario: number;
-        email: string;
-        rol: string | { id: number; nombre: string };
-    };
-    areas_asignadas?: Array<{
-        id_area: number;
-        nombre: string;
-    }>;
-    [key: string]: any;
-}
+/**
+ * Mapea la respuesta cruda de la API de verificación de CI a un objeto de dominio limpio
+ * que utiliza el frontend.
+ *
+ * Esta función es el "cerebro" que determina el escenario del usuario.
+ * AHORA DETECTA:
+ * 1. Si el usuario ya es Responsable (isAssignedToCurrentGestion).
+ * 2. Si el usuario ya es Evaluador (esEvaluadorExistente).
+ * 3. Si el usuario ya es Responsable (esResponsableExistente).
+ */
+export const mapApiUsuarioToVerificacionCompleta = (
+  apiData: ApiUsuarioResponse | null | undefined
+): VerificacionUsuarioCompleta => {
+  if (!apiData || typeof apiData.id_usuario !== 'number') {
+    console.warn('API de verificación de CI devolvió datos inválidos:', apiData);
+    throw new Error('Respuesta de verificación de CI inválida o incompleta.');
+  }
 
-interface ApiGestionResponse {
-    Id_olimpiada: number;
-    gestion: string;
-}
+  const datosPersona: DatosPersonaVerificada = {
+    Id_usuario: apiData.id_usuario,
+    Nombres: apiData.nombre ?? '',
+    Apellidos: apiData.apellido ?? '',
+    Correo: apiData.email ?? '',
+    Ci: apiData.ci ?? '',
+    Teléfono: apiData.telefono ?? '',
+  };
 
-export const mapApiUserDataToPersonaVerificada = (apiData: ApiUserResponse | null | undefined): DatosPersonaVerificada | null => {
-    if (!apiData || typeof apiData.Id_usuario !== 'number') {
-    console.warn("API de verificación de CI devolvió datos inválidos o sin Id_usuario:", apiData);
-    return null;
+  const gestionesPasadas: Gestion[] = apiData.roles_por_gestion
+    .filter((g) => g.gestion !== GESTION_ACTUAL_ANIO)
+    .map((g) => ({
+      Id_olimpiada: g.id_olimpiada,
+      gestion: g.gestion,
+    }));
+
+  let isAssignedToCurrentGestion = false;
+  let initialAreas: number[] = [];
+  let esEvaluadorExistente = false;
+  let esResponsableExistente = false;
+
+  const gestionActual = apiData.roles_por_gestion.find(
+    (g) => g.gestion === GESTION_ACTUAL_ANIO
+  );
+
+  if (gestionActual) {
+
+    const rolResponsable = gestionActual.roles.find(
+      (r) => r.rol === 'Responsable Area'
+    );
+    const rolEvaluador = gestionActual.roles.find(
+      (r) => r.rol === 'Evaluador'
+    );
+
+    esEvaluadorExistente = !!rolEvaluador;
+    esResponsableExistente = !!rolResponsable;
+
+    if (rolResponsable && rolResponsable.detalles?.areas_responsable) {
+      isAssignedToCurrentGestion = true;
+      initialAreas = rolResponsable.detalles.areas_responsable.map(
+        (a) => a.id_area
+      );
     }
+  }
 
-    const personaVerificada: DatosPersonaVerificada = {
-    Id_usuario: apiData.Id_usuario,
-    Nombres: apiData.Nombres ?? '',
-    Apellidos: apiData.Apellidos ?? '',
-    Correo: apiData.Correo ?? '',
-    Ci: apiData.Ci ?? '',
-    Teléfono: apiData.Teléfono ?? '',
-    Rol: apiData.Rol && apiData.Rol.Nombre_rol ? {
-    Id_rol: apiData.Rol.Id_rol,
-    Nombre_rol: apiData.Rol.Nombre_rol,
-    } : undefined,
-    };
-
-    return personaVerificada;
+  return {
+    datosPersona,
+    isAssignedToCurrentGestion,
+    initialAreas,
+    gestionesPasadas,
+    rolesPorGestion: apiData.roles_por_gestion,
+    esEvaluadorExistente,
+    esResponsableExistente,
+  };
 };
 
-export const mapApiResponsableCreado = (apiData: ApiResponsableCreadoResponse | null | undefined): ResponsableCreado => {
-    if (!apiData || typeof apiData.message !== 'string') {
-        console.error("Respuesta inválida al crear responsable:", apiData);
-        throw new Error("La respuesta del servidor al crear el responsable no tiene el formato esperado (falta 'message').");
-    }
-    const responsableCreado: ResponsableCreado = {
-        ...apiData,
-    };
+export const mapApiResponsableCreado = (
+  apiData: ApiModificacionResponse | null | undefined
+): ResponsableCreado => {
+  if (!apiData || typeof apiData.message !== 'string') {
+    console.error('Respuesta inválida al crear/asignar responsable:', apiData);
+    throw new Error(
+      "La respuesta del servidor no tiene el formato esperado (falta 'message')."
+    );
+  }
+  const responsableCreado: ResponsableCreado = {
+    ...apiData,
+  };
 
-    return responsableCreado;
-};
-
-export const mapApiGestionToGestion = (apiData: ApiGestionResponse[] | null | undefined): Gestion[] => {
-    if (!Array.isArray(apiData)) {
-        console.warn("API de gestiones pasadas no devolvió un array:", apiData);
-        return [];
-    }
-
-    return apiData
-        .filter(g => typeof g?.Id_olimpiada === 'number' && typeof g?.gestion === 'string')
-        .map(g => ({
-            Id_olimpiada: g.Id_olimpiada,
-            gestion: g.gestion,
-        }));
+  return responsableCreado;
 };

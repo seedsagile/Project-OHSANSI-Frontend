@@ -1,5 +1,48 @@
 import type { Area as AreaGeneral } from '@/features/areas/types';
 
+export type ApiAreaResponsable = {
+  id_area: number;
+  nombre_area: string;
+};
+
+export type ApiRolDetalle = {
+  areas_responsable?: ApiAreaResponsable[];
+  [key: string]: any;
+};
+
+export type ApiRolPorGestion = {
+  rol: string;
+  detalles: ApiRolDetalle | null;
+};
+
+export type ApiGestionRoles = {
+  id_olimpiada: number;
+  gestion: string;
+  roles: ApiRolPorGestion[];
+};
+
+export type ApiUsuarioResponse = {
+  id_usuario: number;
+  nombre: string;
+  apellido: string;
+  ci: string;
+  email: string;
+  telefono: string;
+  created_at: string;
+  updated_at: string;
+  roles_por_gestion: ApiGestionRoles[];
+};
+
+export type VerificacionUsuarioCompleta = {
+  datosPersona: DatosPersonaVerificada;
+  isAssignedToCurrentGestion: boolean;
+  initialAreas: number[];
+  gestionesPasadas: Gestion[];
+  rolesPorGestion: ApiGestionRoles[];
+  esEvaluadorExistente: boolean;
+  esResponsableExistente: boolean;
+};
+
 export type DatosPersonaVerificada = {
   Id_usuario: number;
   Nombres: string;
@@ -7,10 +50,6 @@ export type DatosPersonaVerificada = {
   Correo: string;
   Ci: string;
   Teléfono: string;
-  Rol?: {
-    Id_rol: number;
-    Nombre_rol: string;
-  };
 };
 
 export type Gestion = {
@@ -26,7 +65,6 @@ export type AreaPasadaResponse = {
   };
 };
 
-// Payload para Crear (POST)
 export type CrearResponsablePayload = {
   nombre: string;
   apellido: string;
@@ -36,39 +74,37 @@ export type CrearResponsablePayload = {
   telefono: string;
   id_olimpiada?: number;
   areas: number[];
+  force_create_role?: boolean; 
 };
 
-export type ActualizarResponsablePayload = { //
+export type AsignarResponsablePayload = {
   id_olimpiada: number;
   areas: number[];
 };
 
-// Respuesta de Crear (POST)
 export type ResponsableCreado = {
   message: string;
   [key: string]: any;
 };
 
-// Respuesta de Actualizar (PUT) - Puede ser similar a la de Crear
-export type ResponsableActualizado = {
-  message: string;
-  [key: string]: any;
-};
+export type ResponsableAsignado = ResponsableCreado;
+export type ResponsableActualizado = ResponsableAsignado;
 
-// Estados del flujo de registro/edición
-export type PasoRegistroResponsable = //
+export type PasoRegistroResponsable =
   | 'VERIFICACION_CI'
   | 'CARGANDO_VERIFICACION'
   | 'FORMULARIO_DATOS'
-  | 'CARGANDO_GUARDADO'
-  | 'READ_ONLY';
+  | 'CARGANDO_GUARDADO';
 
-// Estado para el modal de feedback
 export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'confirmation';
+  onConfirm?: () => void;
+  confirmText?: string;
+  cancelText?: string;
 };
 
-export type { AreaGeneral as Area }; //
+export type { AreaGeneral as Area };
+export type { ResponsableFormData } from '../utils/validations';

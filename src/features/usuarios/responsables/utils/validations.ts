@@ -7,7 +7,7 @@ const APELLIDO_MIN_LENGTH = 2;
 export const APELLIDO_MAX_LENGTH = 30;
 
 const CI_MIN_LENGTH = 5;
-export const CI_MAX_LENGTH = 10;
+export const CI_MAX_LENGTH = 16;
 
 const CELULAR_MIN_LENGTH = 8;
 export const CELULAR_MAX_LENGTH = 8;
@@ -40,9 +40,6 @@ const sanitizeSpaces = (str: string): string => {
  */
 const toTitleCase = (str: string): string => {
     if (!str) return '';
-    // No se convierte a minúsculas primero para respetar mayúsculas intencionales si las hubiera,
-    // aunque la validación de Nombres/Apellidos podría restringir esto.
-    // Se capitaliza después de sanitizar espacios.
     return str.split(' ').map(word =>
         word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : ''
     ).join(' ');
@@ -66,7 +63,6 @@ const sanitizeEmail = (str: string): string => {
 
 /**
  * Sanitiza Celular: Elimina espacios y prefijos (+591 o 591) para validar solo los 8 dígitos.
- * NOTA: Esta sanitización es para VALIDACIÓN. Al guardar, podrías querer mantener el prefijo si existe.
  */
 const sanitizeCelularForValidation = (str: string): string => {
     if (!str) return '';
@@ -79,15 +75,13 @@ const sanitizeCelularForValidation = (str: string): string => {
     return sanitized.replace(/\D/g, '');
 }
 
-
-// --- Esquemas de Validación Zod de CI ---
 export const verificacionCISchema = z.object({
     ci: z
         .string({ message: 'El campo Verificar carnet de identidad es obligatorio.' })
         .transform(sanitizeCI)
         .pipe(z.string()
             .min(1, 'El campo Verificar carnet de identidad es obligatorio.')
-            .min(CI_MIN_LENGTH, { message: `Mínimo ${CI_MIN_LENGTH} caracteres.` })
+            .min(CI_MIN_LENGTH, { message: `Formato no válido` })
             .max(CI_MAX_LENGTH, { message: `Máximo ${CI_MAX_LENGTH} caracteres.` })
             .superRefine((val, ctx) => {
                 if (REGEX_CI_CARACTERES_INVALIDOS.test(val)) {
@@ -185,8 +179,9 @@ export const datosResponsableSchema = z.object({
         ),
 
     areas: z
-        .array(z.number())
-        .min(1, { message: 'Debe asignar al menos un área.' }),
+        .array(
+            z.number()
+        ),
 });
 
 export type ResponsableFormData = z.infer<typeof datosResponsableSchema>;
