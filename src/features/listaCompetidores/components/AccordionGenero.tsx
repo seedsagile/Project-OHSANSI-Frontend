@@ -8,8 +8,8 @@ interface Genero {
 }
 
 interface AccordionGeneroProps {
-  selectedGenero: string | null;
-  onChangeSelected: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedGenero: string[];
+  onChangeSelected: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export const AccordionGenero: React.FC<AccordionGeneroProps> = ({
@@ -39,12 +39,27 @@ export const AccordionGenero: React.FC<AccordionGeneroProps> = ({
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
+  // ✅ Seleccionar / deseleccionar individual
   const handleCheckboxChange = (generoId: string) => {
-    // Selección única: si ya estaba seleccionado, deselecciona; si no, selecciona
-    onChangeSelected(selectedGenero === generoId ? null : generoId);
+    if (selectedGenero.includes(generoId)) {
+      onChangeSelected(selectedGenero.filter((id) => id !== generoId));
+    } else {
+      onChangeSelected([...selectedGenero, generoId]);
+    }
   };
 
-  // 🔹 Cerrar acordeón al hacer click fuera
+  // ✅ Marcar / desmarcar todos
+  const handleSelectAll = () => {
+    if (selectedGenero.length === generos.length) {
+      onChangeSelected([]); // desmarcar todo
+    } else {
+      onChangeSelected(generos.map((g) => g.id)); // marcar todo
+    }
+  };
+
+  const isAllSelected = generos.length > 0 && selectedGenero.length === generos.length;
+
+  // 🔹 Cerrar al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
@@ -80,36 +95,56 @@ export const AccordionGenero: React.FC<AccordionGeneroProps> = ({
       {isOpen && (
         <div
           className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
-          style={{ maxHeight: '200px' }}
+          style={{ maxHeight: '220px' }}
         >
           {loading ? (
             <p className="text-center text-neutro-400">Cargando géneros...</p>
           ) : generos.length === 0 ? (
             <p className="text-center text-neutro-400">No hay géneros disponibles</p>
           ) : (
-            <div className="space-y-2">
-              {generos.map((genero) => {
-                const isChecked = selectedGenero === genero.id;
-                return (
-                  <label
-                    key={genero.id}
-                    className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
-                      isChecked
-                        ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
-                        : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
-                    }`}
-                  >
-                    <span className="text-negro">{genero.nombre}</span>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleCheckboxChange(genero.id)}
-                      className="accent-principal-500 w-4 h-4"
-                    />
-                  </label>
-                );
-              })}
-            </div>
+            <>
+              {/* ✅ Checkbox de "Marcar todo" */}
+              <label
+                className={`flex justify-between items-center w-full px-2 py-2 rounded-md border transition-all duration-150 cursor-pointer mb-2 ${
+                  isAllSelected
+                    ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                    : 'bg-white hover:bg-neutro-100 border-neutro-200'
+                }`}
+              >
+                <span className="text-principal-500">Marcar todo</span>
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleSelectAll}
+                  className="accent-principal-500 w-4 h-4"
+                />
+              </label>
+
+              {/* 🔹 Lista de géneros */}
+              <div className="space-y-2">
+                {generos.map((genero) => {
+                  const isChecked = selectedGenero.includes(genero.id);
+                  return (
+                    <label
+                      key={genero.id}
+                      className={`flex justify-between items-center w-full px-2 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                        isChecked
+                          ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                          : 'bg-white hover:bg-neutro-100 border-neutro-200'
+                      }`}
+                    >
+                      <span className="text-negro">{genero.nombre}</span>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleCheckboxChange(genero.id)}
+                        className="accent-principal-500 w-4 h-4"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}

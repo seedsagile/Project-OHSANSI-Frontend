@@ -1,4 +1,3 @@
-// src/features/listaCompetidores/components/AccordionGrado.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { getGradosAPI } from '../service/service';
 
@@ -20,12 +19,20 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
   const [grados, setGrados] = useState<Grado[]>([]);
   const accordionRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
+  const [marcarTodo, setMarcarTodo] = useState(false); // ← Nuevo estado
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
   const handleCheckboxChange = (id_grado_escolaridad: number) => {
-    // Selección única: si ya estaba seleccionado, deselecciona; si no, selecciona
     onChangeSelected(selectedGrado === id_grado_escolaridad ? null : id_grado_escolaridad);
+    setMarcarTodo(false); // Si se elige uno, desactiva "Marcar todo"
+  };
+
+  // 🔹 Manejar "Marcar todo"
+  const handleMarcarTodo = () => {
+    const nuevoEstado = !marcarTodo;
+    setMarcarTodo(nuevoEstado);
+    onChangeSelected(nuevoEstado ? 0 : null); // usamos 0 para indicar "todos los grados"
   };
 
   // 🔹 Obtener los grados desde la API al montar el componente
@@ -54,6 +61,12 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 🔹 Sincronizar "Marcar todo" con el valor actual del grado
+  useEffect(() => {
+    if (selectedGrado === 0) setMarcarTodo(true);
+    else setMarcarTodo(false);
+  }, [selectedGrado]);
 
   return (
     <div ref={accordionRef} className="relative w-60">
@@ -90,6 +103,24 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
             <div className="text-center text-gray-500 py-2">No hay grados disponibles</div>
           ) : (
             <div className="space-y-2">
+              {/* 🔹 Opción de Marcar todo */}
+              <label
+                className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                  marcarTodo
+                    ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                    : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
+                }`}
+              >
+                <span className="text-principal-500">Marcar todo</span>
+                <input
+                  type="checkbox"
+                  checked={marcarTodo}
+                  onChange={handleMarcarTodo}
+                  className="accent-principal-500 w-4 h-4"
+                />
+              </label>
+
+              {/* 🔹 Listado de grados */}
               {grados.map((grado) => {
                 const isChecked = selectedGrado === grado.id_grado_escolaridad;
                 return (

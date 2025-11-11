@@ -36,7 +36,7 @@ export const ListaCompetidores = () => {
     [id_area: number]: number[];
   }>({});
   const [gradoSeleccionado, setGradoSeleccionado] = useState<number | null>(null);
-  const [generoSeleccionado, setGeneroSeleccionado] = useState<string | null>(null);
+  const [generoSeleccionado, setGeneroSeleccionado] = useState<string[]>([]);
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
@@ -78,7 +78,7 @@ export const ListaCompetidores = () => {
       setAreasSeleccionadas([]);
       setNivelesSeleccionados({});
       setGradoSeleccionado(null);
-      setGeneroSeleccionado(null);
+      setGeneroSeleccionado([]);
       setDepartamentoSeleccionado(null);
       setBusqueda('');
     } catch (error) {
@@ -98,6 +98,12 @@ export const ListaCompetidores = () => {
 
       let competidoresEncontrados: Competidor[] = [];
 
+      // ✅ Definir parámetro correcto para el backend
+      const generoParam =
+        generoSeleccionado.length === 1
+          ? generoSeleccionado[0] // 'M' o 'F'
+          : ''; // ninguno o ambos -> mostrar todos
+
       // ¿Hay al menos 1 nivel seleccionado en alguna área?
       const hayAlgunNivelSeleccionado = Object.values(nivelesSeleccionados).some(
         (arr) => Array.isArray(arr) && arr.length > 0
@@ -110,65 +116,53 @@ export const ListaCompetidores = () => {
           const idGrado = gradoSeleccionado || 0;
 
           if (hayAlgunNivelSeleccionado) {
-            // ---------- CASO A: hay al menos 1 nivel seleccionado en alguna área ----------
-            // -> Solo traemos resultados para las áreas que tengan niveles seleccionados.
-            // -> Si el área NO tiene niveles seleccionados (niveles.length === 0) la SALTAMOS.
-            if (!niveles || niveles.length === 0) {
-              // No hacemos la llamada para esta área (porque el usuario pidió niveles explícitos)
-              continue;
-            }
+            // ---------- CASO A: hay al menos 1 nivel seleccionado ----------
+            if (!niveles || niveles.length === 0) continue;
 
-            // Si el área tiene niveles seleccionados, hacemos llamadas por cada nivel
+            // Llamadas por cada nivel seleccionado
             for (const nivel of niveles) {
               const data = await getCompetidoresFiltradosAPI(
                 responsableId,
                 area.id_area.toString(),
                 nivel,
                 idGrado,
-                generoSeleccionado || undefined,
+                generoParam, // ✅ valor corregido
                 departamentoSeleccionado || undefined
               );
               competidoresEncontrados.push(...(data.data?.competidores || []));
             }
           } else {
-            // ---------- CASO B: NO hay niveles seleccionados en ninguna área ----------
-            // -> Traemos todos los competidores de cada área (nivel = 0)
+            // ---------- CASO B: no hay niveles seleccionados ----------
             const data = await getCompetidoresFiltradosAPI(
               responsableId,
               area.id_area.toString(),
-              0, // 0 = todos los niveles para esa área
+              0,
               idGrado,
-              generoSeleccionado || undefined,
+              generoParam, // ✅ valor corregido
               departamentoSeleccionado || undefined
             );
             competidoresEncontrados.push(...(data.data?.competidores || []));
           }
         }
 
-        // Eliminar duplicados por CI (si hay)
+        // Eliminar duplicados por CI
         competidoresEncontrados = Array.from(
           new Map(competidoresEncontrados.map((c) => [c.ci, c])).values()
         );
       } else {
-        // Si no hay áreas seleccionadas -> traer todo y aplicar filtros locales
-        const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
-        competidoresEncontrados = data.data?.competidores || [];
+        // ---------- CASO C: sin áreas seleccionadas ----------
+        const idGrado = gradoSeleccionado || 0;
 
-        if (gradoSeleccionado) {
-          competidoresEncontrados = competidoresEncontrados.filter(
-            (c) => Number(c.grado) === gradoSeleccionado
-          );
-        }
-        if (generoSeleccionado) {
-          competidoresEncontrados = competidoresEncontrados.filter(
-            (c) => c.genero === generoSeleccionado
-          );
-        }
-        if (departamentoSeleccionado) {
-          competidoresEncontrados = competidoresEncontrados.filter(
-            (c) => c.departamento === departamentoSeleccionado
-          );
-        }
+        const data = await getCompetidoresFiltradosAPI(
+          responsableId,
+          '0', // sin área
+          0, // sin nivel
+          idGrado,
+          generoParam, // ✅ valor corregido
+          departamentoSeleccionado || undefined
+        );
+
+        competidoresEncontrados = data.data?.competidores || [];
       }
 
       if (competidoresEncontrados.length === 0) {
