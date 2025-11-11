@@ -1,4 +1,3 @@
-// src/features/listaCompetidores/components/AccordionDepartamento.tsx
 import React, { useState, useRef, useEffect } from 'react';
 
 interface Departamento {
@@ -7,17 +6,16 @@ interface Departamento {
 }
 
 interface AccordionDepartamentoProps {
-  selectedDepartamento: string | null;
-  onChangeSelected: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedDepartamentos: string[]; // ✅ ahora acepta varios
+  onChangeSelected: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export const AccordionDepartamento: React.FC<AccordionDepartamentoProps> = ({
-  selectedDepartamento,
+  selectedDepartamentos,
   onChangeSelected,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const accordionRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(false);
 
   const departamentos: Departamento[] = [
     { id: 1, nombre: 'La Paz' },
@@ -33,12 +31,26 @@ export const AccordionDepartamento: React.FC<AccordionDepartamentoProps> = ({
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
+  // 🔹 Función para seleccionar o deseleccionar uno
   const handleCheckboxChange = (nombre: string) => {
-    // Selección única: si ya estaba seleccionado, deselecciona; si no, selecciona
-    onChangeSelected(selectedDepartamento === nombre ? null : nombre);
+    const isSelected = selectedDepartamentos.includes(nombre);
+    const newSelected = isSelected
+      ? selectedDepartamentos.filter((d) => d !== nombre)
+      : [...selectedDepartamentos, nombre];
+    onChangeSelected(newSelected);
   };
 
-  // Cerrar acordeón al hacer click fuera
+  // 🔹 Función para marcar o desmarcar todos
+  const handleSelectAll = () => {
+    const allSelected = selectedDepartamentos.length === departamentos.length;
+    const newSelected = allSelected ? [] : departamentos.map((d) => d.nombre);
+    onChangeSelected(newSelected);
+  };
+
+  const isAllSelected =
+    departamentos.length > 0 && selectedDepartamentos.length === departamentos.length;
+
+  // 🔹 Cerrar acordeón al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
@@ -76,33 +88,47 @@ export const AccordionDepartamento: React.FC<AccordionDepartamentoProps> = ({
           className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
           style={{ maxHeight: '200px' }}
         >
-          {loading ? (
-            <p className="text-center text-neutro-400">Cargando departamentos...</p>
-          ) : (
-            <div className="space-y-2">
-              {departamentos.map((d) => {
-                const isChecked = selectedDepartamento === d.nombre;
-                return (
-                  <label
-                    key={d.id}
-                    className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
-                      isChecked
-                        ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
-                        : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
-                    }`}
-                  >
-                    <span className="text-negro">{d.nombre}</span>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleCheckboxChange(d.nombre)}
-                      className="accent-principal-500 w-4 h-4"
-                    />
-                  </label>
-                );
-              })}
-            </div>
-          )}
+          <div className="space-y-2">
+            {/* 🔹 Opción de marcar todo */}
+            <label
+              className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                isAllSelected
+                  ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                  : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
+              }`}
+            >
+              <span className="text-principal-500">Marcar todo</span>
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={handleSelectAll}
+                className="accent-principal-500 w-4 h-4"
+              />
+            </label>
+
+            {/* 🔹 Lista de departamentos */}
+            {departamentos.map((d) => {
+              const isChecked = selectedDepartamentos.includes(d.nombre);
+              return (
+                <label
+                  key={d.id}
+                  className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                    isChecked
+                      ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
+                      : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
+                  }`}
+                >
+                  <span className="text-negro">{d.nombre}</span>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleCheckboxChange(d.nombre)}
+                    className="accent-principal-500 w-4 h-4"
+                  />
+                </label>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

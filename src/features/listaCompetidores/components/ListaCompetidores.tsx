@@ -37,7 +37,7 @@ export const ListaCompetidores = () => {
   }>({});
   const [gradoSeleccionado, setGradoSeleccionado] = useState<number | null>(null);
   const [generoSeleccionado, setGeneroSeleccionado] = useState<string[]>([]);
-  const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string | null>(null);
+  const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string[]>([]);
   const [busqueda, setBusqueda] = useState('');
 
   const responsableId = Number(localStorage.getItem('id_responsable')) || 4;
@@ -79,7 +79,7 @@ export const ListaCompetidores = () => {
       setNivelesSeleccionados({});
       setGradoSeleccionado(null);
       setGeneroSeleccionado([]);
-      setDepartamentoSeleccionado(null);
+      setDepartamentoSeleccionado([]);
       setBusqueda('');
     } catch (error) {
       console.error('Error al obtener competidores:', error);
@@ -91,6 +91,7 @@ export const ListaCompetidores = () => {
 
   // Actualizar competidores según filtros
   // Actualizar competidores según filtros (versión corregida)
+  // ✅ Actualizar competidores según filtros (versión con múltiples departamentos)
   const actualizarCompetidores = async () => {
     try {
       setLoadingCompetidores(true);
@@ -98,50 +99,53 @@ export const ListaCompetidores = () => {
 
       let competidoresEncontrados: Competidor[] = [];
 
-      // ✅ Definir parámetro correcto para el backend
-      const generoParam =
-        generoSeleccionado.length === 1
-          ? generoSeleccionado[0] // 'M' o 'F'
-          : ''; // ninguno o ambos -> mostrar todos
+      // ✅ Parámetro de género correcto
+      const generoParam = generoSeleccionado.length === 1 ? generoSeleccionado[0] : '';
 
-      // ¿Hay al menos 1 nivel seleccionado en alguna área?
       const hayAlgunNivelSeleccionado = Object.values(nivelesSeleccionados).some(
         (arr) => Array.isArray(arr) && arr.length > 0
       );
 
+      // ✅ Determinar departamentos a recorrer
+      const departamentos =
+        departamentoSeleccionado.length > 0 ? departamentoSeleccionado : [undefined]; // si no hay ninguno, se llama sin parámetro
+
       if (areasSeleccionadas.length > 0) {
-        // Recorremos cada área seleccionada
+        // 🔹 Con áreas seleccionadas
         for (const area of areasSeleccionadas) {
           const niveles = nivelesSeleccionados[area.id_area] || [];
           const idGrado = gradoSeleccionado || 0;
 
           if (hayAlgunNivelSeleccionado) {
-            // ---------- CASO A: hay al menos 1 nivel seleccionado ----------
+            // ---------- CASO A: hay niveles seleccionados ----------
             if (!niveles || niveles.length === 0) continue;
 
-            // Llamadas por cada nivel seleccionado
             for (const nivel of niveles) {
+              for (const dep of departamentos) {
+                const data = await getCompetidoresFiltradosAPI(
+                  responsableId,
+                  area.id_area.toString(),
+                  nivel,
+                  idGrado,
+                  generoParam,
+                  dep ? dep.toLowerCase() : undefined
+                );
+                competidoresEncontrados.push(...(data.data?.competidores || []));
+              }
+            }
+          } else {
+            // ---------- CASO B: sin niveles seleccionados ----------
+            for (const dep of departamentos) {
               const data = await getCompetidoresFiltradosAPI(
                 responsableId,
                 area.id_area.toString(),
-                nivel,
+                0,
                 idGrado,
-                generoParam, // ✅ valor corregido
-                departamentoSeleccionado || undefined
+                generoParam,
+                dep ? dep.toLowerCase() : undefined
               );
               competidoresEncontrados.push(...(data.data?.competidores || []));
             }
-          } else {
-            // ---------- CASO B: no hay niveles seleccionados ----------
-            const data = await getCompetidoresFiltradosAPI(
-              responsableId,
-              area.id_area.toString(),
-              0,
-              idGrado,
-              generoParam, // ✅ valor corregido
-              departamentoSeleccionado || undefined
-            );
-            competidoresEncontrados.push(...(data.data?.competidores || []));
           }
         }
 
@@ -153,16 +157,17 @@ export const ListaCompetidores = () => {
         // ---------- CASO C: sin áreas seleccionadas ----------
         const idGrado = gradoSeleccionado || 0;
 
-        const data = await getCompetidoresFiltradosAPI(
-          responsableId,
-          '0', // sin área
-          0, // sin nivel
-          idGrado,
-          generoParam, // ✅ valor corregido
-          departamentoSeleccionado || undefined
-        );
-
-        competidoresEncontrados = data.data?.competidores || [];
+        for (const dep of departamentos) {
+          const data = await getCompetidoresFiltradosAPI(
+            responsableId,
+            '0',
+            0,
+            idGrado,
+            generoParam,
+            dep ? dep.toLowerCase() : undefined
+          );
+          competidoresEncontrados.push(...(data.data?.competidores || []));
+        }
       }
 
       if (competidoresEncontrados.length === 0) {
@@ -335,8 +340,8 @@ export const ListaCompetidores = () => {
             Listado de Competidores
           </h1>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex flex-col space-y-4 ">
+          <div className="flex flex-col lg:flex-row gap-6 ">
+            <div className="flex flex-col space-y-4 px-10 ">
               <button
                 onClick={handleMostrarTodo}
                 className="w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors flex items-center justify-center"
@@ -385,7 +390,7 @@ export const ListaCompetidores = () => {
               />
 
               <AccordionDepartamento
-                selectedDepartamento={departamentoSeleccionado}
+                selectedDepartamentos={departamentoSeleccionado}
                 onChangeSelected={setDepartamentoSeleccionado}
               />
 
@@ -411,9 +416,18 @@ export const ListaCompetidores = () => {
                   type="text"
                   placeholder="Buscar: nombre, apellido, colegio"
                   value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
+                  maxLength={20}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    // Permite letras (con acentos), números y espacios
+                    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]*$/;
+                    if (regex.test(valor)) {
+                      setBusqueda(valor);
+                    }
+                  }}
                   className="w-full sm:w-72 px-4 py-2 rounded-xl border-2 border-principal-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-300 transition"
                 />
+
                 <button
                   onClick={() => {}}
                   className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
