@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { asignacionesService } from '../services/asignarServices';
 import type { AsignacionPayload, Grado, GradosPorNivel } from '../types';
@@ -39,7 +39,7 @@ const initialModalGradosState: ModalGradosState = {
 const GESTION_ACTUAL = '2025';
 
 export function useAsignarNiveles() {
-  const queryClient = useQueryClient();
+  //const queryClient = useQueryClient();
   const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Set<number>>(new Set());
   const [modalState, setModalState] = useState<ModalState>(initialModalState);
