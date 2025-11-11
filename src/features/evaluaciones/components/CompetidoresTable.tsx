@@ -1,7 +1,6 @@
 // src/features/evaluaciones/components/CompetidoresTable.tsx
 
 import type { Competidor } from '../types/evaluacion.types';
-//import { formatearNombreCompleto } from '../utils/validations';
 
 interface CompetidoresTableProps {
   competidores: Competidor[];
@@ -43,8 +42,8 @@ export const CompetidoresTable = ({
           <thead className="bg-blue-600 text-white">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold">NRO</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">NOMBRES</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">APELLIDOS</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">NOMBRE</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">APELLIDO</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">CI</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">ESTADO</th>
               <th className="px-4 py-3 text-center text-sm font-semibold">CALIFICACIÓN</th>
@@ -53,12 +52,12 @@ export const CompetidoresTable = ({
           <tbody>
             {competidores.map((competidor, index) => (
               <tr
-                key={competidor.id_competidor}
+                key={competidor.ci}
                 className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
               >
                 <td className="px-4 py-3 text-sm">{index + 1}</td>
-                <td className="px-4 py-3 text-sm">{competidor.nombres}</td>
-                <td className="px-4 py-3 text-sm">{competidor.apellidos}</td>
+                <td className="px-4 py-3 text-sm">{competidor.nombre}</td>
+                <td className="px-4 py-3 text-sm">{competidor.apellido}</td>
                 <td className="px-4 py-3 text-sm">{competidor.ci}</td>
                 <td className="px-4 py-3 text-sm">
                   <span
@@ -70,7 +69,7 @@ export const CompetidoresTable = ({
                         : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    {competidor.estado}
+                    {competidor.estado || 'Pendiente'}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">

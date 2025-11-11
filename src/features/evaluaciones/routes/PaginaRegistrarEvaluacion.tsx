@@ -11,7 +11,7 @@ import type { Competidor } from '../types/evaluacion.types';
 import { formatearNombreCompleto } from '../utils/validations';
 
 export function PaginaRegistrarEvaluacion() {
-  const { user} = useAuth();
+  const { user } = useAuth();
   const {
     areas,
     competidores,
@@ -30,6 +30,12 @@ export function PaginaRegistrarEvaluacion() {
   // Verificar que el usuario sea evaluador
   const isEvaluador = user?.role === 'evaluador';
 
+  // Obtener nombres de área y nivel seleccionados
+  const areaSeleccionada = areas.find(a => a.id_area.toString() === selectedArea);
+  const nivelSeleccionado = areaSeleccionada?.niveles.find(
+    n => n.id_nivel.toString() === selectedNivel
+  );
+
   // Filtrar competidores por búsqueda
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -38,7 +44,7 @@ export function PaginaRegistrarEvaluacion() {
     }
 
     const filtered = competidores.filter((c) => {
-      const nombreCompleto = formatearNombreCompleto(c.nombres, c.apellidos).toLowerCase();
+      const nombreCompleto = formatearNombreCompleto(c.nombre, c.apellido).toLowerCase();
       return nombreCompleto.includes(searchTerm.toLowerCase());
     });
 
@@ -59,6 +65,7 @@ export function PaginaRegistrarEvaluacion() {
     if (selectedArea && selectedNivel) {
       handleBuscar();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedArea, selectedNivel]);
 
   // Si no es evaluador, mostrar mensaje de acceso denegado
@@ -143,6 +150,8 @@ export function PaginaRegistrarEvaluacion() {
       {selectedCompetidor && (
         <CalificacionModal
           competidor={selectedCompetidor}
+          areaSeleccionada={areaSeleccionada?.nombre_area || ''}
+          nivelSeleccionado={nivelSeleccionado?.nombre || ''}
           onClose={() => setSelectedCompetidor(null)}
           onSave={guardarEvaluacion}
         />

@@ -41,11 +41,18 @@ export const useEvaluaciones = () => {
       const response = await evaluacionService.getCompetidoresByAreaNivel(idArea, idNivel);
       
       if (response.success && response.data.competidores.length > 0) {
-        setCompetidores(response.data.competidores);
-        toast.success(`Se encontraron ${response.data.competidores.length} competidores`);
+        // Mapear competidores y agregar estado "Pendiente" por defecto
+        const competidoresMapeados = response.data.competidores.map((comp, index) => ({
+          ...comp,
+          id_competidor: index + 1, // Generar ID temporal si no viene del backend
+          estado: comp.estado || ('Pendiente' as const), // Estado por defecto
+        }));
+        
+        setCompetidores(competidoresMapeados);
+        toast.success(`Se encontraron ${competidoresMapeados.length} competidores`);
       } else {
         setCompetidores([]);
-        toast.success(response.message || 'No se encontraron competidores');
+        toast(`No se encontraron competidores`, { icon: 'ℹ️' });
       }
     } catch (error) {
       console.error('Error al cargar competidores:', error);
@@ -58,38 +65,39 @@ export const useEvaluaciones = () => {
 
   // Guardar evaluación
   const guardarEvaluacion = async (
-    idCompetidor: number,
+    ci: string, // Cambiado a CI en lugar de id_competidor
     nota: number,
     observaciones?: string
-  ):Promise<void> => {
+  ): Promise<void> => {
     try {
-      // TODO: Verificar con backend qué ID debe ir en la URL (idCompetencia)
-      // Por ahora usamos 1 como placeholder
-      const idCompetencia = 1;//fase me dijo ariel
+      const idFase = 1; // Fase 1 por defecto
       
-      // TODO: Verificar qué es id_evaluadorAN
-      // Por ahora usamos 1 como placeholder
+      // Buscar el competidor por CI
+      const competidor = competidores.find(c => c.ci === ci);
+      if (!competidor) {
+        throw new Error('Competidor no encontrado');
+      }
+      
       const data: CalificacionData = {
         nota,
         observaciones: observaciones || '',
-        id_competidor: idCompetidor,
-        id_evaluadorAN: 1,//PREGUNTAR A ARIEL
+        id_competidor: competidor.id_competidor || 0, // TODO: Verificar con backend
+        id_evaluadorAN: 1, // TODO: Verificar con backend
         estado: false,
       };
 
-      await evaluacionService.guardarEvaluacion(idCompetencia, data);
+      await evaluacionService.guardarEvaluacion(idFase, data);
       
       // Actualizar el estado del competidor en la lista
       setCompetidores(prev =>
         prev.map(c =>
-          c.id_competidor === idCompetidor
+          c.ci === ci
             ? { ...c, calificacion: nota, observaciones, estado: 'Calificado' as const }
             : c
         )
       );
 
       toast.success('Evaluación guardada exitosamente');
-      //return response;
     } catch (error) {
       console.error('Error al guardar evaluación:', error);
       toast.error('Error al guardar la evaluación');

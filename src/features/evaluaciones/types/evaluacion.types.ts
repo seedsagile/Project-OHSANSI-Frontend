@@ -1,11 +1,17 @@
 // src/features/evaluaciones/types/evaluacion.types.ts
 
 export interface Competidor {
-  id_competidor: number;
-  nombres: string;
-  apellidos: string;
+  id_competidor?: number; // Opcional porque el API no lo devuelve directamente
+  apellido: string;
+  nombre: string;
+  genero: string;
   ci: string;
-  estado: 'Pendiente' | 'En calificacion' | 'Calificado';
+  departamento: string;
+  colegio: string;
+  area: string;
+  nivel: string;
+  grado: string;
+  estado?: 'Pendiente' | 'En calificacion' | 'Calificado'; // Agregado localmente
   calificacion?: number;
   observaciones?: string;
 }
