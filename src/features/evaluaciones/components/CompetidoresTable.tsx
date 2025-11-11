@@ -74,17 +74,13 @@ export const CompetidoresTable = ({
                 </td>
                 <td className="px-4 py-3 text-center">
                   {competidor.estado === 'Calificado' ? (
-                    <div className="flex flex-col items-center">
-                      <span className="text-sm font-semibold text-green-600">
-                        {competidor.calificacion?.toFixed(2)}
-                      </span>
-                      <button
-                        onClick={() => onCalificar(competidor)}
-                        className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Ver/Editar
-                      </button>
-                    </div>
+                    <span className="text-sm font-semibold text-green-600">
+                      Calificado
+                    </span>
+                  ) : competidor.estado === 'En calificacion' ? (
+                    <span className="text-sm font-semibold text-yellow-600">
+                      En proceso...
+                    </span>
                   ) : (
                     <button
                       onClick={() => onCalificar(competidor)}

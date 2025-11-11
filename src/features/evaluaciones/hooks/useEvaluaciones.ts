@@ -63,9 +63,20 @@ export const useEvaluaciones = () => {
     }
   };
 
+  // Marcar competidor como "En calificación"
+  const marcarEnCalificacion = (ci: string) => {
+    setCompetidores(prev =>
+      prev.map(c =>
+        c.ci === ci
+          ? { ...c, estado: 'En calificacion' as const }
+          : c
+      )
+    );
+  };
+
   // Guardar evaluación
   const guardarEvaluacion = async (
-    ci: string, // Cambiado a CI en lugar de id_competidor
+    ci: string,
     nota: number,
     observaciones?: string
   ): Promise<void> => {
@@ -76,6 +87,18 @@ export const useEvaluaciones = () => {
       const competidor = competidores.find(c => c.ci === ci);
       if (!competidor) {
         throw new Error('Competidor no encontrado');
+      }
+
+      // Verificar que no esté siendo calificado por otro evaluador
+      if (competidor.estado === 'En calificacion') {
+        toast.error('Este competidor está siendo calificado por otro evaluador');
+        throw new Error('Competidor en proceso de calificación');
+      }
+
+      // Verificar que no esté ya calificado
+      if (competidor.estado === 'Calificado') {
+        toast.error('Este competidor ya ha sido calificado');
+        throw new Error('Competidor ya calificado');
       }
       
       const data: CalificacionData = {
@@ -88,7 +111,7 @@ export const useEvaluaciones = () => {
 
       await evaluacionService.guardarEvaluacion(idFase, data);
       
-      // Actualizar el estado del competidor en la lista
+      // Actualizar el estado del competidor a "Calificado"
       setCompetidores(prev =>
         prev.map(c =>
           c.ci === ci
@@ -99,8 +122,21 @@ export const useEvaluaciones = () => {
 
       toast.success('Evaluación guardada exitosamente');
     } catch (error) {
+      // Si hay error, volver el estado a "Pendiente"
+      setCompetidores(prev =>
+        prev.map(c =>
+          c.ci === ci
+            ? { ...c, estado: 'Pendiente' as const }
+            : c
+        )
+      );
+      
       console.error('Error al guardar evaluación:', error);
-      toast.error('Error al guardar la evaluación');
+      if (error instanceof Error) {
+        if (!error.message.includes('siendo calificado') && !error.message.includes('ya calificado')) {
+          toast.error('Error al guardar la evaluación');
+        }
+      }
       throw error;
     }
   };
@@ -113,6 +149,7 @@ export const useEvaluaciones = () => {
     loading,
     loadingCompetidores,
     cargarCompetidores,
+    marcarEnCalificacion,
     guardarEvaluacion,
   };
 };
