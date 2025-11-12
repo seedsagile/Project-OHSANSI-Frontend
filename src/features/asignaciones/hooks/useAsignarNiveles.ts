@@ -39,7 +39,6 @@ const initialModalGradosState: ModalGradosState = {
 const GESTION_ACTUAL = '2025';
 
 export function useAsignarNiveles() {
-  //const queryClient = useQueryClient();
   const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Set<number>>(new Set());
   const [modalState, setModalState] = useState<ModalState>(initialModalState);
@@ -66,7 +65,7 @@ export function useAsignarNiveles() {
     queryFn: asignacionesService.obtenerGradosEscolaridad,
   });
 
-  // NUEVO: Cargar niveles y grados ya asignados al área seleccionada
+  // Cargar niveles y grados ya asignados al área seleccionada
   const { data: datosAsignados, refetch: refetchAsignados } = useQuery({
     queryKey: ['area-niveles-grados', areaSeleccionadaId, GESTION_ACTUAL],
     queryFn: () => 
@@ -91,7 +90,7 @@ export function useAsignarNiveles() {
     [areasOrdenadas, areaSeleccionadaId]
   );
 
-  // NUEVO: Calcular si hay niveles nuevos seleccionados
+  // Calcular si hay niveles nuevos seleccionados
   const hayNivelesNuevos = useMemo(() => {
     const nivelesNuevos = Array.from(nivelesSeleccionados).filter(
       (id) => !nivelesOriginales.has(id)
@@ -99,7 +98,7 @@ export function useAsignarNiveles() {
     return nivelesNuevos.length > 0;
   }, [nivelesSeleccionados, nivelesOriginales]);
 
-  // ACTUALIZADO: Sincronizar niveles y grados asignados
+  // Sincronizar niveles y grados asignados
   useEffect(() => {
     if (areaSeleccionadaId && datosAsignados?.data) {
       const nivelesAsignados = new Set<number>();
@@ -146,6 +145,20 @@ export function useAsignarNiveles() {
   };
 
   const handleCerrarModalGrados = () => {
+    // Al cerrar el modal con "Cancelar", verificar si el nivel tiene grados
+    // Si NO tiene grados, desmarcarlo
+    if (modalGradosState.nivelId !== null) {
+      const gradosDelNivel = gradosPorNivel[modalGradosState.nivelId];
+      
+      if (!gradosDelNivel || gradosDelNivel.size === 0) {
+        setNivelesSeleccionados((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(modalGradosState.nivelId!);
+          return newSet;
+        });
+      }
+    }
+    
     setModalGradosState(initialModalGradosState);
   };
 
@@ -154,13 +167,13 @@ export function useAsignarNiveles() {
       // Obtener los grados originales del nivel
       const gradosOriginales = gradosPorNivel[modalGradosState.nivelId] || new Set();
       
-      // Verificar si hubo cambios comparando los sets
+      // Verificar si hubo cambios
       const huboyCambios = !isEqual(
         Array.from(gradosOriginales).sort(),
         Array.from(gradosSeleccionados).sort()
       );
 
-      // Si no hubo cambios, mostrar mensaje informativo
+      // Si no hubo cambios, mostrar mensaje
       if (!huboyCambios) {
         setModalState({
           isOpen: true,
@@ -170,11 +183,11 @@ export function useAsignarNiveles() {
         });
         clearTimeout(modalTimerRef.current);
         modalTimerRef.current = window.setTimeout(() => closeModal(), 1500);
-        handleCerrarModalGrados();
+        setModalGradosState(initialModalGradosState);
         return;
       }
 
-      // Si no hay grados seleccionados, desmarcar el nivel completamente
+      // Actualizar gradosPorNivel ANTES de cerrar
       if (gradosSeleccionados.size === 0) {
         setNivelesSeleccionados((prev) => {
           const newSet = new Set(prev);
@@ -182,24 +195,23 @@ export function useAsignarNiveles() {
           return newSet;
         });
         
-        // Eliminar los grados del nivel
         setGradosPorNivel((prev) => {
           const newGrados = { ...prev };
           delete newGrados[modalGradosState.nivelId!];
           return newGrados;
         });
       } else {
-        // Si hay grados seleccionados, actualizar los grados
         setGradosPorNivel((prev) => ({
           ...prev,
           [modalGradosState.nivelId!]: gradosSeleccionados,
         }));
       }
     }
-    handleCerrarModalGrados();
+    
+    // Cerrar modal directamente (sin validación, porque ya guardamos)
+    setModalGradosState(initialModalGradosState);
   };
 
-  // ACTUALIZADO: Mutación con mensaje personalizado del frontend
   const { mutate: guardarAsignaciones, isPending: isSaving } = useMutation({
     mutationFn: async (payload: AsignacionPayload[]) => {
       return asignacionesService.crearAsignacionesDeArea(payload);
@@ -207,7 +219,6 @@ export function useAsignarNiveles() {
     onSuccess: (response) => {
       const nombreArea = areaActual ? areaActual.nombre : '';
       
-      // Verificar si hubo errores
       if (response.success_count === 0 || response.created_count === 0) {
         const erroresDetalle = response.errors && response.errors.length > 0 
           ? response.errors.join('\n\n') 
@@ -222,7 +233,6 @@ export function useAsignarNiveles() {
         return;
       }
     
-      // Mensaje de éxito personalizado del frontend
       const mensajeExito = `Los niveles y grados fueron asignados correctamente al área "${nombreArea}".`;
       
       setModalState({ 
@@ -232,7 +242,6 @@ export function useAsignarNiveles() {
         message: mensajeExito 
       });
       
-      // Refrescar datos asignados
       refetchAsignados();
       
       clearTimeout(modalTimerRef.current);
@@ -254,7 +263,6 @@ export function useAsignarNiveles() {
     return () => clearTimeout(modalTimerRef.current);
   }, []);
 
-  // ACTUALIZADO: handleGuardar con validación de grados y payload correcto
   const handleGuardar = () => {
     if (!areaSeleccionadaId) return;
 
@@ -284,7 +292,6 @@ export function useAsignarNiveles() {
       return;
     }
 
-    // Validar que todos los niveles nuevos tengan grados
     const nivelesSinGrados = nivelesNuevos.filter(
       (id) => !gradosPorNivel[id] || gradosPorNivel[id].size === 0
     );
@@ -300,7 +307,6 @@ export function useAsignarNiveles() {
       return;
     }
 
-    // Crear payload: un registro por cada combinación nivel-grado
     const payload: AsignacionPayload[] = [];
     
     nivelesNuevos.forEach((id_nivel) => {
@@ -391,6 +397,6 @@ export function useAsignarNiveles() {
     handleCerrarModalGrados,
     handleGuardarGrados,
     modalGradosState,
-    hayNivelesNuevos, // NUEVO: exportar esta variable
+    hayNivelesNuevos,
   };
 }
