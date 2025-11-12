@@ -31,19 +31,13 @@ export const getNivelesPorAreaAPI = async (idArea: number): Promise<Nivel[]> => 
     const response = await apiClient.get(`/niveles/${idArea}/area`);
     const data = response.data?.data;
 
-    if (!data) return [];
+    if (!data || !Array.isArray(data.niveles)) return [];
 
-    // ✅ Caso 1: si data.niveles es un array (varios niveles)
-    if (Array.isArray(data.niveles)) {
-      return data.niveles;
-    }
-
-    // ✅ Caso 2: si data es directamente un nivel (un solo objeto)
-    if (data.id_nivel) {
-      return [data];
-    }
-
-    return [];
+    // ✅ Normalizamos los nombres de las propiedades
+    return data.niveles.map((n: any) => ({
+      id_nivel: n.id_nivel,
+      nombre: n.nombre_nivel, // 👈 convertir nombre_nivel → nombre
+    }));
   } catch (error) {
     console.error(`Error al obtener niveles del área ${idArea}:`, error);
     return [];

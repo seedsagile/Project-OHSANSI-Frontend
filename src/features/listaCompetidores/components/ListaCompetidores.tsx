@@ -40,7 +40,7 @@ export const ListaCompetidores = () => {
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string[]>([]);
   const [busqueda, setBusqueda] = useState('');
 
-  const responsableId = Number(localStorage.getItem('id_responsable')) || 4;
+  const responsableId = Number(localStorage.getItem('id_responsable'));
   console.log('ID del responsable logueado:', responsableId);
 
   const [orden, setOrden] = useState<{ columna: string; ascendente: boolean }>({

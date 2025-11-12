@@ -9,13 +9,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { authService } from '../../services/authService';
 
 const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'El correo es obligatorio.')
-    .email('Debe ser un correo válido.'),
-  password: z
-    .string()
-    .min(1, 'La contraseña es obligatoria.'),
+  email: z.string().min(1, 'El correo es obligatorio.').email('Debe ser un correo válido.'),
+  password: z.string().min(1, 'La contraseña es obligatoria.'),
 });
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
@@ -42,6 +37,13 @@ export const LoginForm: React.FC = () => {
       const { user, token } = await authService.login(data);
       setUser(user);
       setToken(token);
+      // Guardar el ID del responsable en localStorage
+      if (user?.id_usuario) {
+        localStorage.setItem('id_responsable', user.id_usuario.toString());
+        console.log('ID responsable guardado:', user.id_usuario);
+      } else {
+        console.warn('No se recibió id_usuario del backend');
+      }
     } catch (err) {
       if (err instanceof AxiosError) {
         if (err.response?.status === 401 || err.response?.status === 404) {
@@ -54,7 +56,7 @@ export const LoginForm: React.FC = () => {
       } else {
         setApiError('Ocurrió un error inesperado.');
       }
-      console.error("Error en login:", err);
+      console.error('Error en login:', err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,6 @@ export const LoginForm: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutro-100 p-4 font-display">
       <div className="w-full max-w-md p-8 bg-blanco rounded-xl shadow-lg space-y-6 border border-neutro-200">
-
         {/* --- Logo --- */}
         <div className="flex justify-center mb-4">
           <img
@@ -72,14 +73,10 @@ export const LoginForm: React.FC = () => {
             className="h-28 w-28 rounded-full object-cover border-2 border-principal-500 shadow-md"
           />
         </div>
-        
+
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-neutro-800">
-            Oh! SanSi - Acceso
-          </h2>
-          <p className="mt-2 text-neutro-600">
-            Ingresa tus credenciales para continuar.
-          </p>
+          <h2 className="text-3xl font-bold text-neutro-800">Oh! SanSi - Acceso</h2>
+          <p className="mt-2 text-neutro-600">Ingresa tus credenciales para continuar.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -113,7 +110,11 @@ export const LoginForm: React.FC = () => {
               }`}
             />
             {errors.email && (
-              <p id="email-error" role="alert" className="mt-1.5 text-xs text-acento-600 flex items-center gap-1">
+              <p
+                id="email-error"
+                role="alert"
+                className="mt-1.5 text-xs text-acento-600 flex items-center gap-1"
+              >
                 <AlertCircle size={14} />
                 {errors.email.message}
               </p>
@@ -151,7 +152,11 @@ export const LoginForm: React.FC = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
             {errors.password && (
-              <p id="password-error" role="alert" className="mt-1.5 text-xs text-acento-600 flex items-center gap-1">
+              <p
+                id="password-error"
+                role="alert"
+                className="mt-1.5 text-xs text-acento-600 flex items-center gap-1"
+              >
                 <AlertCircle size={14} />
                 {errors.password.message}
               </p>
