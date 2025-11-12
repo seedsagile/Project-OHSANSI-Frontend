@@ -11,6 +11,7 @@ type TablaAsignacionAreasProps = {
   isLoading?: boolean;
   isReadOnly?: boolean;
   preAsignadas: Set<number>;
+  areasOcupadas: Set<number>; // 1. Recibir nueva prop
   areasFromPastGestion?: Set<number>;
   gestionPasadaId?: number | null;
 };
@@ -22,6 +23,7 @@ export function TablaAsignacionAreas({
   isLoading = false,
   isReadOnly = false,
   preAsignadas = new Set(),
+  areasOcupadas = new Set(), // 2. Usar valor por defecto
   areasFromPastGestion = new Set(),
   gestionPasadaId = null,
 }: TablaAsignacionAreasProps) {
@@ -35,9 +37,13 @@ export function TablaAsignacionAreas({
   const watchedAreasSet = useMemo(() => new Set(watchedAreas || []), [watchedAreas]);
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
 
+  // 3. 'areasHabilitadas' (para "Seleccionar Todas") ahora excluye preAsignadas Y ocupadas
   const areasHabilitadas = useMemo(() => {
-    return areas.filter((area) => !preAsignadas.has(area.id_area));
-  }, [areas, preAsignadas]);
+    return areas.filter(
+      (area) =>
+        !preAsignadas.has(area.id_area) && !areasOcupadas.has(area.id_area)
+    );
+  }, [areas, preAsignadas, areasOcupadas]); // Dependencia añadida
 
   const idsHabilitados = useMemo(() => {
     return areasHabilitadas.map((a) => a.id_area);
@@ -70,6 +76,7 @@ export function TablaAsignacionAreas({
     const idsPreAsignados = Array.from(preAsignadas);
 
     if (seleccionar) {
+      // Sigue siendo correcto: solo añade las habilitadas
       nuevasAreas = [...new Set([...idsPreAsignados, ...idsHabilitados])];
     } else {
       nuevasAreas = idsPreAsignados;
@@ -77,8 +84,13 @@ export function TablaAsignacionAreas({
     onToggleSeleccionarTodas(nuevasAreas);
   };
 
-  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, areaId: number) => {
-    if (isDisabled || preAsignadas.has(areaId)) return;
+  const handleCheckboxChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    areaId: number
+  ) => {
+    // 4. Lógica de bloqueo actualizada
+    if (isDisabled || preAsignadas.has(areaId) || areasOcupadas.has(areaId))
+      return;
     onSeleccionarArea(areaId, event.target.checked);
   };
 
@@ -89,7 +101,9 @@ export function TablaAsignacionAreas({
   return (
     <fieldset className="space-y-4" disabled={isDisabled}>
       <legend className="text-lg font-semibold text-neutro-800 border-b border-neutro-200 pb-2 w-full flex justify-between items-center">
-        <span>Asignación de Áreas <span className="text-acento-500">*</span></span>
+        <span>
+          Asignación de Áreas <span className="text-acento-500">*</span>
+        </span>
         <span className="text-sm font-normal text-neutro-500">
           {totalSeleccionadas} / {areas.length} seleccionada(s)
         </span>
@@ -102,18 +116,22 @@ export function TablaAsignacionAreas({
             id="seleccionar-todas-areas"
             type="checkbox"
             className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${
-              isDisabled || idsHabilitados.length === 0 ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+              isDisabled || idsHabilitados.length === 0
+                ? 'cursor-not-allowed opacity-60'
+                : 'cursor-pointer'
             }`}
             checked={todasSeleccionadas}
             ref={selectAllCheckboxRef}
             onChange={handleToggleTodas}
-            disabled={isDisabled || idsHabilitados.length === 0} 
+            disabled={isDisabled || idsHabilitados.length === 0}
             aria-label="Seleccionar o deseleccionar todas las áreas habilitadas"
           />
           <label
             htmlFor="seleccionar-todas-areas"
             className={`ml-2 text-sm font-medium ${
-              isDisabled || idsHabilitados.length === 0 ? 'text-neutro-400 cursor-not-allowed' : 'text-neutro-700 cursor-pointer'
+              isDisabled || idsHabilitados.length === 0
+                ? 'text-neutro-400 cursor-not-allowed'
+                : 'text-neutro-700 cursor-pointer'
             }`}
           >
             Seleccionar Todas (Habilitadas)
@@ -122,64 +140,126 @@ export function TablaAsignacionAreas({
       )}
 
       {/* Tabla de Áreas */}
-      <div className={`mb-4 overflow-hidden rounded-lg shadow-md ${errorAreas && !isDisabled ? 'border border-acento-500' : ''}`}>
+      <div
+        className={`mb-4 overflow-hidden rounded-lg shadow-md ${
+          errorAreas && !isDisabled ? 'border border-acento-500' : ''
+        }`}
+      >
         <div className="overflow-y-auto max-h-[384px] scrollbar-thin scrollbar-thumb-neutro-300 scrollbar-track-neutro-100 hover:scrollbar-thumb-neutro-400">
           <table className="w-full">
             <thead className="sticky top-0 bg-principal-500 text-white z-10">
               <tr>
-                <th scope="col" className="py-3 px-4 font-semibold text-center uppercase text-sm tracking-wider w-16">NRO</th>
-                <th scope="col" className="py-3 px-4 font-semibold text-left uppercase text-sm tracking-wider">Área</th>
-                <th scope="col" className="py-3 px-4 font-semibold text-center uppercase text-sm tracking-wider w-20">Asignar</th>
+                <th
+                  scope="col"
+                  className="py-3 px-4 font-semibold text-center uppercase text-sm tracking-wider w-16"
+                >
+                  NRO
+                </th>
+                <th
+                  scope="col"
+                  className="py-3 px-4 font-semibold text-left uppercase text-sm tracking-wider"
+                >
+                  Área
+                </th>
+                <th
+                  scope="col"
+                  className="py-3 px-4 font-semibold text-center uppercase text-sm tracking-wider w-20"
+                >
+                  Asignar
+                </th>
               </tr>
             </thead>
             <tbody className={isDisabled ? 'opacity-50' : ''}>
               {isLoading ? (
                 <tr>
                   <td colSpan={3} className="text-center py-10 text-gray-400 italic">
-                      Cargando áreas...
+                    Cargando áreas...
                   </td>
                 </tr>
               ) : !(areas && areas.length > 0) ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-neutro-500 italic">
-                      No se pudieron cargar las áreas disponibles.
+                  <td
+                    colSpan={3}
+                    className="px-4 py-6 text-center text-neutro-500 italic"
+                  >
+                    No se pudieron cargar las áreas disponibles.
                   </td>
                 </tr>
               ) : (
                 areas.map((area: Area, index: number) => {
+                  // --- 5. LÓGICA DE ESTADO DE FILA ACTUALIZADA ---
                   const isPreAsignada = preAsignadas.has(area.id_area);
-                  const isSelected = watchedAreasSet.has(area.id_area);
-                  
-                  const rowDisabled = isDisabled || isPreAsignada;
-                  const isChecked = isSelected;
+                  // Nuevo estado: ocupada por *otro* responsable
+                  const isOcupadaPorOtro =
+                    !isPreAsignada && areasOcupadas.has(area.id_area);
 
-                  const loadedFromPast = !!gestionPasadaId && areasFromPastGestion.has(area.id_area) && isSelected && !isPreAsignada;
+                  const isSelected = watchedAreasSet.has(area.id_area);
+
+                  // Deshabilitado si: es read-only, está asignada a ESTE usuario, o está asignada a OTRO usuario
+                  const rowDisabled =
+                    isDisabled || isPreAsignada || isOcupadaPorOtro;
+
+                  // Marcado si: está seleccionado (por este admin), Ocupada por otro, (isPreAsignada ya está cubierta por isSelected via useEffect)
+                  const isChecked = isSelected || isOcupadaPorOtro;
+
+                  const loadedFromPast =
+                    !!gestionPasadaId &&
+                    areasFromPastGestion.has(area.id_area) &&
+                    isSelected &&
+                    !isPreAsignada;
                   const originalIndex = index;
 
                   return (
                     <tr
                       key={area.id_area}
-                      className={`${originalIndex % 2 === 0 ? 'bg-gray-50' : 'bg-neutro-100'} ${
-                          isChecked ? (isPreAsignada ? 'bg-neutro-200' : 'bg-principal-100') : ''
+                      className={`${
+                        originalIndex % 2 === 0 ? 'bg-gray-50' : 'bg-neutro-100'
                       } ${
-                          rowDisabled ? 'cursor-not-allowed' : 'hover:bg-principal-50 transition-colors'
+                        isChecked
+                          ? isPreAsignada || isOcupadaPorOtro // Si está bloqueada
+                            ? 'bg-neutro-200' // Color gris de bloqueado
+                            : 'bg-principal-100' // Color azul de seleccionado
+                          : ''
+                      } ${
+                        rowDisabled
+                          ? 'cursor-not-allowed'
+                          : 'hover:bg-principal-50 transition-colors'
                       } h-16`}
                     >
-                      <td className="py-3 px-4 text-center font-medium text-neutro-900">{originalIndex + 1}</td>
+                      <td className="py-3 px-4 text-center font-medium text-neutro-900">
+                        {originalIndex + 1}
+                      </td>
                       <td className="py-3 px-4 text-left flex items-center gap-2">
                         {area.nombre}
-                        
+
                         {/* Icono de gestión pasada */}
                         {loadedFromPast && (
-                          <span className="cursor-help" title="Cargado de gestión pasada">
+                          <span
+                            className="cursor-help"
+                            title="Cargado de gestión pasada"
+                          >
                             <History size={14} className="text-blue-600" />
                           </span>
                         )}
 
-                        {/* Icono de bloqueado (Caso 3) */}
+                        {/* Icono de bloqueado (Asignada a este usuario) */}
                         {isPreAsignada && (
-                          <span className="cursor-not-allowed" title="Área ya asignada en esta gestión">
+                          <span
+                            className="cursor-not-allowed"
+                            title="Área ya asignada a este responsable en esta gestión"
+                          >
                             <Lock size={14} className="text-neutro-500" />
+                          </span>
+                        )}
+
+                        {/* Icono de bloqueado (Ocupada por otro) */}
+                        {isOcupadaPorOtro && (
+                          <span
+                            className="cursor-not-allowed"
+                            title="Área ya asignada a otro responsable"
+                          >
+                            {/* Color rojo (acento) para distinguirla */}
+                            <Lock size={14} className="text-acento-500" />
                           </span>
                         )}
                       </td>
@@ -188,15 +268,26 @@ export function TablaAsignacionAreas({
                           id={`area-${area.id_area}`}
                           type="checkbox"
                           className={`w-4 h-4 text-principal-600 bg-neutro-100 border-neutro-300 rounded focus:ring-principal-500 focus:ring-offset-0 focus:ring-1 ${
-                            rowDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                            rowDisabled
+                              ? 'cursor-not-allowed opacity-60'
+                              : 'cursor-pointer'
                           }`}
-                          checked={isChecked}
+                          checked={isChecked} // Usar isChecked
                           onChange={(e) => handleCheckboxChange(e, area.id_area)}
-                          disabled={rowDisabled}
+                          disabled={rowDisabled} // Usar rowDisabled
                           aria-labelledby={`area-label-${area.id_area}`}
                         />
-                        <label htmlFor={`area-${area.id_area}`} id={`area-label-${area.id_area}`} className="sr-only">
-                          Asignar área {area.nombre} {isPreAsignada ? '(Asignada y bloqueada)' : ''}
+                        <label
+                          htmlFor={`area-${area.id_area}`}
+                          id={`area-label-${area.id_area}`}
+                          className="sr-only"
+                        >
+                          Asignar área {area.nombre}{' '}
+                          {isPreAsignada
+                            ? '(Asignada y bloqueada)'
+                            : isOcupadaPorOtro
+                            ? '(Ocupada por otro responsable y bloqueada)'
+                            : ''}
                         </label>
                       </td>
                     </tr>
@@ -208,7 +299,9 @@ export function TablaAsignacionAreas({
         </div>
       </div>
       {errorAreas && !isDisabled && (
-        <p role="alert" className="mt-1 text-xs text-acento-600">{errorAreas.message}</p>
+        <p role="alert" className="mt-1 text-xs text-acento-600">
+          {errorAreas.message}
+        </p>
       )}
     </fieldset>
   );

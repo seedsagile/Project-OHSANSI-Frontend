@@ -6,14 +6,14 @@ import { FormularioDatosResponsable } from '../components/FormularioDatosRespons
 import { TablaAsignacionAreas } from '../components/TablaAsignacionAreas';
 import { Modal1 } from '@/components/ui/Modal1';
 import { Alert } from '@/components/ui/Alert';
-import { useMemo } from 'react';
+// import { useMemo } from 'react'; // <--- ELIMINADO (Corrige error TS6133)
 
 export function PaginaRegistrarResponsable() {
   const {
     pasoActual,
     formMethodsVerificacion,
     formMethodsPrincipal,
-    areasDisponibles,
+    areasDisponibles, // <-- Esta es la lista COMPLETA (7 áreas)
     areasDisponiblesQuery,
     gestionesPasadas,
     datosPersona,
@@ -31,10 +31,13 @@ export function PaginaRegistrarResponsable() {
     gestionPasadaSeleccionadaId,
     isReadOnly: isDataFormReadOnly,
     isAssignedToCurrentGestion,
-    initialAreasReadOnly,
+    // initialAreasReadOnly, // <--- ELIMINADO (Corrige error TS6133)
     handleToggleSeleccionarTodas,
     areasLoadedFromPast,
     finalizeSuccessAction,
+    preAsignadasSet,
+    ocupadasSet, // <-- Este es el Set de áreas OCUPADAS (6 áreas)
+    areasOcupadasQuery,
   } = useGestionResponsable();
 
   const { formState } = formMethodsPrincipal;
@@ -48,16 +51,13 @@ export function PaginaRegistrarResponsable() {
     pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO';
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
 
-  const preAsignadasSet = useMemo(() => {
-    return isAssignedToCurrentGestion
-      ? new Set(initialAreasReadOnly)
-      : new Set<number>();
-  }, [isAssignedToCurrentGestion, initialAreasReadOnly]);
-
-  const falloCargaAreas = areasDisponiblesQuery.isError;
+  // Comprueba si CUALQUIERA de las queries de datos falló
+  const falloCargaAreas =
+    areasDisponiblesQuery.isError || areasOcupadasQuery.isError;
 
   const botonGuardarDeshabilitado =
     !formState.isValid || isLoading || isProcessing || falloCargaAreas;
+    
 
   return (
     <>
@@ -93,8 +93,8 @@ export function PaginaRegistrarResponsable() {
                   pasoVerificacionCompletado
                     ? 'border-principal-600 bg-principal-600 text-white'
                     : pasoVerificacionActivo
-                      ? 'border-principal-600 bg-principal-600 text-white'
-                      : 'border-neutro-400'
+                    ? 'border-principal-600 bg-principal-600 text-white'
+                    : 'border-neutro-400'
                 }`}
               >
                 {pasoVerificacionCompletado ? <Check size={16} /> : '1'}
@@ -151,6 +151,13 @@ export function PaginaRegistrarResponsable() {
                     />
                   )}
 
+                  {falloCargaAreas && (
+                    <Alert
+                      type="error"
+                      message="Error crítico: No se pudieron cargar las áreas. Recargue la página."
+                    />
+                  )}
+
                   <FormularioDatosResponsable
                     ref={primerInputRef}
                     gestiones={gestionesPasadas}
@@ -165,6 +172,13 @@ export function PaginaRegistrarResponsable() {
 
                   <hr className="my-8 border-t border-neutro-200" />
 
+                  {/*
+                   * --- CORRECCIÓN CLAVE DEL BUG ---
+                   * Aquí nos aseguramos de pasar `areasDisponibles` (la lista completa de 7)
+                   * a la prop `areas` de la tabla, para que renderice todas las filas.
+                   * `ocupadasSet` (el set de 6) se pasa a `areasOcupadas` para que la tabla
+                   * sepa cuáles bloquear.
+                   */}
                   <TablaAsignacionAreas
                     areas={areasDisponibles}
                     onSeleccionarArea={handleSeleccionarArea}
@@ -172,6 +186,7 @@ export function PaginaRegistrarResponsable() {
                     isLoading={isLoading}
                     isReadOnly={isLoading || isProcessing}
                     preAsignadas={preAsignadasSet}
+                    areasOcupadas={ocupadasSet}
                     areasFromPastGestion={areasLoadedFromPast}
                     gestionPasadaId={gestionPasadaSeleccionadaId}
                   />

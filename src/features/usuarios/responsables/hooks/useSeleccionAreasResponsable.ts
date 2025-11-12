@@ -13,6 +13,7 @@ interface UseSeleccionAreasProps {
     isLoading: boolean;
   };
   preAsignadas: Set<number>;
+  ocupadasSet: Set<number>; // <-- 1. ACEPTAR LA NUEVA PROP
   rolesPorGestion: ApiGestionRoles[];
 }
 
@@ -22,6 +23,7 @@ export function useSeleccionAreasResponsable({
   isReadOnly,
   areasDisponiblesQuery,
   preAsignadas = new Set(),
+  ocupadasSet = new Set(), // <-- 2. USAR LA NUEVA PROP
   rolesPorGestion = [],
 }: UseSeleccionAreasProps) {
   const { setValue, getValues, control } = formMethods;
@@ -34,6 +36,7 @@ export function useSeleccionAreasResponsable({
   const prevGestionAnioRef = useRef<string | null>(undefined);
   const prevAreasDisponiblesRef = useRef<Area[] | undefined>(undefined);
 
+  // Este useEffect es seguro. Solo se re-ejecuta si sus dependencias (props/datos de query) cambian.
   useEffect(() => {
     const gestionAnioChanged =
       prevGestionAnioRef.current !== gestionPasadaSeleccionadaAnio;
@@ -68,11 +71,22 @@ export function useSeleccionAreasResponsable({
       }
 
       const idsAreasActualesSet = new Set(areasDisponibles.map((a) => a.id_area));
-      const idsComunesCargables = areasPasadasIds.filter(
-        (idPasada) =>
-          idsAreasActualesSet.has(idPasada) && !preAsignadas.has(idPasada)
+      
+      // Lista para los iconos (History) - Muestra todas las históricas que existen hoy
+      const idsComunesHistoricos = areasPasadasIds.filter((idPasada) =>
+        idsAreasActualesSet.has(idPasada)
       );
-      const newAreasLoadedFromPast = new Set(idsComunesCargables);
+
+      // --- INICIO DE LA CORRECCIÓN ---
+      // Lista para AÑADIR AL FORMULARIO
+      // Filtramos las que ya están asignadas a ESTE usuario (preAsignadas)
+      // Y también filtramos las que están asignadas a OTRO usuario (ocupadasSet)
+      const idsComunesCargables = idsComunesHistoricos.filter(
+        (id) => !preAsignadas.has(id) && !ocupadasSet.has(id)
+      );
+      // --- FIN DE LA CORRECCIÓN ---
+
+      const newAreasLoadedFromPast = new Set(idsComunesHistoricos); // El icono se muestra igual
 
       if (
         gestionAnioChanged ||
@@ -81,6 +95,7 @@ export function useSeleccionAreasResponsable({
       ) {
         setAreasLoadedFromPast(newAreasLoadedFromPast);
 
+        // El valor del formulario SÓLO incluye las pre-asignadas + las cargables (válidas)
         const newValue = [...new Set([...idsPreAsignados, ...idsComunesCargables])];
         const currentFormAreas = getValues('areas') || [];
 
@@ -88,7 +103,6 @@ export function useSeleccionAreasResponsable({
           setValue('areas', newValue, { shouldValidate: true, shouldDirty: true });
         }
       }
-
     } else if (!gestionPasadaSeleccionadaAnio && !isReadOnly) {
       if (areasLoadedFromPast.size > 0) {
         setAreasLoadedFromPast(new Set());
@@ -101,7 +115,6 @@ export function useSeleccionAreasResponsable({
         });
       }
     }
-
   }, [
     gestionPasadaSeleccionadaAnio,
     rolesPorGestion,
@@ -111,11 +124,13 @@ export function useSeleccionAreasResponsable({
     getValues,
     areasLoadedFromPast,
     preAsignadas,
+    ocupadasSet, // <-- 3. AÑADIR DEPENDENCIA
   ]);
 
   const handleSeleccionarArea = useCallback(
     (areaId: number, seleccionado: boolean) => {
-      if (isReadOnly || preAsignadas.has(areaId)) return;
+      // 4. AÑADIR LÓGICA DE BLOQUEO AQUÍ TAMBIÉN
+      if (isReadOnly || preAsignadas.has(areaId) || ocupadasSet.has(areaId)) return;
 
       const currentAreas = watchedAreas || [];
       const nuevasAreas = seleccionado
@@ -123,7 +138,7 @@ export function useSeleccionAreasResponsable({
         : currentAreas.filter((id) => id !== areaId);
       setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
     },
-    [isReadOnly, setValue, watchedAreas, preAsignadas]
+    [isReadOnly, setValue, watchedAreas, preAsignadas, ocupadasSet] // <-- 5. AÑADIR DEPENDENCIA
   );
 
   const handleToggleSeleccionarTodas = useCallback(

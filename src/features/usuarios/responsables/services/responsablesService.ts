@@ -23,6 +23,12 @@ type ApiErrorResponse = {
   errors?: Record<string, string[]>;
 };
 
+// --- TIPO PARA LA NUEVA API ---
+type ApiResponseAreasOcupadas = {
+  message: string;
+  data: Area[];
+};
+
 export const verificarCI = async (
   ci: string
 ): Promise<VerificacionUsuarioCompleta | null> => {
@@ -53,6 +59,31 @@ export const verificarCI = async (
     throw new Error(errorMessage);
   }
 };
+
+// --- FUNCIÓN AÑADIDA ---
+/**
+ * Obtiene las áreas que YA TIENEN un responsable asignado
+ * en la gestión actual.
+ */
+export const obtenerAreasOcupadasActuales = async (): Promise<Area[]> => {
+  try {
+    const response = await apiClient.get<ApiResponseAreasOcupadas>(
+      `/responsables/areas/ocupadas/gestion/actual`
+    );
+    // Devolvemos solo el array de áreas
+    return response.data?.data || [];
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiErrorResponse>;
+    console.error(`Error al obtener áreas ocupadas:`, error);
+    const apiError = axiosError.response?.data;
+    throw new Error(
+      apiError?.message ||
+        axiosError.message ||
+        'Error de red al obtener áreas ocupadas.'
+    );
+  }
+};
+// --- FIN DE FUNCIÓN AÑADIDA ---
 
 export const obtenerAreasActuales = async (): Promise<Area[]> => {
   try {
