@@ -1,5 +1,3 @@
-// src/features/medallero/hooks/useMedallero.ts
-
 import { useState } from 'react';
 import { Area, MedalData, MedalleroSaveData } from '../types/medallero.types';
 import { medalleroService } from '../services/medallero.service';
@@ -57,23 +55,27 @@ export const useMedallero = (userId: number | undefined) => {
           a.nombre_nivel.localeCompare(b.nombre_nivel)
         );
 
-        // Verificar si ya está parametrizado
-        const yaParametrizado = sortedNiveles.some(nivel => 
-          nivel.ya_parametrizado === true || 
-          (nivel.oro !== undefined && nivel.oro !== null)
+        // Verificar si TODOS los niveles ya están parametrizados
+        const todosParametrizados = sortedNiveles.every(nivel => 
+          nivel.oro !== undefined && nivel.oro !== null
         );
 
-        setIsParametrized(yaParametrizado);
+        setIsParametrized(todosParametrizados);
 
-        const initialData: MedalData[] = sortedNiveles.map(nivel => ({
-          id_area_nivel: nivel.id_area_nivel,
-          nombre_nivel: nivel.nombre_nivel,
-          oro: nivel.oro ?? 1,
-          plata: nivel.plata ?? 1,
-          bronce: nivel.bronce ?? 1,
-          menciones: nivel.menciones ?? 0,
-          ya_parametrizado: yaParametrizado,
-        }));
+        const initialData: MedalData[] = sortedNiveles.map(nivel => {
+          // Determinar si este nivel específico ya está parametrizado
+          const nivelParametrizado = nivel.oro !== undefined && nivel.oro !== null;
+          
+          return {
+            id_area_nivel: nivel.id_area_nivel,
+            nombre_nivel: nivel.nombre_nivel,
+            oro: nivel.oro ?? 1,
+            plata: nivel.plata ?? 1,
+            bronce: nivel.bronce ?? 1,
+            menciones: nivel.menciones ?? 0,
+            ya_parametrizado: nivelParametrizado,
+          };
+        });
 
         setMedalData(initialData);
       }
@@ -129,10 +131,18 @@ export const useMedallero = (userId: number | undefined) => {
       return false;
     }
 
+    // Solo enviar niveles que NO están parametrizados
+    const nivelesAGuardar = medalData.filter(item => !item.ya_parametrizado);
+    
+    if (nivelesAGuardar.length === 0) {
+      setError('Todos los niveles ya están parametrizados');
+      return false;
+    }
+
     setSaving(true);
     setError(null);
     try {
-      const dataToSave: MedalleroSaveData[] = medalData.map(item => ({
+      const dataToSave: MedalleroSaveData[] = nivelesAGuardar.map(item => ({
         id_area_nivel: item.id_area_nivel,
         oro: item.oro,
         plata: item.plata,
@@ -143,6 +153,7 @@ export const useMedallero = (userId: number | undefined) => {
       const response = await medalleroService.saveMedallero(dataToSave);
       
       if (response.success) {
+        // Marcar todos los niveles como parametrizados
         setIsParametrized(true);
         const updatedData = medalData.map(item => ({
           ...item,

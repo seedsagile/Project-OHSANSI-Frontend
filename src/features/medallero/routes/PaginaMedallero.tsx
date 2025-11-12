@@ -1,5 +1,3 @@
-// src/features/medallero/routes/PaginaMedallero.tsx
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save } from 'lucide-react';
