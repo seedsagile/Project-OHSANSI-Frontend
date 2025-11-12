@@ -47,12 +47,15 @@ export type Gestion = {
   gestion: string;
 };
 
+// --- TIPO ACTUALIZADO ---
+// Se añade 'esResponsableExistente' para cumplir el CA 57
 export type VerificacionUsuarioCompleta = {
   datosPersona: DatosPersonaVerificada;
   isAssignedToCurrentGestion: boolean;
   initialAsignaciones: ApiAsignacionDetalle[];
   gestionesPasadas: Gestion[];
   rolesPorGestion: ApiGestionRoles[];
+  esResponsableExistente: boolean; // <-- CAMBIO APLICADO
 };
 
 export type NivelParaAsignar = {
@@ -67,6 +70,8 @@ export type AreaParaAsignar = {
   niveles: NivelParaAsignar[];
 };
 
+// --- TIPO ACTUALIZADO ---
+// Se añade 'force_create_role' para cumplir el CA 56
 export type CrearEvaluadorPayload = {
   nombre: string;
   apellido: string;
@@ -76,6 +81,7 @@ export type CrearEvaluadorPayload = {
   password?: string;
   id_olimpiada?: number;
   area_nivel_ids: number[];
+  force_create_role?: boolean; // <-- CAMBIO APLICADO
 };
 
 export type AsignarEvaluadorPayload = {
@@ -103,7 +109,10 @@ export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'confirmation'; // <-- Añadido 'confirmation'
+  onConfirm?: () => void;
+  confirmText?: string;
+  cancelText?: string;
 };
 
 export type { AreaParaAsignar as Area };

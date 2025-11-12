@@ -13,12 +13,12 @@ export function PaginaRegistrarEvaluador() {
     formMethodsVerificacion,
     formMethodsPrincipal,
     areasDisponibles,
-    areasDisponiblesQuery,
+    areasDisponiblesQuery, // <-- Se usa para CA 12
     gestionesPasadas,
     datosPersona,
     isLoading,
     isLoadingGestiones,
-    isProcessing,
+    isProcessing, // <-- Ahora se recibe este estado unificado
     modalFeedback,
     handleVerificarCISubmit,
     onSubmitFormularioPrincipal,
@@ -53,19 +53,23 @@ export function PaginaRegistrarEvaluador() {
 
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
 
+  // --- IMPLEMENTACIÓN DE CA 12 ---
   const falloCargaAreas = areasDisponiblesQuery.isError;
   const { formState } = formMethodsPrincipal;
 
+  // (CA 11) El botón se deshabilita si falla la carga de áreas
   const botonGuardarDeshabilitado =
     !formState.isValid ||
     isLoading ||
     isProcessing ||
     falloCargaAreas;
+  // --- FIN DE CA 12 ---
 
   return (
     <>
       <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex justify-center items-start pt-12 md:pt-16">
         <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-6 md:p-8 relative transition-all duration-300 ease-in-out">
+          {/* --- Overlay de Carga --- */}
           {(isProcessing || mostrarCargaPagina) && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col justify-center items-center z-20 rounded-xl transition-opacity duration-200">
               <LoaderCircle className="animate-spin h-12 w-12 text-principal-500" />
@@ -83,6 +87,7 @@ export function PaginaRegistrarEvaluador() {
             </h1>
           </header>
 
+          {/* --- Stepper Visual --- */}
           <div className="flex justify-center items-center space-x-2 sm:space-x-4 mb-8 text-sm sm:text-base">
             <span
               className={`flex items-center gap-2 font-semibold ${
@@ -124,15 +129,18 @@ export function PaginaRegistrarEvaluador() {
           </div>
 
           <div className="transition-opacity duration-300 ease-in-out">
+            {/* --- PASO 1: VERIFICACIÓN --- */}
             {pasoActual === 'VERIFICACION_CI' && (
               <FormProvider {...formMethodsVerificacion}>
                 <VerificacionCI onSubmit={handleVerificarCISubmit} />
               </FormProvider>
             )}
 
+            {/* --- PASO 2: FORMULARIO --- */}
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
+                  {/* Alerta Escenario 2 */}
                   {datosPersona?.Id_usuario &&
                     !isAssignedToCurrentGestion &&
                     !falloCargaAreas && (
@@ -142,16 +150,27 @@ export function PaginaRegistrarEvaluador() {
                       />
                     )}
 
+                  {/* Alerta Escenario 3 (CA 50) */}
                   {isAssignedToCurrentGestion && !falloCargaAreas && (
                     <Alert
                       type="warning"
                       message={`Este evaluador ya se encuentra asignado. Las áreas/niveles asignados (marcadas con 🔒) no son editables, pero puede añadir nuevas.`}
                     />
                   )}
+                  
+                  {/* --- INICIO DE MODIFICACIÓN (CA 12) --- */}
+                  {falloCargaAreas && (
+                    <Alert
+                      type="error"
+                      message="Error crítico: No se pudieron cargar las áreas y los niveles. Recargue la página."
+                    />
+                  )}
+                  {/* --- FIN DE MODIFICACIÓN --- */}
+
 
                   <FormularioDatosEvaluador
                     ref={primerInputRef}
-                    gestiones={gestionesPasadas}
+                    gestiones={gestionesPasadas} // <-- Prop pasada correctamente
                     personaVerificada={datosPersona}
                     isLoading={isLoading}
                     isLoadingGestiones={isLoadingGestiones}
@@ -166,7 +185,7 @@ export function PaginaRegistrarEvaluador() {
                   <TablaAsignacionAreaNivel
                     areas={areasDisponibles}
                     isLoading={isLoading}
-                    isReadOnly={isLoading || isProcessing}
+                    isReadOnly={isLoading || isProcessing} // <-- Usa isProcessing
                     preAsignadas={preAsignadasSet}
                     areasFromPastGestion={areasFromPastGestion}
                     nivelesSeleccionados={nivelesSeleccionadosSet}
@@ -180,7 +199,7 @@ export function PaginaRegistrarEvaluador() {
                     <button
                       type="button"
                       onClick={handleCancelar}
-                      disabled={isProcessing}
+                      disabled={isProcessing} // <-- Usa isProcessing
                       className="flex items-center justify-center gap-2 font-semibold py-2.5 
                       px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300
                       transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -191,7 +210,7 @@ export function PaginaRegistrarEvaluador() {
 
                     <button
                       type="submit"
-                      disabled={botonGuardarDeshabilitado}
+                      disabled={botonGuardarDeshabilitado} // <-- Estado de deshabilitar (CA 11)
                       className="flex items-center justify-center gap-2 min-w-[150px] font-semibold 
                       py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 
                       transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
@@ -215,6 +234,7 @@ export function PaginaRegistrarEvaluador() {
         </main>
       </div>
 
+      {/* Modal de Feedback */}
       <Modal1
         isOpen={modalFeedback.isOpen}
         onClose={
@@ -224,6 +244,10 @@ export function PaginaRegistrarEvaluador() {
         }
         title={modalFeedback.title}
         type={modalFeedback.type}
+        onConfirm={modalFeedback.onConfirm} // Necesario para CA 56/57
+        loading={isProcessing} // Pasa el estado de carga al modal
+        confirmText={modalFeedback.confirmText} // Pasa texto custom
+        cancelText={modalFeedback.cancelText}   // Pasa texto custom
       >
         {modalFeedback.message}
       </Modal1>

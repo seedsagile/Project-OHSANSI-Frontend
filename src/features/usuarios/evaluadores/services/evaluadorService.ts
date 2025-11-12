@@ -28,7 +28,6 @@ const _handleMutationError = (error: unknown): Error => {
     const errorData = axiosError.response.data;
 
     if (axiosError.response.status === 422 && errorData?.errors) {
-
       const validationErrors = Object.values(errorData.errors).flat().join(' ');
       errorMessage = validationErrors || errorData.message || errorMessage;
     } else {
@@ -110,6 +109,9 @@ export const crearEvaluador = async (
     password: payload.password || 'password_predeterminado',
     id_olimpiada: payload.id_olimpiada ?? ID_OLIMPIADA_ACTUAL,
     area_nivel_ids: payload.area_nivel_ids,
+    // --- INICIO DE LA MODIFICACIÓN (CA 56) ---
+    force_create_role: payload.force_create_role ?? false,
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   try {

@@ -1,20 +1,15 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
+import { useQuery } from '@tanstack/react-query';
 import * as evaluadorService from '../services/evaluadorService';
 import { datosEvaluadorSchema } from '../utils/validations';
-import { ID_OLIMPIADA_ACTUAL } from '../utils/constants';
 import { z } from 'zod';
 import type {
   ApiAsignacionDetalle,
   DatosPersonaVerificada,
-  CrearEvaluadorPayload,
-  AsignarEvaluadorPayload,
-  EvaluadorCreado,
-  EvaluadorAsignado,
   AreaParaAsignar,
+  Gestion,
 } from '../types';
 import type { EvaluadorFormData, EvaluadorFormInput } from '../utils/validations';
 
@@ -32,25 +27,20 @@ interface UseFormularioPrincipalProps {
   datosPersonaVerificada: DatosPersonaVerificada | null;
   isReadOnly: boolean;
   initialAsignaciones: ApiAsignacionDetalle[];
-  onFormSubmitSuccess: (
-    data: EvaluadorCreado | EvaluadorAsignado,
-    esActualizacion: boolean
-  ) => void;
-  onFormSubmitError: (message: string) => void;
+  gestionesPasadas: Gestion[];
+  onFormSubmit: (data: EvaluadorFormData) => void;
 }
 
-type BackendValidationError = {
-  errors?: Record<keyof EvaluadorFormData | string, string[]>;
-  message?: string;
-};
+// --- TIPO "BackendValidationError" ELIMINADO ---
+// Ya no es necesario en este archivo, la lógica de mutación está en el hook padre.
 
 export function useFormularioPrincipalEvaluador({
   ciVerificado,
   datosPersonaVerificada,
   isReadOnly,
   initialAsignaciones,
-  onFormSubmitSuccess,
-  onFormSubmitError,
+  gestionesPasadas,
+  onFormSubmit,
 }: UseFormularioPrincipalProps) {
   const [gestionPasadaSeleccionadaId, setGestionPasadaSeleccionadaId] =
     useState<number | null>(null);
@@ -72,6 +62,7 @@ export function useFormularioPrincipalEvaluador({
         .array(z.number())
         .superRefine((selectedAreaNivelIDs, ctx) => {
           if (isAssignedToCurrentGestion) {
+            // Escenario 3: Debe seleccionar al menos una *nueva*
             const tieneNuevasAsignaciones = selectedAreaNivelIDs.some(
               (id) => !initialAreaNivelIds.has(id)
             );
@@ -82,6 +73,7 @@ export function useFormularioPrincipalEvaluador({
               });
             }
           } else {
+            // Escenario 1 y 2: Debe seleccionar al menos una
             if (selectedAreaNivelIDs.length === 0) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -100,11 +92,8 @@ export function useFormularioPrincipalEvaluador({
     shouldFocusError: true,
     delayError: 400,
   });
-  const {
-    reset: resetPrincipalForm,
-    setError,
-    setFocus,
-  } = formMethodsPrincipal;
+
+  const { reset: resetPrincipalForm } = formMethodsPrincipal;
 
   const areasDisponiblesQuery = useQuery<AreaParaAsignar[], Error>({
     queryKey: ['areasConNivelesActuales'],
@@ -114,6 +103,8 @@ export function useFormularioPrincipalEvaluador({
     enabled: true,
   });
 
+  // Este useEffect es seguro y no causará bucles.
+  // Resetea el formulario solo cuando el usuario verificado cambia (un evento discreto).
   useEffect(() => {
     const resetValuesBase: EvaluadorFormInput = {
       ...defaultFormValues,
@@ -122,6 +113,7 @@ export function useFormularioPrincipalEvaluador({
     };
 
     if (isAssignedToCurrentGestion) {
+      // Escenario 3
       resetPrincipalForm({
         nombres: datosPersonaVerificada?.Nombres || '',
         apellidos: datosPersonaVerificada?.Apellidos || '',
@@ -131,6 +123,7 @@ export function useFormularioPrincipalEvaluador({
         area_nivel_ids: Array.from(initialAreaNivelIds),
       });
     } else if (datosPersonaVerificada) {
+      // Escenario 2
       resetPrincipalForm({
         nombres: datosPersonaVerificada?.Nombres || '',
         apellidos: datosPersonaVerificada?.Apellidos || '',
@@ -140,9 +133,11 @@ export function useFormularioPrincipalEvaluador({
         area_nivel_ids: [],
       });
     } else if (ciVerificado) {
+      // Escenario 1
       resetPrincipalForm(resetValuesBase);
       setTimeout(() => primerInputRef.current?.focus(), 100);
     } else {
+      // Estado inicial
       resetPrincipalForm(defaultFormValues);
     }
 
@@ -156,64 +151,8 @@ export function useFormularioPrincipalEvaluador({
     resetPrincipalForm,
   ]);
 
-  const handleMutationError = (error: AxiosError<BackendValidationError>) => {
-    let errorMessage = 'No se pudo guardar.';
-    const errorData = error.response?.data;
-
-    if (error.response?.status === 422 && errorData?.errors) {
-      let firstFieldWithError: keyof EvaluadorFormData | null = null;
-      Object.entries(errorData.errors).forEach(([field, messages]) => {
-        const fieldName = field as keyof EvaluadorFormData;
-        if (messages.length > 0) {
-          setError(fieldName, { type: 'backend', message: messages[0] });
-          if (!firstFieldWithError) firstFieldWithError = fieldName;
-        }
-      });
-      if (firstFieldWithError) {
-        setFocus(firstFieldWithError);
-        errorMessage =
-          errorData.message ||
-          errorData.errors[firstFieldWithError]?.[0] ||
-          errorMessage;
-      } else {
-        errorMessage = errorData.message || errorMessage;
-      }
-    } else if (errorData?.message) {
-      errorMessage = errorData.message;
-    } else if (error.request) {
-      errorMessage = 'No se recibió respuesta del servidor.';
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    onFormSubmitError(errorMessage);
-  };
-
-  const { mutate: crearEvaluador, isPending: isCreatingEvaluador } = useMutation<
-    EvaluadorCreado,
-    AxiosError<BackendValidationError>,
-    CrearEvaluadorPayload
-  >({
-    mutationFn: evaluadorService.crearEvaluador,
-    onSuccess: (data) => {
-      onFormSubmitSuccess(data, false);
-    },
-    onError: handleMutationError,
-  });
-
-  const { mutate: asignarEvaluador, isPending: isAsigningEvaluador } =
-    useMutation<
-      EvaluadorAsignado,
-      AxiosError<BackendValidationError>,
-      { ci: string; payload: AsignarEvaluadorPayload }
-    >({
-      mutationFn: ({ ci, payload }) =>
-        evaluadorService.asignarEvaluador(ci, payload),
-      onSuccess: (data) => {
-        onFormSubmitSuccess(data, true);
-      },
-      onError: handleMutationError,
-    });
-
+  // Esta función es segura, solo depende de 'gestionesPasadas'
+  // que es una prop estable cargada una vez.
   const handleGestionSelect = useCallback(
     (selectedValue: string | number | null) => {
       const id =
@@ -224,53 +163,24 @@ export function useFormularioPrincipalEvaluador({
             : selectedValue
               ? parseInt(String(selectedValue), 10)
               : null;
+
+      const anio = id
+        ? (gestionesPasadas || []).find((g) => g.Id_olimpiada === id)?.gestion ?? null
+        : null;
+
       setGestionPasadaSeleccionadaId(id);
+      setGestionPasadaSeleccionadaAnio(anio);
     },
-    []
+    [gestionesPasadas]
   );
 
+  // El submit ahora solo pasa los datos al hook padre
   const onSubmitFormularioPrincipal: SubmitHandler<EvaluadorFormData> =
     useCallback(
       (formData) => {
-        if (isReadOnly && !isAssignedToCurrentGestion) return;
-
-        if (datosPersonaVerificada) {
-          if (!ciVerificado) {
-            onFormSubmitError('Error: No se encontró el CI para asignar.');
-            return;
-          }
-
-          const idsParaEnviar = isAssignedToCurrentGestion
-            ? formData.area_nivel_ids.filter((id) => !initialAreaNivelIds.has(id))
-            : formData.area_nivel_ids;
-
-          const payload: AsignarEvaluadorPayload = {
-            id_olimpiada: ID_OLIMPIADA_ACTUAL,
-            area_nivel_ids: idsParaEnviar,
-          };
-          asignarEvaluador({ ci: ciVerificado, payload });
-        } else {
-          const payload: CrearEvaluadorPayload = {
-            nombre: formData.nombres,
-            apellido: formData.apellidos,
-            ci: formData.ci,
-            email: formData.correo,
-            telefono: formData.celular,
-            area_nivel_ids: formData.area_nivel_ids,
-          };
-          crearEvaluador(payload);
-        }
+        onFormSubmit(formData);
       },
-      [
-        isReadOnly,
-        isAssignedToCurrentGestion,
-        datosPersonaVerificada,
-        ciVerificado,
-        initialAreaNivelIds,
-        crearEvaluador,
-        asignarEvaluador,
-        onFormSubmitError,
-      ]
+      [onFormSubmit]
     );
 
   const resetFormularioPrincipalHook = useCallback(
@@ -284,12 +194,9 @@ export function useFormularioPrincipalEvaluador({
     [resetPrincipalForm]
   );
 
-  const isSaving = isCreatingEvaluador || isAsigningEvaluador;
-
   return {
     formMethodsPrincipal,
     areasDisponiblesQuery,
-    isSaving,
     onSubmitFormularioPrincipal:
       formMethodsPrincipal.handleSubmit(onSubmitFormularioPrincipal),
     handleGestionSelect,
