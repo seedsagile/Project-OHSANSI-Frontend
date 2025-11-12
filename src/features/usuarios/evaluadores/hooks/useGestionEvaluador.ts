@@ -1,43 +1,59 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVerificacionEvaluador } from './useVerificacionEvaludor';
 import { useFormularioPrincipalEvaluador } from './useFormularioPrincipalEvaluador';
-import { useSeleccionAreasEvaluador } from './useSeleccionAreasEvaluador';
-import type { PasoRegistroEvaluador, ModalFeedbackState, EvaluadorCreado, EvaluadorActualizado, DatosPersonaVerificada } from '../types';
-import { GESTION_ACTUAL_ANIO } from '../utils/constants';
+import { useSeleccionAreaNivel } from './useSeleccionAreaNivel';
+import type {
+  PasoRegistroEvaluador,
+  ModalFeedbackState,
+  EvaluadorCreado,
+  EvaluadorAsignado,
+  DatosPersonaVerificada,
+  VerificacionUsuarioCompleta,
+  Gestion,
+  ApiGestionRoles,
+  ApiAsignacionDetalle,
+} from '../types';
 
-const initialModalState: ModalFeedbackState = { isOpen: false, title: '', message: '', type: 'info' };
+const initialModalState: ModalFeedbackState = {
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'info',
+};
 
 export function useGestionEvaluador() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [pasoActual, setPasoActual] = useState<PasoRegistroEvaluador>('VERIFICACION_CI');
-  const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>(initialModalState);
-  const [datosPersona, setDatosPersona] = useState<DatosPersonaVerificada | null>(null);
-  const [isAssignedToCurrentGestion, setIsAssignedToCurrentGestion] = useState(false);
-  const [initialAreasReadOnly, setInitialAreasReadOnly] = useState<number[]>([]);
+
+  const [pasoActual, setPasoActual] =
+    useState<PasoRegistroEvaluador>('VERIFICACION_CI');
+  const [modalFeedback, setModalFeedback] =
+    useState<ModalFeedbackState>(initialModalState);
+
+  const [datosPersona, setDatosPersona] =
+    useState<DatosPersonaVerificada | null>(null);
+  const [isAssignedToCurrentGestion, setIsAssignedToCurrentGestion] =
+    useState(false);
+  const [initialAsignaciones, setInitialAsignaciones] = useState<
+    ApiAsignacionDetalle[]
+  >([]);
+  const [gestionesPasadas, setGestionesPasadas] = useState<Gestion[]>([]);
+  const [rolesPorGestion, setRolesPorGestion] = useState<ApiGestionRoles[]>([]);
 
   const modalTimerRef = useRef<number | undefined>(undefined);
-    useEffect(() => {
-        return () => clearTimeout(modalTimerRef.current);
-    }, []);
 
-    const closeModalFeedback = useCallback(() => {
-        setModalFeedback(initialModalState);
-        clearTimeout(modalTimerRef.current);
-    }, []);
-
-  const handleVerificationComplete = useCallback((
-      data: DatosPersonaVerificada | null,
-      isAlreadyAssigned: boolean,
-      initialAreas: number[]
-  ) => {
-      setDatosPersona(data);
-      setIsAssignedToCurrentGestion(isAlreadyAssigned);
-      setInitialAreasReadOnly(initialAreas);
-      setPasoActual(isAlreadyAssigned ? 'READ_ONLY' : 'FORMULARIO_DATOS');
+  useEffect(() => {
+    return () => clearTimeout(modalTimerRef.current);
   }, []);
+
+  const closeModalFeedback = useCallback(() => {
+    setModalFeedback(initialModalState);
+    clearTimeout(modalTimerRef.current);
+  }, []);
+
+  const handleCancelarCallbackRef = useRef<(() => void) | undefined>(undefined);
 
   const finalizeSuccessAction = useCallback(() => {
     closeModalFeedback();
@@ -49,9 +65,36 @@ export function useGestionEvaluador() {
     clearTimeout(modalTimerRef.current);
   }, [closeModalFeedback, navigate]);
 
+  const handleVerificationComplete = useCallback(
+    (data: VerificacionUsuarioCompleta | null) => {
+      if (data) {
+        setDatosPersona(data.datosPersona);
+        setIsAssignedToCurrentGestion(data.isAssignedToCurrentGestion);
+        setInitialAsignaciones(data.initialAsignaciones);
+        setGestionesPasadas(data.gestionesPasadas);
+        setRolesPorGestion(data.rolesPorGestion);
+      } else {
+        setDatosPersona(null);
+        setIsAssignedToCurrentGestion(false);
+        setInitialAsignaciones([]);
+        setGestionesPasadas([]);
+        setRolesPorGestion([]);
+      }
+      setPasoActual('FORMULARIO_DATOS');
+    },
+    []
+  );
+
   const handleVerificationError = useCallback((message: string) => {
-      setModalFeedback({ isOpen: true, type: 'error', title: 'Error Verificación', message });
-      setPasoActual('VERIFICACION_CI');
+    setModalFeedback({
+      isOpen: true,
+      type: 'error',
+      title: 'Error de Verificación',
+      message:
+        message ||
+        'No se pudo completar la verificación. Revise su conexión o intente más tarde.',
+    });
+    setPasoActual('VERIFICACION_CI');
   }, []);
 
   const {
@@ -60,15 +103,49 @@ export function useGestionEvaluador() {
     handleVerificarCISubmit,
     resetVerification,
     ciVerificado,
-  } = useVerificacionEvaluador(handleVerificationComplete, handleVerificationError);
+  } = useVerificacionEvaluador(
+    handleVerificationComplete,
+    handleVerificationError
+  );
 
-  const handleCancelarCallbackRef = useRef<() => void>(undefined);
+  const handleFormSubmitSuccess = useCallback(
+    (data: EvaluadorCreado | EvaluadorAsignado, esActualizacion: boolean) => {
+      const message =
+        data.message ||
+        (esActualizacion
+          ? '¡Evaluador Asignado exitosamente!'
+          : '¡Registro Exitoso!');
+
+      setModalFeedback({
+        isOpen: true,
+        type: 'success',
+        title: '¡Éxito!',
+        message,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['evaluadores'] });
+      if (ciVerificado) {
+        queryClient.invalidateQueries({ queryKey: ['usuarios', ciVerificado] });
+      }
+
+      clearTimeout(modalTimerRef.current);
+      modalTimerRef.current = window.setTimeout(finalizeSuccessAction, 5000);
+    },
+    [queryClient, ciVerificado, finalizeSuccessAction]
+  );
+
+  const handleFormSubmitError = useCallback((message: string) => {
+    setModalFeedback({
+      isOpen: true,
+      type: 'error',
+      title: '¡Ups! Algo salió mal',
+      message,
+    });
+  }, []);
 
   const {
     formMethodsPrincipal,
-    gestionesPasadas,
     areasDisponiblesQuery,
-    isLoadingGestiones,
     isSaving,
     onSubmitFormularioPrincipal,
     handleGestionSelect,
@@ -77,16 +154,35 @@ export function useGestionEvaluador() {
     primerInputRef,
     resetFormularioPrincipal,
   } = useFormularioPrincipalEvaluador({
-      ciVerificado,
-      datosPersonaVerificada: datosPersona,
-      isReadOnly: isAssignedToCurrentGestion,
-      initialAreas: initialAreasReadOnly,
-      onFormSubmitSuccess: (data, esActualizacion) => {
-          handleFormSubmitSuccess(data, esActualizacion);
-      },
-      onFormSubmitError: (message) => {
-          handleFormSubmitError(message);
-      }
+    ciVerificado,
+    datosPersonaVerificada: datosPersona,
+    isReadOnly: !!datosPersona,
+    initialAsignaciones: initialAsignaciones,
+    onFormSubmitSuccess: handleFormSubmitSuccess,
+    onFormSubmitError: handleFormSubmitError,
+  });
+
+  const preAsignadasSet = useMemo(() => {
+    if (!isAssignedToCurrentGestion || initialAsignaciones.length === 0) {
+      return new Set<number>();
+    }
+    return new Set(initialAsignaciones.map((a) => a.id_area_nivel));
+  }, [isAssignedToCurrentGestion, initialAsignaciones]);
+
+  const {
+    handleToggleNivel,
+    handleToggleArea,
+    handleToggleSeleccionarTodas,
+    nivelesSeleccionadosSet,
+    areasExpandidasSet,
+    areasFromPastGestion,
+    isLoading: isLoadingSeleccion,
+  } = useSeleccionAreaNivel({
+    formMethods: formMethodsPrincipal,
+    gestionPasadaSeleccionadaAnio,
+    preAsignadas: preAsignadasSet,
+    areasDisponiblesQuery,
+    rolesPorGestion: rolesPorGestion,
   });
 
   const handleCancelar = useCallback(() => {
@@ -94,87 +190,60 @@ export function useGestionEvaluador() {
     resetFormularioPrincipal(true);
     setDatosPersona(null);
     setIsAssignedToCurrentGestion(false);
-    setInitialAreasReadOnly([]);
+    setInitialAsignaciones([]);
+    setGestionesPasadas([]);
+    setRolesPorGestion([]);
     setPasoActual('VERIFICACION_CI');
     closeModalFeedback();
     navigate('/evaluadores');
-  }, [isAssignedToCurrentGestion, navigate, resetVerification, resetFormularioPrincipal, closeModalFeedback]);
+  }, [
+    navigate,
+    resetVerification,
+    resetFormularioPrincipal,
+    closeModalFeedback,
+  ]);
 
   handleCancelarCallbackRef.current = handleCancelar;
 
-  const handleFormSubmitSuccess = useCallback((data: EvaluadorCreado | EvaluadorActualizado, esActualizacion: boolean) => {
-    
-    const message = data.message || (esActualizacion ? '¡Evaluador Asignado en nueva gestion!' : '¡Registro Exitoso!');
-
-    setModalFeedback({
-        isOpen: true,
-        type: 'success',
-        title: '¡Éxito!',
-        message
-    });
-
-    queryClient.invalidateQueries({ queryKey: ['evaluadores'] });
-    if (gestionPasadaSeleccionadaAnio) {
-      queryClient.invalidateQueries({ queryKey: ['areasPasadas', gestionPasadaSeleccionadaAnio, ciVerificado] });
-    }
-    queryClient.invalidateQueries({ queryKey: ['gestionesPasadas', ciVerificado] });
-    if (esActualizacion && ciVerificado) {
-      queryClient.invalidateQueries({ queryKey: ['areasPasadas', GESTION_ACTUAL_ANIO, ciVerificado] });
-    }
-
-    clearTimeout(modalTimerRef.current);
-    modalTimerRef.current = window.setTimeout(finalizeSuccessAction, 5000);
-
-  }, [queryClient, ciVerificado, gestionPasadaSeleccionadaAnio, finalizeSuccessAction]);
-
-  const handleFormSubmitError = useCallback((message: string) => {
-      setModalFeedback({ isOpen: true, type: 'error', title: '¡Ups! Algo salió mal', message });
-  }, []);
-
-  const {
-    handleSeleccionarArea,
-    handleToggleSeleccionarTodas,
-    isLoadingAreas,
-    areasLoadedFromPast,
-  } = useSeleccionAreasEvaluador({
-    formMethods: formMethodsPrincipal,
-    ciVerificado,
-    gestionPasadaSeleccionadaAnio,
-    initialAreas: initialAreasReadOnly,
-    isReadOnly: isAssignedToCurrentGestion,
-    areasDisponiblesQuery,
-  });
-
-  const isLoading = areasDisponiblesQuery.isLoading || isLoadingGestiones || isLoadingAreas;
+  const isLoading =
+    areasDisponiblesQuery.isLoading || isLoadingSeleccion;
   const isProcessing = isVerifying || isSaving;
-  const pasoActualUI = isVerifying ? 'CARGANDO_VERIFICACION'
-        : isSaving ? 'CARGANDO_GUARDADO'
-        : isAssignedToCurrentGestion ? 'READ_ONLY'
-        : pasoActual;
 
+  const pasoActualUI = isVerifying
+    ? 'CARGANDO_VERIFICACION'
+    : isSaving
+      ? 'CARGANDO_GUARDADO'
+      : pasoActual;
 
   return {
     pasoActual: pasoActualUI,
     datosPersona,
     areasDisponibles: areasDisponiblesQuery.data || [],
+    areasDisponiblesQuery,
     gestionesPasadas,
     modalFeedback,
-    isReadOnly: isAssignedToCurrentGestion,
+    isReadOnly: !!datosPersona,
+    isAssignedToCurrentGestion,
+    initialAsignaciones,
+    preAsignadasSet,
     gestionPasadaSeleccionadaId,
-    areasLoadedFromPast,
+    areasFromPastGestion,
     isLoading,
-    isLoadingGestiones,
+    isLoadingGestiones: isProcessing,
     isProcessing,
     formMethodsVerificacion,
     formMethodsPrincipal,
     primerInputRef,
     handleVerificarCISubmit,
-    handleSeleccionarArea,
+    handleToggleNivel,
+    handleToggleArea,
     handleToggleSeleccionarTodas,
     handleGestionSelect,
     onSubmitFormularioPrincipal,
     handleCancelar,
     closeModalFeedback,
-    finalizeSuccessAction
+    finalizeSuccessAction,
+    nivelesSeleccionadosSet,
+    areasExpandidasSet,
   };
 }

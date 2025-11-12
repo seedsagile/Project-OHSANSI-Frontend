@@ -1,90 +1,94 @@
-import React, { useState, useEffect, useRef } from 'react';
-import apiClient from '../../../api/ApiPhp';
-import type { Area } from '../interface/interface';
+import React, { useState, useRef, useEffect } from 'react';
+import { getGradosAPI } from '../service/service';
 
-interface AccordionAreaProps {
-  responsableId: number;
-  selectedAreas: Area[];
-  onChangeSelected?: (selected: Area[]) => void;
+interface Grado {
+  id_grado_escolaridad: number;
+  nombre: string;
 }
 
-export const AccordionArea: React.FC<AccordionAreaProps> = ({
-  responsableId,
-  selectedAreas,
+interface AccordionGradoProps {
+  selectedGrados: number[];
+  onChangeSelected: React.Dispatch<React.SetStateAction<number[]>>;
+}
+
+export const AccordionGrado: React.FC<AccordionGradoProps> = ({
+  selectedGrados,
   onChangeSelected,
 }) => {
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
-  const [localSelectedAreas, setLocalSelectedAreas] = useState<Area[]>([]);
+  const [grados, setGrados] = useState<Grado[]>([]);
   const accordionRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [marcarTodo, setMarcarTodo] = useState(false);
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  useEffect(() => {
-    setLocalSelectedAreas(selectedAreas);
-  }, [selectedAreas]);
+  // ✅ Manejar selección individual
+  const handleCheckboxChange = (id_grado_escolaridad: number) => {
+    if (selectedGrados.includes(id_grado_escolaridad)) {
+      onChangeSelected(selectedGrados.filter((id) => id !== id_grado_escolaridad));
+    } else {
+      onChangeSelected([...selectedGrados, id_grado_escolaridad]);
+    }
+  };
 
-  // Fetch interno de áreas
+  // ✅ Marcar/Deseleccionar todo
+  const handleMarcarTodo = () => {
+    const nuevoEstado = !marcarTodo;
+    setMarcarTodo(nuevoEstado);
+    if (nuevoEstado) {
+      const todosLosIds = grados.map((g) => g.id_grado_escolaridad);
+      onChangeSelected(todosLosIds);
+    } else {
+      onChangeSelected([]);
+    }
+  };
+
+  // ✅ Obtener grados desde API
   useEffect(() => {
-    const fetchAreas = async () => {
+    const fetchGrados = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get(`/responsable/${responsableId}`);
-        setAreas(response.data.data.areas || []);
+        const data = await getGradosAPI();
+        setGrados(data);
       } catch (error) {
-        console.error('Error al obtener áreas:', error);
-        setAreas([]);
+        console.error('Error al obtener los grados:', error);
       } finally {
         setLoading(false);
       }
     };
+    fetchGrados();
+  }, []);
 
-    fetchAreas();
-  }, [responsableId]);
-
-  const handleCheckboxChange = (area: Area) => {
-    const isSelected = localSelectedAreas.some((a) => a.id_area === area.id_area);
-    const newSelected = isSelected
-      ? localSelectedAreas.filter((a) => a.id_area !== area.id_area)
-      : [...localSelectedAreas, area];
-
-    setLocalSelectedAreas(newSelected);
-    onChangeSelected?.(newSelected);
-  };
-
-  // 🔹 Función para marcar o desmarcar todo
-  const handleSelectAll = () => {
-    const allSelected = localSelectedAreas.length === areas.length;
-    const newSelected = allSelected ? [] : areas;
-    setLocalSelectedAreas(newSelected);
-    onChangeSelected?.(newSelected);
-  };
-
-  const isAllSelected = areas.length > 0 && localSelectedAreas.length === areas.length;
-
-  // Cerrar acordeón al hacer click fuera
+  // ✅ Cerrar acordeón al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // ✅ Sincronizar “Marcar todo”
+  useEffect(() => {
+    if (grados.length > 0 && selectedGrados.length === grados.length) {
+      setMarcarTodo(true);
+    } else {
+      setMarcarTodo(false);
+    }
+  }, [selectedGrados, grados]);
 
   return (
     <div ref={accordionRef} className="relative w-60">
+      {/* Botón principal */}
       <button
         type="button"
         onClick={toggleAccordion}
         className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
       >
-        <span>Seleccionar Área</span>
+        <span>Seleccionar Grado</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -99,21 +103,22 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
         </svg>
       </button>
 
+      {/* Contenido del acordeón */}
       {isOpen && (
         <div
           className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
           style={{ maxHeight: '200px' }}
         >
           {loading ? (
-            <p className="text-neutro-700 text-sm text-center">Cargando áreas...</p>
-          ) : areas.length === 0 ? (
-            <p className="text-neutro-700 text-sm text-center">No hay áreas disponibles.</p>
+            <div className="text-center text-gray-500 py-2">Cargando grados...</div>
+          ) : grados.length === 0 ? (
+            <div className="text-center text-gray-500 py-2">No hay grados disponibles</div>
           ) : (
             <div className="space-y-2">
-              {/* 🔹 Opción de marcar todo */}
+              {/* 🔹 Opción de Marcar todo */}
               <label
                 className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
-                  isAllSelected
+                  marcarTodo
                     ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
                     : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
                 }`}
@@ -121,29 +126,29 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
                 <span className="text-principal-500">Marcar todo</span>
                 <input
                   type="checkbox"
-                  checked={isAllSelected}
-                  onChange={handleSelectAll}
+                  checked={marcarTodo}
+                  onChange={handleMarcarTodo}
                   className="accent-principal-500 w-4 h-4"
                 />
               </label>
 
-              {/* 🔹 Listado de áreas */}
-              {areas.map((area) => {
-                const isChecked = localSelectedAreas.some((a) => a.id_area === area.id_area);
+              {/* 🔹 Listado de grados */}
+              {grados.map((grado) => {
+                const isChecked = selectedGrados.includes(grado.id_grado_escolaridad);
                 return (
                   <label
-                    key={area.id_area}
+                    key={grado.id_grado_escolaridad}
                     className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
                       isChecked
                         ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
                         : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
                     }`}
                   >
-                    <span className="text-negro">{area.nombre}</span>
+                    <span className="text-negro">{grado.nombre}</span>
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => handleCheckboxChange(area)}
+                      onChange={() => handleCheckboxChange(grado.id_grado_escolaridad)}
                       className="accent-principal-500 w-4 h-4"
                     />
                   </label>

@@ -1,56 +1,113 @@
 // src/features/service/service.ts
 import apiClient from '../../../api/ApiPhp';
-import type { Area, Nivel } from '../interface/interface';
+import type { Nivel } from '../interface/interface';
 
 /**
- * 🔹 Obtener todas las ÁREAS de un responsable
- * Ejemplo: GET /responsable/4
- * Devuelve:
- * [
- *   { "id_area": 1, "nombre": "Matemáticas" },
- *   { "id_area": 2, "nombre": "Física" }
- * ]
+ * 🔹 Obtener todos los competidores de un responsable (sin filtrar)
+ * Ejemplo: GET /listaCompleta/4/0/0/0
  */
-export const getAreasPorResponsableAPI = async (id_responsable: number): Promise<Area[]> => {
-  const response = await apiClient.get<Area[]>(`/responsable/${id_responsable}`);
+export const getTodosCompetidoresPorResponsableAPI = async (id_responsable: number) => {
+  const response = await apiClient.get(`/listaCompleta/${id_responsable}/0/0/0`);
   return response.data;
 };
 
 /**
- * 🔹 Obtener todos los NIVELES de un área
- * Ejemplo: GET /niveles/2
- * Devuelve:
- * [
- *   { "id_nivel": 1, "nombre": "1ro de Secundaria" },
- *   { "id_nivel": 2, "nombre": "2do de Secundaria" }
- * ]
+ * 🔹 Obtener solo las áreas de un responsable
+ * GET /responsable/{id_responsable}
  */
-export const getNivelesPorAreaAPI = async (id_area: number): Promise<Nivel[]> => {
-  const response = await apiClient.get<Nivel[]>(`/niveles/${id_area}`);
-  return response.data;
+export const getAreasPorResponsableAPI = async (id_responsable: number) => {
+  const response = await apiClient.get(`/responsable/${id_responsable}`);
+  return response.data.areas || []; // asumiendo que la respuesta viene como { areas: [...] }
 };
 
 /**
- * 🔹 Obtener lista de competidores (estudiantes) según filtros
- * Ejemplo:
- *  - Todos los estudiantes del responsable 4 → /listaCompleta/4/0/0
- *  - Filtrando por área 2 → /listaCompleta/4/2/0
- *  - Filtrando por área y nivel → /listaCompleta/4/2/1
- *
- * Devuelve:
- * {
- *   "headers": {},
- *   "original": [
- *     { "nombre": "Juan", "apellido": "Angel", "area": "Matemáticas", ... }
- *   ],
- *   "exception": null
- * }
+ * 🔹 Obtener los niveles de un área específica
+ * GET /niveles/{idArea}
  */
-export const getCompetidoresAPI = async (
+// src/features/service/service.ts
+// src/features/service/service.ts
+export const getNivelesPorAreaAPI = async (idArea: number): Promise<Nivel[]> => {
+  try {
+    const response = await apiClient.get(`/niveles/${idArea}/area`);
+    const data = response.data?.data;
+
+    if (!data) return [];
+
+    // ✅ Caso 1: si data.niveles es un array (varios niveles)
+    if (Array.isArray(data.niveles)) {
+      return data.niveles;
+    }
+
+    // ✅ Caso 2: si data es directamente un nivel (un solo objeto)
+    if (data.id_nivel) {
+      return [data];
+    }
+
+    return [];
+  } catch (error) {
+    console.error(`Error al obtener niveles del área ${idArea}:`, error);
+    return [];
+  }
+};
+
+/**
+ * 🔹 Obtener todos los grados escolares
+ * GET /grado
+ */
+export const getGradosAPI = async () => {
+  try {
+    const response = await apiClient.get('/grado');
+    const data = response.data?.data;
+
+    if (!data || !Array.isArray(data.grados)) return [];
+
+    return data.grados.map((grado: any) => ({
+      id_grado_escolaridad: grado.id_grado_escolaridad,
+      nombre: grado.nombre,
+      created_at: grado.created_at,
+      updated_at: grado.updated_at,
+    }));
+  } catch (error) {
+    console.error('Error al obtener los grados:', error);
+    return [];
+  }
+};
+
+/**
+ * 🔹 Obtener todos los géneros
+ * GET /generos
+ */
+export const getGenerosAPI = async () => {
+  try {
+    const response = await apiClient.get('/generos');
+    const data = response.data?.data;
+
+    if (!data || !Array.isArray(data.generos)) return [];
+
+    // ✅ Normalizamos la estructura
+    return data.generos.map((genero: any) => ({
+      id: genero.id,
+      nombre: genero.nombre,
+    }));
+  } catch (error) {
+    console.error('Error al obtener los géneros:', error);
+    return [];
+  }
+};
+
+//recibier todos los filtros
+export const getCompetidoresFiltradosAPI = async (
   id_responsable: number,
-  id_area: number = 0,
-  id_nivel: number = 0
+  idAreas: string = '0', // <- cambiar a string
+  idNivel: number | number[] = 0,
+  idGrado: number = 0,
+  genero?: string,
+  departamento?: string
 ) => {
-  const response = await apiClient.get(`/listaCompleta/${id_responsable}/${id_area}/${id_nivel}`);
+  let url = `/listaCompleta/${id_responsable}/${idAreas}/${idNivel}/${idGrado}`;
+  if (genero) url += `/${genero}`;
+  if (departamento) url += `/${encodeURIComponent(departamento)}`;
+
+  const response = await apiClient.get(url);
   return response.data;
 };

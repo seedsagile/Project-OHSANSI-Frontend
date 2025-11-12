@@ -14,7 +14,7 @@ const esquemaNotas = z.object({
       message: 'El campo Nota mínima de clasificacion es obligatorio.',
     })
     .refine((val) => /^(\d+(\.\d+)?)$/.test(limpiarEspacios(val)), {
-      message: 'Solo se permiten números y punto en Nota mínima.',
+      message: 'Formato invalido',
     }),
 
   cantidadMaxCompetidores: z
@@ -85,7 +85,6 @@ export const Formulario: React.FC<FormularioProps> = ({
 
       await crearParametroAPI(payload);
 
-      // Marcar todos los niveles enviados
       nivelesSeleccionados.forEach((n) => onMarcarEnviado(n.nombre, idArea));
 
       reset({ notaMinima: '', cantidadMaxCompetidores: '' });
@@ -100,7 +99,6 @@ export const Formulario: React.FC<FormularioProps> = ({
     }
   };
 
-  // 👉 Nueva función para limpiar los campos
   const handleLimpiar = () => {
     reset({ notaMinima: '', cantidadMaxCompetidores: '' });
   };
@@ -108,54 +106,70 @@ export const Formulario: React.FC<FormularioProps> = ({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-4 border-2 border-blue-500 p-4 rounded-2xl"
+      className="space-y-4 border-2 border-blue-500 p-4 rounded-2xl w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto bg-white shadow-md"
     >
-      <h1 className="flex justify-center text-2xl font-bold">
-        Ingresar parametro de clasificación
+      <h1 className="flex justify-center text-xl sm:text-2xl font-bold text-center">
+        Ingresar parámetro de clasificación
       </h1>
 
       {formularioBloqueado && (
-        <p className="text-center text-red-500 font-medium">
+        <p className="text-center text-red-500 font-medium text-sm sm:text-base">
           Selecciona un nivel para habilitar el formulario.
         </p>
       )}
 
       <div>
-        <label className="block font-semibold text-negro mb-1">Nota mínima de clasificados</label>
+        <label className="block font-semibold text-negro mb-1 text-sm sm:text-base">
+          Nota mínima de clasificacion:
+        </label>
         <input
           type="text"
           {...register('notaMinima')}
-          className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500"
+          maxLength={4}
+          onInput={(e) => {
+            e.currentTarget.value = e.currentTarget.value
+              .replace(/[^0-9.]/g, '') // solo permite números y punto
+              .replace(/(\..*?)\..*/g, '$1'); // evita más de un punto
+          }}
+          className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500 text-sm sm:text-base"
           disabled={formularioBloqueado}
         />
+
         {errors.notaMinima && (
-          <p className="text-red-500 text-sm mt-1">{errors.notaMinima.message}</p>
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.notaMinima.message}</p>
         )}
       </div>
 
       <div>
-        <label className="block font-semibold text-negro mb-1">
+        <label className="block font-semibold text-negro mb-1 text-sm sm:text-base">
           Cantidad máxima de clasificados:
         </label>
         <input
           type="text"
           {...register('cantidadMaxCompetidores')}
-          className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500"
+          maxLength={4}
+          onInput={(e) => {
+            e.currentTarget.value = e.currentTarget.value
+              .replace(/[^0-9]/g, '') // solo permite números y punto
+              .replace(/(\..*?)\..*/g, '$1'); // evita más de un punto
+          }}
+          className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500 text-sm sm:text-base"
           disabled={formularioBloqueado}
         />
         {errors.cantidadMaxCompetidores && (
-          <p className="text-red-500 text-sm mt-1">{errors.cantidadMaxCompetidores.message}</p>
+          <p className="text-red-500 text-xs sm:text-sm mt-1">
+            {errors.cantidadMaxCompetidores.message}
+          </p>
         )}
       </div>
 
-      <div className="flex gap-3 justify-center">
+      <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-around">
         {/* Botón de limpiar */}
-
         <button
           type="button"
           onClick={handleLimpiar}
           disabled={formularioBloqueado || loading}
-          className={`flex py-2 px-8 rounded-md text-white font-semibold transition ${
+          className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
             formularioBloqueado || loading
               ? 'bg-neutro-400 cursor-not-allowed'
               : 'bg-gray-400 hover:bg-gray-300'
@@ -163,25 +177,26 @@ export const Formulario: React.FC<FormularioProps> = ({
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            className="lucide lucide-x-icon lucide-x"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-x mr-2"
           >
             <path d="M18 6 6 18" />
             <path d="m6 6 12 12" />
           </svg>
           Limpiar
         </button>
+
         <button
           type="submit"
           disabled={formularioBloqueado || loading}
-          className={`flex py-2 px-8 rounded-md text-white font-semibold transition ${
+          className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
             formularioBloqueado || loading
               ? 'bg-neutro-400 cursor-not-allowed'
               : 'bg-principal-500 hover:bg-principal-600'
@@ -189,15 +204,15 @@ export const Formulario: React.FC<FormularioProps> = ({
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            className="lucide lucide-save-icon lucide-save"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-save mr-2"
           >
             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
             <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useMutation} from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as responsableService from '../services/responsablesService';
@@ -8,13 +8,11 @@ import type { VerificacionCIForm } from '../utils/validations';
 import { verificacionCISchema } from '../utils/validations';
 
 export function useVerificacionResponsable(
-    onVerificationComplete: (
-        data: VerificacionUsuarioCompleta | null
-    ) => void,
-    onError: (message: string) => void
+  onVerificationComplete: (data: VerificacionUsuarioCompleta | null) => void,
+  onError: (message: string) => void
 ) {
   const [ciVerificado, setCiVerificado] = useState<string>('');
-  
+
   const formMethodsVerificacion = useForm<VerificacionCIForm>({
     resolver: zodResolver(verificacionCISchema),
     mode: 'all',
@@ -36,17 +34,25 @@ export function useVerificacionResponsable(
     },
     onError: (error) => {
       setCiVerificado('');
-      onError(error.message || 'No se pudo verificar el CI.');
+      // 🔽 --- CORRECCIÓN DEL BUG ---
+      // Se elimina la lógica de fallback '||'.
+      // Ahora simplemente pasamos el 'error.message' (que puede ser '')
+      // al hook 'useGestionResponsable', que es el encargado
+      // de interpretarlo y mostrar el mensaje genérico del CA #8.
+      onError(error.message);
+      // 🔽 --- FIN DE CORRECCIÓN ---
     },
   });
 
-  const handleVerificarCISubmit = formMethodsVerificacion.handleSubmit((formData) => {
-    verificarCI(formData.ci);
-  });
+  const handleVerificarCISubmit = formMethodsVerificacion.handleSubmit(
+    (formData) => {
+      verificarCI(formData.ci);
+    }
+  );
 
   const resetVerification = useCallback(() => {
-      setCiVerificado('');
-      formMethodsVerificacion.reset();
+    setCiVerificado('');
+    formMethodsVerificacion.reset();
   }, [formMethodsVerificacion]);
 
   return {

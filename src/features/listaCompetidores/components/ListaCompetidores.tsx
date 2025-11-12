@@ -1,58 +1,86 @@
+// src/features/listaCompetidores/components/ListaCompetidores.tsx
 import { useEffect, useState } from 'react';
+import {
+  getCompetidoresFiltradosAPI,
+  getTodosCompetidoresPorResponsableAPI,
+} from '../service/service';
+import type { Area } from '../interface/interface';
 import { AccordionArea } from './AccordionArea';
 import { AccordionNivel } from './AccordionNivel';
-import {
-  getAreasPorResponsableAPI,
-  getNivelesPorAreaAPI,
-  getCompetidoresAPI,
-} from '../service/service';
-import type { Nivel, Area } from '../interface/interface';
+import { AccordionGrado } from './AccordionGrado';
+import { AccordionDepartamento } from './AccordionDepartamento';
+import { AccordionGenero } from './AccordionGenero';
+
+import jsPDF from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface Competidor {
-  nombre: string;
   apellido: string;
+  nombre: string;
+  genero: string;
+  ci: string;
+  departamento: string;
+  colegio: string;
   area: string;
   nivel: string;
   grado: string;
-  ci: string;
 }
 
 export const ListaCompetidores = () => {
-  const [areas, setAreas] = useState<Area[]>([]);
+  const [areasSeleccionadas, setAreasSeleccionadas] = useState<Area[]>([]);
   const [competidores, setCompetidores] = useState<Competidor[]>([]);
-  const [areaNiveles, setAreaNiveles] = useState<{ areaNombre: string; niveles: Nivel[] }[]>([]);
-
-  const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
-  const [selectedNiveles, setSelectedNiveles] = useState<{ [areaNombre: string]: number | null }>(
-    {}
-  );
-
-  const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingCompetidores, setLoadingCompetidores] = useState(true);
+  const [nivelesSeleccionados, setNivelesSeleccionados] = useState<{
+    [id_area: number]: number[];
+  }>({});
+  const [gradoSeleccionado, setGradoSeleccionado] = useState<number[]>([]);
+  const [generoSeleccionado, setGeneroSeleccionado] = useState<string[]>([]);
+  const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string[]>([]);
+  const [busqueda, setBusqueda] = useState('');
 
-  const responsableId = 4;
+  const responsableId = Number(localStorage.getItem('id_responsable')) || 4;
+  console.log('ID del responsable logueado:', responsableId);
 
-  /** 🔹 Cargar Áreas del responsable */
+  const [orden, setOrden] = useState<{ columna: string; ascendente: boolean }>({
+    columna: '',
+    ascendente: true,
+  });
+
+  const [mensajeSinCompetidores, setMensajeSinCompetidores] = useState<string | null>(null);
+
+  // Cargar competidores al montar el componente
   useEffect(() => {
-    const fetchAreas = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getAreasPorResponsableAPI(responsableId);
-        setAreas(data);
+        setLoadingCompetidores(true);
+        const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
+        setCompetidores(data.data?.competidores || []);
       } catch (error) {
-        console.error('Error al obtener áreas:', error);
+        console.error('Error al obtener competidores:', error);
+        setCompetidores([]);
       } finally {
-        setLoadingAreas(false);
+        setLoadingCompetidores(false);
       }
     };
-    fetchAreas();
-  }, []);
 
-  /** 🔹 Cargar competidores */
-  const fetchCompetidores = async (id_area = 0, id_nivel = 0) => {
+    fetchData();
+  }, [responsableId]);
+
+  // Mostrar todos los competidores
+  const handleMostrarTodo = async () => {
     try {
       setLoadingCompetidores(true);
-      const data = await getCompetidoresAPI(responsableId, id_area, id_nivel);
-      setCompetidores(data.original || []);
+      const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
+      setCompetidores(data.data?.competidores || []);
+
+      setAreasSeleccionadas([]);
+      setNivelesSeleccionados({});
+      setGradoSeleccionado([]);
+      setGeneroSeleccionado([]);
+      setDepartamentoSeleccionado([]);
+      setBusqueda('');
     } catch (error) {
       console.error('Error al obtener competidores:', error);
       setCompetidores([]);
@@ -61,140 +89,518 @@ export const ListaCompetidores = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCompetidores();
-  }, []);
+  // Actualizar competidores según filtros
+  // Actualizar competidores según filtros (versión corregida)
+  // ✅ Actualizar competidores según filtros (versión con múltiples departamentos)
+  const actualizarCompetidores = async () => {
+    try {
+      setLoadingCompetidores(true);
+      setMensajeSinCompetidores(null);
 
-  /** 🔹 Manejar selección de áreas */
-  const handleSelectedAreas = async (selected: Area[]) => {
-    setSelectedAreas(selected);
+      let competidoresEncontrados: Competidor[] = [];
 
-    if (selected.length === 0) {
-      setAreaNiveles([]);
-      setSelectedNiveles({});
-      await fetchCompetidores(0, 0);
-      return;
-    }
+      // ✅ Parámetro de género correcto
+      const generoParam = generoSeleccionado.length === 1 ? generoSeleccionado[0] : '';
 
-    // Cargar niveles de todas las áreas seleccionadas
-    const nivelesPorArea = await Promise.all(
-      selected.map(async (area) => {
-        const niveles = await getNivelesPorAreaAPI(area.id_area);
-        return { areaNombre: area.nombre, niveles };
-      })
-    );
-    setAreaNiveles(nivelesPorArea);
+      const hayAlgunNivelSeleccionado = Object.values(nivelesSeleccionados).some(
+        (arr) => Array.isArray(arr) && arr.length > 0
+      );
 
-    // 🔹 Mostrar competidores de todas las áreas seleccionadas
-    let todos: Competidor[] = [];
-    for (const area of selected) {
-      const data = await getCompetidoresAPI(responsableId, area.id_area, 0);
-      todos = todos.concat(data.original || []);
-    }
-    setCompetidores(todos);
-  };
+      // ✅ Determinar departamentos a recorrer
+      const departamentos =
+        departamentoSeleccionado.length > 0 ? departamentoSeleccionado : [undefined]; // si no hay ninguno, se llama sin parámetro
 
-  /** 🔹 Manejar selección de niveles */
-  const handleSelectedNiveles = async (niveles: { [areaNombre: string]: number | null }) => {
-    setSelectedNiveles(niveles);
+      if (areasSeleccionadas.length > 0) {
+        // 🔹 Con áreas seleccionadas
+        for (const area of areasSeleccionadas) {
+          const niveles = nivelesSeleccionados[area.id_area] || [];
+          const idGrado = gradoSeleccionado.length > 0 ? gradoSeleccionado[0] : 0;
 
-    if (selectedAreas.length === 0) return;
+          if (hayAlgunNivelSeleccionado) {
+            // ---------- CASO A: hay niveles seleccionados ----------
+            if (!niveles || niveles.length === 0) continue;
 
-    let todos: Competidor[] = [];
+            for (const nivel of niveles) {
+              for (const dep of departamentos) {
+                const data = await getCompetidoresFiltradosAPI(
+                  responsableId,
+                  area.id_area.toString(),
+                  nivel,
+                  idGrado,
+                  generoParam,
+                  dep ? dep.toLowerCase() : undefined
+                );
+                competidoresEncontrados.push(...(data.data?.competidores || []));
+              }
+            }
+          } else {
+            // ---------- CASO B: sin niveles seleccionados ----------
+            for (const dep of departamentos) {
+              const data = await getCompetidoresFiltradosAPI(
+                responsableId,
+                area.id_area.toString(),
+                0,
+                idGrado,
+                generoParam,
+                dep ? dep.toLowerCase() : undefined
+              );
+              competidoresEncontrados.push(...(data.data?.competidores || []));
+            }
+          }
+        }
 
-    for (const area of selectedAreas) {
-      const nivelId = niveles[area.nombre];
-      if (nivelId) {
-        const data = await getCompetidoresAPI(responsableId, area.id_area, nivelId);
-        todos = todos.concat(data.original || []);
+        // Eliminar duplicados por CI
+        competidoresEncontrados = Array.from(
+          new Map(competidoresEncontrados.map((c) => [c.ci, c])).values()
+        );
+      } else {
+        // ---------- CASO C: sin áreas seleccionadas ----------
+        const idGrados = gradoSeleccionado.length > 0 ? gradoSeleccionado : [0];
+
+        for (const idGrado of idGrados) {
+          for (const dep of departamentos) {
+            const data = await getCompetidoresFiltradosAPI(
+              responsableId,
+              '0',
+              0,
+              idGrado, // ✅ Aquí se pasa un solo número, no un array
+              generoParam,
+              dep ? dep.toLowerCase() : undefined
+            );
+            competidoresEncontrados.push(...(data.data?.competidores || []));
+          }
+        }
       }
-    }
 
-    setCompetidores(todos);
+      if (competidoresEncontrados.length === 0) {
+        setMensajeSinCompetidores('No hay competidores registrados en el nivel seleccionado');
+      }
+
+      setCompetidores(competidoresEncontrados);
+    } catch (error) {
+      console.error('Error al actualizar competidores:', error);
+      setCompetidores([]);
+      setMensajeSinCompetidores('Error al cargar competidores');
+    } finally {
+      setLoadingCompetidores(false);
+    }
   };
 
-  /** 🔹 Mostrar todos los competidores */
-  const handleMostrarTodo = () => {
-    setSelectedAreas([]);
-    setSelectedNiveles({});
-    setAreaNiveles([]);
-    fetchCompetidores(0, 0);
+  // Llamar a actualizarCompetidores cuando cambian los filtros
+  useEffect(() => {
+    const actualizar = async () => {
+      // 🟢 Si no hay áreas seleccionadas ni otros filtros -> mostrar todo
+      if (
+        areasSeleccionadas.length === 0 &&
+        !gradoSeleccionado &&
+        !generoSeleccionado &&
+        !departamentoSeleccionado
+      ) {
+        try {
+          setLoadingCompetidores(true);
+          const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
+          setCompetidores(data.data?.competidores || []);
+        } catch (error) {
+          console.error('Error al obtener competidores:', error);
+          setCompetidores([]);
+        } finally {
+          setLoadingCompetidores(false);
+        }
+      } else {
+        // 🔹 Si hay algún filtro aplicado -> filtrar normalmente
+        actualizarCompetidores();
+      }
+    };
+
+    actualizar();
+  }, [
+    areasSeleccionadas,
+    nivelesSeleccionados,
+    gradoSeleccionado,
+    generoSeleccionado,
+    departamentoSeleccionado,
+  ]);
+
+  // Función de búsqueda local
+  const filtrarCompetidores = () => {
+    if (!busqueda) return competidores;
+    const texto = busqueda.toLowerCase();
+    return competidores.filter(
+      (c) =>
+        c.nombre.toLowerCase().includes(texto) ||
+        c.apellido.toLowerCase().includes(texto) ||
+        c.colegio.toLowerCase().includes(texto)
+    );
+  };
+
+  // Función para descargar PDF
+  // ✅ Descargar PDF con filtros aplicados
+  const descargarPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    doc.setFontSize(18);
+    doc.text('Listado de Competidores', 40, 40);
+
+    // 🟢 Preparar texto con los filtros aplicados
+    const filtrosTexto = [
+      `Áreas: ${
+        areasSeleccionadas.length > 0 ? areasSeleccionadas.map((a) => a.nombre).join(', ') : 'Todas'
+      }`,
+      `Niveles: ${
+        Object.values(nivelesSeleccionados).flat().length > 0
+          ? Object.values(nivelesSeleccionados).flat().join(', ')
+          : 'Todos'
+      }`,
+      `Grado: ${gradoSeleccionado ? gradoSeleccionado : 'Todos'}`,
+      `Género: ${generoSeleccionado.length > 0 ? generoSeleccionado.join(', ') : 'Todos'}`,
+      `Departamentos: ${
+        departamentoSeleccionado.length > 0 ? departamentoSeleccionado.join(', ') : 'Todos'
+      }`,
+    ].join(' | ');
+
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Filtros aplicados: ${filtrosTexto}`, 40, 60, { maxWidth: 750 });
+
+    const columns = [
+      'Apellido',
+      'Nombre',
+      'Género',
+      'Departamento',
+      'Colegio',
+      'CI',
+      'Área',
+      'Nivel',
+      'Grado',
+    ];
+
+    const rows = filtrarCompetidores().map((c) => [
+      c.apellido,
+      c.nombre,
+      c.genero || '-',
+      c.departamento || '-',
+      c.colegio || '-',
+      c.ci,
+      c.area,
+      c.nivel,
+      c.grado,
+    ]);
+
+    // 📄 Ajustar posición de la tabla (debajo del texto de filtros)
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 80,
+      styles: {
+        fontSize: 10,
+        cellPadding: 5,
+        halign: 'left',
+        valign: 'middle',
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+      theme: 'grid',
+    });
+
+    doc.save('competidores.pdf');
+  };
+
+  const descargarExcel = () => {
+    // 🟢 Texto con los filtros aplicados (en una sola línea)
+    const filtrosTexto = [
+      `Áreas: ${
+        areasSeleccionadas.length > 0 ? areasSeleccionadas.map((a) => a.nombre).join(', ') : 'Todas'
+      }`,
+      `Niveles: ${
+        Object.values(nivelesSeleccionados).flat().length > 0
+          ? Object.values(nivelesSeleccionados).flat().join(', ')
+          : 'Todos'
+      }`,
+      `Grado: ${gradoSeleccionado.length > 0 ? gradoSeleccionado.join(', ') : 'Todos'}`,
+      `Género: ${generoSeleccionado.length > 0 ? generoSeleccionado.join(', ') : 'Todos'}`,
+      `Departamentos: ${
+        departamentoSeleccionado.length > 0 ? departamentoSeleccionado.join(', ') : 'Todos'
+      }`,
+    ].join(' | ');
+
+    // 🟡 Datos de la tabla
+    const data = filtrarCompetidores().map((c) => ({
+      Apellido: c.apellido,
+      Nombre: c.nombre,
+      Género: c.genero || '-',
+      Departamento: c.departamento || '-',
+      Colegio: c.colegio || '-',
+      CI: c.ci,
+      Área: c.area,
+      Nivel: c.nivel,
+      Grado: c.grado,
+    }));
+
+    // 🧩 Crear la hoja Excel
+    const worksheet = XLSX.utils.json_to_sheet([]);
+
+    // 🔹 Escribir la fila de filtros en la primera fila (celda A1)
+    XLSX.utils.sheet_add_aoa(worksheet, [[`Filtros aplicados: ${filtrosTexto}`]], {
+      origin: 'A1',
+    });
+
+    // 🔹 Escribir los datos comenzando desde la fila 3 (dejamos una fila vacía)
+    XLSX.utils.sheet_add_json(worksheet, data, { origin: 'A3', skipHeader: false });
+
+    // 🟢 Ajustar ancho de columnas automáticamente
+    const colWidths = Object.keys(data[0] || {}).map((key) => ({
+      wch: Math.max(key.length + 2, 15),
+    }));
+    worksheet['!cols'] = colWidths;
+
+    // 📘 Crear y guardar el libro
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Competidores');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(blob, 'competidores.xlsx');
+  };
+
+  const ordenarPorColumna = (columna: keyof Competidor) => {
+    const ascendente = orden.columna === columna ? !orden.ascendente : true;
+    const competidoresOrdenados = [...competidores].sort((a, b) => {
+      const valorA = a[columna] ?? '';
+      const valorB = b[columna] ?? '';
+
+      if (!isNaN(Number(valorA)) && !isNaN(Number(valorB))) {
+        // Orden numérico
+        return ascendente ? Number(valorA) - Number(valorB) : Number(valorB) - Number(valorA);
+      } else {
+        // Orden alfabético
+        return ascendente
+          ? String(valorA).localeCompare(String(valorB))
+          : String(valorB).localeCompare(String(valorA));
+      }
+    });
+
+    setCompetidores(competidoresOrdenados);
+    setOrden({ columna, ascendente });
   };
 
   return (
-    <div className="bg-neutro-100 min-h-screen flex items-center justify-center p-4 font-display">
-      <main className="bg-blanco w-full max-w-5xl rounded-xl shadow-sombra-3 p-8">
-        <header className="flex flex-col mb-10">
-          <h1 className="text-4xl font-extrabold text-negro tracking-tighter text-center mb-8">
-            Listar competidores
+    <div className="min-h-screen flex items-start justify-center font-display">
+      <main className="bg-blanco w-full max-w-8xl rounded-2xl shadow-lg p-6 md:p-10">
+        <header className="flex flex-col mb-8">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-principal-800 tracking-tight text-center mb-6 animate-fade-in">
+            Listado de Competidores
           </h1>
 
-          <div className="flex justify-end items-start gap-4 mb-6">
-            <button
-              onClick={handleMostrarTodo}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
-            >
-              Mostrar Todo
-            </button>
+          <div className="flex flex-col lg:flex-row gap-6 ">
+            <div className="flex flex-col space-y-4 px-10 ">
+              <button
+                onClick={handleMostrarTodo}
+                className="w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors flex items-center justify-center"
+              >
+                Mostrar Todo
+              </button>
 
-            {loadingAreas ? (
-              <span>Cargando áreas...</span>
-            ) : (
               <AccordionArea
-                areas={areas}
-                selectedAreas={selectedAreas}
-                onChangeSelected={handleSelectedAreas}
+                responsableId={responsableId}
+                selectedAreas={areasSeleccionadas}
+                onChangeSelected={(nuevasAreas) => {
+                  // 🔹 Actualiza áreas
+                  setAreasSeleccionadas(nuevasAreas);
+
+                  // 🔹 Limpia niveles de las áreas que fueron deseleccionadas
+                  setNivelesSeleccionados((prev) => {
+                    const nuevasClaves = nuevasAreas.map((a) => a.id_area);
+                    const actualizadas: { [id_area: number]: number[] } = {};
+
+                    // Solo mantiene los niveles de áreas aún seleccionadas
+                    for (const id of nuevasClaves) {
+                      if (prev[id]) {
+                        actualizadas[id] = prev[id];
+                      }
+                    }
+
+                    return actualizadas;
+                  });
+                }}
               />
-            )}
 
-            <AccordionNivel
-              data={areaNiveles}
-              selectedNiveles={selectedNiveles}
-              onChangeSelected={handleSelectedNiveles}
-            />
-          </div>
+              <AccordionNivel
+                selectedAreas={areasSeleccionadas}
+                selectedNiveles={nivelesSeleccionados}
+                onChangeSelected={setNivelesSeleccionados}
+              />
 
-          {/* Tabla */}
-          <div className="w-full overflow-x-auto">
-            <div className="max-h-[950px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent rounded-lg border border-gray-200">
-              <table className="w-full border-collapse">
-                <thead className="bg-principal-500 text-blanco text-left sticky top-0 z-10">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">Nombre</th>
-                    <th className="px-6 py-3 font-semibold">Apellido</th>
-                    <th className="px-6 py-3 font-semibold">Nivel</th>
-                    <th className="px-6 py-3 font-semibold">Área</th>
-                    <th className="px-6 py-3 font-semibold">CI</th>
-                    <th className="px-6 py-3 font-semibold">Grado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loadingCompetidores ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-3 text-center">
-                        Cargando competidores...
-                      </td>
-                    </tr>
-                  ) : competidores.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-3 text-center">
-                        No hay competidores registrados
-                      </td>
-                    </tr>
-                  ) : (
-                    competidores.map((c, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="px-6 py-3">{c.nombre}</td>
-                        <td className="px-6 py-3">{c.apellido}</td>
-                        <td className="px-6 py-3">{c.nivel}</td>
-                        <td className="px-6 py-3">{c.area}</td>
-                        <td className="px-6 py-3">{c.ci}</td>
-                        <td className="px-6 py-3">{c.grado}</td>
+              <AccordionGrado
+                selectedGrados={gradoSeleccionado}
+                onChangeSelected={setGradoSeleccionado}
+              />
+
+              <AccordionGenero
+                selectedGenero={generoSeleccionado}
+                onChangeSelected={setGeneroSeleccionado}
+              />
+
+              <AccordionDepartamento
+                selectedDepartamentos={departamentoSeleccionado}
+                onChangeSelected={setDepartamentoSeleccionado}
+              />
+
+              <button
+                onClick={descargarPDF}
+                className="w-full hover:bg-acento-400 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold  transition-colors"
+              >
+                Descargar PDF
+              </button>
+
+              <button
+                onClick={descargarExcel}
+                className="w-full hover:bg-acento-400 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold  transition-colors"
+              >
+                Descargar EXCEL
+              </button>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-4 min-w-0">
+              {/* Buscador */}
+              <div className="flex flex-col sm:flex-row justify-end gap-2">
+                <input
+                  type="text"
+                  placeholder="Buscar: nombre, apellido, colegio"
+                  value={busqueda}
+                  maxLength={20}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    // Permite letras (con acentos), números y espacios
+                    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]*$/;
+                    if (regex.test(valor)) {
+                      setBusqueda(valor);
+                    }
+                  }}
+                  className="w-full sm:w-72 px-4 py-2 rounded-xl border-2 border-principal-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-300 transition"
+                />
+
+                {/* <button
+                  onClick={() => {}}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
+                >
+                  Buscar
+                </button> */}
+              </div>
+
+              <div className="relative overflow-hidden rounded-lg border border-principal-200 shadow-inner bg-white">
+                <div className="overflow-auto max-h-[600px] scrollbar-thin scrollbar-thumb-principal-400 scrollbar-track-principal-100">
+                  <table className="w-full min-w-[900px] table-auto border-collapse text-sm md:text-base">
+                    <thead className="bg-principal-500 text-white sticky top-0 z-10 shadow-md">
+                      <tr>
+                        {[
+                          'apellido',
+                          'nombre',
+                          'genero',
+                          'departamento',
+                          'colegio',
+                          'ci',
+                          'area',
+                          'nivel',
+                          'grado',
+                        ].map((header) => (
+                          <th
+                            key={header}
+                            onClick={() => ordenarPorColumna(header as keyof Competidor)}
+                            className="px-3 hover:bg-acento-400 py-3 text-left font-semibold border-r border-principal-400 last:border-r-0 whitespace-nowrap cursor-pointer select-none"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{header.charAt(0).toUpperCase() + header.slice(1)}</span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`ml-2 transition-transform ${
+                                  orden.columna === header
+                                    ? orden.ascendente
+                                      ? 'rotate-180'
+                                      : ''
+                                    : ''
+                                }`}
+                              >
+                                <path d="m21 16-4 4-4-4" />
+                                <path d="M17 20V4" />
+                                <path d="m3 8 4-4 4 4" />
+                                <path d="M7 4v16" />
+                              </svg>
+                            </div>
+                          </th>
+                        ))}
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+
+                    <tbody>
+                      {loadingCompetidores ? (
+                        <tr>
+                          <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                            <div className="flex justify-center items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-principal-500"></div>
+                              <span className="ml-3">Cargando competidores...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : filtrarCompetidores().length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                            {mensajeSinCompetidores || 'No hay competidores disponibles.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filtrarCompetidores().map((c, i) => (
+                          <tr
+                            key={i}
+                            className={`border-b border-principal-100 transition-colors ${
+                              i % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                            } hover:bg-principal-50`}
+                          >
+                            <td className="px-3 py-3 border-r border-principal-100">
+                              {c.apellido}
+                            </td>
+                            <td className="px-3 py-3 border-r border-principal-100">{c.nombre}</td>
+                            <td className="px-3 py-3 border-r border-principal-100">
+                              {c.genero || '-'}
+                            </td>
+                            <td className="px-3 py-3 border-r border-principal-100">
+                              {c.departamento || '-'}
+                            </td>
+                            <td className="px-3 py-3 border-r border-principal-100">
+                              {c.colegio || '-'}
+                            </td>
+                            <td className="px-3 py-3 border-r border-principal-100">{c.ci}</td>
+                            <td className="px-3 py-3 border-r border-principal-100">{c.area}</td>
+                            <td className="px-3 py-3 border-r border-principal-100">{c.nivel}</td>
+                            <td className="px-3 py-3">{c.grado}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="block lg:hidden text-center text-xs text-gray-500 mt-2">
+                ← Desliza para ver más columnas →
+              </div>
             </div>
           </div>
         </header>

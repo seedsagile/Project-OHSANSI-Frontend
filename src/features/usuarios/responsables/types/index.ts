@@ -39,6 +39,8 @@ export type VerificacionUsuarioCompleta = {
   initialAreas: number[];
   gestionesPasadas: Gestion[];
   rolesPorGestion: ApiGestionRoles[];
+  esEvaluadorExistente: boolean;
+  esResponsableExistente: boolean;
 };
 
 export type DatosPersonaVerificada = {
@@ -72,6 +74,7 @@ export type CrearResponsablePayload = {
   telefono: string;
   id_olimpiada?: number;
   areas: number[];
+  force_create_role?: boolean; 
 };
 
 export type AsignarResponsablePayload = {
@@ -84,10 +87,8 @@ export type ResponsableCreado = {
   [key: string]: any;
 };
 
-export type ResponsableAsignado = {
-  message: string;
-  [key: string]: any;
-};
+export type ResponsableAsignado = ResponsableCreado;
+export type ResponsableActualizado = ResponsableAsignado;
 
 export type PasoRegistroResponsable =
   | 'VERIFICACION_CI'
@@ -99,9 +100,11 @@ export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'confirmation';
+  onConfirm?: () => void;
+  confirmText?: string;
+  cancelText?: string;
 };
 
 export type { AreaGeneral as Area };
-export type ActualizarResponsablePayload = AsignarResponsablePayload;
-export type ResponsableActualizado = ResponsableAsignado;
+export type { ResponsableFormData } from '../utils/validations';

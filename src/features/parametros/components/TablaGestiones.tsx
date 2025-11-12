@@ -81,8 +81,8 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
               {nivelesSeleccionados.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-6 text-neutro-600">
-                    No se seleccionó ningún nivel. Selecciona al menos un nivel en la lista para ver
-                    los datos.
+                    No se seleccionó ningún nivel. Selecciona al menos un nivel para ver sus
+                    parámetros de clasificación.
                   </td>
                 </tr>
               ) : (
