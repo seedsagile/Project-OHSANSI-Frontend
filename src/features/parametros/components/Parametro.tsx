@@ -67,7 +67,13 @@ export const Parametro = () => {
     const fetchAreas = async () => {
       try {
         const data = await obtenerAreasAPI();
-        setAreas(data);
+
+        // 🔤 Ordenar de A a Z por nombre
+        const areasOrdenadas = data.sort((a: Area, b: Area) =>
+          a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+        );
+
+        setAreas(areasOrdenadas);
         //toast.success('Áreas cargadas correctamente');
       } catch (error) {
         //console.error('Error al obtener áreas:', error);
@@ -119,7 +125,19 @@ export const Parametro = () => {
 
     try {
       const nivelesData = await obtenerNivelesPorAreaAPI(id);
-      setNiveles(nivelesData);
+      // 🔢 Ordenar niveles considerando el número dentro del nombre
+      const nivelesOrdenados = nivelesData.sort((a: Nivel, b: Nivel) => {
+        // Extraer número del texto, ej: "1ro de Secundaria" -> 1
+        const numA = parseInt(a.nombre.match(/\d+/)?.[0] || '0', 10);
+        const numB = parseInt(b.nombre.match(/\d+/)?.[0] || '0', 10);
+
+        // Si ambos tienen número, ordenar por número; si no, por nombre alfabético
+        if (!isNaN(numA) && !isNaN(numB) && numA !== numB) return numA - numB;
+
+        // Si son iguales o no hay número, usar orden alfabético
+        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+      });
+      setNiveles(nivelesOrdenados);
       //toast.success('Niveles cargados correctamente');
     } catch (error) {
       console.error('Error al obtener niveles por área:', error);
@@ -353,9 +371,12 @@ export const Parametro = () => {
         >
           <p className="font-semibold mb-1">Grados:</p>
           <ul className="list-disc pl-4 space-y-1">
-            {hoveredGrado.grados.map((grado) => (
-              <li key={grado.id}>{grado.nombre}</li>
-            ))}
+            {hoveredGrado.grados
+              .slice() // copia para no mutar el original
+              .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { numeric: true })) // ordena alfabéticamente o numéricamente
+              .map((grado) => (
+                <li key={grado.id}>{grado.nombre}</li>
+              ))}
           </ul>
         </div>
       )}
