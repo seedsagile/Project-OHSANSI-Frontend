@@ -63,6 +63,7 @@ export function PaginaRegistrarResponsable() {
     <>
       <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex justify-center items-start pt-12 md:pt-16">
         <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-6 md:p-8 relative transition-all duration-300 ease-in-out">
+          {/* --- Overlay de Carga --- */}
           {(isProcessing || mostrarCargaPagina) && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col justify-center items-center z-20 rounded-xl transition-opacity duration-200">
               <LoaderCircle className="animate-spin h-12 w-12 text-principal-500" />
@@ -80,6 +81,7 @@ export function PaginaRegistrarResponsable() {
             </h1>
           </header>
 
+          {/* --- Stepper Visual --- */}
           <div className="flex justify-center items-center space-x-2 sm:space-x-4 mb-8 text-sm sm:text-base">
             <span
               className={`flex items-center gap-2 font-semibold ${
@@ -111,7 +113,9 @@ export function PaginaRegistrarResponsable() {
             >
               <span
                 className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
-                  pasoFormularioActivo ? 'border-principal-600 bg-principal-600 text-white' : 'border-neutro-400'
+                  pasoFormularioActivo
+                    ? 'border-principal-600 bg-principal-600 text-white'
+                    : 'border-neutro-400'
                 }`}
               >
                 2
@@ -130,7 +134,7 @@ export function PaginaRegistrarResponsable() {
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
-
+                  {/* CA: Alerta Escenario 2 */}
                   {datosPersona?.Id_usuario &&
                     !isAssignedToCurrentGestion &&
                     !falloCargaAreas && (
@@ -220,6 +224,10 @@ export function PaginaRegistrarResponsable() {
         }
         title={modalFeedback.title}
         type={modalFeedback.type}
+        onConfirm={modalFeedback.onConfirm}
+        loading={isProcessing}
+        confirmText={modalFeedback.confirmText}
+        cancelText={modalFeedback.cancelText}
       >
         {modalFeedback.message}
       </Modal1>

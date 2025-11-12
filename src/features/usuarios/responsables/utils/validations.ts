@@ -7,7 +7,7 @@ const APELLIDO_MIN_LENGTH = 2;
 export const APELLIDO_MAX_LENGTH = 30;
 
 const CI_MIN_LENGTH = 5;
-export const CI_MAX_LENGTH = 10;
+export const CI_MAX_LENGTH = 16;
 
 const CELULAR_MIN_LENGTH = 8;
 export const CELULAR_MAX_LENGTH = 8;

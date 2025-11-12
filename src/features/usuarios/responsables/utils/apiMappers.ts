@@ -12,6 +12,16 @@ interface ApiModificacionResponse {
   [key: string]: any;
 }
 
+/**
+ * Mapea la respuesta cruda de la API de verificación de CI a un objeto de dominio limpio
+ * que utiliza el frontend.
+ *
+ * Esta función es el "cerebro" que determina el escenario del usuario.
+ * AHORA DETECTA:
+ * 1. Si el usuario ya es Responsable (isAssignedToCurrentGestion).
+ * 2. Si el usuario ya es Evaluador (esEvaluadorExistente).
+ * 3. Si el usuario ya es Responsable (esResponsableExistente).
+ */
 export const mapApiUsuarioToVerificacionCompleta = (
   apiData: ApiUsuarioResponse | null | undefined
 ): VerificacionUsuarioCompleta => {
@@ -38,19 +48,30 @@ export const mapApiUsuarioToVerificacionCompleta = (
 
   let isAssignedToCurrentGestion = false;
   let initialAreas: number[] = [];
+  let esEvaluadorExistente = false;
+  let esResponsableExistente = false;
 
   const gestionActual = apiData.roles_por_gestion.find(
     (g) => g.gestion === GESTION_ACTUAL_ANIO
   );
 
   if (gestionActual) {
+
     const rolResponsable = gestionActual.roles.find(
       (r) => r.rol === 'Responsable Area'
     );
+    const rolEvaluador = gestionActual.roles.find(
+      (r) => r.rol === 'Evaluador'
+    );
+
+    esEvaluadorExistente = !!rolEvaluador;
+    esResponsableExistente = !!rolResponsable;
 
     if (rolResponsable && rolResponsable.detalles?.areas_responsable) {
       isAssignedToCurrentGestion = true;
-      initialAreas = rolResponsable.detalles.areas_responsable.map((a) => a.id_area);
+      initialAreas = rolResponsable.detalles.areas_responsable.map(
+        (a) => a.id_area
+      );
     }
   }
 
@@ -60,6 +81,8 @@ export const mapApiUsuarioToVerificacionCompleta = (
     initialAreas,
     gestionesPasadas,
     rolesPorGestion: apiData.roles_por_gestion,
+    esEvaluadorExistente,
+    esResponsableExistente,
   };
 };
 
