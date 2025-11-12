@@ -14,7 +14,7 @@ const esquemaNotas = z.object({
       message: 'El campo Nota mínima de clasificacion es obligatorio.',
     })
     .refine((val) => /^(\d+(\.\d+)?)$/.test(limpiarEspacios(val)), {
-      message: 'Solo se permiten números y punto en Nota mínima.',
+      message: 'Formato invalido',
     }),
 
   cantidadMaxCompetidores: z
