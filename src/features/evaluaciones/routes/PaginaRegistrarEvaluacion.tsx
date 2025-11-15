@@ -7,6 +7,7 @@ import { AreaNivelSelector } from '../components/AreaNivelSelector';
 import { SearchBar } from '../components/SearchBar';
 import { CompetidoresTable } from '../components/CompetidoresTable';
 import { CalificacionModal } from '../components/CalificacionModal';
+import { ModificarNotaModal } from '../components/ModificarNotaModal';
 import type { Competidor } from '../types/evaluacion.types';
 import { formatearNombreCompleto } from '../utils/validations';
 import toast from 'react-hot-toast';
@@ -22,12 +23,14 @@ export function PaginaRegistrarEvaluacion() {
     intentarBloquear,
     desbloquearCompetidor,
     guardarEvaluacion,
+    modificarEvaluacion,
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedNivel, setSelectedNivel] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
+  const [competidorAModificar, setCompetidorAModificar] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
   const [bloqueando, setBloqueando] = useState(false);
 
@@ -74,9 +77,9 @@ export function PaginaRegistrarEvaluacion() {
 
   // Manejar apertura del modal de calificación
   const handleCalificar = async (competidor: Competidor) => {
-    // Si ya está calificado, permitir ver/editar directamente
+    // Si ya está calificado, no permitir calificar de nuevo
     if (competidor.estado === 'Calificado') {
-      setSelectedCompetidor(competidor);
+      toast.error('Este competidor ya ha sido calificado. Use el botón "Modificar" para editar.');
       return;
     }
 
@@ -96,7 +99,16 @@ export function PaginaRegistrarEvaluacion() {
     }
   };
 
-  // Manejar cierre del modal (cancelar)
+  // Manejar apertura del modal de modificación
+  const handleModificar = (competidor: Competidor) => {
+    if (competidor.estado !== 'Calificado') {
+      toast.error('Solo puede modificar competidores ya calificados');
+      return;
+    }
+    setCompetidorAModificar(competidor);
+  };
+
+  // Manejar cierre del modal de calificación (cancelar)
   const handleCloseModal = async () => {
     if (selectedCompetidor) {
       // Si no estaba calificado, desbloquear
@@ -105,6 +117,11 @@ export function PaginaRegistrarEvaluacion() {
       }
     }
     setSelectedCompetidor(null);
+  };
+
+  // Manejar cierre del modal de modificación
+  const handleCloseModificarModal = () => {
+    setCompetidorAModificar(null);
   };
 
   // Si no es evaluador, mostrar mensaje de acceso denegado
@@ -191,9 +208,11 @@ export function PaginaRegistrarEvaluacion() {
       <CompetidoresTable
         competidores={filteredCompetidores}
         onCalificar={handleCalificar}
+        onModificar={handleModificar}
         loading={loadingCompetidores}
       />
 
+      {/* Modal de Calificación */}
       {selectedCompetidor && (
         <CalificacionModal
           competidor={selectedCompetidor}
@@ -201,6 +220,17 @@ export function PaginaRegistrarEvaluacion() {
           nivelSeleccionado={nivelSeleccionado?.nombre || ''}
           onClose={handleCloseModal}
           onSave={guardarEvaluacion}
+        />
+      )}
+
+      {/* Modal de Modificación */}
+      {competidorAModificar && (
+        <ModificarNotaModal
+          competidor={competidorAModificar}
+          areaSeleccionada={areaSeleccionada?.nombre_area || ''}
+          nivelSeleccionado={nivelSeleccionado?.nombre || ''}
+          onClose={handleCloseModificarModal}
+          onSave={modificarEvaluacion}
         />
       )}
     </div>

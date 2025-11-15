@@ -183,6 +183,48 @@ const desbloquearCompetidor = async (ci: string) => {
     }
   };
 
+
+// Modificar evaluación (con justificación obligatoria)
+  const modificarEvaluacion = async (
+    ci: string,
+    nota: number,
+    justificacion: string
+  ): Promise<void> => {
+    try {
+      const idFase = 1;
+      
+      const competidor = competidores.find(c => c.ci === ci);
+      if (!competidor) {
+        throw new Error('Competidor no encontrado');
+      }
+      
+      const data: CalificacionData = {
+        nota,
+        observaciones: justificacion, // La justificación se guarda como observación
+        id_competidor: competidor.id_competidor || 0,
+        id_evaluadorAN: 1,
+        estado: false,
+      };
+
+      await evaluacionService.guardarEvaluacion(idFase, data);
+      
+      // Actualizar nota y observaciones
+      setCompetidores(prev =>
+        prev.map(c =>
+          c.ci === ci
+            ? { ...c, calificacion: nota, observaciones: justificacion }
+            : c
+        )
+      );
+
+      toast.success('Nota modificada exitosamente');
+    } catch (error) {
+      console.error('Error al modificar evaluación:', error);
+      toast.error('Error al modificar la evaluación');
+      throw error;
+    }
+  };
+
   return {
     userId,
     user,
@@ -194,5 +236,6 @@ const desbloquearCompetidor = async (ci: string) => {
     intentarBloquear,
     desbloquearCompetidor,
     guardarEvaluacion,
+    modificarEvaluacion,
   };
 };

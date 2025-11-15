@@ -38,13 +38,6 @@ export const SearchBar = ({
           className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
-      <button
-        onClick={onSearch}
-        disabled={disabled}
-        className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Buscar
-      </button>
     </div>
   );
 };
