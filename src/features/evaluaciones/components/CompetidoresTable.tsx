@@ -5,12 +5,14 @@ import type { Competidor } from '../types/evaluacion.types';
 interface CompetidoresTableProps {
   competidores: Competidor[];
   onCalificar: (competidor: Competidor) => void;
+  onModificar: (competidor: Competidor) => void;
   loading?: boolean;
 }
 
 export const CompetidoresTable = ({
   competidores,
   onCalificar,
+  onModificar,
   loading = false,
 }: CompetidoresTableProps) => {
   if (loading) {
@@ -42,11 +44,12 @@ export const CompetidoresTable = ({
           <thead className="bg-blue-600 text-white">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold">NRO</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">NOMBRE</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">APELLIDO</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">NOMBRES</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">APELLIDOS</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">CI</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">ESTADO</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">ESTADOS</th>
               <th className="px-4 py-3 text-center text-sm font-semibold">CALIFICACIÓN</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold">EDITAR</th>
             </tr>
           </thead>
           <tbody>
@@ -74,12 +77,9 @@ export const CompetidoresTable = ({
                 </td>
                 <td className="px-4 py-3 text-center">
                   {competidor.estado === 'Calificado' ? (
-                    <button
-                      onClick={() => onCalificar(competidor)}
-                      className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-gray-500 text-white hover:bg-gray-600"
-                    >
-                      Calificado
-                    </button>
+                    <span className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-300 text-gray-800 text-sm font-semibold">
+                      {competidor.calificacion?.toFixed(2) || '0.00'}
+                    </span>
                   ) : competidor.estado === 'En calificacion' ? (
                     <span className="text-sm font-semibold text-gray-600">
                       En proceso...
@@ -92,6 +92,19 @@ export const CompetidoresTable = ({
                       Calificar
                     </button>
                   )}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() => onModificar(competidor)}
+                    disabled={competidor.estado !== 'Calificado'}
+                    className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+                      competidor.estado === 'Calificado'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Modificar
+                  </button>
                 </td>
               </tr>
             ))}
