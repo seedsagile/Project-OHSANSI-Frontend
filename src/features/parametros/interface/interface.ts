@@ -31,7 +31,7 @@ export interface Grado {
 export interface AreaNivel {
   id_area_nivel: number;
   nota_min_clasif: number;
-  cantidad_max_apro: number;
+  cantidad_max_apro: number | null;
 }
 
 export interface ParametroClasificacion {
