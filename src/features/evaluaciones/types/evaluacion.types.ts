@@ -1,5 +1,17 @@
 // src/features/evaluaciones/types/evaluacion.types.ts
 
+export interface Evaluacion {
+  id_evaluacion: number;
+  nota: string;
+  observaciones: string | null;
+  fecha_evaluacion: string;
+  estado: string;
+  id_competidor: number;
+  id_competencia: number;
+  id_evaluadorAN: number | null;
+  id_parametro: number | null;
+}
+
 export interface Competidor {
   id_competidor?: number;
   apellido: string;
@@ -11,10 +23,13 @@ export interface Competidor {
   area: string;
   nivel: string;
   grado: string;
+  id_olimpiada?: number;
+  evaluaciones?: Evaluacion[]; // Array de evaluaciones del API
   estado?: 'Pendiente' | 'En calificacion' | 'Calificado';
   calificacion?: number;
   observaciones?: string;
-  bloqueado_por?: number; // ID del evaluador que está calificando
+  bloqueado_por?: number;
+  id_evaluacion?: number; // Para guardar el ID de la evaluación activa
 }
 
 export interface Area {
@@ -36,24 +51,45 @@ export interface EvaluadorAreasNiveles {
   areas: Area[];
 }
 
-export interface CalificacionData {
-  nota: number;
-  observaciones?: string;
+// Request para crear evaluación
+export interface CrearEvaluacionRequest {
   id_competidor: number;
   id_evaluadorAN: number;
-  estado: boolean;
 }
 
-export interface CalificacionResponse {
-  nota: number;
-  observaciones: string;
+// Response al crear evaluación
+export interface CrearEvaluacionResponse {
+  id_evaluacion: number;
   id_competidor: number;
   id_evaluadorAN: number;
-  estado: boolean;
+  id_competencia: number;
+  id_parametro: number;
+  estado: string;
+  nota: number;
   fecha_evaluacion: string;
-  updated_at: string;
   created_at: string;
+  updated_at: string;
+}
+
+// Request para finalizar evaluación
+export interface FinalizarEvaluacionRequest {
+  nota: number;
+  observaciones?: string;
+}
+
+// Response al finalizar evaluación
+export interface FinalizarEvaluacionResponse {
   id_evaluacion: number;
+  nota: number;
+  observaciones: string;
+  fecha_evaluacion: string;
+  estado: string;
+  id_competidor: number;
+  id_competencia: number;
+  id_evaluadorAN: number;
+  id_parametro: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CompetidoresResponse {

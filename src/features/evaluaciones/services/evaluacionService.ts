@@ -4,8 +4,10 @@ import apiClient from '@/api/ApiPhp';
 import type {
   EvaluadorAreasNiveles,
   CompetidoresResponse,
-  CalificacionData,
-  CalificacionResponse,
+  CrearEvaluacionRequest,
+  CrearEvaluacionResponse,
+  FinalizarEvaluacionRequest,
+  FinalizarEvaluacionResponse,
   BloqueoCompetidorRequest,
   BloqueoCompetidorResponse,
 } from '../types/evaluacion.types';
@@ -35,8 +37,37 @@ class EvaluacionService {
   }
 
   /**
-   * Bloquea un competidor para que solo el evaluador actual pueda calificarlo
-   * TODO: Implementar endpoint en backend: POST /competidores/bloqueo
+   * PASO 1: Crear evaluación (al hacer clic en "Calificar")
+   * Estado inicial: "En Proceso"
+   */
+  async crearEvaluacion(
+    idCompetencia: number,
+    data: CrearEvaluacionRequest
+  ): Promise<CrearEvaluacionResponse> {
+    const response = await apiClient.post<CrearEvaluacionResponse>(
+      `/competencias/${idCompetencia}/evaluacion`,
+      data
+    );
+    return response.data;
+  }
+
+  /**
+   * PASO 2: Finalizar evaluación (al hacer clic en "Guardar")
+   * Estado final: "Calificado"
+   */
+  async finalizarEvaluacion(
+    idEvaluacion: number,
+    data: FinalizarEvaluacionRequest
+  ): Promise<FinalizarEvaluacionResponse> {
+    const response = await apiClient.post<FinalizarEvaluacionResponse>(
+      `/evaluaciones/${idEvaluacion}/finalizar`,
+      data
+    );
+    return response.data;
+  }
+
+  /**
+   * Bloquea un competidor (simulación local)
    */
   async bloquearCompetidor(data: BloqueoCompetidorRequest): Promise<BloqueoCompetidorResponse> {
     try {
@@ -46,7 +77,6 @@ class EvaluacionService {
       );
       return response.data;
     } catch (error) {
-      // Si el endpoint no existe aún, simular comportamiento
       console.warn('Endpoint de bloqueo no implementado, simulando...');
       return {
         success: data.accion === 'bloquear',
@@ -59,7 +89,6 @@ class EvaluacionService {
 
   /**
    * Verifica si un competidor está bloqueado
-   * TODO: Implementar endpoint en backend: GET /competidores/{ci}/estado-bloqueo
    */
   async verificarBloqueo(ci: string): Promise<BloqueoCompetidorResponse> {
     try {
@@ -68,7 +97,6 @@ class EvaluacionService {
       );
       return response.data;
     } catch (error) {
-      // Si el endpoint no existe aún, simular que no está bloqueado
       console.warn('Endpoint de verificación no implementado, simulando...');
       return {
         success: true,
@@ -76,20 +104,6 @@ class EvaluacionService {
         bloqueado_por: undefined,
       };
     }
-  }
-
-  /**
-   * Guarda o actualiza la evaluación de un competidor
-   */
-  async guardarEvaluacion(
-    idCompetencia: number,
-    data: CalificacionData
-  ): Promise<CalificacionResponse> {
-    const response = await apiClient.post<CalificacionResponse>(
-      `/competencias/${idCompetencia}/evaluacion`,
-      data
-    );
-    return response.data;
   }
 }
 

@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
 import { evaluacionService } from '../services/evaluacionService';
-import type { Area, Competidor, CalificacionData } from '../types/evaluacion.types';
+import type { Area, Competidor } from '../types/evaluacion.types';
 import toast from 'react-hot-toast';
-import { ConcurrenciaLocal } from '../utils/concurrenciaLocal';
 
 export const useEvaluaciones = () => {
   const { userId, user } = useAuth();
@@ -14,7 +13,7 @@ export const useEvaluaciones = () => {
   const [loading, setLoading] = useState(false);
   const [loadingCompetidores, setLoadingCompetidores] = useState(false);
 
-  // Cargar áreas y niveles del evaluador al montar el componente
+  // Cargar áreas y niveles del evaluador
   useEffect(() => {
     const fetchAreasNiveles = async () => {
       if (!userId) return;
@@ -42,11 +41,26 @@ export const useEvaluaciones = () => {
       const response = await evaluacionService.getCompetidoresByAreaNivel(idArea, idNivel);
       
       if (response.success && response.data.competidores.length > 0) {
-        const competidoresMapeados = response.data.competidores.map((comp, index) => ({
-          ...comp,
-          id_competidor: index + 1,
-          estado: comp.estado || ('Pendiente' as const),
-        }));
+        const competidoresMapeados = response.data.competidores.map((comp) => {
+          // Buscar evaluación con estado "1" (finalizada) o con nota > 0
+          const evaluacionFinalizada = comp.evaluaciones?.find(
+            ev => ev.estado === "1" || parseFloat(ev.nota) > 0
+          );
+          
+          const tieneEvaluacion = !!evaluacionFinalizada;
+          
+          return {
+            ...comp,
+            // Si tiene evaluación finalizada, está calificado
+            estado: tieneEvaluacion ? ('Calificado' as const) : ('Pendiente' as const),
+            // Extraer la nota (convertir string a number)
+            calificacion: evaluacionFinalizada ? parseFloat(evaluacionFinalizada.nota) : undefined,
+            // Extraer las observaciones
+            observaciones: evaluacionFinalizada?.observaciones || undefined,
+            // Guardar el ID de la evaluación finalizada
+            id_evaluacion: evaluacionFinalizada?.id_evaluacion,
+          };
+        });
         
         setCompetidores(competidoresMapeados);
         toast.success(`Se encontraron ${competidoresMapeados.length} competidores`);
@@ -63,166 +77,28 @@ export const useEvaluaciones = () => {
     }
   };
 
- // Modificar la función intentarBloquear:
-const intentarBloquear = async (ci: string): Promise<boolean> => {
-  if (!userId) return false;
-
-  try {
-    // Limpiar bloqueos vencidos primero
-    ConcurrenciaLocal.limpiarVencidos();
-
-    // Verificar bloqueo local
-    if (ConcurrenciaLocal.estaBloqueado(ci, userId)) {
-      toast.error('Este competidor está siendo calificado por otro evaluador');
-      return false;
-    }
-
-    // Intentar bloquear localmente
-    const bloqueadoLocal = ConcurrenciaLocal.bloquear(ci, userId);
-    
-    if (!bloqueadoLocal) {
-      toast.error('Este competidor está siendo calificado por otro evaluador');
-      return false;
-    }
-
-    // Actualizar estado local
-    setCompetidores(prev =>
-      prev.map(c =>
-        c.ci === ci
-          ? { ...c, estado: 'En calificacion' as const, bloqueado_por: userId }
-          : c
-      )
-    );
-    
-    return true;
-  } catch (error) {
-    console.error('Error al intentar bloquear:', error);
-    return false;
-  }
-};
-
-// Modificar desbloquearCompetidor:
-const desbloquearCompetidor = async (ci: string) => {
-  if (!userId) return;
-
-  try {
-    // Desbloquear localmente
-    ConcurrenciaLocal.desbloquear(ci);
-
-    // Actualizar estado local
-    setCompetidores(prev =>
-      prev.map(c =>
-        c.ci === ci && c.estado !== 'Calificado'
-          ? { ...c, estado: 'Pendiente' as const, bloqueado_por: undefined }
-          : c
-      )
-    );
-  } catch (error) {
-    console.error('Error al desbloquear:', error);
-  }
-};
-
-  // Guardar evaluación
+  // Función placeholder para guardar (no hace nada por ahora)
   const guardarEvaluacion = async (
     ci: string,
     nota: number,
     observaciones?: string
   ): Promise<void> => {
-    try {
-      const idFase = 1;
-      
-      const competidor = competidores.find(c => c.ci === ci);
-      if (!competidor) {
-        throw new Error('Competidor no encontrado');
-      }
-
-      // Verificar que esté bloqueado por este evaluador
-      if (competidor.bloqueado_por && competidor.bloqueado_por !== userId) {
-        toast.error('Este competidor está siendo calificado por otro evaluador');
-        throw new Error('Competidor bloqueado por otro evaluador');
-      }
-      
-      const data: CalificacionData = {
-        nota,
-        observaciones: observaciones || '',
-        id_competidor: competidor.id_competidor || 0,
-        id_evaluadorAN: 1,
-        estado: false,
-      };
-
-      await evaluacionService.guardarEvaluacion(idFase, data);
-      
-      // Actualizar a "Calificado" y desbloquear
-      setCompetidores(prev =>
-        prev.map(c =>
-          c.ci === ci
-            ? { 
-                ...c, 
-                calificacion: nota, 
-                observaciones, 
-                estado: 'Calificado' as const,
-                bloqueado_por: undefined 
-              }
-            : c
-        )
-      );
-
-      // Desbloquear en el backend
-      await desbloquearCompetidor(ci);
-
-      toast.success('Evaluación guardada exitosamente');
-    } catch (error) {
-      console.error('Error al guardar evaluación:', error);
-      
-      if (error instanceof Error) {
-        if (!error.message.includes('bloqueado')) {
-          toast.error('Error al guardar la evaluación');
-        }
-      }
-      throw error;
-    }
-  };
-
-
-// Modificar evaluación (con justificación obligatoria)
-  const modificarEvaluacion = async (
-    ci: string,
-    nota: number,
-    justificacion: string
-  ): Promise<void> => {
-    try {
-      const idFase = 1;
-      
-      const competidor = competidores.find(c => c.ci === ci);
-      if (!competidor) {
-        throw new Error('Competidor no encontrado');
-      }
-      
-      const data: CalificacionData = {
-        nota,
-        observaciones: justificacion, // La justificación se guarda como observación
-        id_competidor: competidor.id_competidor || 0,
-        id_evaluadorAN: 1,
-        estado: false,
-      };
-
-      await evaluacionService.guardarEvaluacion(idFase, data);
-      
-      // Actualizar nota y observaciones
-      setCompetidores(prev =>
-        prev.map(c =>
-          c.ci === ci
-            ? { ...c, calificacion: nota, observaciones: justificacion }
-            : c
-        )
-      );
-
-      toast.success('Nota modificada exitosamente');
-    } catch (error) {
-      console.error('Error al modificar evaluación:', error);
-      toast.error('Error al modificar la evaluación');
-      throw error;
-    }
+    console.log('📝 Guardando evaluación (placeholder):', { ci, nota, observaciones });
+    toast.success('Evaluación guardada (modo prueba)');
+    
+    // Actualizar localmente para mostrar la nota
+    setCompetidores(prev =>
+      prev.map(c =>
+        c.ci === ci
+          ? { 
+              ...c, 
+              calificacion: nota, 
+              observaciones, 
+              estado: 'Calificado' as const
+            }
+          : c
+      )
+    );
   };
 
   return {
@@ -233,9 +109,6 @@ const desbloquearCompetidor = async (ci: string) => {
     loading,
     loadingCompetidores,
     cargarCompetidores,
-    intentarBloquear,
-    desbloquearCompetidor,
     guardarEvaluacion,
-    modificarEvaluacion,
   };
 };
