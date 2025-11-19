@@ -88,7 +88,7 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
         onClick={toggleAccordion}
         className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
       >
-        <span>Seleccionar Grado</span>
+        <span>Grado</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"

@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { excelIcon, pdfIcon } from '@/assets';
 
 interface Competidor {
   apellido: string;
@@ -394,110 +395,103 @@ export const ListaCompetidores = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center font-display">
-      <main className="bg-blanco w-full max-w-8xl rounded-2xl shadow-lg p-6 md:p-10">
+    <div className="min-h-screen flex items-start justify-center font-display px-3 sm:px-6">
+      <main className="bg-blanco w-full max-w-8xl rounded-2xl shadow-lg p-4 sm:p-6 lg:p-10">
         <header className="flex flex-col mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-principal-800 tracking-tight text-center mb-6 animate-fade-in">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-principal-800 tracking-tight text-center mb-6 animate-fade-in">
             Listado de Competidores
           </h1>
 
-          <div className="flex flex-col lg:flex-row gap-6 ">
-            <div className="flex flex-col space-y-4 px-10 ">
-              <button
-                onClick={handleMostrarTodo}
-                className="w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors flex items-center justify-center"
-              >
-                Mostrar Todo
-              </button>
-
-              <AccordionArea
-                responsableId={responsableId}
-                selectedAreas={areasSeleccionadas}
-                onChangeSelected={(nuevasAreas) => {
-                  // 🔹 Actualiza áreas
-                  setAreasSeleccionadas(nuevasAreas);
-
-                  // 🔹 Limpia niveles de las áreas que fueron deseleccionadas
-                  setNivelesSeleccionados((prev) => {
-                    const nuevasClaves = nuevasAreas.map((a) => a.id_area);
-                    const actualizadas: { [id_area: number]: number[] } = {};
-
-                    // Solo mantiene los niveles de áreas aún seleccionadas
-                    for (const id of nuevasClaves) {
-                      if (prev[id]) {
-                        actualizadas[id] = prev[id];
-                      }
-                    }
-
-                    return actualizadas;
-                  });
-                }}
-              />
-
-              <AccordionNivel
-                selectedAreas={areasSeleccionadas}
-                selectedNiveles={nivelesSeleccionados}
-                onChangeSelected={setNivelesSeleccionados}
-              />
-
-              <AccordionGrado
-                selectedGrados={gradoSeleccionado}
-                onChangeSelected={setGradoSeleccionado}
-              />
-
-              <AccordionGenero
-                selectedGenero={generoSeleccionado}
-                onChangeSelected={setGeneroSeleccionado}
-              />
-
-              <AccordionDepartamento
-                selectedDepartamentos={departamentoSeleccionado}
-                onChangeSelected={setDepartamentoSeleccionado}
-              />
-
-              <button
-                onClick={descargarPDF}
-                className="w-full hover:bg-acento-400 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold  transition-colors"
-              >
-                Descargar PDF
-              </button>
-
-              <button
-                onClick={descargarExcel}
-                className="w-full hover:bg-acento-400 px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold  transition-colors"
-              >
-                Descargar EXCEL
-              </button>
-            </div>
-
+          <div className="flex flex-col lg:flex-row gap-6 w-full">
             <div className="flex-1 flex flex-col gap-4 min-w-0">
-              {/* Buscador */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2">
-                <input
-                  type="text"
-                  placeholder="Buscar: nombre, apellido, colegio"
-                  value={busqueda}
-                  maxLength={20}
-                  onChange={(e) => {
-                    const valor = e.target.value;
-                    // Permite letras (con acentos), números y espacios
-                    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]*$/;
-                    if (regex.test(valor)) {
-                      setBusqueda(valor);
-                    }
-                  }}
-                  className="w-full sm:w-72 px-4 py-2 rounded-xl border-2 border-principal-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-principal-300 transition"
-                />
+              {/* BOTONES SUPERIORES */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:items-center">
+                  <button
+                    onClick={handleMostrarTodo}
+                    className="w-full sm:w-[200px] px-5 py-2.5 rounded-xl bg-principal-500 text-white font-semibold 
+                  hover:bg-principal-600 transition-all shadow-md hover:shadow-lg"
+                  >
+                    Mostrar Todo
+                  </button>
 
-                {/* <button
-                  onClick={() => {}}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors whitespace-nowrap"
-                >
-                  Buscar
-                </button> */}
+                  <button
+                    onClick={descargarPDF}
+                    className="w-full sm:w-[200px] px-5 py-2.5 rounded-xl border-2 border-principal-500 
+                  text-black font-semibold hover:bg-sky-400 transition-all shadow-sm hover:shadow-lg flex items-center gap-2"
+                  >
+                    <img src={pdfIcon} alt="PDF icon" className="w-5 h-5 object-contain" />
+                    PDF
+                  </button>
+
+                  <button
+                    onClick={descargarExcel}
+                    className="w-full sm:w-[200px] px-5 py-2.5 rounded-xl border-2 border-principal-500 
+                  text-black font-semibold hover:bg-green-300 transition-all shadow-sm hover:shadow-lg flex items-center gap-2"
+                  >
+                    <img src={excelIcon} alt="Excel icon" className="w-5 h-5 object-contain" />
+                    Excel
+                  </button>
+                </div>
+
+                {/* columna vacía derecha para mantener layout */}
+                <div></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-lg border border-principal-200 shadow-inner bg-white">
+              {/* FILTROS EN GRID RESPONSIVE */}
+              <div
+                className="
+              grid 
+              grid-cols-1 
+              sm:grid-cols-2 
+              md:grid-cols-3 
+              lg:flex lg:flex-row 
+              justify-between 
+              gap-2 w-full
+            "
+              >
+                <AccordionArea
+                  responsableId={responsableId}
+                  selectedAreas={areasSeleccionadas}
+                  onChangeSelected={(nuevasAreas) => {
+                    setAreasSeleccionadas(nuevasAreas);
+
+                    setNivelesSeleccionados((prev) => {
+                      const nuevasClaves = nuevasAreas.map((a) => a.id_area);
+                      const actualizadas: { [id_area: number]: number[] } = {};
+
+                      for (const id of nuevasClaves) {
+                        if (prev[id]) actualizadas[id] = prev[id];
+                      }
+                      return actualizadas;
+                    });
+                  }}
+                />
+
+                <AccordionNivel
+                  selectedAreas={areasSeleccionadas}
+                  selectedNiveles={nivelesSeleccionados}
+                  onChangeSelected={setNivelesSeleccionados}
+                />
+
+                <AccordionGrado
+                  selectedGrados={gradoSeleccionado}
+                  onChangeSelected={setGradoSeleccionado}
+                />
+
+                <AccordionGenero
+                  selectedGenero={generoSeleccionado}
+                  onChangeSelected={setGeneroSeleccionado}
+                />
+
+                <AccordionDepartamento
+                  selectedDepartamentos={departamentoSeleccionado}
+                  onChangeSelected={setDepartamentoSeleccionado}
+                />
+              </div>
+
+              {/* TABLA */}
+              <div className="relative overflow-hidden rounded-lg border border-principal-200 shadow-inner bg-white mt-4">
                 <div className="overflow-auto max-h-[600px] scrollbar-thin scrollbar-thumb-principal-400 scrollbar-track-principal-100">
                   <table className="w-full min-w-[900px] table-auto border-collapse text-sm md:text-base">
                     <thead className="bg-principal-500 text-white sticky top-0 z-10 shadow-md">
