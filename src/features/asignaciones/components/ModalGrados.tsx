@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, AlertCircle } from 'lucide-react';
 import type { Grado } from '../types';
 
 type ModalGradosProps = {
@@ -10,6 +10,7 @@ type ModalGradosProps = {
   gradosSeleccionados: Set<number>;
   nombreNivel: string;
   isLoading?: boolean;
+  procesoIniciado?: boolean;
 };
 
 export function ModalGrados({
@@ -20,6 +21,7 @@ export function ModalGrados({
   gradosSeleccionados,
   nombreNivel,
   isLoading = false,
+  procesoIniciado = false,
 }: ModalGradosProps) {
   const [gradosTemp, setGradosTemp] = React.useState<Set<number>>(new Set());
 
@@ -30,6 +32,11 @@ export function ModalGrados({
   }, [isOpen, gradosSeleccionados]);
 
   const handleToggle = (id_grado_escolaridad: number) => {
+    // Si el proceso ha iniciado, no permitir cambios
+    if (procesoIniciado) {
+      return;
+    }
+
     setGradosTemp((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id_grado_escolaridad)) {
@@ -42,11 +49,13 @@ export function ModalGrados({
   };
 
   const handleSave = () => {
-    /*if (gradosTemp.size === 0) {
-      alert('Debe seleccionar al menos un grado de escolaridad.');
+    // Si el proceso ha iniciado, solo cerrar el modal
+    if (procesoIniciado) {
+      onClose();
       return;
-    }*/
-   //permite guardar incluso sin grados seleccionados
+    }
+
+    // Permite guardar incluso sin grados seleccionados
     onSave(gradosTemp);
   };
 
@@ -62,6 +71,18 @@ export function ModalGrados({
           <p className="text-sm text-neutro-600 mt-2">
             Nivel: <span className="font-semibold">{nombreNivel}</span>
           </p>
+
+          {/* Mensaje de advertencia si el proceso ha iniciado */}
+          {procesoIniciado && (
+            <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-md">
+              <div className="flex items-start">
+                <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
+                <p className="text-xs text-yellow-800">
+                  Solo puede visualizar los grados previamente asignados. No se permiten cambios.
+                </p>
+              </div>
+            </div>
+          )}
         </header>
 
         <div className="rounded-lg border border-neutro-200 overflow-hidden mb-6">
@@ -117,9 +138,14 @@ export function ModalGrados({
                           <input
                             type="checkbox"
                             aria-label={`Seleccionar el grado: ${grado.nombre}`}
-                            className="h-5 w-5 rounded border-gray-400 text-principal-600 focus:ring-principal-500 cursor-pointer"
+                            className={`h-5 w-5 rounded border-gray-400 text-principal-600 focus:ring-principal-500 ${
+                              procesoIniciado
+                                ? 'cursor-not-allowed opacity-60'
+                                : 'cursor-pointer'
+                            }`}
                             checked={estaSeleccionado}
                             onChange={() => handleToggle(grado.id_grado_escolaridad)}
+                            disabled={procesoIniciado}
                           />
                         </td>
                       </tr>
@@ -137,16 +163,28 @@ export function ModalGrados({
             className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
           >
             <X className="h-5 w-5" />
-            <span>Cancelar</span>
+            <span>{procesoIniciado ? 'Cerrar' : 'Cancelar'}</span>
           </button>
 
-          <button
-            onClick={handleSave}
-            className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
-          >
-            <Save className="h-5 w-5" />
-            <span>Guardar</span>
-          </button>
+          {!procesoIniciado && (
+            <button
+              onClick={handleSave}
+              className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
+            >
+              <Save className="h-5 w-5" />
+              <span>Guardar</span>
+            </button>
+          )}
+
+          {procesoIniciado && (
+            <button
+              disabled
+              className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-300 text-blanco cursor-not-allowed"
+            >
+              <Save className="h-5 w-5" />
+              <span>Guardar</span>
+            </button>
+          )}
         </footer>
       </div>
     </div>

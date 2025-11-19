@@ -64,6 +64,23 @@ export type GradosPorNivel = {
   [id_nivel: number]: Set<number>;
 };
 
+export type ModalState = {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  type: 'success' | 'error' | 'info' | 'confirmation';
+  onConfirm?: () => void;
+};
+
+export type ModalGradosState = {
+  isOpen: boolean;
+  nivelId: number | null;
+  nombreNivel: string;
+  grados: Grado[];
+  gradosSeleccionados: Set<number>;
+  isLoading: boolean;
+};
+
 // NUEVO: Tipos para el GET de niveles y grados asignados
 export type NivelConGrados = {
   id_nivel: number;
@@ -91,4 +108,11 @@ export type AreaNivelesResponse = {
     total_niveles: number;
   };
   message: string;
+};
+
+// NUEVO: Tipo para la respuesta de áreas con validación de proceso
+export type AreasResponse = {
+  success: boolean;
+  message: string;
+  data: Area[];
 };

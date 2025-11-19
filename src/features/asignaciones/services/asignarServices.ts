@@ -7,7 +7,8 @@ import type {
   Area,
   Nivel,
   Grado,
-  AreaNivelesResponse
+  AreaNivelesResponse,
+  AreasResponse
 } from '../types';
 
 type GradosResponse = {
@@ -16,10 +17,10 @@ type GradosResponse = {
 };
 
 export const asignacionesService = {
-  // GET /api/area - Obtener todas las áreas
-  async obtenerAreas(gestion: string): Promise<Area[]> {
-    const response = await apiClient.get<{ message: string; data: Area[] }>(`/area/${gestion}`);
-    return response.data.data; // ← Cambio aquí: agregamos .data para acceder al array
+  // GET /api/area/gestion/{gestion} - Obtener todas las áreas con validación de proceso
+  async obtenerAreas(gestion: string): Promise<AreasResponse> {
+    const response = await apiClient.get<AreasResponse>(`/area/gestion/${gestion}`);
+    return response.data;
   },
 
   // GET /api/niveles - Obtener todos los niveles

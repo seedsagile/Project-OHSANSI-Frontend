@@ -1,5 +1,5 @@
 import { useAsignarNiveles } from '../hooks/useAsignarNiveles';
-import { Save, LoaderCircle, X } from 'lucide-react';
+import { Save, LoaderCircle, X, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import { ModalGrados } from '../components/ModalGrados';
 import type { Nivel } from '../types';
@@ -24,7 +24,9 @@ export function PaginaAsignarNiveles() {
     handleCerrarModalGrados,
     handleGuardarGrados,
     modalGradosState,
-    hayNivelesNuevos, // NUEVO: recibir esta variable
+    hayNivelesNuevos,
+    procesoIniciado,
+    mensajeProcesoIniciado,
   } = useAsignarNiveles();
 
   const navigate = useNavigate();
@@ -42,12 +44,22 @@ export function PaginaAsignarNiveles() {
     const esNivelOriginal = nivelesOriginales.has(nivel.id_nivel);
     const estaSeleccionado = nivelesSeleccionados.has(nivel.id_nivel);
     
-    // Si el nivel ya estaba asignado originalmente, no hacer nada
+    // Si el proceso ha iniciado
+    if (procesoIniciado) {
+      // Solo permitir abrir modal para niveles previamente asignados (con check)
+      if (esNivelOriginal && estaSeleccionado) {
+        handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
+      }
+      // Para niveles no asignados (sin check), no hacer nada
+      return;
+    }
+
+    // Si NO hay proceso iniciado y el nivel ya estaba asignado originalmente, no hacer nada
     if (esNivelOriginal) {
       return;
     }
 
-    // Si el nivel ya estaba seleccionado (desmarcarlo)
+    // Si el nivel ya estaba seleccionado (es un nivel nuevo), abrir modal para editarlo
     if (estaSeleccionado) {
       handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
       return;
@@ -68,13 +80,25 @@ export function PaginaAsignarNiveles() {
           <header className="mb-10">
             <div className="text-right mb-2">
               <p className="text-sm font-semibold text-negro tracking-wider">
-                Gestión 2025
+                Gestión {new Date().getFullYear()}
               </p>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tighter text-center">
               Asignar Niveles a Área
             </h1>
           </header>
+
+          {/* Mensaje de advertencia si el proceso ha iniciado */}
+          {procesoIniciado && (
+            <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                <p className="text-sm text-yellow-800">
+                  {mensajeProcesoIniciado}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="mb-6 relative">
             <label
@@ -147,10 +171,25 @@ export function PaginaAsignarNiveles() {
                       const esNivelOriginal = nivelesOriginales.has(nivel.id_nivel);
                       const estaSeleccionado = nivelesSeleccionados.has(nivel.id_nivel);
                       
+                      // Lógica de deshabilitado:
+                      // - Si proceso iniciado: deshabilitar solo los NO asignados
+                      // - Si NO proceso iniciado: deshabilitar solo los originales (no nuevos)
+                      const estaDeshabilitado = procesoIniciado 
+                        ? !esNivelOriginal  // Con proceso: solo habilitar los ya asignados
+                        : esNivelOriginal;   // Sin proceso: solo habilitar los nuevos
+                      
                       return (
                         <tr
                           key={nivel.id_nivel}
-                          className="even:bg-neutro-100 hover:bg-principal-50 transition-colors"
+                          className={`even:bg-neutro-100 hover:bg-principal-50 transition-colors ${
+                            procesoIniciado && esNivelOriginal && estaSeleccionado ? 'cursor-pointer' : ''
+                          }`}
+                          onClick={() => {
+                            // Si el proceso ha iniciado y es un nivel original asignado, abrir modal
+                            if (procesoIniciado && esNivelOriginal && estaSeleccionado) {
+                              handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
+                            }
+                          }}
                         >
                           <td className="p-4 text-neutro-700 text-center">{index + 1}</td>
                           <td className="p-4 text-neutro-700 text-left">{nivel.nombre}</td>
@@ -159,13 +198,23 @@ export function PaginaAsignarNiveles() {
                               type="checkbox"
                               aria-label={`Asignar el nivel: ${nivel.nombre}`}
                               className={`h-5 w-5 rounded border-gray-400 text-principal-600 focus:ring-principal-500 ${
-                                esNivelOriginal 
+                                estaDeshabilitado
                                   ? 'cursor-not-allowed opacity-60' 
+                                  : procesoIniciado && esNivelOriginal
+                                  ? 'cursor-pointer'  // Si está asignado y proceso iniciado, cursor pointer
                                   : 'cursor-pointer'
                               }`}
                               checked={estaSeleccionado}
                               onChange={() => handleCheckboxClick(nivel)}
-                              disabled={esNivelOriginal}
+                              disabled={estaDeshabilitado}
+                              onClick={(e) => {
+                                // Si el proceso ha iniciado y es un nivel original, abrir modal
+                                if (procesoIniciado && esNivelOriginal && estaSeleccionado) {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleAbrirModalGrados(nivel.id_nivel, nivel.nombre);
+                                }
+                              }}
                             />
                           </td>
                         </tr>
@@ -188,7 +237,7 @@ export function PaginaAsignarNiveles() {
 
             <button
               onClick={handleGuardar}
-              disabled={!areaSeleccionadaId || isSaving || isLoading || !hayNivelesNuevos}
+              disabled={!areaSeleccionadaId || isSaving || isLoading || !hayNivelesNuevos || procesoIniciado}
               className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed min-w-[150px]"
             >
               {isSaving ? (
@@ -226,6 +275,7 @@ export function PaginaAsignarNiveles() {
         gradosSeleccionados={modalGradosState.gradosSeleccionados}
         nombreNivel={modalGradosState.nombreNivel}
         isLoading={modalGradosState.isLoading}
+        procesoIniciado={procesoIniciado}
       />
     </>
   );

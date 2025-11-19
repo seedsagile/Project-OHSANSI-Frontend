@@ -2,28 +2,11 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { asignacionesService } from '../services/asignarServices';
-import type { AsignacionPayload, Grado, GradosPorNivel } from '../types';
+import type { AsignacionPayload, GradosPorNivel, ModalState, ModalGradosState } from '../types';
 import isEqual from 'lodash.isequal';
 
 type ApiErrorResponse = {
   message: string;
-};
-
-type ModalState = {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  type: 'success' | 'error' | 'info' | 'confirmation';
-  onConfirm?: () => void;
-};
-
-type ModalGradosState = {
-  isOpen: boolean;
-  nivelId: number | null;
-  nombreNivel: string;
-  grados: Grado[];
-  gradosSeleccionados: Set<number>;
-  isLoading: boolean;
 };
 
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
@@ -36,7 +19,13 @@ const initialModalGradosState: ModalGradosState = {
   isLoading: false,
 };
 
-const GESTION_ACTUAL = '2025';
+// Obtener año dinámicamente
+//const obtenerGestionActual = (): string => {
+//  return new Date().getFullYear().toString();
+//};
+
+//const GESTION_ACTUAL = obtenerGestionActual();
+const GESTION_ACTUAL = "2024";
 
 export function useAsignarNiveles() {
   const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
@@ -45,13 +34,28 @@ export function useAsignarNiveles() {
   const [nivelesOriginales, setNivelesOriginales] = useState<Set<number>>(new Set());
   const [gradosPorNivel, setGradosPorNivel] = useState<GradosPorNivel>({});
   const [modalGradosState, setModalGradosState] = useState<ModalGradosState>(initialModalGradosState);
+  const [procesoIniciado, setProcesoIniciado] = useState<boolean>(false);
+  const [mensajeProcesoIniciado, setMensajeProcesoIniciado] = useState<string>('');
   const modalTimerRef = useRef<number | undefined>(undefined);
 
-  // Cargar áreas
-  const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({
+  // Cargar áreas con validación de proceso
+  const { data: respuestaAreas, isLoading: isLoadingAreas } = useQuery({
     queryKey: ['areas', GESTION_ACTUAL],
     queryFn: () => asignacionesService.obtenerAreas(GESTION_ACTUAL),
   });
+
+  // Determinar si el proceso ha iniciado basado en el mensaje de la API
+  useEffect(() => {
+    if (respuestaAreas) {
+      const procesoHaIniciado = respuestaAreas.message.includes('proceso de evaluación ha iniciado');
+      setProcesoIniciado(procesoHaIniciado);
+      if (procesoHaIniciado) {
+        setMensajeProcesoIniciado(respuestaAreas.message);
+      }
+    }
+  }, [respuestaAreas]);
+
+  const todasLasAreas = useMemo(() => respuestaAreas?.data || [], [respuestaAreas]);
 
   // Cargar niveles
   const { data: todosLosNiveles = [], isLoading: isLoadingNiveles } = useQuery({
@@ -145,6 +149,12 @@ export function useAsignarNiveles() {
   };
 
   const handleCerrarModalGrados = () => {
+    // Si el proceso ha iniciado, no validar ni desmarcar nada
+    if (procesoIniciado) {
+      setModalGradosState(initialModalGradosState);
+      return;
+    }
+
     // Al cerrar el modal con "Cancelar", verificar si el nivel tiene grados
     // Si NO tiene grados, desmarcarlo
     if (modalGradosState.nivelId !== null) {
@@ -168,13 +178,13 @@ export function useAsignarNiveles() {
       const gradosOriginales = gradosPorNivel[modalGradosState.nivelId] || new Set();
       
       // Verificar si hubo cambios
-      const huboyCambios = !isEqual(
+      const huboCambios = !isEqual(
         Array.from(gradosOriginales).sort(),
         Array.from(gradosSeleccionados).sort()
       );
 
       // Si no hubo cambios, mostrar mensaje
-      if (!huboyCambios) {
+      if (!huboCambios) {
         setModalState({
           isOpen: true,
           type: 'info',
@@ -358,7 +368,7 @@ export function useAsignarNiveles() {
       new Set(nivelesSeleccionados)
     );
 
-    if (hayCambiosSinGuardar) {
+    if (hayCambiosSinGuardar && !procesoIniciado) {
       setModalState({
         isOpen: true,
         type: 'confirmation',
@@ -398,5 +408,7 @@ export function useAsignarNiveles() {
     handleGuardarGrados,
     modalGradosState,
     hayNivelesNuevos,
+    procesoIniciado,
+    mensajeProcesoIniciado,
   };
 }
