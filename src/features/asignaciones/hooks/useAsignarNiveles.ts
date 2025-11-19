@@ -20,12 +20,12 @@ const initialModalGradosState: ModalGradosState = {
 };
 
 // Obtener año dinámicamente
-//const obtenerGestionActual = (): string => {
-//  return new Date().getFullYear().toString();
-//};
+const obtenerGestionActual = (): string => {
+  return new Date().getFullYear().toString();
+};
 
-//const GESTION_ACTUAL = obtenerGestionActual();
-const GESTION_ACTUAL = "2024";
+const GESTION_ACTUAL = obtenerGestionActual();
+//const GESTION_ACTUAL = "2024";
 
 export function useAsignarNiveles() {
   const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
