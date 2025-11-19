@@ -140,7 +140,7 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Configuraciones
           </p>
-          <NavLink to="/configuracion_gestestion_olimpiada" icon={<SettingsIcon /> } label="Configuración de la Olimpiada" onClick={() => setOpen(false)} />
+          <NavLink to="/configuracionFasesGlobales" icon={<SettingsIcon /> } label="Configuración de Fases Globales" onClick={() => setOpen(false)} />
         
         </nav>
 
