@@ -17,7 +17,6 @@ export function PaginaConfiguracionFases() {
   return (
     <div className="min-h-screen bg-neutro-50 p-4 md:p-8 font-display">
       <main className="max-w-7xl mx-auto space-y-6">
-        
         <section className="relative min-h-[400px]">
           
           {/* Estado: Cargando */}

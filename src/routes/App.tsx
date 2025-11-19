@@ -16,6 +16,7 @@ import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes
 import { PaginaRegistrarEvaluacion } from '@/features/evaluaciones/routes/PaginaRegistrarEvaluacion';
 import { PaginaMedallero } from '@/features/medallero/routes/PaginaMedallero';
 import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/PaginaConfiguracionFases';
+import { PaginaAdministrarSubFases } from '@/features/subfases/routes/PaginaAdministrarSubFases';
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: 'parametrosCalificaciones', element: <Parametro /> },
       { path: 'medallero', element: <PaginaMedallero /> },
       { path: 'configuracionFasesGlobales', element: <PaginaConfiguracionFases/> },
+      { path: 'configuracionSubFases', element: <PaginaAdministrarSubFases/> },
     ],
   },
 ]);

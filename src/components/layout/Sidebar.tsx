@@ -141,6 +141,7 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             Configuraciones
           </p>
           <NavLink to="/configuracionFasesGlobales" icon={<SettingsIcon /> } label="Configuración de Fases Globales" onClick={() => setOpen(false)} />
+          <NavLink to="/configuracionSubFases" icon={<SettingsIcon /> } label="Administrar Sub-Fases" onClick={() => setOpen(false)} />
         
         </nav>
 
