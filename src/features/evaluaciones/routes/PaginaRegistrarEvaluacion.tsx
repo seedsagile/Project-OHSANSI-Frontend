@@ -12,7 +12,7 @@ import { formatearNombreCompleto } from '../utils/validations';
 import toast from 'react-hot-toast';
 
 export function PaginaRegistrarEvaluacion() {
-  const { user, userId } = useAuth(); // 👈 Agregar userId aquí
+  const { user, userId } = useAuth();
   const {
     areas,
     competidores,
@@ -20,9 +20,9 @@ export function PaginaRegistrarEvaluacion() {
     loadingCompetidores,
     idEvaluadorAN,
     cargarCompetidores,
+    actualizarEstadosCompetidores, // 👈 Nueva función
     iniciarEvaluacion,
     guardarEvaluacion,
-    recargarCompetidores,
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
@@ -61,29 +61,26 @@ export function PaginaRegistrarEvaluacion() {
     }
   }, [selectedArea, selectedNivel]);
 
-  // Polling para actualizar estados en tiempo real (cada 5 segundos)
+  // Polling silencioso en segundo plano (cada 3 segundos)
   useEffect(() => {
     if (!selectedArea || !selectedNivel) return;
 
     const interval = setInterval(() => {
-      recargarCompetidores();
-    }, 5000); // Actualizar cada 5 segundos
+      actualizarEstadosCompetidores(); // 👈 Actualización silenciosa
+    }, 3000); // Cada 3 segundos
 
     return () => clearInterval(interval);
-  }, [selectedArea, selectedNivel]);
+  }, [selectedArea, selectedNivel, actualizarEstadosCompetidores]);
 
   // Manejar clic en calificar
   const handleCalificar = async (competidor: Competidor) => {
-    // Verificar si ya está calificado
     if (competidor.estado === 'Calificado') {
       toast.error('Este competidor ya ha sido calificado');
       return;
     }
 
-    // Verificar si está en proceso por otro evaluador
     if (competidor.estado === 'En Proceso') {
-      // Si está bloqueado por este mismo evaluador, permitir abrir
-      if (competidor.bloqueado_por === idEvaluadorAN || competidor.bloqueado_por === userId) { // 👈 Usar userId
+      if (competidor.bloqueado_por === idEvaluadorAN || competidor.bloqueado_por === userId) {
         setSelectedCompetidor(competidor);
         return;
       } else {
@@ -92,13 +89,11 @@ export function PaginaRegistrarEvaluacion() {
       }
     }
 
-    // Iniciar evaluación (crear registro en backend)
     setIniciandoEvaluacion(true);
     const resultado = await iniciarEvaluacion(competidor);
     setIniciandoEvaluacion(false);
 
     if (resultado.success) {
-      // Actualizar el competidor con el id_evaluacion
       const competidorActualizado = competidores.find(c => c.ci === competidor.ci);
       if (competidorActualizado) {
         setSelectedCompetidor(competidorActualizado);
@@ -109,8 +104,8 @@ export function PaginaRegistrarEvaluacion() {
   // Cerrar modal
   const handleCloseModal = () => {
     setSelectedCompetidor(null);
-    // Recargar competidores para actualizar estados
-    recargarCompetidores();
+    // Actualizar estados inmediatamente
+    actualizarEstadosCompetidores();
   };
 
   if (!isEvaluador) {
