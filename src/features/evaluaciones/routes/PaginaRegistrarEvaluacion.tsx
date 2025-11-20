@@ -7,6 +7,7 @@ import { AreaNivelSelector } from '../components/AreaNivelSelector';
 import { SearchBar } from '../components/SearchBar';
 import { CompetidoresTable } from '../components/CompetidoresTable';
 import { CalificacionModal } from '../components/CalificacionModal';
+import { ModificarNotaModal } from '../components/ModificarNotaModal';
 import type { Competidor } from '../types/evaluacion.types';
 import { formatearNombreCompleto } from '../utils/validations';
 import toast from 'react-hot-toast';
@@ -20,15 +21,17 @@ export function PaginaRegistrarEvaluacion() {
     loadingCompetidores,
     idEvaluadorAN,
     cargarCompetidores,
-    actualizarEstadosCompetidores, // 👈 Nueva función
+    actualizarEstadosCompetidores,
     iniciarEvaluacion,
     guardarEvaluacion,
+    modificarNota, // 👈 Nueva función
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedNivel, setSelectedNivel] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
+  const [competidorAEditar, setCompetidorAEditar] = useState<Competidor | null>(null); // 👈 Nuevo estado
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
   const [iniciandoEvaluacion, setIniciandoEvaluacion] = useState(false);
 
@@ -66,8 +69,8 @@ export function PaginaRegistrarEvaluacion() {
     if (!selectedArea || !selectedNivel) return;
 
     const interval = setInterval(() => {
-      actualizarEstadosCompetidores(); // 👈 Actualización silenciosa
-    }, 3000); // Cada 3 segundos
+      actualizarEstadosCompetidores();
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [selectedArea, selectedNivel, actualizarEstadosCompetidores]);
@@ -101,10 +104,20 @@ export function PaginaRegistrarEvaluacion() {
     }
   };
 
-  // Cerrar modal
+  // 👇 NUEVA FUNCIÓN: Manejar clic en editar nota
+  const handleEditarNota = (competidor: Competidor) => {
+    setCompetidorAEditar(competidor);
+  };
+
+  // Cerrar modal de calificación
   const handleCloseModal = () => {
     setSelectedCompetidor(null);
-    // Actualizar estados inmediatamente
+    actualizarEstadosCompetidores();
+  };
+
+  // 👇 NUEVA FUNCIÓN: Cerrar modal de edición
+  const handleCloseModalEdicion = () => {
+    setCompetidorAEditar(null);
     actualizarEstadosCompetidores();
   };
 
@@ -186,9 +199,11 @@ export function PaginaRegistrarEvaluacion() {
       <CompetidoresTable
         competidores={filteredCompetidores}
         onCalificar={handleCalificar}
+        onEditarNota={handleEditarNota} // 👈 Nueva prop
         loading={loadingCompetidores}
       />
 
+      {/* Modal de Calificación (nueva evaluación) */}
       {selectedCompetidor && (
         <CalificacionModal
           competidor={selectedCompetidor}
@@ -196,6 +211,17 @@ export function PaginaRegistrarEvaluacion() {
           nivelSeleccionado={nivelSeleccionado?.nombre || ''}
           onClose={handleCloseModal}
           onSave={guardarEvaluacion}
+        />
+      )}
+
+      {/* 👇 NUEVO: Modal de Edición (modificar nota existente) */}
+      {competidorAEditar && (
+        <ModificarNotaModal
+          competidor={competidorAEditar}
+          areaSeleccionada={areaSeleccionada?.nombre_area || ''}
+          nivelSeleccionado={nivelSeleccionado?.nombre || ''}
+          onClose={handleCloseModalEdicion}
+          onSave={modificarNota}
         />
       )}
     </div>

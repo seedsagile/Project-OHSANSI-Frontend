@@ -148,10 +148,20 @@ export const ModificarNotaModal = ({
             />
           </div>
 
-          {/* Nota del competidor */}
+          {/* Nota Anterior (solo muestra) */}
+          <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <label className="block text-sm font-medium text-yellow-800 mb-1">
+              Nota Anterior
+            </label>
+            <p className="text-lg font-bold text-yellow-900">
+              {competidor.calificacion?.toFixed(2) || '0.00'}
+            </p>
+          </div>
+
+          {/* Nueva Nota */}
           <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nota del competidor
+              Nueva Nota <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -175,9 +185,9 @@ export const ModificarNotaModal = ({
               value={justificacion}
               onChange={(e) => setJustificacion(e.target.value)}
               disabled={loading}
-              rows={3}
+              rows={4}
               maxLength={500}
-              placeholder="Ej: escriba aqui las observaciones"
+              placeholder="Explique el motivo de la modificación de la nota (obligatorio)"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:opacity-50 text-sm"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -201,7 +211,7 @@ export const ModificarNotaModal = ({
             ) : (
               <>
                 <Save size={20} className="mr-2" />
-                Guardar
+                Guardar Modificación
               </>
             )}
           </button>

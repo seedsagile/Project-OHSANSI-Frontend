@@ -48,11 +48,18 @@ export const useEvaluaciones = () => {
       let idEvaluadorAsignado: number | undefined = undefined;
 
       if (comp.evaluaciones && comp.evaluaciones.length > 0) {
-        const evaluacionCalificada = comp.evaluaciones.find(
+        // 👇 ORDENAR por id_evaluacion DESC para obtener la MÁS RECIENTE primero
+        const evaluacionesOrdenadas = [...comp.evaluaciones].sort(
+          (a: any, b: any) => b.id_evaluacion - a.id_evaluacion
+        );
+
+        // Buscar la evaluación más reciente que esté calificada
+        const evaluacionCalificada = evaluacionesOrdenadas.find(
           (ev: any) => ev.estado === "1" || ev.estado === "Calificado" || parseFloat(ev.nota) > 0
         );
 
-        const evaluacionEnProceso = comp.evaluaciones.find(
+        // Buscar si hay alguna evaluación en proceso
+        const evaluacionEnProceso = evaluacionesOrdenadas.find(
           (ev: any) => ev.estado === "En Proceso"
         );
 
@@ -61,6 +68,12 @@ export const useEvaluaciones = () => {
           notaFinal = parseFloat(evaluacionCalificada.nota);
           observacionesFinal = evaluacionCalificada.observaciones || undefined;
           idEvaluacionFinal = evaluacionCalificada.id_evaluacion;
+          
+          console.log(`📊 Competidor ${comp.nombre} ${comp.apellido}:`, {
+            total_evaluaciones: comp.evaluaciones.length,
+            id_evaluacion_mas_reciente: evaluacionCalificada.id_evaluacion,
+            nota_mostrada: notaFinal,
+          });
         } else if (evaluacionEnProceso) {
           estadoFinal = 'En Proceso';
           idEvaluacionFinal = evaluacionEnProceso.id_evaluacion;
@@ -254,6 +267,90 @@ export const useEvaluaciones = () => {
     }
   };
 
+  // 👇 MODIFICAR NOTA: Sigue los MISMOS 2 PASOS que calificar
+  const modificarNota = async (
+    ci: string,
+    nuevaNota: number,
+    justificacion: string
+  ): Promise<void> => {
+    if (!userId) {
+      toast.error('No se pudo identificar el usuario');
+      throw new Error('Usuario no identificado');
+    }
+
+    if (!idCompetenciaActual) {
+      toast.error('No se encontró el ID de competencia');
+      throw new Error('ID de competencia no encontrado');
+    }
+
+    try {
+      const competidor = competidores.find(c => c.ci === ci);
+      if (!competidor) {
+        throw new Error('Competidor no encontrado');
+      }
+
+      if (!competidor.id_competidor) {
+        throw new Error('ID de competidor no válido');
+      }
+
+      console.log('✏️ PASO 1/2 - Creando nueva evaluación para modificar:', {
+        id_competidor: competidor.id_competidor,
+        nombre: `${competidor.nombre} ${competidor.apellido}`,
+        id_competencia: idCompetenciaActual,
+        nota_anterior: competidor.calificacion,
+        nota_nueva: nuevaNota,
+      });
+
+      // PASO 1: Crear nueva evaluación
+      const responseCrear = await evaluacionService.crearEvaluacion(idCompetenciaActual, {
+        id_competidor: competidor.id_competidor,
+        id_evaluadorAN: userId,
+      });
+
+      console.log('✅ PASO 1/2 completado - Nueva evaluación creada:', responseCrear);
+
+      // PASO 2: Finalizar evaluación con la nueva nota
+      console.log('✏️ PASO 2/2 - Finalizando con nueva nota:', {
+        id_evaluacion: responseCrear.id_evaluacion,
+        nota: nuevaNota,
+        justificacion,
+      });
+
+      const responseFinalizar = await evaluacionService.finalizarEvaluacion(
+        responseCrear.id_evaluacion,
+        {
+          nota: nuevaNota,
+          observaciones: justificacion,
+        }
+      );
+
+      console.log('✅ PASO 2/2 completado - Nota modificada:', responseFinalizar);
+
+      // Actualizar estado local
+      setCompetidores(prev =>
+        prev.map(c =>
+          c.ci === ci
+            ? { 
+                ...c, 
+                calificacion: parseFloat(responseFinalizar.nota),
+                observaciones: responseFinalizar.observaciones,
+                estado: 'Calificado' as const,
+                id_evaluacion: responseFinalizar.id_evaluacion,
+                bloqueado_por: undefined,
+              }
+            : c
+        )
+      );
+
+      toast.success('Nota modificada exitosamente');
+    } catch (error: any) {
+      console.error('❌ Error al modificar nota:', error);
+      const errorMsg = error?.response?.data?.message || 'Error al modificar la nota';
+      toast.error(errorMsg);
+      throw error;
+    }
+  };
+
   return {
     userId,
     user,
@@ -263,8 +360,9 @@ export const useEvaluaciones = () => {
     loadingCompetidores,
     idEvaluadorAN,
     cargarCompetidores,
-    actualizarEstadosCompetidores, // 👈 Nueva función
+    actualizarEstadosCompetidores,
     iniciarEvaluacion,
     guardarEvaluacion,
+    modificarNota, // 👈 Ahora sigue los mismos 2 pasos
   };
 };

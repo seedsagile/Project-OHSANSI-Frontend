@@ -5,12 +5,14 @@ import type { Competidor } from '../types/evaluacion.types';
 interface CompetidoresTableProps {
   competidores: Competidor[];
   onCalificar: (competidor: Competidor) => void;
+  onEditarNota: (competidor: Competidor) => void; // 👈 Nueva prop
   loading?: boolean;
 }
 
 export const CompetidoresTable = ({
   competidores,
   onCalificar,
+  onEditarNota, // 👈 Nueva prop
   loading = false,
 }: CompetidoresTableProps) => {
   if (loading) {
@@ -74,9 +76,13 @@ export const CompetidoresTable = ({
                 </td>
                 <td className="px-4 py-3 text-center">
                   {competidor.estado === 'Calificado' ? (
-                    <span className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-green-100 text-green-800 text-sm font-semibold">
+                    <button
+                      onClick={() => onEditarNota(competidor)} // 👈 Al hacer clic, edita
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-green-100 text-green-800 text-sm font-semibold hover:bg-green-200 transition-colors cursor-pointer"
+                      title="Clic para editar nota"
+                    >
                       {competidor.calificacion?.toFixed(2) || '0.00'}
-                    </span>
+                    </button>
                   ) : competidor.estado === 'En Proceso' ? (
                     <button
                       onClick={() => onCalificar(competidor)}
