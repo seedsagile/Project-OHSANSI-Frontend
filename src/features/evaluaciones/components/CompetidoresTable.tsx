@@ -45,7 +45,7 @@ export const CompetidoresTable = ({
               <th className="px-4 py-3 text-left text-sm font-semibold">NOMBRES</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">APELLIDOS</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">CI</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">ESTADOS</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">ESTADO</th>
               <th className="px-4 py-3 text-center text-sm font-semibold">CALIFICACIÓN</th>
             </tr>
           </thead>
@@ -64,7 +64,7 @@ export const CompetidoresTable = ({
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       competidor.estado === 'Calificado'
                         ? 'bg-green-100 text-green-800'
-                        : competidor.estado === 'En calificacion'
+                        : competidor.estado === 'En Proceso'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-gray-200 text-gray-700'
                     }`}
@@ -77,10 +77,14 @@ export const CompetidoresTable = ({
                     <span className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-green-100 text-green-800 text-sm font-semibold">
                       {competidor.calificacion?.toFixed(2) || '0.00'}
                     </span>
-                  ) : competidor.estado === 'En calificacion' ? (
-                    <span className="text-sm font-semibold text-yellow-600">
+                  ) : competidor.estado === 'En Proceso' ? (
+                    <button
+                      onClick={() => onCalificar(competidor)}
+                      disabled
+                      className="px-4 py-1.5 rounded text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
+                    >
                       En proceso...
-                    </span>
+                    </button>
                   ) : (
                     <button
                       onClick={() => onCalificar(competidor)}

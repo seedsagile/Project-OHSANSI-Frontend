@@ -12,14 +12,17 @@ import { formatearNombreCompleto } from '../utils/validations';
 import toast from 'react-hot-toast';
 
 export function PaginaRegistrarEvaluacion() {
-  const { user } = useAuth();
+  const { user, userId } = useAuth(); // 👈 Agregar userId aquí
   const {
     areas,
     competidores,
     loading,
     loadingCompetidores,
+    idEvaluadorAN,
     cargarCompetidores,
+    iniciarEvaluacion,
     guardarEvaluacion,
+    recargarCompetidores,
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
@@ -27,6 +30,7 @@ export function PaginaRegistrarEvaluacion() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
+  const [iniciandoEvaluacion, setIniciandoEvaluacion] = useState(false);
 
   const isEvaluador = user?.role === 'evaluador';
 
@@ -57,18 +61,56 @@ export function PaginaRegistrarEvaluacion() {
     }
   }, [selectedArea, selectedNivel]);
 
-  // Manejar clic en calificar - solo abre el modal
-  const handleCalificar = (competidor: Competidor) => {
+  // Polling para actualizar estados en tiempo real (cada 5 segundos)
+  useEffect(() => {
+    if (!selectedArea || !selectedNivel) return;
+
+    const interval = setInterval(() => {
+      recargarCompetidores();
+    }, 5000); // Actualizar cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, [selectedArea, selectedNivel]);
+
+  // Manejar clic en calificar
+  const handleCalificar = async (competidor: Competidor) => {
+    // Verificar si ya está calificado
     if (competidor.estado === 'Calificado') {
       toast.error('Este competidor ya ha sido calificado');
       return;
     }
-    setSelectedCompetidor(competidor);
+
+    // Verificar si está en proceso por otro evaluador
+    if (competidor.estado === 'En Proceso') {
+      // Si está bloqueado por este mismo evaluador, permitir abrir
+      if (competidor.bloqueado_por === idEvaluadorAN || competidor.bloqueado_por === userId) { // 👈 Usar userId
+        setSelectedCompetidor(competidor);
+        return;
+      } else {
+        toast.error('Este competidor está siendo calificado por otro evaluador');
+        return;
+      }
+    }
+
+    // Iniciar evaluación (crear registro en backend)
+    setIniciandoEvaluacion(true);
+    const resultado = await iniciarEvaluacion(competidor);
+    setIniciandoEvaluacion(false);
+
+    if (resultado.success) {
+      // Actualizar el competidor con el id_evaluacion
+      const competidorActualizado = competidores.find(c => c.ci === competidor.ci);
+      if (competidorActualizado) {
+        setSelectedCompetidor(competidorActualizado);
+      }
+    }
   };
 
   // Cerrar modal
   const handleCloseModal = () => {
     setSelectedCompetidor(null);
+    // Recargar competidores para actualizar estados
+    recargarCompetidores();
   };
 
   if (!isEvaluador) {
@@ -113,6 +155,13 @@ export function PaginaRegistrarEvaluacion() {
 
   return (
     <div className="p-6">
+      {iniciandoEvaluacion && (
+        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center z-50">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+          <span>Iniciando evaluación...</span>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900">Registrar Evaluación</h1>
         <p className="text-gray-600 mt-2">

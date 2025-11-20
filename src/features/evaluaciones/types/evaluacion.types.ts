@@ -24,12 +24,12 @@ export interface Competidor {
   nivel: string;
   grado: string;
   id_olimpiada?: number;
-  evaluaciones?: Evaluacion[]; // Array de evaluaciones del API
-  estado?: 'Pendiente' | 'En calificacion' | 'Calificado';
+  evaluaciones?: Evaluacion[];
+  estado?: 'Pendiente' | 'En Proceso' | 'Calificado'; // 👈 Agregado "En Proceso"
   calificacion?: number;
   observaciones?: string;
   bloqueado_por?: number;
-  id_evaluacion?: number; // Para guardar el ID de la evaluación activa
+  id_evaluacion?: number;
 }
 
 export interface Area {
@@ -51,13 +51,11 @@ export interface EvaluadorAreasNiveles {
   areas: Area[];
 }
 
-// Request para crear evaluación
 export interface CrearEvaluacionRequest {
   id_competidor: number;
   id_evaluadorAN: number;
 }
 
-// Response al crear evaluación
 export interface CrearEvaluacionResponse {
   id_evaluacion: number;
   id_competidor: number;
@@ -65,22 +63,21 @@ export interface CrearEvaluacionResponse {
   id_competencia: number;
   id_parametro: number;
   estado: string;
-  nota: number;
+  nota: string;
   fecha_evaluacion: string;
   created_at: string;
   updated_at: string;
+  observaciones?: string;
 }
 
-// Request para finalizar evaluación
 export interface FinalizarEvaluacionRequest {
   nota: number;
   observaciones?: string;
 }
 
-// Response al finalizar evaluación
 export interface FinalizarEvaluacionResponse {
   id_evaluacion: number;
-  nota: number;
+  nota: string;
   observaciones: string;
   fecha_evaluacion: string;
   estado: string;
