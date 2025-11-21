@@ -1,6 +1,8 @@
 // src/features/evaluaciones/components/SearchBar.tsx
 
 import { Search } from 'lucide-react';
+import { validarBusqueda, esBusquedaValida } from '../utils/validations';
+import { useState } from 'react';
 
 interface SearchBarProps {
   searchTerm: string;
@@ -13,6 +15,30 @@ export const SearchBar = ({
   onSearchChange,
   disabled = false,
 }: SearchBarProps) => {
+  const [error, setError] = useState<string>('');
+
+  const handleChange = (value: string) => {
+    // Limpiar error previo
+    setError('');
+
+    // Si está vacío o solo espacios, permitir pero no buscar
+    if (!esBusquedaValida(value)) {
+      onSearchChange('');
+      return;
+    }
+
+    // Validar con Zod
+    const validacion = validarBusqueda(value);
+    
+    if (!validacion.valido && validacion.mensaje) {
+      setError(validacion.mensaje);
+      return;
+    }
+
+    // Si es válido, actualizar búsqueda
+    onSearchChange(value);
+  };
+
   return (
     <div className="mb-6">
       <div className="relative">
@@ -24,11 +50,22 @@ export const SearchBar = ({
           type="text"
           placeholder="Nombre Completo del competidor"
           value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           disabled={disabled}
-          className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          maxLength={50}
+          className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+            error 
+              ? 'border-red-300 focus:ring-red-500' 
+              : 'border-gray-300 focus:ring-blue-500'
+          }`}
         />
       </div>
+      {error && (
+        <p className="mt-1 text-sm text-red-600">{error}</p>
+      )}
+      <p className="text-xs text-gray-500 mt-1">
+        Solo letras - Máximo 50 caracteres
+      </p>
     </div>
   );
 };

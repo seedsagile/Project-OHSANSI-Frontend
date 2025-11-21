@@ -31,7 +31,7 @@ export const CompetidoresTable = ({
       <div className="bg-white rounded-lg shadow p-8 text-center">
         <p className="text-gray-500">No se encontraron competidores para esta área y nivel</p>
         <p className="text-sm text-gray-400 mt-2">
-          Seleccione un área y nivel para ver los competidores disponibles
+          Seleccione un área y nivel para ver los el registro de estudiantes y comenzar a calificar
         </p>
       </div>
     );
