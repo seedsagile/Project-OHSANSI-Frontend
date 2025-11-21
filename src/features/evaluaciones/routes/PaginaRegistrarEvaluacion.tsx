@@ -9,7 +9,7 @@ import { CompetidoresTable } from '../components/CompetidoresTable';
 import { CalificacionModal } from '../components/CalificacionModal';
 import { ModificarNotaModal } from '../components/ModificarNotaModal';
 import type { Competidor } from '../types/evaluacion.types';
-import { formatearNombreCompleto } from '../utils/validations';
+import { formatearNombreCompleto, esBusquedaValida } from '../utils/validations';
 import toast from 'react-hot-toast';
 
 export function PaginaRegistrarEvaluacion() {
@@ -24,16 +24,16 @@ export function PaginaRegistrarEvaluacion() {
     actualizarEstadosCompetidores,
     iniciarEvaluacion,
     guardarEvaluacion,
-    modificarNota, // 👈 Nueva función
+    modificarNota,
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedNivel, setSelectedNivel] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
-  const [competidorAEditar, setCompetidorAEditar] = useState<Competidor | null>(null); // 👈 Nuevo estado
+  const [competidorAEditar, setCompetidorAEditar] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
-  const [iniciandoEvaluacion, setIniciandoEvaluacion] = useState(false);
+  const [competidorEnModal, setCompetidorEnModal] = useState<string | null>(null); // CI del competidor en modal
 
   const isEvaluador = user?.role === 'evaluador';
 
@@ -42,25 +42,36 @@ export function PaginaRegistrarEvaluacion() {
     n => n.id_nivel.toString() === selectedNivel
   );
 
-  // Filtrar competidores por búsqueda
+  // Filtrar competidores por búsqueda y bloquear el que está en modal
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredCompetidores(competidores);
-      return;
+    let resultados = competidores;
+
+    // Si no hay búsqueda válida, mostrar todos
+    if (esBusquedaValida(searchTerm)) {
+      resultados = competidores.filter((c) => {
+        const nombreCompleto = formatearNombreCompleto(c.nombre, c.apellido).toLowerCase();
+        return nombreCompleto.includes(searchTerm.toLowerCase());
+      });
     }
 
-    const filtered = competidores.filter((c) => {
-      const nombreCompleto = formatearNombreCompleto(c.nombre, c.apellido).toLowerCase();
-      return nombreCompleto.includes(searchTerm.toLowerCase());
-    });
+    // Si hay un competidor en modal, bloquearlo visualmente
+    if (competidorEnModal) {
+      resultados = resultados.map(c => 
+        c.ci === competidorEnModal 
+          ? { ...c, estado: 'En Proceso' as const }
+          : c
+      );
+    }
 
-    setFilteredCompetidores(filtered);
-  }, [competidores, searchTerm]);
+    setFilteredCompetidores(resultados);
+  }, [competidores, searchTerm, competidorEnModal]);
 
   // Auto-cargar competidores cuando se selecciona área y nivel
   useEffect(() => {
     if (selectedArea && selectedNivel) {
       cargarCompetidores(parseInt(selectedArea), parseInt(selectedNivel));
+    } else {
+      setFilteredCompetidores([]);
     }
   }, [selectedArea, selectedNivel]);
 
@@ -85,6 +96,7 @@ export function PaginaRegistrarEvaluacion() {
     if (competidor.estado === 'En Proceso') {
       if (competidor.bloqueado_por === idEvaluadorAN || competidor.bloqueado_por === userId) {
         setSelectedCompetidor(competidor);
+        setCompetidorEnModal(competidor.ci);
         return;
       } else {
         toast.error('Este competidor está siendo calificado por otro evaluador');
@@ -92,32 +104,43 @@ export function PaginaRegistrarEvaluacion() {
       }
     }
 
-    setIniciandoEvaluacion(true);
+    // Bloquear visualmente sin cambiar estado real
+    setCompetidorEnModal(competidor.ci);
+    
+    // Iniciar evaluación en el backend
     const resultado = await iniciarEvaluacion(competidor);
-    setIniciandoEvaluacion(false);
 
     if (resultado.success) {
       const competidorActualizado = competidores.find(c => c.ci === competidor.ci);
       if (competidorActualizado) {
         setSelectedCompetidor(competidorActualizado);
       }
+    } else {
+      // Si falla, desbloquear
+      setCompetidorEnModal(null);
     }
   };
 
-  // 👇 NUEVA FUNCIÓN: Manejar clic en editar nota
-  const handleEditarNota = (competidor: Competidor) => {
+  // Manejar clic en editar nota (al hacer clic en la nota)
+  const handleEditarNota = async (competidor: Competidor) => {
+    // Bloquear visualmente
+    setCompetidorEnModal(competidor.ci);
+    
+    // Abrir modal de edición directamente
     setCompetidorAEditar(competidor);
   };
 
   // Cerrar modal de calificación
   const handleCloseModal = () => {
     setSelectedCompetidor(null);
+    setCompetidorEnModal(null);
     actualizarEstadosCompetidores();
   };
 
-  // 👇 NUEVA FUNCIÓN: Cerrar modal de edición
+  // Cerrar modal de edición
   const handleCloseModalEdicion = () => {
     setCompetidorAEditar(null);
+    setCompetidorEnModal(null);
     actualizarEstadosCompetidores();
   };
 
@@ -163,13 +186,6 @@ export function PaginaRegistrarEvaluacion() {
 
   return (
     <div className="p-6">
-      {iniciandoEvaluacion && (
-        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center z-50">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-          <span>Iniciando evaluación...</span>
-        </div>
-      )}
-
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900">Registrar Evaluación</h1>
         <p className="text-gray-600 mt-2">
@@ -199,8 +215,10 @@ export function PaginaRegistrarEvaluacion() {
       <CompetidoresTable
         competidores={filteredCompetidores}
         onCalificar={handleCalificar}
-        onEditarNota={handleEditarNota} // 👈 Nueva prop
+        onEditarNota={handleEditarNota}
         loading={loadingCompetidores}
+        esBusqueda={esBusquedaValida(searchTerm)}
+        areaSeleccionada={!!selectedArea && !!selectedNivel}
       />
 
       {/* Modal de Calificación (nueva evaluación) */}
@@ -214,7 +232,7 @@ export function PaginaRegistrarEvaluacion() {
         />
       )}
 
-      {/* 👇 NUEVO: Modal de Edición (modificar nota existente) */}
+      {/* Modal de Edición (modificar nota existente) */}
       {competidorAEditar && (
         <ModificarNotaModal
           competidor={competidorAEditar}

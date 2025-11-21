@@ -13,7 +13,11 @@ import { z } from 'zod';
 export const notaSchema = z
   .string()
   .min(1, 'El campo Nota del competidor es obligatorio.')
-  .refine((val) => !isNaN(parseFloat(val)), {
+  .refine((val) => {
+    const trimmed = val.trim();
+    if (trimmed === '') return false;
+    return !isNaN(parseFloat(trimmed));
+  }, {
     message: 'La nota debe ser un número válido.',
   })
   .refine((val) => {
@@ -28,14 +32,14 @@ export const notaSchema = z
  * - Es opcional (puede estar vacío)
  * - No puede contener solo espacios en blanco
  * - Máximo 300 caracteres
- * - Solo letras, números, comas, punto y coma, puntos
+ * - Solo letras, números, espacios, coma (,), punto y coma (;), punto (.)
  */
 export const observacionesCalificacionSchema = z
   .string()
   .optional()
   .refine(
     (val) => {
-      if (!val) return true; // Vacío es válido
+      if (!val || val.length === 0) return true; // Vacío es válido
       return val.trim().length > 0; // Si tiene contenido, no puede ser solo espacios
     },
     {
@@ -59,7 +63,7 @@ export const observacionesCalificacionSchema = z
       return regex.test(val);
     },
     {
-      message: 'Las observaciones solo pueden contener letras, números, comas (,), punto y coma (;) y punto (.).',
+      message: 'El campo Observaciones solo puede contener letras, números y los caracteres especiales: coma (,), punto y coma (;) y punto (.).',
     }
   );
 
@@ -68,7 +72,7 @@ export const observacionesCalificacionSchema = z
  * - Es OBLIGATORIO (no puede estar vacío)
  * - No puede contener solo espacios en blanco
  * - Máximo 300 caracteres
- * - Solo letras, números, comas, punto y coma, puntos
+ * - Solo letras, números, espacios, coma (,), punto y coma (;), punto (.)
  */
 export const observacionesModificacionSchema = z
   .string()
@@ -83,7 +87,7 @@ export const observacionesModificacionSchema = z
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s,;.]+$/;
     return regex.test(val);
   }, {
-    message: 'Las observaciones solo pueden contener letras, números, comas (,), punto y coma (;) y punto (.).',
+    message: 'El campo Observaciones solo puede contener letras, números y los caracteres especiales: coma (,), punto y coma (;) y punto (.).',
   });
 
 /**
@@ -103,7 +107,7 @@ export const busquedaSchema = z
       return regex.test(val);
     },
     {
-      message: 'La búsqueda solo puede contener letras.',
+      message: 'El campo de búsqueda permite el ingreso únicamente de letras.',
     }
   );
 
@@ -141,26 +145,25 @@ export const validarCalificacion = (
   rangoMax: number = 100
 ): { valido: boolean; mensaje?: string } => {
   try {
-    // Crear schema dinámico con rango personalizado
-    const notaDinamica = z
-      .string()
-      .min(1, 'El campo Nota del competidor es obligatorio.')
-      .refine((val) => !isNaN(parseFloat(val)), {
-        message: 'La nota debe ser un número válido.',
-      })
-      .refine((val) => {
-        const num = parseFloat(val);
-        return num >= rangoMin && num <= rangoMax;
-      }, {
-        message: `Rango de nota no permitido. Solo se puede calificar entre ${rangoMin}-${rangoMax}.`,
-      });
+    if (!calificacion || calificacion.trim() === '') {
+      return { valido: false, mensaje: 'El campo Nota del competidor es obligatorio.' };
+    }
 
-    notaDinamica.parse(calificacion);
+    const num = parseFloat(calificacion);
+    
+    if (isNaN(num)) {
+      return { valido: false, mensaje: 'La nota debe ser un número válido.' };
+    }
+
+    if (num < rangoMin || num > rangoMax) {
+      return { 
+        valido: false, 
+        mensaje: `Rango de nota no permitido. Solo se puede calificar entre ${rangoMin}-${rangoMax}.` 
+      };
+    }
+
     return { valido: true };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { valido: false, mensaje: error.errors[0].message };
-    }
     return { valido: false, mensaje: 'Error de validación desconocido.' };
   }
 };
@@ -172,12 +175,32 @@ export const validarCalificacion = (
  */
 export const validarObservacionesCalificacion = (observaciones: string): { valido: boolean; mensaje?: string } => {
   try {
-    observacionesCalificacionSchema.parse(observaciones);
+    // Si está vacío, es válido (es opcional)
+    if (!observaciones || observaciones.length === 0) {
+      return { valido: true };
+    }
+
+    // Verificar que no sea solo espacios
+    if (observaciones.trim().length === 0) {
+      return { valido: false, mensaje: 'El campo Observaciones no puede contener solo espacios.' };
+    }
+
+    // Verificar longitud máxima
+    if (observaciones.length > 300) {
+      return { valido: false, mensaje: 'Las observaciones no pueden exceder 300 caracteres.' };
+    }
+
+    // Verificar caracteres permitidos
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s,;.]+$/;
+    if (!regex.test(observaciones)) {
+      return { 
+        valido: false, 
+        mensaje: 'El campo Observaciones solo puede contener letras, números y los caracteres especiales: coma (,), punto y coma (;) y punto (.).' 
+      };
+    }
+
     return { valido: true };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { valido: false, mensaje: error.errors[0].message };
-    }
     return { valido: false, mensaje: 'Error de validación desconocido.' };
   }
 };
@@ -189,12 +212,32 @@ export const validarObservacionesCalificacion = (observaciones: string): { valid
  */
 export const validarObservacionesModificacion = (observaciones: string): { valido: boolean; mensaje?: string } => {
   try {
-    observacionesModificacionSchema.parse(observaciones);
+    // Es obligatorio
+    if (!observaciones || observaciones.length === 0) {
+      return { valido: false, mensaje: 'El campo Observaciones es obligatorio.' };
+    }
+
+    // Verificar que no sea solo espacios
+    if (observaciones.trim().length === 0) {
+      return { valido: false, mensaje: 'El campo Observaciones no puede contener solo espacios.' };
+    }
+
+    // Verificar longitud máxima
+    if (observaciones.length > 300) {
+      return { valido: false, mensaje: 'Las observaciones no pueden exceder 300 caracteres.' };
+    }
+
+    // Verificar caracteres permitidos
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s,;.]+$/;
+    if (!regex.test(observaciones)) {
+      return { 
+        valido: false, 
+        mensaje: 'El campo Observaciones solo puede contener letras, números y los caracteres especiales: coma (,), punto y coma (;) y punto (.).' 
+      };
+    }
+
     return { valido: true };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { valido: false, mensaje: error.errors[0].message };
-    }
     return { valido: false, mensaje: 'Error de validación desconocido.' };
   }
 };
@@ -206,12 +249,24 @@ export const validarObservacionesModificacion = (observaciones: string): { valid
  */
 export const validarBusqueda = (busqueda: string): { valido: boolean; mensaje?: string } => {
   try {
-    busquedaSchema.parse(busqueda);
+    if (!busqueda || busqueda.trim().length === 0) {
+      return { valido: true }; // Vacío es válido
+    }
+
+    if (busqueda.length > 50) {
+      return { valido: false, mensaje: 'La búsqueda no puede exceder 50 caracteres.' };
+    }
+
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+    if (!regex.test(busqueda)) {
+      return { 
+        valido: false, 
+        mensaje: 'El campo de búsqueda permite el ingreso únicamente de letras.' 
+      };
+    }
+
     return { valido: true };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { valido: false, mensaje: error.errors[0].message };
-    }
     return { valido: false, mensaje: 'Error de validación desconocido.' };
   }
 };
@@ -225,20 +280,25 @@ export const validarFormularioCalificacion = (data: {
   nota: string;
   observaciones?: string;
 }): { valido: boolean; errores?: Record<string, string> } => {
-  try {
-    formularioCalificacionSchema.parse(data);
-    return { valido: true };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errores: Record<string, string> = {};
-      error.errors.forEach((err) => {
-        const campo = err.path[0] as string;
-        errores[campo] = err.message;
-      });
-      return { valido: false, errores };
-    }
-    return { valido: false, errores: { general: 'Error de validación desconocido.' } };
+  const errores: Record<string, string> = {};
+
+  // Validar nota
+  const validacionNota = validarCalificacion(data.nota);
+  if (!validacionNota.valido && validacionNota.mensaje) {
+    errores.nota = validacionNota.mensaje;
   }
+
+  // Validar observaciones (si tiene contenido)
+  if (data.observaciones) {
+    const validacionObs = validarObservacionesCalificacion(data.observaciones);
+    if (!validacionObs.valido && validacionObs.mensaje) {
+      errores.observaciones = validacionObs.mensaje;
+    }
+  }
+
+  return Object.keys(errores).length === 0 
+    ? { valido: true } 
+    : { valido: false, errores };
 };
 
 /**
@@ -250,20 +310,23 @@ export const validarFormularioModificacion = (data: {
   nota: string;
   observaciones: string;
 }): { valido: boolean; errores?: Record<string, string> } => {
-  try {
-    formularioModificacionSchema.parse(data);
-    return { valido: true };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errores: Record<string, string> = {};
-      error.errors.forEach((err) => {
-        const campo = err.path[0] as string;
-        errores[campo] = err.message;
-      });
-      return { valido: false, errores };
-    }
-    return { valido: false, errores: { general: 'Error de validación desconocido.' } };
+  const errores: Record<string, string> = {};
+
+  // Validar nota
+  const validacionNota = validarCalificacion(data.nota);
+  if (!validacionNota.valido && validacionNota.mensaje) {
+    errores.nota = validacionNota.mensaje;
   }
+
+  // Validar observaciones (obligatorio)
+  const validacionObs = validarObservacionesModificacion(data.observaciones);
+  if (!validacionObs.valido && validacionObs.mensaje) {
+    errores.observaciones = validacionObs.mensaje;
+  }
+
+  return Object.keys(errores).length === 0 
+    ? { valido: true } 
+    : { valido: false, errores };
 };
 
 // ==================== UTILIDADES ====================

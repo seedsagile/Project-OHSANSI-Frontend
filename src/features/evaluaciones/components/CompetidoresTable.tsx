@@ -5,15 +5,19 @@ import type { Competidor } from '../types/evaluacion.types';
 interface CompetidoresTableProps {
   competidores: Competidor[];
   onCalificar: (competidor: Competidor) => void;
-  onEditarNota: (competidor: Competidor) => void; // 👈 Nueva prop
+  onEditarNota: (competidor: Competidor) => void;
   loading?: boolean;
+  esBusqueda?: boolean;
+  areaSeleccionada?: boolean;
 }
 
 export const CompetidoresTable = ({
   competidores,
   onCalificar,
-  onEditarNota, // 👈 Nueva prop
+  onEditarNota,
   loading = false,
+  esBusqueda = false,
+  areaSeleccionada = false,
 }: CompetidoresTableProps) => {
   if (loading) {
     return (
@@ -26,12 +30,34 @@ export const CompetidoresTable = ({
     );
   }
 
-  if (competidores.length === 0) {
+  // Mensaje cuando NO hay área y nivel seleccionados
+  if (!areaSeleccionada) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
-        <p className="text-gray-500">No se encontraron competidores para esta área y nivel</p>
-        <p className="text-sm text-gray-400 mt-2">
-          Seleccione un área y nivel para ver los el registro de estudiantes y comenzar a calificar
+        <p className="text-gray-500">
+          Seleccione un área y un nivel, para ver el registro de estudiantes y comenzar a calificar
+        </p>
+      </div>
+    );
+  }
+
+  // Mensaje cuando NO hay competidores después de una búsqueda
+  if (esBusqueda && competidores.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center">
+        <p className="text-gray-500">
+          No se encontraron resultados de la búsqueda realizada.
+        </p>
+      </div>
+    );
+  }
+
+  // Mensaje cuando NO hay competidores en el área y nivel seleccionados
+  if (!esBusqueda && competidores.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center">
+        <p className="text-gray-500">
+          No hay competidores registrados para el área y nivel seleccionados.
         </p>
       </div>
     );
@@ -71,13 +97,13 @@ export const CompetidoresTable = ({
                         : 'bg-gray-200 text-gray-700'
                     }`}
                   >
-                    {competidor.estado || 'Pendiente'}
+                    {competidor.estado === 'En Proceso' ? 'En calificación' : competidor.estado || 'Pendiente'}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {competidor.estado === 'Calificado' ? (
                     <button
-                      onClick={() => onEditarNota(competidor)} // 👈 Al hacer clic, edita
+                      onClick={() => onEditarNota(competidor)}
                       className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-green-100 text-green-800 text-sm font-semibold hover:bg-green-200 transition-colors cursor-pointer"
                       title="Clic para editar nota"
                     >
@@ -85,11 +111,10 @@ export const CompetidoresTable = ({
                     </button>
                   ) : competidor.estado === 'En Proceso' ? (
                     <button
-                      onClick={() => onCalificar(competidor)}
                       disabled
                       className="px-4 py-1.5 rounded text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
                     >
-                      En proceso...
+                      Calificar
                     </button>
                   ) : (
                     <button

@@ -1,8 +1,8 @@
 // src/features/evaluaciones/components/SearchBar.tsx
 
 import { Search } from 'lucide-react';
-import { validarBusqueda, esBusquedaValida } from '../utils/validations';
-import { useState } from 'react';
+import { validarBusqueda } from '../utils/validations';
+import { useState, useEffect } from 'react';
 
 interface SearchBarProps {
   searchTerm: string;
@@ -16,13 +16,18 @@ export const SearchBar = ({
   disabled = false,
 }: SearchBarProps) => {
   const [error, setError] = useState<string>('');
+  const [inputValue, setInputValue] = useState(searchTerm);
+
+  useEffect(() => {
+    setInputValue(searchTerm);
+  }, [searchTerm]);
 
   const handleChange = (value: string) => {
-    // Limpiar error previo
+    setInputValue(value);
     setError('');
 
-    // Si está vacío o solo espacios, permitir pero no buscar
-    if (!esBusquedaValida(value)) {
+    // Si está vacío, permitir y limpiar búsqueda
+    if (value.trim().length === 0) {
       onSearchChange('');
       return;
     }
@@ -32,6 +37,7 @@ export const SearchBar = ({
     
     if (!validacion.valido && validacion.mensaje) {
       setError(validacion.mensaje);
+      // No actualizar la búsqueda si hay error
       return;
     }
 
@@ -49,7 +55,7 @@ export const SearchBar = ({
         <input
           type="text"
           placeholder="Nombre Completo del competidor"
-          value={searchTerm}
+          value={inputValue}
           onChange={(e) => handleChange(e.target.value)}
           disabled={disabled}
           maxLength={50}
@@ -63,9 +69,11 @@ export const SearchBar = ({
       {error && (
         <p className="mt-1 text-sm text-red-600">{error}</p>
       )}
-      <p className="text-xs text-gray-500 mt-1">
-        Solo letras - Máximo 50 caracteres
-      </p>
+      {!error && (
+        <p className="text-xs text-gray-500 mt-1">
+          Solo letras - Máximo 50 caracteres
+        </p>
+      )}
     </div>
   );
 };
