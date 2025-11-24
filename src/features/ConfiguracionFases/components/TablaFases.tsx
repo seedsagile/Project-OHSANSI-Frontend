@@ -1,5 +1,3 @@
-// src/features/ConfiguracionFases/components/TablaFases.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Save, X, LoaderCircle, Check, Info } from 'lucide-react';
 import type { AccionSistema, FaseGlobal, PermisoFase } from '../types';
@@ -23,7 +21,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
 }) => {
   const [permisosSeleccionados, setPermisosSeleccionados] = useState<Set<string>>(new Set());
 
-  // Carga inicial de datos
   useEffect(() => {
     const iniciales = new Set<string>();
     permisosIniciales.forEach((p) => {
@@ -34,7 +31,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
     setPermisosSeleccionados(iniciales);
   }, [permisosIniciales]);
 
-  // --- Lógica de Checkbox Individual ---
   const handleToggle = (idFase: number, idAccion: number) => {
     const key = `${idFase}-${idAccion}`;
     const nuevoSet = new Set(permisosSeleccionados);
@@ -43,20 +39,14 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
     setPermisosSeleccionados(nuevoSet);
   };
 
-  // --- Lógica "Select All" por COLUMNA (Fase) ---
   const toggleColumn = (idFase: number) => {
     const nuevoSet = new Set(permisosSeleccionados);
-    // Generamos todas las claves posibles para esta columna (una por cada acción)
     const keysColumna = acciones.map(a => `${idFase}-${a.id}`);
-
-    // Verificamos si TODAS las acciones de esta fase están seleccionadas
     const allSelected = keysColumna.every(k => nuevoSet.has(k));
 
     if (allSelected) {
-      // Si todas están marcadas -> Desmarcar todas
       keysColumna.forEach(k => nuevoSet.delete(k));
     } else {
-      // Si falta alguna -> Marcar todas
       keysColumna.forEach(k => nuevoSet.add(k));
     }
     setPermisosSeleccionados(nuevoSet);
@@ -67,7 +57,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
     return acciones.every(a => permisosSeleccionados.has(`${idFase}-${a.id}`));
   };
 
-  // --- Guardado ---
   const handleGuardarClick = () => {
     const payload: PermisoFase[] = [];
     fases.forEach((fase) => {
@@ -83,7 +72,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
     onGuardar(payload);
   };
 
-  // Componente Checkbox Reutilizable
   const CustomCheckbox = ({ 
     checked, 
     onChange, 
@@ -123,17 +111,14 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
         <div className="overflow-auto max-h-[600px] scrollbar-thin scrollbar-thumb-neutro-300 scrollbar-track-neutro-100">
           <table className="w-full border-collapse text-left min-w-[600px] sm:min-w-[800px]">
             
-            {/* --- Cabecera --- */}
             <thead className="sticky top-0 z-20 bg-principal-500 text-white shadow-md">
               <tr>
-                {/* Columna Acciones (Fija) */}
                 <th className="py-4 px-4 md:px-6 font-bold text-sm md:text-base w-[200px] sm:w-[280px] sticky left-0 bg-principal-500 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] border-r border-principal-400/50 align-bottom">
                   <div className="flex items-end pb-3 h-full">
                     Acciones del Sistema
                   </div>
                 </th>
                 
-                {/* Columnas Fases (Dinámicas) + Checkbox Maestro Columna */}
                 {fases.map((fase) => (
                   <th
                     key={fase.id}
@@ -142,7 +127,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
                     <div className="flex flex-col items-center justify-between gap-2 h-full">
                       <span className="whitespace-normal leading-tight">{fase.nombre}</span>
                       
-                      {/* Checkbox Maestro de Columna (Select All Phase) */}
                       <div className="mt-1 bg-white/10 p-1 rounded-lg hover:bg-white/20 transition-colors">
                         <label 
                           className="relative flex items-center justify-center cursor-pointer"
@@ -169,7 +153,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
               </tr>
             </thead>
 
-            {/* --- Cuerpo --- */}
             <tbody className="text-neutro-800 divide-y divide-neutro-200">
               {acciones.map((accion, index) => (
                 <tr
@@ -178,27 +161,25 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
                     index % 2 !== 0 ? 'bg-neutro-100' : 'bg-white'
                   }`}
                 >
-                  {/* Nombre de Acción (Sin Checkbox Maestro) */}
                   <td className={`py-3 px-4 md:px-6 font-medium text-xs md:text-base sticky left-0 z-10 transition-colors group-hover:bg-principal-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-neutro-200 ${
-                     index % 2 !== 0 ? 'bg-neutro-100' : 'bg-white'
+                      index % 2 !== 0 ? 'bg-neutro-100' : 'bg-white'
                   }`}>
                     <div className="flex items-center justify-between gap-2 h-full">
                       <div className="flex flex-col justify-center">
                         <span className="break-words leading-tight">{accion.nombre}</span>
                         {accion.descripcion && (
-                           <span className="text-[10px] text-neutro-400 font-normal hidden sm:block max-w-[180px] truncate mt-0.5">
-                             {accion.descripcion}
-                           </span>
+                            <span className="text-[10px] text-neutro-400 font-normal hidden sm:block max-w-[180px] truncate mt-0.5">
+                              {accion.descripcion}
+                            </span>
                         )}
                       </div>
                       
                       {accion.descripcion && (
-                         <Info size={16} className="text-neutro-400 flex-shrink-0 sm:hidden ml-auto" />
+                          <Info size={16} className="text-neutro-400 flex-shrink-0 sm:hidden ml-auto" />
                       )}
                     </div>
                   </td>
 
-                  {/* Celdas Individuales */}
                   {fases.map((fase) => (
                     <td
                       key={fase.id}
@@ -220,7 +201,6 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
         </div>
       </div>
 
-      {/* --- Footer --- */}
       <footer className="mt-6 pt-6 border-t border-neutro-200 flex flex-col-reverse sm:flex-row justify-end items-center gap-3 sm:gap-4">
         <button
           type="button"

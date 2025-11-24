@@ -86,7 +86,7 @@ export function PaginaConfiguracionFases() {
           {!isLoading && !isError && matrizData && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <TablaFases
-                key={resetKey} // <-- CORRECCIÓN: Esto fuerza el reseteo completo al cancelar
+                key={resetKey}
                 acciones={matrizData.acciones}
                 fases={matrizData.fases}
                 permisosIniciales={matrizData.permisos}

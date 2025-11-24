@@ -1,5 +1,3 @@
-// src/features/ConfiguracionFases/hooks/useConfiguracionFases.ts
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { configuracionService, type ConfiguracionUI } from '../services/configuracionService';
@@ -15,7 +13,6 @@ type ModalFeedbackState = {
 export function useConfiguracionFases() {
   const queryClient = useQueryClient();
 
-  // 1. Estados Locales
   const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>({
     isOpen: false,
     type: 'info',
@@ -24,14 +21,12 @@ export function useConfiguracionFases() {
   });
   const [isCancelModalOpen, setCancelModalOpen] = useState(false);
   
-  // NUEVO: Estado para forzar el reset del componente tabla
   const [resetKey, setResetKey] = useState(0);
 
   const closeModalFeedback = useCallback(() => {
     setModalFeedback((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
-  // 2. Carga de Datos
   const gestionQuery = useQuery<Gestion, Error>({
     queryKey: ['gestionActual'],
     queryFn: configuracionService.obtenerGestionActual,
@@ -51,7 +46,6 @@ export function useConfiguracionFases() {
     refetchOnWindowFocus: false,
   });
 
-  // 3. Mutación
   const { mutate: guardarCambios, isPending: isSaving } = useMutation({
     mutationFn: async (permisosModificados: PermisoFase[]) => {
       if (!idGestion || !configQuery.data) {
@@ -83,7 +77,6 @@ export function useConfiguracionFases() {
     },
   });
 
-  // 4. Handlers
   const handleGuardar = useCallback((permisos: PermisoFase[]) => {
     guardarCambios(permisos);
   }, [guardarCambios]);
@@ -92,18 +85,16 @@ export function useConfiguracionFases() {
     setCancelModalOpen(true);
   }, []);
 
-  // CORRECCIÓN CLAVE: Al confirmar, recargamos datos E incrementamos la key
   const confirmarCancelacion = useCallback(() => {
     setCancelModalOpen(false);
-    configQuery.refetch(); // Trae datos frescos del servidor
-    setResetKey(prev => prev + 1); // Fuerza la destrucción y reconstrucción de la tabla
+    configQuery.refetch();
+    setResetKey(prev => prev + 1);
   }, [configQuery]);
 
   const cerrarCancelModal = useCallback(() => {
     setCancelModalOpen(false);
   }, []);
 
-  // 5. Datos UI
   const infoGestionParaUI = gestionData
     ? {
         id: gestionData.id,
@@ -126,6 +117,6 @@ export function useConfiguracionFases() {
     isCancelModalOpen,
     confirmarCancelacion,
     cerrarCancelModal,
-    resetKey, // Exportamos la key para la vista
+    resetKey,
   };
 }
