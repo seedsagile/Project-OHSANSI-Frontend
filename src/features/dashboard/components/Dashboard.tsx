@@ -63,19 +63,22 @@ export function Dashboard() {
     {
       icon: UserPlus,
       title: 'Registrar Competidores',
-      description: 'Importa masivamente la información de los estudiantes participantes desde un archivo CSV.',
+      description:
+        'Importa masivamente la información de los estudiantes participantes desde un archivo CSV.',
       linkTo: '/competidores',
     },
     {
       icon: ListChecks,
       title: 'Lista de Competidores',
-      description: 'Visualiza y filtra la lista completa de competidores inscritos por área y nivel.',
+      description:
+        'Visualiza y filtra la lista completa de competidores inscritos por área y nivel.',
       linkTo: '/listaCompetidores',
     },
     {
       icon: SlidersHorizontal,
-      title: 'Parámetros de Calificación',
-      description: 'Define los criterios de clasificación (notas mínimas, máximas, cupos) por área y nivel.',
+      title: 'Parámetros de Clasificación',
+      description:
+        'Define los criterios de clasificación (notas mínimas, máximo competidores) por área y nivel.',
       linkTo: '/parametrosCalificaciones',
     },
     {
@@ -101,7 +104,7 @@ export function Dashboard() {
             <Link
               key={feature.title}
               to={feature.linkTo}
-              className="no-underline text-inherit block h-full" 
+              className="no-underline text-inherit block h-full"
             >
               <FeatureCard
                 icon={feature.icon}

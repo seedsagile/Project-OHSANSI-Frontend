@@ -8,11 +8,11 @@ import {
   UserCheck,
   UserSquare,
   UserPlus,
-  Medal,//calu añadio
+  Medal, //calu añadio
   ListChecks,
   SlidersHorizontal,
   LogOut as LogoutIcon,
-  Cog as SettingsIcon 
+  Cog as SettingsIcon,
 } from 'lucide-react';
 import { useAuth } from '../../auth/login/hooks/useAuth';
 import { IconoUsuario } from '../ui/IconoUsuario';
@@ -40,8 +40,8 @@ const NavLink = ({
         }`
       }
     >
-      <div className='flex-shrink-0 w-5 h-5'>{icon}</div>
-      <span className='truncate'>{label}</span>
+      <div className="flex-shrink-0 w-5 h-5">{icon}</div>
+      <span className="truncate">{label}</span>
     </RouterNavLink>
   );
 };
@@ -92,57 +92,123 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             aria-label="Cerrar menú"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" >
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <line x1="18" y1="6" x2="6" y2="18" /> <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
         <nav className="flex-grow flex flex-col gap-1.5 overflow-y-auto pr-1 custom-scrollbar">
-          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-2 mb-1"> 
+          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-2 mb-1">
             Principal
           </p>
-          <NavLink to="/dashboard" icon={<DashboardIcon />} label="Dashboard" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/dashboard"
+            icon={<DashboardIcon />}
+            label="Dashboard"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Gestión de la Olimpiada ----- */}
-          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-3 mb-1"> 
+          <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-3 mb-1">
             Gestión de la Olimpiada
           </p>
-          <NavLink to="/areas" icon={<LayoutGrid />} label="Áreas" onClick={() => setOpen(false)} /> 
-          <NavLink to="/niveles" icon={<Network />} label="Niveles" onClick={() => setOpen(false)} /> 
-          <NavLink to="/asignarNiveles" icon={<Link2 />} label="Asignar Niveles a Áreas" onClick={() => setOpen(false)} /> 
+          <NavLink to="/areas" icon={<LayoutGrid />} label="Áreas" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/niveles"
+            icon={<Network />}
+            label="Niveles"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/asignarNiveles"
+            icon={<Link2 />}
+            label="Asignar Niveles a Áreas"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Gestión de Usuarios ----- */}
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Gestión de Usuarios
           </p>
-          <NavLink to="/responsables" icon={<UserCheck />} label="Responsables de Área" onClick={() => setOpen(false)} />
-          <NavLink to="/evaluadores" icon={<UserSquare />} label="Evaluadores" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/responsables"
+            icon={<UserCheck />}
+            label="Responsables de Área"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/evaluadores"
+            icon={<UserSquare />}
+            label="Evaluadores"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Gestión de Competidores ----- */}
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Gestión de Competidores
           </p>
-          <NavLink to="/competidores" icon={<UserPlus />} label="Registrar Competidores" onClick={() => setOpen(false)} />
-          <NavLink to="/listaCompetidores" icon={<ListChecks />} label="Lista de Competidores" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/competidores"
+            icon={<UserPlus />}
+            label="Registrar Competidores"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/listaCompetidores"
+            icon={<ListChecks />}
+            label="Lista de Competidores"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Evaluación y Clasificación ----- */}
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Evaluación y Clasificación
           </p>
-          <NavLink to="/evaluaciones"  icon={<UserCheck />} label="Registrar Evaluación" onClick={() => setOpen(false)} />
-          <NavLink to="/parametrosCalificaciones" icon={<SlidersHorizontal />} label="Parámetros de Calificación" onClick={() => setOpen(false)} />
-          <NavLink to="/medallero" icon={<Medal />} label="Parametrizar Medallero" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/evaluaciones"
+            icon={<UserCheck />}
+            label="Registrar Evaluación"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/parametrosCalificaciones"
+            icon={<SlidersHorizontal />}
+            label="Parámetros de Clasificación"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/medallero"
+            icon={<Medal />}
+            label="Parametrizar Medallero"
+            onClick={() => setOpen(false)}
+          />
 
-        
           {/* ----- Configuraciones ----- */}
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Configuraciones
           </p>
-          <NavLink to="/configuracionFasesGlobales" icon={<SettingsIcon /> } label="Configuración de Fases Globales" onClick={() => setOpen(false)} />
-          <NavLink to="/configuracionSubFases" icon={<SettingsIcon /> } label="Administrar Sub-Fases" onClick={() => setOpen(false)} />
-        
+          <NavLink
+            to="/configuracionFasesGlobales"
+            icon={<SettingsIcon />}
+            label="Configuración de Fases Globales"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/configuracionSubFases"
+            icon={<SettingsIcon />}
+            label="Administrar Sub-Fases"
+            onClick={() => setOpen(false)}
+          />
         </nav>
 
         {/* Footer */}
@@ -151,9 +217,13 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             <div className="h-10 w-10 rounded-full bg-principal-600 flex items-center justify-center flex-shrink-0">
               <IconoUsuario />
             </div>
-            <div className='overflow-hidden whitespace-nowrap'>
-              <p className="font-semibold text-blanco truncate w-full">{user?.nombre || 'Usuario'}</p>
-              <p className="text-sm text-principal-200 capitalize truncate w-full">{user?.role || 'Rol'}</p>
+            <div className="overflow-hidden whitespace-nowrap">
+              <p className="font-semibold text-blanco truncate w-full">
+                {user?.nombre || 'Usuario'}
+              </p>
+              <p className="text-sm text-principal-200 capitalize truncate w-full">
+                {user?.role || 'Rol'}
+              </p>
             </div>
           </div>
           <button
