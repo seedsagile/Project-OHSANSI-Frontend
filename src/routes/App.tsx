@@ -17,6 +17,7 @@ import { PaginaRegistrarEvaluacion } from '@/features/evaluaciones/routes/Pagina
 import { PaginaMedallero } from '@/features/medallero/routes/PaginaMedallero';
 import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/PaginaConfiguracionFases';
 import { PaginaAdministrarSubFases } from '@/features/subfases/routes/PaginaAdministrarSubFases';
+import { PaginaReporteCambios } from '../features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios';
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -53,6 +54,7 @@ const router = createBrowserRouter([
       { path: 'medallero', element: <PaginaMedallero /> },
       { path: 'configuracionFasesGlobales', element: <PaginaConfiguracionFases/> },
       { path: 'configuracionSubFases', element: <PaginaAdministrarSubFases/> },
+      {path: 'reportesCambiosCalificaciones', element: <PaginaReporteCambios/> },
     ],
   },
 ]);
