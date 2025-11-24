@@ -67,6 +67,15 @@ export const Formulario: React.FC<FormularioProps> = ({
     }
   }, [valoresCopiados, valoresCopiadosManualmente, formularioBloqueado, reset]);
 
+  useEffect(() => {
+    if (nivelesSeleccionados.length === 0) {
+      reset({
+        notaMinima: '',
+        cantidadMaxCompetidores: '',
+      });
+    }
+  }, [nivelesSeleccionados, reset]);
+
   /** ⬇⬇⬇ Manejamos el submit con la condición del modal ⬇⬇⬇ */
   const handleValidate = (data: FormValues) => {
     if (!data.cantidadMaxCompetidores || data.cantidadMaxCompetidores.trim() === '') {
@@ -100,7 +109,8 @@ export const Formulario: React.FC<FormularioProps> = ({
 
       reset({ notaMinima: '', cantidadMaxCompetidores: '' });
       if (onLimpiarSeleccion) onLimpiarSeleccion();
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(forceNull ? 'soloNota' : 'notaYCantidad');
+
       onCerrar();
     } catch (error: any) {
       console.error('Error al enviar parámetro:', error);
@@ -113,7 +123,8 @@ export const Formulario: React.FC<FormularioProps> = ({
   /** Confirmar en el modal → enviar null */
   const confirmarGuardado = () => {
     if (formValuesTemp) {
-      onSubmit(formValuesTemp, true); // Enviamos null
+      onSubmit(formValuesTemp, true);
+      if (onSuccess) onSuccess('soloNota');
     }
     setShowModal(false);
   };
