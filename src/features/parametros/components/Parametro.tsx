@@ -27,6 +27,8 @@ export const Parametro = () => {
     y: number;
   }>({ visible: false, grados: [], x: 0, y: 0 });
 
+  const [successType, setSuccessType] = useState<'notaYCantidad' | 'soloNota'>('notaYCantidad');
+
   useEffect(() => {
     if (modalSuccessOpen) {
       const timer = setTimeout(() => {
@@ -343,7 +345,10 @@ export const Parametro = () => {
               valoresCopiados={valoresCopiados}
               valoresCopiadosManualmente={valoresCopiadosManualmente}
               onLimpiarSeleccion={limpiarGestionSeleccionada}
-              onSuccess={() => setModalSuccessOpen(true)}
+              onSuccess={(type) => {
+                setSuccessType(type);
+                setModalSuccessOpen(true);
+              }}
             />
           </div>
         </div>
@@ -387,7 +392,13 @@ export const Parametro = () => {
         title="¡Registro exitoso!"
         type="success"
       >
-        La Cantidad máxima y la Nota mínima de clasificados han sido registradas correctamente.
+        {successType === 'notaYCantidad' ? (
+          <>
+            La Cantidad máxima y la Nota mínima de clasificados han sido registradas correctamente.
+          </>
+        ) : (
+          <>La Nota mínima de clasificados ha sido registrada correctamente.</>
+        )}
       </Modal>
     </div>
   );

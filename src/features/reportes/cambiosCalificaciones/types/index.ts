@@ -1,6 +1,4 @@
-
 export type TipoAccion = 'Modificar' | 'Calificar' | 'Desclasificar';
-
 export interface HistorialCambio {
   readonly id_historial: number;
   readonly fecha_hora: string;
