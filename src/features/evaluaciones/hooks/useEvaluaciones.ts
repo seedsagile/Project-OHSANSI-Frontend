@@ -26,6 +26,13 @@ export const useEvaluaciones = () => {
         setLoading(true);
         const response = await evaluacionService.getAreasNivelesByEvaluador(userId);
         setAreas(response.areas);
+        
+        // 👇 GUARDAR id_evaluador del backend
+        if (response.evaluador?.id_evaluador) {
+          setIdEvaluadorAN(response.evaluador.id_evaluador);
+          console.log('🆔 ID Evaluador obtenido:', response.evaluador.id_evaluador);
+        }
+        
         console.log('📚 Áreas y niveles cargadas:', response);
       } catch (error) {
         console.error('Error al cargar áreas y niveles:', error);
@@ -157,17 +164,21 @@ export const useEvaluaciones = () => {
 
   // PASO 1: Crear evaluación al hacer clic en "Calificar"
   const iniciarEvaluacion = async (competidor: Competidor): Promise<{ success: boolean; idEvaluacion?: number }> => {
-    if (!userId) {
-      toast.error('No se pudo identificar el usuario');
+    // ✅ Validar que tenemos el id_evaluador
+    if (!idEvaluadorAN) {
+      console.error('❌ No se encontró idEvaluadorAN');
+      toast.error('No se pudo identificar el ID del evaluador');
       return { success: false };
     }
 
     if (!idCompetenciaActual) {
+      console.error('❌ No se encontró idCompetenciaActual');
       toast.error('No se encontró el ID de competencia');
       return { success: false };
     }
 
     if (!competidor.id_competidor) {
+      console.error('❌ Competidor sin id_competidor');
       toast.error('ID de competidor no válido');
       return { success: false };
     }
@@ -177,16 +188,16 @@ export const useEvaluaciones = () => {
         id_competidor: competidor.id_competidor,
         nombre: `${competidor.nombre} ${competidor.apellido}`,
         id_competencia: idCompetenciaActual,
+        id_evaluadorAN: idEvaluadorAN,
       });
 
+      // 👇 HACER LA PETICIÓN POST
       const response = await evaluacionService.crearEvaluacion(idCompetenciaActual, {
         id_competidor: competidor.id_competidor,
-        id_evaluadorAN: userId,
+        id_evaluadorAN: idEvaluadorAN,
       });
 
-      console.log('✅ Evaluación creada:', response);
-
-      setIdEvaluadorAN(response.id_evaluadorAN);
+      console.log('✅ Evaluación creada exitosamente:', response);
 
       // Actualizar estado local a "En Proceso"
       setCompetidores(prev =>
@@ -204,8 +215,23 @@ export const useEvaluaciones = () => {
 
       return { success: true, idEvaluacion: response.id_evaluacion };
     } catch (error: any) {
-      console.error('❌ Error al crear evaluación:', error);
-      const errorMsg = error?.response?.data?.message || 'Error al iniciar la evaluación';
+      console.error('❌ Error completo al crear evaluación:', {
+        error,
+        response: error?.response,
+        data: error?.response?.data,
+        status: error?.response?.status,
+      });
+
+      let errorMsg = 'Error al iniciar la evaluación';
+      
+      if (error?.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMsg = error.response.data.error;
+      } else if (error?.message) {
+        errorMsg = error.message;
+      }
+
       toast.error(errorMsg);
       return { success: false };
     }
@@ -267,15 +293,15 @@ export const useEvaluaciones = () => {
     }
   };
 
-  // 👇 MODIFICAR NOTA: Sigue los MISMOS 2 PASOS que calificar
+  // MODIFICAR NOTA: Sigue los MISMOS 2 PASOS que calificar
   const modificarNota = async (
     ci: string,
     nuevaNota: number,
     justificacion: string
   ): Promise<void> => {
-    if (!userId) {
-      toast.error('No se pudo identificar el usuario');
-      throw new Error('Usuario no identificado');
+    if (!idEvaluadorAN) {
+      toast.error('No se pudo identificar el ID del evaluador');
+      throw new Error('ID de evaluador no identificado');
     }
 
     if (!idCompetenciaActual) {
@@ -297,6 +323,7 @@ export const useEvaluaciones = () => {
         id_competidor: competidor.id_competidor,
         nombre: `${competidor.nombre} ${competidor.apellido}`,
         id_competencia: idCompetenciaActual,
+        id_evaluadorAN: idEvaluadorAN,
         nota_anterior: competidor.calificacion,
         nota_nueva: nuevaNota,
       });
@@ -304,7 +331,7 @@ export const useEvaluaciones = () => {
       // PASO 1: Crear nueva evaluación
       const responseCrear = await evaluacionService.crearEvaluacion(idCompetenciaActual, {
         id_competidor: competidor.id_competidor,
-        id_evaluadorAN: userId,
+        id_evaluadorAN: idEvaluadorAN,
       });
 
       console.log('✅ PASO 1/2 completado - Nueva evaluación creada:', responseCrear);
@@ -363,6 +390,6 @@ export const useEvaluaciones = () => {
     actualizarEstadosCompetidores,
     iniciarEvaluacion,
     guardarEvaluacion,
-    modificarNota, // 👈 Ahora sigue los mismos 2 pasos
+    modificarNota,
   };
 };

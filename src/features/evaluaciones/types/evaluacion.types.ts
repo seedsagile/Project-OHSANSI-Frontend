@@ -25,7 +25,7 @@ export interface Competidor {
   grado: string;
   id_olimpiada?: number;
   evaluaciones?: Evaluacion[];
-  estado?: 'Pendiente' | 'En Proceso' | 'Calificado'; // 👈 Agregado "En Proceso"
+  estado?: 'Pendiente' | 'En Proceso' | 'Calificado';
   calificacion?: number;
   observaciones?: string;
   bloqueado_por?: number;
@@ -47,13 +47,14 @@ export interface EvaluadorAreasNiveles {
   evaluador: {
     id_usuario: number;
     nombre_completo: string;
+    id_evaluador: number; // 👈 Este es el que necesitamos para crear evaluaciones
   };
   areas: Area[];
 }
 
 export interface CrearEvaluacionRequest {
   id_competidor: number;
-  id_evaluadorAN: number;
+  id_evaluadorAN: number; // 👈 Este debe ser el id_evaluador de la respuesta anterior
 }
 
 export interface CrearEvaluacionResponse {
