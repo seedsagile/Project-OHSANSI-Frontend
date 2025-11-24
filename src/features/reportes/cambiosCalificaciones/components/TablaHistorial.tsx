@@ -2,23 +2,27 @@ import { useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   flexRender,
   type ColumnDef,
+  type PaginationState,
+  type OnChangeFn,
 } from '@tanstack/react-table';
 import {
   AlertCircle,
+  LoaderCircle,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  LoaderCircle,
 } from 'lucide-react';
 import type { HistorialCambio, TipoAccion } from '../types';
 
 interface TablaHistorialProps {
   data: HistorialCambio[];
   isLoading: boolean;
+  pagination: PaginationState;
+  onPaginationChange: OnChangeFn<PaginationState>;
+  rowCount: number;
 }
 
 const ActionBadge = ({ accion }: { accion: TipoAccion }) => {
@@ -39,14 +43,21 @@ const ActionBadge = ({ accion }: { accion: TipoAccion }) => {
   );
 };
 
-export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
+export const TablaHistorial = ({ 
+  data, 
+  isLoading, 
+  pagination, 
+  onPaginationChange, 
+  rowCount 
+}: TablaHistorialProps) => {
+  
   const columns = useMemo<ColumnDef<HistorialCambio>[]>(
     () => [
       {
         header: 'Nº',
         id: 'index',
         cell: (info) => {
-          const { pageIndex, pageSize } = info.table.getState().pagination;
+          const { pageIndex, pageSize } = pagination;
           return (
             <span className="text-neutro-600 font-bold text-sm">
               {pageIndex * pageSize + info.row.index + 1}
@@ -100,9 +111,7 @@ export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
       {
         accessorKey: 'area',
         header: 'ÁREA',
-        cell: (info) => (
-          <span className="text-sm text-neutro-700">{info.getValue() as string}</span>
-        ),
+        cell: (info) => <span className="text-sm text-neutro-700">{info.getValue() as string}</span>,
       },
       {
         accessorKey: 'nivel',
@@ -148,19 +157,17 @@ export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
         },
       },
     ],
-    []
+    [pagination]
   );
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    manualPagination: true,
+    rowCount: rowCount,
+    state: { pagination },
+    onPaginationChange,
   });
 
   if (isLoading) {
@@ -193,7 +200,6 @@ export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
       <div className="rounded-xl border border-neutro-200 bg-blanco overflow-hidden shadow-sm">
         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-neutro-300 scrollbar-track-neutro-100">
           <table className="w-full text-left table-auto border-collapse">
-            {/* Header Azul Sólido */}
             <thead className="sticky top-0 z-10 bg-principal-500 text-white shadow-md">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -220,7 +226,7 @@ export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="p-4 text-center align-middle"
+                      className="p-4 text-center align-middle border-none"
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
@@ -231,8 +237,6 @@ export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
           </table>
         </div>
       </div>
-
-      {/* Paginación y Controles */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 px-2 py-2">
         <div className="flex items-center gap-4 text-sm text-neutro-600 bg-white px-4 py-2 rounded-lg border border-neutro-200 shadow-sm">
           <span className="font-medium">
@@ -275,7 +279,7 @@ export const TablaHistorial = ({ data, isLoading }: TablaHistorialProps) => {
           </button>
 
           <div className="mx-3 text-xs font-bold text-principal-700 bg-principal-50 px-3 py-1 rounded-md border border-principal-100">
-            {data.length} Registros
+            {rowCount} Registros
           </div>
 
           <button

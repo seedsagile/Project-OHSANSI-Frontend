@@ -15,14 +15,15 @@ export interface HistorialCambio {
   readonly nota_nueva?: number;
 }
 
-export interface NivelOpcion {
-  id: number;
-  nombre: string;
-  disabled?: boolean;
+export interface MetaPaginacion {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-export interface FiltrosReporteState {
-  areaId: number | null;
-  nivelesIds: Set<number>;
-  terminoBusqueda: string;
+export interface ReporteResponse {
+  success: boolean;
+  data: HistorialCambio[];
+  meta: MetaPaginacion;
 }

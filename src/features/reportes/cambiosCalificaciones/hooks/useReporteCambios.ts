@@ -1,8 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { reporteService } from '../services/reporteService';
-import type { HistorialCambio } from '../types';
-
+import type { MetaPaginacion } from '../types';
 const REGEX_SOLO_NUMEROS = /^[0-9]+$/;
 const REGEX_SOLO_ESPECIALES = /^[^a-zA-Z0-9]+$/;
 
@@ -10,98 +9,97 @@ export function useReporteCambios() {
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
   const [selectedNiveles, setSelectedNiveles] = useState<Set<number>>(new Set());
   const [terminoBusqueda, setTerminoBusqueda] = useState<string>('');
-  
   const [isShowingAll, setIsShowingAll] = useState<boolean>(false);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const searchTermToUse = 
+    REGEX_SOLO_NUMEROS.test(terminoBusqueda) || REGEX_SOLO_ESPECIALES.test(terminoBusqueda)
+      ? '' 
+      : terminoBusqueda;
 
   const {
-    data: historialBruto = [],
+    data: response,
     isLoading,
     isError,
     error,
+    isPlaceholderData,
     refetch,
-  } = useQuery<HistorialCambio[], Error>({
+  } = useQuery({
     queryKey: [
       'reporteHistorial',
       isShowingAll ? 'ALL' : selectedAreaId,
-      isShowingAll ? 'ALL' : Array.from(selectedNiveles).sort().join(',')
+      isShowingAll ? 'ALL' : Array.from(selectedNiveles).sort().join(','),
+      pagination.pageIndex,
+      pagination.pageSize,
+      searchTermToUse
     ],
     
     queryFn: () => {
+      const apiPage = pagination.pageIndex + 1;
+      
       if (isShowingAll) {
-        return reporteService.obtenerHistorial(null, []);
+        return reporteService.obtenerHistorial(null, [], apiPage, pagination.pageSize);
       }
+      
       return selectedAreaId
-        ? reporteService.obtenerHistorial(selectedAreaId, Array.from(selectedNiveles))
-        : Promise.resolve([]);
+        ? reporteService.obtenerHistorial(
+            selectedAreaId, 
+            Array.from(selectedNiveles), 
+            apiPage, 
+            pagination.pageSize
+          )
+        : Promise.resolve({ 
+            success: true, 
+            data: [], 
+            meta: { total: 0, page: 1, limit: 10, totalPages: 0 } 
+          });
     },
-        
+
+    placeholderData: keepPreviousData,
+    
     enabled: isShowingAll || (!!selectedAreaId && selectedNiveles.size > 0),
     
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutos
     retry: 1,
     refetchOnWindowFocus: false,
   });
 
-  const historialFiltrado = useMemo(() => {
-    const term = terminoBusqueda.trim();
+  const historialData = response?.data || [];
+  const metaData: MetaPaginacion = response?.meta || { 
+    total: 0, page: 1, limit: 10, totalPages: 0 
+  };
 
-    if (!term) return historialBruto;
-
-    if (REGEX_SOLO_NUMEROS.test(term)) return historialBruto;
-
-    if (REGEX_SOLO_ESPECIALES.test(term)) return historialBruto;
-
-    const normalize = (str: string) =>
-      str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-    const normalizedTerm = normalize(term);
-
-    return historialBruto.filter((item) => {
-      const searchableText = [
-        item.nombre_evaluador,
-        item.nombre_olimpista,
-        item.area,
-        item.nivel,
-        item.accion,
-        item.descripcion,
-        item.observacion || '',
-      ].join(' ');
-
-      return normalize(searchableText).includes(normalizedTerm);
-    });
-  }, [historialBruto, terminoBusqueda]);
+  const _resetPagination = () => setPagination(prev => ({ ...prev, pageIndex: 0 }));
 
   const handleAreaChange = useCallback((areaId: number) => {
     setIsShowingAll(false);
     setSelectedAreaId(areaId);
     setSelectedNiveles(new Set());
     setTerminoBusqueda('');
+    _resetPagination();
   }, []);
 
   const handleToggleNivel = useCallback((nivelId: number) => {
     setIsShowingAll(false);
     setSelectedNiveles((prev) => {
       const next = new Set(prev);
-      if (next.has(nivelId)) {
-        next.delete(nivelId);
-      } else {
-        next.add(nivelId);
-      }
+      if (next.has(nivelId)) next.delete(nivelId);
+      else next.add(nivelId);
       return next;
     });
+    _resetPagination();
   }, []);
 
   const handleToggleAllNiveles = useCallback((idsNivelesDisponibles: number[]) => {
     setIsShowingAll(false);
     setSelectedNiveles((prev) => {
       const allSelected = idsNivelesDisponibles.every(id => prev.has(id));
-      
-      if (allSelected) {
-        return new Set();
-      } else {
-        return new Set(idsNivelesDisponibles);
-      }
+      return allSelected ? new Set() : new Set(idsNivelesDisponibles);
     });
+    _resetPagination();
   }, []);
 
   const handleMostrarTodo = useCallback(() => {
@@ -109,24 +107,29 @@ export function useReporteCambios() {
     setSelectedAreaId(null);
     setSelectedNiveles(new Set());
     setTerminoBusqueda('');
+    _resetPagination();
   }, []);
 
   const handleSearch = useCallback((term: string) => {
     setTerminoBusqueda(term);
+    _resetPagination();
   }, []);
 
   return {
-    // Estado
+    // Estados para UI
     selectedAreaId,
     selectedNiveles,
     terminoBusqueda,
     isShowingAll,
-
-    // Datos
-    historialFiltrado,
     
-    // Feedback
-    isLoading,
+    // Datos y Paginación para la Tabla
+    historialData,
+    metaData,
+    pagination,
+    setPagination, // Función para que la tabla controle el cambio de pág
+
+    // Estados de Carga
+    isLoading: isLoading || (isPlaceholderData && !isError),
     isError,
     error,
 
@@ -138,9 +141,8 @@ export function useReporteCambios() {
     handleSearch,
     refetch,
 
-    // Helpers para la UI
-    hasResultados: historialFiltrado.length > 0,
-    // La UI de resultados se muestra si hay filtros válidos O si está en modo "Mostrar Todo"
+    // Helpers
+    hasResultados: historialData.length > 0,
     hasFiltrosRequeridos: isShowingAll || (!!selectedAreaId && selectedNiveles.size > 0),
   };
 }

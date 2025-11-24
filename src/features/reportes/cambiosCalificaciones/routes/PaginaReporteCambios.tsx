@@ -1,51 +1,100 @@
 import { useMemo } from 'react';
 import { 
   Filter, 
-  Search,
+  Search, 
   AlertTriangle, 
   List, 
-  FileSpreadsheet,
-  FileText
+  FileSpreadsheet, 
+  FileText 
 } from 'lucide-react';
 
 import { useReporteCambios } from '../hooks/useReporteCambios';
 import { useExportarReporte } from '../hooks/useExportarReporte';
 import { TablaHistorial } from '../components/TablaHistorial';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
-import {
-  MOCK_AREAS,
-  MOCK_NIVELES_MATEMATICAS,
-  MOCK_NIVELES_FISICA,
-  MOCK_NIVELES_ROBOTICA,
-} from '@/features/subfases/utils/mocks';
+
+const MOCK_AREAS_LOCAL = [
+  { id_area: 1, nombre: 'Matemáticas' },
+  { id_area: 2, nombre: 'Física' },
+  { id_area: 3, nombre: 'Robótica' },
+  { id_area: 4, nombre: 'Química' },
+];
+
+const MOCK_NIVELES_MATEMATICAS = [
+  { id_nivel: 101, nombre: '1ro de Secundaria' },
+  { id_nivel: 102, nombre: '2do de Secundaria' },
+  { id_nivel: 103, nombre: '3ro de Secundaria' },
+];
+
+const MOCK_NIVELES_FISICA = [
+  { id_nivel: 301, nombre: 'Nivel Intermedio' },
+  { id_nivel: 302, nombre: 'Nivel Avanzado' },
+];
+
+const MOCK_NIVELES_ROBOTICA = [
+  { id_nivel: 201, nombre: 'Categoría A' },
+  { id_nivel: 202, nombre: 'Categoría B' },
+];
 
 export function PaginaReporteCambios() {
   const {
     selectedAreaId,
     selectedNiveles,
     terminoBusqueda,
-    historialFiltrado,
-    isLoading,
     isShowingAll,
+    
+    // Datos
+    historialData,
+    pagination,
+    setPagination,
+    metaData,
+    
+    // Estados
+    isLoading,
+    
     // Acciones
     handleAreaChange,
     handleToggleNivel,
     handleToggleAllNiveles,
     handleMostrarTodo,
     handleSearch,
-    // Helpers UI
+    
     hasFiltrosRequeridos,
     hasResultados,
   } = useReporteCambios();
 
   const { exportarExcel, exportarPDF } = useExportarReporte();
 
+  // Handler seguro para cambio de área
+  const onAreaSelect = (val: string | number) => {
+    const id = Number(val);
+    console.log("Área seleccionada:", id); // Para depuración
+    if (!isNaN(id)) {
+      handleAreaChange(id);
+    }
+  };
+
+  const handleExport = (type: 'excel' | 'pdf') => {
+    let contexto = '';
+    if (isShowingAll) {
+      contexto = 'Historial Completo (Sin filtros)';
+    } else {
+      const nombreArea = MOCK_AREAS_LOCAL.find(a => a.id_area === selectedAreaId)?.nombre || 'Desconocida';
+      contexto = `Área: ${nombreArea} | Niveles: ${selectedNiveles.size}`;
+    }
+
+    if (type === 'excel') exportarExcel(historialData, contexto);
+    else exportarPDF(historialData, contexto);
+  };
+
   const areaOptions = useMemo(
-    () => MOCK_AREAS.map((a) => ({ value: a.id_area, label: a.nombre })),
+    () => MOCK_AREAS_LOCAL.map((a) => ({ value: a.id_area, label: a.nombre })),
     []
   );
 
+  // Selector de niveles seguro
   const nivelesDisponibles = useMemo(() => {
+    if (!selectedAreaId) return [];
     switch (selectedAreaId) {
       case 1: return MOCK_NIVELES_MATEMATICAS;
       case 2: return MOCK_NIVELES_FISICA;
@@ -57,19 +106,6 @@ export function PaginaReporteCambios() {
   const areAllNivelesSelected = 
     nivelesDisponibles.length > 0 && 
     nivelesDisponibles.every(n => selectedNiveles.has(n.id_nivel));
-
-  const handleExport = (type: 'excel' | 'pdf') => {
-    let contexto = '';
-    if (isShowingAll) {
-      contexto = 'Historial Completo (Sin filtros)';
-    } else {
-      const nombreArea = areaOptions.find(a => a.value === selectedAreaId)?.label || 'Desconocida';
-      contexto = `Área: ${nombreArea} | Niveles: ${selectedNiveles.size}`;
-    }
-
-    if (type === 'excel') exportarExcel(historialFiltrado, contexto);
-    else exportarPDF(historialFiltrado, contexto);
-  };
 
   return (
     <div className="min-h-screen bg-neutro-100 p-4 md:p-8 font-display animate-fade-in">
@@ -86,13 +122,12 @@ export function PaginaReporteCambios() {
 
         <button
           onClick={handleMostrarTodo}
-          disabled={isLoading}
+          // Quitamos disabled={isLoading} para que la UI se sienta viva
           className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border shadow-sm ${
             isShowingAll
               ? 'bg-principal-600 text-white border-principal-600 ring-2 ring-principal-200 ring-offset-1'
               : 'bg-white text-principal-700 border-principal-200 hover:bg-principal-50 hover:border-principal-300'
           }`}
-          title="Mostrar el historial completo sin filtros de área"
         >
           <List size={18} />
           <span>{isShowingAll ? 'Viendo Historial Completo' : 'Ver Historial Completo'}</span>
@@ -101,6 +136,7 @@ export function PaginaReporteCambios() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
+        {/* FILTROS */}
         <aside className="lg:col-span-1 space-y-6 sticky top-6 z-20">
           <div className={`bg-white p-5 rounded-xl shadow-sombra-3 border transition-colors duration-300 ${isShowingAll ? 'border-principal-200 bg-principal-50/30' : 'border-neutro-200'}`}>
             
@@ -109,8 +145,8 @@ export function PaginaReporteCambios() {
                 <Filter size={16} /> Filtros
               </div>
               {isShowingAll && (
-                <span className="text-[10px] bg-principal-100 text-principal-700 px-2 py-0.5 rounded-full font-medium">
-                  Modo Global Activo
+                <span className="text-[10px] bg-principal-100 text-principal-700 px-2 py-0.5 rounded-full font-medium animate-pulse">
+                  Global
                 </span>
               )}
             </div>
@@ -122,14 +158,10 @@ export function PaginaReporteCambios() {
               <CustomDropdown
                 options={areaOptions}
                 selectedValue={selectedAreaId}
-                onSelect={(val) => handleAreaChange(Number(val))}
+                onSelect={onAreaSelect} // Usamos el handler seguro
                 placeholder="-- Elija un área --"
+                disabled={false} // Siempre habilitado
               />
-              {isShowingAll && !selectedAreaId && (
-                <p className="text-[10px] text-principal-600 mt-1.5">
-                  💡 Seleccione un área para filtrar la vista actual.
-                </p>
-              )}
             </div>
 
             <div className="relative">
@@ -145,7 +177,6 @@ export function PaginaReporteCambios() {
               </div>
 
               <div className="border border-neutro-200 rounded-lg bg-neutro-50/50 overflow-hidden min-h-[120px] flex flex-col">
-                {/* Estado: Sin Área Seleccionada */}
                 {!selectedAreaId ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-neutro-400">
                     <AlertTriangle size={24} className="mb-2 opacity-20" />
@@ -157,9 +188,8 @@ export function PaginaReporteCambios() {
                   </div>
                 ) : (
                   <>
-                    {/* Opción "Marcar Todos" */}
                     <div className="border-b border-neutro-200 bg-white sticky top-0 z-10">
-                      <label className="flex items-center gap-3 p-3 cursor-pointer hover:bg-principal-50 transition-colors">
+                      <label className="flex items-center gap-3 p-3 cursor-pointer hover:bg-principal-50 transition-colors select-none">
                         <input 
                           type="checkbox" 
                           className="w-4 h-4 text-principal-600 rounded border-gray-300 focus:ring-principal-500 cursor-pointer"
@@ -172,7 +202,6 @@ export function PaginaReporteCambios() {
                       </label>
                     </div>
 
-                    {/* Lista de Niveles Individuales */}
                     <div className="max-h-[280px] overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-neutro-300 bg-white">
                       {nivelesDisponibles.map((nivel) => {
                         const isChecked = selectedNiveles.has(nivel.id_nivel);
@@ -201,86 +230,59 @@ export function PaginaReporteCambios() {
                   </>
                 )}
               </div>
-              
-              {selectedAreaId && (
-                <p className="text-[10px] text-neutro-400 mt-2 text-right">
-                  * Se requiere al menos un nivel seleccionado.
-                </p>
-              )}
             </div>
           </div>
         </aside>
 
-        {/* ─── COLUMNA DERECHA: RESULTADOS ─── */}
+        {/* RESULTADOS */}
         <main className="lg:col-span-3 space-y-6">
-          
-          {/* Toolbar de Acciones */}
           <div className="bg-white p-4 rounded-xl shadow-sm border border-neutro-200 flex flex-col md:flex-row gap-4 justify-between items-center sticky top-6 z-30">
-            
-            {/* Buscador */}
             <div className="relative w-full md:max-w-md group">
-              <Search
-                className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                  hasFiltrosRequeridos ? 'text-neutro-400 group-focus-within:text-principal-500' : 'text-neutro-300'
-                }`}
-                size={20}
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutro-400" size={20} />
               <input
                 type="text"
-                placeholder={
-                  hasFiltrosRequeridos
-                    ? 'Buscar por nombre, acción, observación...'
-                    : 'Configure filtros para habilitar búsqueda'
-                }
-                className="w-full pl-10 pr-4 py-2.5 border border-neutro-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-principal-500 focus:border-transparent transition-all disabled:bg-neutro-50 disabled:text-neutro-400 disabled:cursor-not-allowed text-sm"
+                placeholder={hasFiltrosRequeridos ? 'Buscar...' : 'Configure filtros'}
+                className="w-full pl-10 pr-4 py-2.5 border border-neutro-300 rounded-lg focus:ring-2 focus:ring-principal-500 focus:outline-none transition-all text-sm"
                 value={terminoBusqueda}
                 onChange={(e) => handleSearch(e.target.value)}
                 disabled={!hasFiltrosRequeridos}
               />
             </div>
 
-            {/* Botones de Exportación */}
             <div className="flex gap-3 w-full md:w-auto">
               <button
                 onClick={() => handleExport('excel')}
-                disabled={!hasResultados || isLoading}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 active:scale-95 transition-all font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
-                title="Descargar reporte en Excel"
+                disabled={!hasResultados}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-semibold text-sm shadow-sm disabled:opacity-50"
               >
-                <FileSpreadsheet size={18} />
-                <span>Excel</span>
+                <FileSpreadsheet size={18} /> Excel
               </button>
               <button
                 onClick={() => handleExport('pdf')}
-                disabled={!hasResultados || isLoading}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
-                title="Descargar reporte en PDF"
+                disabled={!hasResultados}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-semibold text-sm shadow-sm disabled:opacity-50"
               >
-                <FileText size={18} />
-                <span>PDF</span>
+                <FileText size={18} /> PDF
               </button>
             </div>
           </div>
 
-          {/* Tabla de Resultados */}
           <div className="min-h-[500px] relative">
             {!hasFiltrosRequeridos ? (
-              // Estado Inicial (Sin configuración)
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 border-2 border-dashed border-neutro-300 rounded-xl p-8">
-                <div className="bg-neutro-100 p-6 rounded-full mb-4 animate-pulse-slow">
+                <div className="bg-neutro-100 p-6 rounded-full mb-4">
                   <Filter size={40} className="text-neutro-400" />
                 </div>
                 <h3 className="text-lg font-bold text-neutro-700">Esperando configuración</h3>
-                <p className="text-neutro-500 max-w-sm text-center mt-2 text-sm leading-relaxed">
-                  Seleccione un <strong>Área</strong> y marque <strong>Niveles</strong> en el panel izquierdo, 
-                  o utilice el botón <strong>"Ver Historial Completo"</strong>.
-                </p>
+                <p className="text-neutro-500 text-sm mt-2">Seleccione un Área y Niveles.</p>
               </div>
             ) : (
-              // Tabla de Datos
               <TablaHistorial 
-                data={historialFiltrado} 
-                isLoading={isLoading} 
+                data={historialData} 
+                isLoading={isLoading}
+                pagination={pagination}
+                onPaginationChange={setPagination}
+                rowCount={metaData.total}
               />
             )}
           </div>
