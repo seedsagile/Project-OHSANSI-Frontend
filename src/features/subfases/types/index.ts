@@ -1,4 +1,5 @@
 export type EstadoSubFase = 'NO_INICIADA' | 'EN_EVALUACION' | 'FINALIZADA';
+
 export interface SubFase {
   id_subfase: number;
   nombre: string;
@@ -9,7 +10,22 @@ export interface SubFase {
   progreso: number;
 }
 
-export interface SubFasesResponse {
-  data: SubFase[];
+export interface AreaSelectorItem {
+  id_area: number;
+  nombre: string;
+}
+
+export interface NivelSelectorItem {
+  id_nivel: number;
+  nombre: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
   message: string;
+  data: T;
+}
+
+export interface CambioEstadoPayload {
+  estado: EstadoSubFase;
 }

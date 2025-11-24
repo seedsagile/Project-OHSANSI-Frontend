@@ -1,8 +1,11 @@
-import { Layers } from 'lucide-react';
+import { useState } from 'react';
+import { Layers, AlertTriangle } from 'lucide-react';
 import { useSubFases } from '../hooks/useSubFases';
 import { SubFaseCard } from '../components/SubFaseCard';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { Alert } from '@/components/ui/Alert';
+import { Modal1 } from '@/components/ui/Modal1';
+import type { SubFase } from '../types';
 
 export function PaginaAdministrarSubFases() {
   const { 
@@ -23,7 +26,69 @@ export function PaginaAdministrarSubFases() {
     }
   } = useSubFases();
 
-  // Mapeo para dropdowns
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    content: React.ReactNode;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    content: null,
+    onConfirm: () => {},
+  });
+
+  const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
+
+  const openConfirmation = (title: string, content: React.ReactNode, action: () => void) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      content,
+      onConfirm: () => {
+        action();
+        closeModal();
+      }
+    });
+  };
+
+  const handleIniciarFase = (fase: SubFase) => {
+    openConfirmation(
+      `¿Iniciar fase "${fase.nombre}"?`,
+      <div className="text-left text-sm text-neutro-600 space-y-3">
+        <p>Al iniciar esta fase, ocurrirá lo siguiente:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Se habilitará el registro de notas para <strong>{fase.cant_evaluadores} evaluadores</strong>.</li>
+          <li>El estado cambiará a "En Evaluación".</li>
+        </ul>
+      </div>,
+      () => cambiarEstado({ id: fase.id_subfase, estado: 'EN_EVALUACION' })
+    );
+  };
+
+  const handleFinalizarFase = (fase: SubFase) => {
+    openConfirmation(
+      `¿Finalizar fase "${fase.nombre}"?`,
+      <div className="text-left text-sm text-neutro-600 space-y-3">
+        <div className="bg-red-50 border border-red-100 p-3 rounded-lg text-red-700 flex items-start gap-2">
+          <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+          <div>
+            <strong className="block text-xs uppercase tracking-wider mb-1">Acción Irreversible</strong>
+            <p className="text-xs leading-relaxed">
+              Una vez finalizada, no se podrán cargar ni modificar más notas para esta fase.
+            </p>
+          </div>
+        </div>
+        <p>Asegúrese de que:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Todos los evaluadores hayan completado su trabajo.</li>
+          <li>Desea habilitar el paso a la siguiente fase.</li>
+        </ul>
+      </div>,
+      () => cambiarEstado({ id: fase.id_subfase, estado: 'FINALIZADA' })
+    );
+  };
+
   const dropdownAreas = areasOptions.map(a => ({ value: a.id_area, label: a.nombre }));
   const dropdownNiveles = nivelesOptions.map(n => ({ value: n.id_nivel, label: n.nombre }));
 
@@ -31,6 +96,7 @@ export function PaginaAdministrarSubFases() {
     <div className="min-h-screen bg-neutro-50 p-4 md:p-8 font-display">
       <main className="max-w-7xl mx-auto space-y-8 animate-fade-in">
         
+        {/* Encabezado */}
         <header className="text-center space-y-3 mb-8">
           <div className="inline-flex items-center justify-center p-3 bg-white rounded-full shadow-sm mb-2 border border-neutro-100">
             <Layers className="text-principal-600" size={32} />
@@ -43,8 +109,8 @@ export function PaginaAdministrarSubFases() {
           </p>
         </header>
 
+        {/* Filtros */}
         <section className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-neutro-200 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 relative z-20">
-          
           <div>
             <label className="block text-sm font-bold text-neutro-700 mb-2 uppercase tracking-wide">
               Seleccionar Área
@@ -77,6 +143,7 @@ export function PaginaAdministrarSubFases() {
           </div>
         </section>
 
+        {/* Manejo de Errores */}
         {isError && (
           <div className="max-w-2xl mx-auto">
             <Alert type="error" message="No se pudo conectar con el servidor de fases. Por favor, intente nuevamente más tarde." />
@@ -130,24 +197,8 @@ export function PaginaAdministrarSubFases() {
                     isUpdating={isUpdating}
                     puedeIniciar={puedeIniciar(fase)}
                     puedeFinalizar={puedeFinalizar(fase)}
-                    onIniciar={() => {
-                      const confirmMsg = `¿Está seguro de INICIAR la fase "${fase.nombre}"?\n\n` +
-                                          `• Se habilitará la carga de notas para los evaluadores.\n` +
-                                          `• Los estudiantes podrán ver que la fase está activa.`;
-                      if(confirm(confirmMsg)) {
-                        cambiarEstado({ id: fase.id_subfase, estado: 'EN_EVALUACION' });
-                      }
-                    }}
-                    onFinalizar={() => {
-                      const confirmMsg = `¿Está seguro de FINALIZAR la fase "${fase.nombre}"?\n\n` + 
-                                      `⚠️ ADVERTENCIA IRREVERSIBLE:\n` +
-                                      `• Se BLOQUEARÁ el registro de notas.\n` +
-                                      `• Se habilitará el paso a la siguiente fase.\n` + 
-                                      `• No podrá deshacer esta acción.`;
-                      if(confirm(confirmMsg)) {
-                        cambiarEstado({ id: fase.id_subfase, estado: 'FINALIZADA' });
-                      }
-                    }}
+                    onIniciar={() => handleIniciarFase(fase)}
+                    onFinalizar={() => handleFinalizarFase(fase)}
                   />
                 ))}
               </div>
@@ -156,6 +207,19 @@ export function PaginaAdministrarSubFases() {
         </section>
       </main>
       
+      <Modal1
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        type="confirmation"
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+        onConfirm={modalConfig.onConfirm}
+        loading={isUpdating}
+      >
+        {modalConfig.content}
+      </Modal1>
+
       <style>{`
         @keyframes slide-up {
           from { opacity: 0; transform: translateY(20px); }
