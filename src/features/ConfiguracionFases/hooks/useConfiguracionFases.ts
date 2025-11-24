@@ -1,66 +1,131 @@
-import { useCallback } from 'react';
+// src/features/ConfiguracionFases/hooks/useConfiguracionFases.ts
+
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { configuracionService } from '../services/configuracionService';
-import { GESTION_ACTUAL } from '../utils/constants'; // <-- Importamos la constante
-import type { 
-  PermisoFase, 
-  GuardarConfiguracionPayload 
-} from '../types';
+import { configuracionService, type ConfiguracionUI } from '../services/configuracionService';
+import type { PermisoFase, Gestion } from '../types';
+
+type ModalFeedbackState = {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info' | 'confirmation';
+  title: string;
+  message: string;
+};
 
 export function useConfiguracionFases() {
   const queryClient = useQueryClient();
 
-  const { 
-    data: matrizData, 
-    isLoading, 
-    isError, 
-    error,
-    refetch 
-  } = useQuery({
-    queryKey: ['configuracionFases', GESTION_ACTUAL.id],
-    queryFn: () => configuracionService.obtenerConfiguracion(GESTION_ACTUAL.gestion),
-    refetchOnWindowFocus: false, 
-    staleTime: 1000 * 60 * 5,
+  // 1. Estados Locales
+  const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+  const [isCancelModalOpen, setCancelModalOpen] = useState(false);
+  
+  // NUEVO: Estado para forzar el reset del componente tabla
+  const [resetKey, setResetKey] = useState(0);
+
+  const closeModalFeedback = useCallback(() => {
+    setModalFeedback((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
+  // 2. Carga de Datos
+  const gestionQuery = useQuery<Gestion, Error>({
+    queryKey: ['gestionActual'],
+    queryFn: configuracionService.obtenerGestionActual,
+    staleTime: 1000 * 60 * 60,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
+  const gestionData = gestionQuery.data;
+  const idGestion = gestionData?.id;
+
+  const configQuery = useQuery<ConfiguracionUI, Error>({
+    queryKey: ['configuracionFases', idGestion],
+    queryFn: () => configuracionService.obtenerConfiguracion(idGestion!),
+    enabled: !!idGestion,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+  });
+
+  // 3. Mutación
   const { mutate: guardarCambios, isPending: isSaving } = useMutation({
-    mutationFn: configuracionService.guardarConfiguracion,
+    mutationFn: async (permisosModificados: PermisoFase[]) => {
+      if (!idGestion || !configQuery.data) {
+        throw new Error('No se ha cargado la información necesaria para guardar.');
+      }
+      const idsFasesActivas = configQuery.data.fases.map((f) => f.id);
+      await configuracionService.guardarConfiguracion(
+        idGestion,
+        permisosModificados,
+        idsFasesActivas
+      );
+    },
     onSuccess: () => {
-      toast.success('Configuración guardada correctamente');
-      queryClient.invalidateQueries({ 
-        queryKey: ['configuracionFases', GESTION_ACTUAL.id] 
+      setModalFeedback({
+        isOpen: true,
+        type: 'success',
+        title: '¡Guardado Exitoso!',
+        message: 'La configuración de fases y permisos se ha actualizado correctamente.',
       });
+      queryClient.invalidateQueries({ queryKey: ['configuracionFases', idGestion] });
     },
     onError: (err: Error) => {
-      console.error('Error al guardar:', err);
-      toast.error(`Error al guardar: ${err.message || 'Intente nuevamente'}`);
+      setModalFeedback({
+        isOpen: true,
+        type: 'error',
+        title: 'Error al Guardar',
+        message: err.message || 'Ocurrió un problema al intentar guardar los cambios.',
+      });
     },
   });
 
-  const handleGuardar = useCallback((permisosModificados: PermisoFase[]) => {
-    const payload: GuardarConfiguracionPayload = {
-      id_gestion: GESTION_ACTUAL.id,
-      permisos: permisosModificados,
-    };
-    guardarCambios(payload);
+  // 4. Handlers
+  const handleGuardar = useCallback((permisos: PermisoFase[]) => {
+    guardarCambios(permisos);
   }, [guardarCambios]);
 
   const handleCancelar = useCallback(() => {
-    if (confirm('¿Está seguro de descartar los cambios no guardados?')) {
-      toast('Recargando datos originales...', { icon: '🔄' });
-      refetch();
-    }
-  }, [refetch]);
+    setCancelModalOpen(true);
+  }, []);
+
+  // CORRECCIÓN CLAVE: Al confirmar, recargamos datos E incrementamos la key
+  const confirmarCancelacion = useCallback(() => {
+    setCancelModalOpen(false);
+    configQuery.refetch(); // Trae datos frescos del servidor
+    setResetKey(prev => prev + 1); // Fuerza la destrucción y reconstrucción de la tabla
+  }, [configQuery]);
+
+  const cerrarCancelModal = useCallback(() => {
+    setCancelModalOpen(false);
+  }, []);
+
+  // 5. Datos UI
+  const infoGestionParaUI = gestionData
+    ? {
+        id: gestionData.id,
+        gestion: String(gestionData.gestion),
+        estado: gestionData.esActual ? 'VIGENTE' : 'HISTÓRICO',
+      }
+    : { id: 0, gestion: '...', estado: '...' };
 
   return {
-    matrizData,
-    gestionActual: GESTION_ACTUAL,
-    isLoading,
+    matrizData: configQuery.data,
+    gestionActual: infoGestionParaUI,
+    isLoading: gestionQuery.isLoading || (!!idGestion && configQuery.isLoading),
     isSaving,
-    isError,
-    errorMessage: error instanceof Error ? error.message : null,
+    isError: gestionQuery.isError || configQuery.isError,
+    errorMessage: (gestionQuery.error as Error)?.message || (configQuery.error as Error)?.message,
     handleGuardar,
     handleCancelar,
+    modalFeedback,
+    closeModalFeedback,
+    isCancelModalOpen,
+    confirmarCancelacion,
+    cerrarCancelModal,
+    resetKey, // Exportamos la key para la vista
   };
 }
