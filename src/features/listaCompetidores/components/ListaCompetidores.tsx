@@ -409,9 +409,24 @@ export const ListaCompetidores = () => {
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:items-center">
                   <button
                     onClick={handleMostrarTodo}
-                    className="w-full sm:w-[200px] px-5 py-2.5 rounded-xl bg-principal-500 text-white font-semibold 
+                    className="flex items-center gap-2 w-full sm:w-[200px] px-5 py-2.5 rounded-xl bg-principal-500 text-white font-semibold 
                   hover:bg-principal-600 transition-all shadow-md hover:shadow-lg"
                   >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      className="lucide lucide-eye-icon lucide-eye"
+                    >
+                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
                     Mostrar Todo
                   </button>
 
