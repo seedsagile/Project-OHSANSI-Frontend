@@ -129,7 +129,9 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
           style={{ maxHeight: '200px' }}
         >
           {loading ? (
-            <div className="text-center text-gray-500 py-2">Cargando grados...</div>
+            <div className="text-center text-gray-500 py-2">
+              Selecciona un nivel para ver sus grados.
+            </div>
           ) : grados.length === 0 ? (
             <div className="text-center text-gray-500 py-2">No hay grados disponibles</div>
           ) : (
