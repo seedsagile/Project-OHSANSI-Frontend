@@ -174,7 +174,7 @@ export const ListaCompetidores = () => {
       }
 
       if (competidoresEncontrados.length === 0) {
-        setMensajeSinCompetidores('No hay competidores registrados en el nivel seleccionado');
+        setMensajeSinCompetidores('No hay competidores registrados');
       }
 
       setCompetidores(competidoresEncontrados);
@@ -405,7 +405,7 @@ export const ListaCompetidores = () => {
           <div className="flex flex-col lg:flex-row gap-6 w-full">
             <div className="flex-1 flex flex-col gap-4 min-w-0">
               {/* BOTONES SUPERIORES */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 w-full">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:items-center">
                   <button
                     onClick={handleMostrarTodo}
@@ -443,10 +443,11 @@ export const ListaCompetidores = () => {
                 className="
               grid 
               grid-cols-1 
+              place-items-center
               sm:grid-cols-2 
               md:grid-cols-3 
               lg:flex lg:flex-row 
-              justify-between 
+              sm:justify-between 
               gap-2 w-full
             "
               >
@@ -475,6 +476,8 @@ export const ListaCompetidores = () => {
                 />
 
                 <AccordionGrado
+                  selectedAreas={areasSeleccionadas}
+                  selectedNiveles={nivelesSeleccionados}
                   selectedGrados={gradoSeleccionado}
                   onChangeSelected={setGradoSeleccionado}
                 />

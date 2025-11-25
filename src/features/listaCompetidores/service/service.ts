@@ -105,3 +105,27 @@ export const getCompetidoresFiltradosAPI = async (
   const response = await apiClient.get(url);
   return response.data;
 };
+
+/**
+ * 🔹 Obtener grados por área y nivel
+ * GET /grados/{idArea}/nivel/{idNivel}
+ */
+export const getGradosPorAreaYNivelAPI = async (idArea: number, idNivel: number) => {
+  try {
+    const response = await apiClient.get(`/grados/${idArea}/nivel/${idNivel}`);
+    const data = response.data?.data;
+
+    if (!data || !Array.isArray(data.grados)) return [];
+
+    // Normalización de la respuesta
+    return data.grados.map((grado: any) => ({
+      id_grado_escolaridad: grado.id_grado_escolaridad,
+      nombre: grado.nombre,
+      created_at: grado.created_at,
+      updated_at: grado.updated_at,
+    }));
+  } catch (error) {
+    console.error(`Error al obtener grados del área ${idArea} y nivel ${idNivel}:`, error);
+    return [];
+  }
+};

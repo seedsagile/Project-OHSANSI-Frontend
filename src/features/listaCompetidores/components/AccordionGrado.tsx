@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getGradosAPI } from '../service/service';
+import { getGradosPorAreaYNivelAPI } from '../service/service';
+import type { Area } from '../interface/interface';
 
 interface Grado {
   id_grado_escolaridad: number;
@@ -7,11 +8,15 @@ interface Grado {
 }
 
 interface AccordionGradoProps {
+  selectedAreas: Area[];
+  selectedNiveles: { [areaId: number]: number[] };
   selectedGrados: number[];
   onChangeSelected: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 export const AccordionGrado: React.FC<AccordionGradoProps> = ({
+  selectedAreas,
+  selectedNiveles,
   selectedGrados,
   onChangeSelected,
 }) => {
@@ -23,7 +28,7 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
 
   const toggleAccordion = () => setIsOpen(!isOpen);
 
-  // ✅ Manejar selección individual
+  // Selección individual
   const handleCheckboxChange = (id_grado_escolaridad: number) => {
     if (selectedGrados.includes(id_grado_escolaridad)) {
       onChangeSelected(selectedGrados.filter((id) => id !== id_grado_escolaridad));
@@ -32,10 +37,11 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
     }
   };
 
-  // ✅ Marcar/Deseleccionar todo
+  // Marcar todo
   const handleMarcarTodo = () => {
     const nuevoEstado = !marcarTodo;
     setMarcarTodo(nuevoEstado);
+
     if (nuevoEstado) {
       const todosLosIds = grados.map((g) => g.id_grado_escolaridad);
       onChangeSelected(todosLosIds);
@@ -44,45 +50,62 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
     }
   };
 
-  // ✅ Obtener grados desde API
+  // Obtener grados filtrados
   useEffect(() => {
     const fetchGrados = async () => {
       try {
         setLoading(true);
-        const data = await getGradosAPI();
-        setGrados(data);
-      } catch (error) {
-        console.error('Error al obtener los grados:', error);
+
+        let gradosAcumulados: Grado[] = [];
+
+        for (const area of selectedAreas) {
+          const nivelesDeArea = selectedNiveles[area.id_area] || [];
+
+          for (const nivelId of nivelesDeArea) {
+            const gradosRespuesta = await getGradosPorAreaYNivelAPI(area.id_area, nivelId);
+            gradosAcumulados = [...gradosAcumulados, ...gradosRespuesta];
+          }
+        }
+
+        const gradosUnicos = Array.from(
+          new Map(gradosAcumulados.map((g) => [g.id_grado_escolaridad, g])).values()
+        );
+
+        setGrados(gradosUnicos);
+      } catch (e) {
+        console.error('Error al obtener grados filtrados:', e);
       } finally {
         setLoading(false);
       }
     };
-    fetchGrados();
-  }, []);
 
-  // ✅ Cerrar acordeón al hacer clic fuera
+    if (selectedAreas.length > 0) {
+      fetchGrados();
+    } else {
+      setGrados([]);
+    }
+  }, [selectedAreas, selectedNiveles]);
+
+  // Detectar clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (accordionRef.current && !accordionRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ✅ Sincronizar “Marcar todo”
+  // Sincronizar "Marcar todo"
   useEffect(() => {
-    if (grados.length > 0 && selectedGrados.length === grados.length) {
-      setMarcarTodo(true);
-    } else {
-      setMarcarTodo(false);
-    }
+    setMarcarTodo(grados.length > 0 && selectedGrados.length === grados.length);
   }, [selectedGrados, grados]);
 
   return (
     <div ref={accordionRef} className="relative w-60">
-      {/* Botón principal */}
+      {/* botón */}
       <button
         type="button"
         onClick={toggleAccordion}
@@ -90,20 +113,16 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
       >
         <span>Grado</span>
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
+          className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          viewBox="0 0 24 24"
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
 
-      {/* Contenido del acordeón */}
       {isOpen && (
         <div
           className="absolute left-0 top-full z-50 w-60 bg-blanco px-6 py-4 border-2 border-principal-500 rounded-b-xl shadow-lg overflow-y-auto"
@@ -115,9 +134,9 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
             <div className="text-center text-gray-500 py-2">No hay grados disponibles</div>
           ) : (
             <div className="space-y-2">
-              {/* 🔹 Opción de Marcar todo */}
+              {/* Marcar todo */}
               <label
-                className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                className={`flex justify-between items-center w-full px-4 py-2 rounded-md border cursor-pointer ${
                   marcarTodo
                     ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
                     : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
@@ -132,19 +151,20 @@ export const AccordionGrado: React.FC<AccordionGradoProps> = ({
                 />
               </label>
 
-              {/* 🔹 Listado de grados */}
+              {/* Lista */}
               {grados.map((grado) => {
                 const isChecked = selectedGrados.includes(grado.id_grado_escolaridad);
+
                 return (
                   <label
                     key={grado.id_grado_escolaridad}
-                    className={`flex justify-between items-center w-full px-4 py-2 rounded-md border transition-all duration-150 cursor-pointer ${
+                    className={`flex justify-between items-center w-full px-4 py-2 rounded-md border cursor-pointer ${
                       isChecked
                         ? 'bg-principal-100 border-principal-400 text-principal-700 font-semibold'
                         : 'bg-blanco hover:bg-neutro-100 border-neutro-200'
                     }`}
                   >
-                    <span className="text-negro">{grado.nombre}</span>
+                    <span>{grado.nombre}</span>
                     <input
                       type="checkbox"
                       checked={isChecked}
