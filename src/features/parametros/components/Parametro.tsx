@@ -27,6 +27,8 @@ export const Parametro = () => {
     y: number;
   }>({ visible: false, grados: [], x: 0, y: 0 });
 
+  const [successType, setSuccessType] = useState<'notaYCantidad' | 'soloNota'>('notaYCantidad');
+
   useEffect(() => {
     if (modalSuccessOpen) {
       const timer = setTimeout(() => {
@@ -189,6 +191,16 @@ export const Parametro = () => {
     setHoveredGrado({ visible: false, grados: [], x: 0, y: 0 });
   };
 
+  const limpiarValoresCopiados = () => {
+    setValoresCopiados({
+      notaMinima: '',
+      notaMaxima: '',
+      cantidadMaxima: '',
+    });
+    setValoresCopiadosManualmente(false);
+    setGestionSeleccionada(null);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 font-display relative">
       {/* <Toaster position="top-right" richColors /> */}
@@ -343,7 +355,11 @@ export const Parametro = () => {
               valoresCopiados={valoresCopiados}
               valoresCopiadosManualmente={valoresCopiadosManualmente}
               onLimpiarSeleccion={limpiarGestionSeleccionada}
-              onSuccess={() => setModalSuccessOpen(true)}
+              onSuccess={(type) => {
+                setSuccessType(type);
+                setModalSuccessOpen(true);
+              }}
+              onLimpiarGestionSeleccionada={() => setGestionSeleccionada(null)}
             />
           </div>
         </div>
@@ -356,6 +372,7 @@ export const Parametro = () => {
           onCopiarValores={copiarValores}
           nivelesSeleccionados={nivelesSeleccionados}
           areaSeleccionadaNombre={areas.find((a) => a.id === areaSeleccionada)?.nombre ?? null}
+          onLimpiarValores={limpiarValoresCopiados}
         />
       </main>
 
@@ -387,7 +404,13 @@ export const Parametro = () => {
         title="¡Registro exitoso!"
         type="success"
       >
-        La Cantidad máxima y la Nota mínima de clasificados han sido registradas correctamente.
+        {successType === 'notaYCantidad' ? (
+          <>
+            La Cantidad máxima y la Nota mínima de clasificados han sido registradas correctamente.
+          </>
+        ) : (
+          <>La Nota mínima de clasificados ha sido registrada correctamente.</>
+        )}
       </Modal>
     </div>
   );

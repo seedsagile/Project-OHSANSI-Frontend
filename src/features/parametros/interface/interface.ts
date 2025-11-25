@@ -70,5 +70,9 @@ export interface FormularioProps {
   };
   valoresCopiadosManualmente?: boolean;
   onLimpiarSeleccion?: () => void;
-  onSuccess?: () => void;
+  // onSuccess?: () => void;
+
+  // ⬇⬇⬇ MODIFICAR ESTA PARTE
+  onSuccess?: (tipo: 'notaYCantidad' | 'soloNota') => void;
+  onLimpiarGestionSeleccionada?: () => void;
 }
