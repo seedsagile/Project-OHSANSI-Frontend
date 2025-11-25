@@ -191,6 +191,16 @@ export const Parametro = () => {
     setHoveredGrado({ visible: false, grados: [], x: 0, y: 0 });
   };
 
+  const limpiarValoresCopiados = () => {
+    setValoresCopiados({
+      notaMinima: '',
+      notaMaxima: '',
+      cantidadMaxima: '',
+    });
+    setValoresCopiadosManualmente(false);
+    setGestionSeleccionada(null);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 font-display relative">
       {/* <Toaster position="top-right" richColors /> */}
@@ -361,6 +371,7 @@ export const Parametro = () => {
           onCopiarValores={copiarValores}
           nivelesSeleccionados={nivelesSeleccionados}
           areaSeleccionadaNombre={areas.find((a) => a.id === areaSeleccionada)?.nombre ?? null}
+          onLimpiarValores={limpiarValoresCopiados}
         />
       </main>
 
