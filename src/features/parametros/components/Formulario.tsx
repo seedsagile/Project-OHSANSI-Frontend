@@ -32,6 +32,7 @@ export const Formulario: React.FC<FormularioProps> = ({
   valoresCopiadosManualmente,
   onLimpiarSeleccion,
   onSuccess,
+  onLimpiarGestionSeleccionada,
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -136,6 +137,13 @@ export const Formulario: React.FC<FormularioProps> = ({
 
   const handleLimpiar = () => {
     reset({ notaMinima: '', cantidadMaxCompetidores: '' });
+    // 🚀 Limpia el checkbox seleccionado en TablaGestiones
+    onLimpiarSeleccion?.();
+
+    // 🚀 Limpia la gestión seleccionada (desmarca checkbox)
+    if (onLimpiarGestionSeleccionada) {
+      onLimpiarGestionSeleccionada();
+    }
   };
 
   return (

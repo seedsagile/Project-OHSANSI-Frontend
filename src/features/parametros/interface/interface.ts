@@ -74,4 +74,5 @@ export interface FormularioProps {
 
   // ⬇⬇⬇ MODIFICAR ESTA PARTE
   onSuccess?: (tipo: 'notaYCantidad' | 'soloNota') => void;
+  onLimpiarGestionSeleccionada?: () => void;
 }

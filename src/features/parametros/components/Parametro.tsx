@@ -359,6 +359,7 @@ export const Parametro = () => {
                 setSuccessType(type);
                 setModalSuccessOpen(true);
               }}
+              onLimpiarGestionSeleccionada={() => setGestionSeleccionada(null)}
             />
           </div>
         </div>
