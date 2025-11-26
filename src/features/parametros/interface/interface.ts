@@ -31,7 +31,7 @@ export interface Grado {
 export interface AreaNivel {
   id_area_nivel: number;
   nota_min_clasif: number;
-  cantidad_max_apro: number;
+  cantidad_max_apro: number | null;
 }
 
 export interface ParametroClasificacion {
@@ -70,5 +70,9 @@ export interface FormularioProps {
   };
   valoresCopiadosManualmente?: boolean;
   onLimpiarSeleccion?: () => void;
-  onSuccess?: () => void;
+  // onSuccess?: () => void;
+
+  // ⬇⬇⬇ MODIFICAR ESTA PARTE
+  onSuccess?: (tipo: 'notaYCantidad' | 'soloNota') => void;
+  onLimpiarGestionSeleccionada?: () => void;
 }

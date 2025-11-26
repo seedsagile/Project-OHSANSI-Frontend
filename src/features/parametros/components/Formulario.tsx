@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { FormularioProps } from '../interface/interface';
 import { crearParametroAPI } from '../service/service';
+import { Modal } from '../../../components/ui/Modal'; // <-- IMPORTANTE
 
 const limpiarEspacios = (val: string) => val.trim().replace(/\s+/g, '');
 
@@ -17,14 +18,7 @@ const esquemaNotas = z.object({
       message: 'Formato invalido',
     }),
 
-  cantidadMaxCompetidores: z
-    .string()
-    .refine((val) => limpiarEspacios(val) !== '', {
-      message: 'El campo Cantidad máxima de clasificados es obligatorio.',
-    })
-    .refine((val) => /^[0-9]+$/.test(limpiarEspacios(val)), {
-      message: 'Solo se permiten números enteros en Cantidad máxima de competidores.',
-    }),
+  cantidadMaxCompetidores: z.string().optional(), // <-- PERMITIMOS VACÍO PORQUE VALIDARÁ EL MODAL
 });
 
 type FormValues = z.infer<typeof esquemaNotas>;
@@ -38,19 +32,26 @@ export const Formulario: React.FC<FormularioProps> = ({
   valoresCopiadosManualmente,
   onLimpiarSeleccion,
   onSuccess,
+  onLimpiarGestionSeleccionada,
 }) => {
   const [loading, setLoading] = useState(false);
+
+  // --- ESTADOS PARA EL MODAL ---
+  const [showModal, setShowModal] = useState(false);
+  const [formValuesTemp, setFormValuesTemp] = useState<FormValues | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    //watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(esquemaNotas),
     mode: 'onChange',
   });
 
+  //const cantidadMaxWatch = watch('cantidadMaxCompetidores');
   const formularioBloqueado = nivelesSeleccionados.length === 0;
 
   useEffect(() => {
@@ -67,7 +68,27 @@ export const Formulario: React.FC<FormularioProps> = ({
     }
   }, [valoresCopiados, valoresCopiadosManualmente, formularioBloqueado, reset]);
 
-  const onSubmit = async (data: FormValues) => {
+  useEffect(() => {
+    if (nivelesSeleccionados.length === 0) {
+      reset({
+        notaMinima: '',
+        cantidadMaxCompetidores: '',
+      });
+    }
+  }, [nivelesSeleccionados, reset]);
+
+  /** ⬇⬇⬇ Manejamos el submit con la condición del modal ⬇⬇⬇ */
+  const handleValidate = (data: FormValues) => {
+    if (!data.cantidadMaxCompetidores || data.cantidadMaxCompetidores.trim() === '') {
+      setFormValuesTemp(data); // Guardamos los valores temporales
+      setShowModal(true); // Mostramos modal
+      return;
+    }
+    onSubmit(data, false); // guardar normal
+  };
+
+  /** Esta función ahora acepta un parámetro: forceNull */
+  const onSubmit = async (data: FormValues, forceNull: boolean) => {
     if (formularioBloqueado) return;
 
     try {
@@ -77,7 +98,7 @@ export const Formulario: React.FC<FormularioProps> = ({
         (nivel.areaNiveles ?? []).map((id_area_nivel) => ({
           id_area_nivel,
           nota_min_clasif: parseFloat(data.notaMinima.replace(',', '.')),
-          cantidad_max_apro: parseInt(data.cantidadMaxCompetidores, 10),
+          cantidad_max_apro: forceNull ? null : parseInt(data.cantidadMaxCompetidores!, 10),
         }))
       );
 
@@ -89,7 +110,8 @@ export const Formulario: React.FC<FormularioProps> = ({
 
       reset({ notaMinima: '', cantidadMaxCompetidores: '' });
       if (onLimpiarSeleccion) onLimpiarSeleccion();
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(forceNull ? 'soloNota' : 'notaYCantidad');
+
       onCerrar();
     } catch (error: any) {
       console.error('Error al enviar parámetro:', error);
@@ -99,128 +121,134 @@ export const Formulario: React.FC<FormularioProps> = ({
     }
   };
 
+  /** Confirmar en el modal → enviar null */
+  const confirmarGuardado = () => {
+    if (formValuesTemp) {
+      onSubmit(formValuesTemp, true);
+      if (onSuccess) onSuccess('soloNota');
+    }
+    setShowModal(false);
+  };
+
+  /** Cancelar en el modal */
+  const cancelarGuardado = () => {
+    setShowModal(false);
+  };
+
   const handleLimpiar = () => {
     reset({ notaMinima: '', cantidadMaxCompetidores: '' });
+    // 🚀 Limpia el checkbox seleccionado en TablaGestiones
+    onLimpiarSeleccion?.();
+
+    // 🚀 Limpia la gestión seleccionada (desmarca checkbox)
+    if (onLimpiarGestionSeleccionada) {
+      onLimpiarGestionSeleccionada();
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-4 border-2 border-blue-500 p-4 rounded-2xl w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto bg-white shadow-md"
-    >
-      <h1 className="flex justify-center text-xl sm:text-2xl font-bold text-center">
-        Ingresar parámetro de clasificación
-      </h1>
+    <>
+      {/* -------------------- MODAL -------------------- */}
+      <Modal
+        isOpen={showModal}
+        onClose={cancelarGuardado}
+        onConfirm={confirmarGuardado}
+        title="¿Guardar sin completar este campo?"
+        type="confirmation"
+        confirmText="Sí"
+        cancelText="No"
+      >
+        ¿Está seguro de que desea guardar sin completar el campo
+        <strong> Cantidad máxima de clasificados</strong>?
+      </Modal>
 
-      {formularioBloqueado && (
-        <p className="text-center text-red-500 font-medium text-sm sm:text-base">
-          Selecciona un nivel para habilitar el formulario.
-        </p>
-      )}
+      {/* -------------------- FORMULARIO ORIGINAL -------------------- */}
+      <form
+        onSubmit={handleSubmit(handleValidate)}
+        className="space-y-4 border-2 border-blue-500 p-4 rounded-2xl w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto bg-white shadow-md"
+      >
+        <h1 className="flex justify-center text-xl sm:text-2xl font-bold text-center">
+          Ingresar parámetro de clasificación
+        </h1>
 
-      <div>
-        <label className="block font-semibold text-negro mb-1 text-sm sm:text-base">
-          Nota mínima de clasificacion:
-        </label>
-        <input
-          type="text"
-          {...register('notaMinima')}
-          maxLength={4}
-          onInput={(e) => {
-            e.currentTarget.value = e.currentTarget.value
-              .replace(/[^0-9.]/g, '') // solo permite números y punto
-              .replace(/(\..*?)\..*/g, '$1'); // evita más de un punto
-          }}
-          className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500 text-sm sm:text-base"
-          disabled={formularioBloqueado}
-        />
-
-        {errors.notaMinima && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.notaMinima.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block font-semibold text-negro mb-1 text-sm sm:text-base">
-          Cantidad máxima de clasificados:
-        </label>
-        <input
-          type="text"
-          {...register('cantidadMaxCompetidores')}
-          maxLength={4}
-          onInput={(e) => {
-            e.currentTarget.value = e.currentTarget.value
-              .replace(/[^0-9]/g, '') // solo permite números y punto
-              .replace(/(\..*?)\..*/g, '$1'); // evita más de un punto
-          }}
-          className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500 text-sm sm:text-base"
-          disabled={formularioBloqueado}
-        />
-        {errors.cantidadMaxCompetidores && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">
-            {errors.cantidadMaxCompetidores.message}
+        {formularioBloqueado && (
+          <p className="text-center text-red-500 font-medium text-sm sm:text-base">
+            Selecciona un nivel para habilitar el formulario.
           </p>
         )}
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-around">
-        {/* Botón de limpiar */}
-        <button
-          type="button"
-          onClick={handleLimpiar}
-          disabled={formularioBloqueado || loading}
-          className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
-            formularioBloqueado || loading
-              ? 'bg-neutro-400 cursor-not-allowed'
-              : 'bg-gray-400 hover:bg-gray-300'
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="lucide lucide-x mr-2"
-          >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
-          Limpiar
-        </button>
+        <div>
+          <label className="block font-semibold text-negro mb-1 text-sm sm:text-base">
+            Nota mínima de clasificacion:
+          </label>
+          <input
+            type="text"
+            {...register('notaMinima')}
+            maxLength={4}
+            onInput={(e) => {
+              e.currentTarget.value = e.currentTarget.value
+                .replace(/[^0-9.]/g, '')
+                .replace(/(\..*?)\..*/g, '$1');
+            }}
+            className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500 text-sm sm:text-base"
+            disabled={formularioBloqueado}
+          />
 
-        <button
-          type="submit"
-          disabled={formularioBloqueado || loading}
-          className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
-            formularioBloqueado || loading
-              ? 'bg-neutro-400 cursor-not-allowed'
-              : 'bg-principal-500 hover:bg-principal-600'
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="lucide lucide-save mr-2"
+          {errors.notaMinima && (
+            <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.notaMinima.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block font-semibold text-negro mb-1 text-sm sm:text-base">
+            Cantidad máxima de clasificados:
+          </label>
+          <input
+            type="text"
+            {...register('cantidadMaxCompetidores')}
+            maxLength={4}
+            onInput={(e) => {
+              e.currentTarget.value = e.currentTarget.value
+                .replace(/[^0-9]/g, '')
+                .replace(/(\..*?)\..*/g, '$1');
+            }}
+            className="w-full border border-neutro-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-principal-500 text-sm sm:text-base"
+            disabled={formularioBloqueado}
+          />
+          {errors.cantidadMaxCompetidores && (
+            <p className="text-red-500 text-xs sm:text-sm mt-1">
+              {errors.cantidadMaxCompetidores.message}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-around">
+          <button
+            type="button"
+            onClick={handleLimpiar}
+            disabled={formularioBloqueado || loading}
+            className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
+              formularioBloqueado || loading
+                ? 'bg-neutro-400 cursor-not-allowed'
+                : 'bg-gray-400 hover:bg-gray-300'
+            }`}
           >
-            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
-            <path d="M7 3v4a1 1 0 0 0 1 1h7" />
-          </svg>
-          {loading ? 'Guardando...' : 'Guardar'}
-        </button>
-      </div>
-    </form>
+            Limpiar
+          </button>
+
+          <button
+            type="submit"
+            disabled={formularioBloqueado || loading}
+            className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
+              formularioBloqueado || loading
+                ? 'bg-neutro-400 cursor-not-allowed'
+                : 'bg-principal-500 hover:bg-principal-600'
+            }`}
+          >
+            {loading ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </form>
+    </>
   );
 };

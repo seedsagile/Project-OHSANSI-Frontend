@@ -15,6 +15,9 @@ import { Dashboard } from '@/features/dashboard/components/Dashboard';
 import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador';
 import { PaginaRegistrarEvaluacion } from '@/features/evaluaciones/routes/PaginaRegistrarEvaluacion';
 import { PaginaMedallero } from '@/features/medallero/routes/PaginaMedallero';
+import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/PaginaConfiguracionFases';
+import { PaginaAdministrarSubFases } from '@/features/subfases/routes/PaginaAdministrarSubFases';
+import { PaginaReporteCambios } from '../features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios';
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -49,7 +52,9 @@ const router = createBrowserRouter([
       { path: 'evaluaciones', element: <PaginaRegistrarEvaluacion /> },
       { path: 'parametrosCalificaciones', element: <Parametro /> },
       { path: 'medallero', element: <PaginaMedallero /> },
-      { path: 'configuracion_gestestion_olimpiada', element: <Navigate to="/dashboard" replace /> },
+      { path: 'configuracionFasesGlobales', element: <PaginaConfiguracionFases/> },
+      { path: 'configuracionSubFases', element: <PaginaAdministrarSubFases/> },
+      {path: 'reportesCambiosCalificaciones', element: <PaginaReporteCambios/> },
     ],
   },
 ]);
