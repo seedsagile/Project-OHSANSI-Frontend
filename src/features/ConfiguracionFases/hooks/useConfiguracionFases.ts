@@ -1,4 +1,7 @@
+// src/features/ConfiguracionFases/hooks/useConfiguracionFases.ts
+
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. Importar hook de navegación
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { configuracionService, type ConfiguracionUI } from '../services/configuracionService';
 import type { PermisoFase, Gestion } from '../types';
@@ -12,21 +15,22 @@ type ModalFeedbackState = {
 
 export function useConfiguracionFases() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate(); // 2. Inicializar navegación
 
+  // --- Estados ---
   const [modalFeedback, setModalFeedback] = useState<ModalFeedbackState>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
+    isOpen: false, type: 'info', title: '', message: '',
   });
   const [isCancelModalOpen, setCancelModalOpen] = useState(false);
   
-  const [resetKey, setResetKey] = useState(0);
+  // (ResetKey ya no es estrictamente necesario si navegamos fuera, pero no estorba)
+  const [resetKey] = useState(0);
 
   const closeModalFeedback = useCallback(() => {
     setModalFeedback((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
+  // --- Queries ---
   const gestionQuery = useQuery<Gestion, Error>({
     queryKey: ['gestionActual'],
     queryFn: configuracionService.obtenerGestionActual,
@@ -35,8 +39,7 @@ export function useConfiguracionFases() {
     refetchOnWindowFocus: false,
   });
 
-  const gestionData = gestionQuery.data;
-  const idGestion = gestionData?.id;
+  const idGestion = gestionQuery.data?.id;
 
   const configQuery = useQuery<ConfiguracionUI, Error>({
     queryKey: ['configuracionFases', idGestion],
@@ -46,24 +49,19 @@ export function useConfiguracionFases() {
     refetchOnWindowFocus: false,
   });
 
+  // --- Mutación ---
   const { mutate: guardarCambios, isPending: isSaving } = useMutation({
     mutationFn: async (permisosModificados: PermisoFase[]) => {
-      if (!idGestion || !configQuery.data) {
-        throw new Error('No se ha cargado la información necesaria para guardar.');
-      }
-      const idsFasesActivas = configQuery.data.fases.map((f) => f.id);
-      await configuracionService.guardarConfiguracion(
-        idGestion,
-        permisosModificados,
-        idsFasesActivas
-      );
+      if (!idGestion || !configQuery.data) throw new Error('Faltan datos.');
+      const idsFases = configQuery.data.fases.map((f) => f.id);
+      await configuracionService.guardarConfiguracion(idGestion, permisosModificados, idsFases);
     },
     onSuccess: () => {
       setModalFeedback({
         isOpen: true,
         type: 'success',
-        title: '¡Guardado Exitoso!',
-        message: 'La configuración de fases y permisos se ha actualizado correctamente.',
+        title: '¡Configuración Exitosa!',
+        message: 'Se configuró correctamente las acciones permitidas por fases.',
       });
       queryClient.invalidateQueries({ queryKey: ['configuracionFases', idGestion] });
     },
@@ -72,10 +70,12 @@ export function useConfiguracionFases() {
         isOpen: true,
         type: 'error',
         title: 'Error al Guardar',
-        message: err.message || 'Ocurrió un problema al intentar guardar los cambios.',
+        message: err.message,
       });
     },
   });
+
+  // --- Handlers ---
 
   const handleGuardar = useCallback((permisos: PermisoFase[]) => {
     guardarCambios(permisos);
@@ -85,21 +85,22 @@ export function useConfiguracionFases() {
     setCancelModalOpen(true);
   }, []);
 
+  // CORRECCIÓN CLAVE: Navegar al dashboard al confirmar
   const confirmarCancelacion = useCallback(() => {
     setCancelModalOpen(false);
-    configQuery.refetch();
-    setResetKey(prev => prev + 1);
-  }, [configQuery]);
+    navigate('/dashboard'); // <-- Redirección
+  }, [navigate]);
 
   const cerrarCancelModal = useCallback(() => {
     setCancelModalOpen(false);
   }, []);
 
-  const infoGestionParaUI = gestionData
+  // --- Datos UI ---
+  const infoGestionParaUI = gestionQuery.data
     ? {
-        id: gestionData.id,
-        gestion: String(gestionData.gestion),
-        estado: gestionData.esActual ? 'VIGENTE' : 'HISTÓRICO',
+        id: gestionQuery.data.id,
+        gestion: String(gestionQuery.data.gestion),
+        estado: gestionQuery.data.esActual ? 'VIGENTE' : 'HISTÓRICO',
       }
     : { id: 0, gestion: '...', estado: '...' };
 
@@ -110,10 +111,13 @@ export function useConfiguracionFases() {
     isSaving,
     isError: gestionQuery.isError || configQuery.isError,
     errorMessage: (gestionQuery.error as Error)?.message || (configQuery.error as Error)?.message,
+    
     handleGuardar,
     handleCancelar,
+
     modalFeedback,
     closeModalFeedback,
+
     isCancelModalOpen,
     confirmarCancelacion,
     cerrarCancelModal,
