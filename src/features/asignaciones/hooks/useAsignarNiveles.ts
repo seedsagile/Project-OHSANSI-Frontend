@@ -138,11 +138,16 @@ export function useAsignarNiveles() {
   };
 
   const handleAbrirModalGrados = (nivelId: number, nombreNivel: string) => {
+    // Ordenar grados alfabéticamente antes de mostrarlos
+    const gradosOrdenados = [...gradosEscolaridad].sort((a, b) => {
+      return a.nombre.localeCompare(b.nombre, 'es', { numeric: true });
+    });
+
     setModalGradosState({
       isOpen: true,
       nivelId,
       nombreNivel,
-      grados: gradosEscolaridad,
+      grados: gradosOrdenados,
       gradosSeleccionados: gradosPorNivel[nivelId] || new Set(),
       isLoading: false,
     });
