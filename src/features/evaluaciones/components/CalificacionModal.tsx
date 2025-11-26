@@ -1,5 +1,3 @@
-// src/features/evaluaciones/components/CalificacionModal.tsx
-
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import type { Competidor } from '../types/evaluacion.types';
@@ -36,6 +34,63 @@ export const CalificacionModal = ({
   const [modalExito, setModalExito] = useState(false);
   const [modalError, setModalError] = useState(false);
   const [mensajeError, setMensajeError] = useState('');
+
+  // ➡️ Lógica de manejo de entrada para la nota (punto, máximo 2 decimales, máximo 100)
+  const handleCalificacionChange = (value: string) => {
+    // 1. FILTRO INICIAL: Reemplazar comas (,) por puntos (.) y eliminar caracteres no válidos
+    // Solo permitimos dígitos (0-9) y el punto (.)
+    let valorLimpio = value.replace(/,/g, '.').replace(/[^\d.]/g, '');
+
+    // 2. RESTRICCIÓN DE PUNTOS Y DECIMALES
+    
+    // a) Evitar que el punto sea el primer carácter (lo convierte en "0.")
+    if (valorLimpio.startsWith('.')) {
+        valorLimpio = `0${valorLimpio}`;
+    }
+
+    // b) Dividir la cadena en partes (entera y decimal)
+    const partes = valorLimpio.split('.');
+
+    // c) Asegurar que solo haya una parte decimal (un solo punto)
+    if (partes.length > 2) {
+        // Si hay más de un punto (ej: "1.2.3"), mantenemos la parte entera y solo el primer decimal
+        valorLimpio = `${partes[0]}.${partes[1]}`;
+    }
+
+    // d) BLOQUEAR MÁS DE DOS DECIMALES
+    if (partes.length === 2 && partes[1].length > 2) {
+        // Cortamos la cadena para dejar solo los primeros dos decimales.
+        valorLimpio = `${partes[0]}.${partes[1].substring(0, 2)}`;
+    }
+    
+    // 3. RESTRICCIÓN DE RANGO (Solo la parte entera, para evitar entradas como 101)
+    if (partes[0].length > 3) {
+        valorLimpio = valorLimpio.substring(0, 3);
+    }
+    
+    const valorNumerico = parseFloat(valorLimpio);
+
+    // Si la nota supera 100, la forzamos a 100 o 100.00
+    if (!isNaN(valorNumerico) && valorNumerico > 100) {
+        if (valorLimpio.includes('.')) {
+            valorLimpio = '100.00';
+        } else {
+            valorLimpio = '100';
+        }
+    }
+
+    setCalificacion(valorLimpio);
+
+    // Limpiar error al escribir
+    if (errores.nota) {
+      setErrores(prev => {
+        const newErrores = { ...prev };
+        delete newErrores.nota;
+        return newErrores;
+      });
+    }
+  };
+
 
   const handleSave = async () => {
     setErrores({});
@@ -183,23 +238,14 @@ export const CalificacionModal = ({
                 Nota del competidor <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text" // ⬅️ Cambiado de "number" a "text" para controlar mejor la entrada decimal
                 min="0"
                 max="100"
                 step="0.01"
                 value={calificacion}
-                onChange={(e) => {
-                  setCalificacion(e.target.value);
-                  if (errores.nota) {
-                    setErrores(prev => {
-                      const newErrores = { ...prev };
-                      delete newErrores.nota;
-                      return newErrores;
-                    });
-                  }
-                }}
+                onChange={(e) => handleCalificacionChange(e.target.value)} // ⬅️ Usando el nuevo handler
                 disabled={loading}
-                placeholder="Ej: 100"
+                placeholder="Ej: 100.00"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 text-sm ${
                   errores.nota 
                     ? 'border-red-300 focus:ring-red-500' 

@@ -1,5 +1,3 @@
-// src/features/evaluaciones/components/SearchBar.tsx
-
 import { Search } from 'lucide-react';
 import { validarBusqueda } from '../utils/validations';
 import { useState, useEffect } from 'react';
@@ -22,27 +20,33 @@ export const SearchBar = ({
     setInputValue(searchTerm);
   }, [searchTerm]);
 
-  const handleChange = (value: string) => {
-    setInputValue(value);
+  const handleInputChange = (value: string) => {
+    // ➡️ 1. RESTRICCIÓN INMEDIATA: Filtrar solo letras, acentos, ñ y espacios
+    // Utiliza una regex para reemplazar cualquier carácter que NO sea una letra (incluye acentos y ñ) o un espacio.
+    const regexSoloLetrasYEspacios = /[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g;
+    const valorFiltrado = value.replace(regexSoloLetrasYEspacios, '');
+
+    // Actualizar el estado local del input con el valor filtrado
+    setInputValue(valorFiltrado);
     setError('');
 
-    // Si está vacío, permitir y limpiar búsqueda
-    if (value.trim().length === 0) {
+    // Si el valor filtrado está vacío, limpiar la búsqueda en el componente padre
+    if (valorFiltrado.trim().length === 0) {
       onSearchChange('');
       return;
     }
 
-    // Validar con Zod
-    const validacion = validarBusqueda(value);
+    // 2. VALIDACIÓN LÓGICA (usando la función que verifica espacios dobles, etc.)
+    const validacion = validarBusqueda(valorFiltrado);
     
     if (!validacion.valido && validacion.mensaje) {
       setError(validacion.mensaje);
-      // No actualizar la búsqueda si hay error
+      // No se llama a onSearchChange, manteniendo el estado filtrado pero con error visual
       return;
     }
 
-    // Si es válido, actualizar búsqueda
-    onSearchChange(value);
+    // 3. Si es válido (solo letras, espacios, y pasa la validación de formato), actualizar búsqueda
+    onSearchChange(valorFiltrado);
   };
 
   return (
@@ -56,7 +60,8 @@ export const SearchBar = ({
           type="text"
           placeholder="Nombre Completo del competidor"
           value={inputValue}
-          onChange={(e) => handleChange(e.target.value)}
+          // ➡️ Usar la nueva función de manejo
+          onChange={(e) => handleInputChange(e.target.value)} 
           disabled={disabled}
           maxLength={50}
           className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -71,7 +76,7 @@ export const SearchBar = ({
       )}
       {!error && (
         <p className="text-xs text-gray-500 mt-1">
-          Solo letras - Máximo 50 caracteres
+          Solo letras y espacios - Máximo 50 caracteres
         </p>
       )}
     </div>

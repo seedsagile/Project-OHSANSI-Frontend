@@ -37,6 +37,11 @@ export function PaginaRegistrarEvaluacion() {
 
   const isEvaluador = user?.role === 'evaluador';
 
+  // ➡️ CORRECCIÓN: Ordenar áreas por nombre
+  const areasOrdenadas = [...areas].sort((a, b) => 
+    a.nombre_area.localeCompare(b.nombre_area)
+  );
+
   const areaSeleccionada = areas.find(a => a.id_area.toString() === selectedArea);
   const nivelSeleccionado = areaSeleccionada?.niveles.find(
     n => n.id_nivel.toString() === selectedNivel
@@ -75,13 +80,13 @@ export function PaginaRegistrarEvaluacion() {
     }
   }, [selectedArea, selectedNivel]);
 
-  // Polling silencioso en segundo plano (cada 3 segundos)
+  // Polling silencioso en segundo plano (cada 1 segundo)
   useEffect(() => {
     if (!selectedArea || !selectedNivel) return;
 
     const interval = setInterval(() => {
       actualizarEstadosCompetidores();
-    }, 3000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [selectedArea, selectedNivel, actualizarEstadosCompetidores]);
@@ -197,7 +202,7 @@ export function PaginaRegistrarEvaluacion() {
         <h2 className="text-lg font-semibold mb-4">Selección de Área y Nivel</h2>
 
         <AreaNivelSelector
-          areas={areas}
+          areas={areasOrdenadas} // ⬅️ Usar áreas ordenadas
           selectedArea={selectedArea}
           selectedNivel={selectedNivel}
           onAreaChange={setSelectedArea}
