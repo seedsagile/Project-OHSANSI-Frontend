@@ -82,9 +82,9 @@ export const AccordionArea: React.FC<AccordionAreaProps> = ({
       <button
         type="button"
         onClick={toggleAccordion}
-        className="flex items-center justify-between w-full px-6 py-2.5 rounded-lg bg-principal-500 text-blanco font-semibold hover:bg-principal-600 transition-colors"
+        className="flex items-center justify-between w-full h-full px-6 py-2.5 rounded-lg bg-white border-2 border-principal-500 text-black font-semibold hover:bg-white transition-colors"
       >
-        <span>Seleccionar Área</span>
+        <span>Área</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"

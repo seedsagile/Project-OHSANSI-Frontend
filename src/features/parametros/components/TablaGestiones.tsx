@@ -24,6 +24,7 @@ interface TablaGestionesProps {
   }) => void;
   nivelesSeleccionados: Nivel[]; // niveles seleccionados desde Parametro.tsx
   areaSeleccionadaNombre: string | null; // nombre del área seleccionada para filtrar
+  onLimpiarValores: () => void;
 }
 
 export const TablaGestiones: React.FC<TablaGestionesProps> = ({
@@ -33,6 +34,7 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
   onCopiarValores,
   nivelesSeleccionados,
   areaSeleccionadaNombre,
+  onLimpiarValores,
 }) => {
   const [parametros, setParametros] = useState<Parametro[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +132,7 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                                 onChange={() => {
                                   if (gestionSeleccionada === p.id) {
                                     onSelectGestion(null);
+                                    onLimpiarValores();
                                   } else {
                                     onSelectGestion(p.id);
                                     onCopiarValores({

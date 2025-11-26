@@ -7,122 +7,161 @@ import { AreaNivelSelector } from '../components/AreaNivelSelector';
 import { SearchBar } from '../components/SearchBar';
 import { CompetidoresTable } from '../components/CompetidoresTable';
 import { CalificacionModal } from '../components/CalificacionModal';
+import { ModificarNotaModal } from '../components/ModificarNotaModal';
 import type { Competidor } from '../types/evaluacion.types';
-import { formatearNombreCompleto } from '../utils/validations';
+import { formatearNombreCompleto, esBusquedaValida } from '../utils/validations';
 import toast from 'react-hot-toast';
 
 export function PaginaRegistrarEvaluacion() {
-  const { user } = useAuth();
+  const { user, userId } = useAuth();
   const {
     areas,
     competidores,
     loading,
     loadingCompetidores,
+    idEvaluadorAN,
     cargarCompetidores,
-    intentarBloquear,
-    desbloquearCompetidor,
+    actualizarEstadosCompetidores,
+    iniciarEvaluacion,
     guardarEvaluacion,
+    modificarNota,
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedNivel, setSelectedNivel] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
+  const [competidorAEditar, setCompetidorAEditar] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
-  const [bloqueando, setBloqueando] = useState(false);
+  const [competidorEnModal, setCompetidorEnModal] = useState<string | null>(null); // CI del competidor en modal
 
-  // Verificar que el usuario sea evaluador
   const isEvaluador = user?.role === 'evaluador';
 
-  // Obtener nombres de área y nivel seleccionados
+  // ➡️ CORRECCIÓN: Ordenar áreas por nombre
+  const areasOrdenadas = [...areas].sort((a, b) => 
+    a.nombre_area.localeCompare(b.nombre_area)
+  );
+
   const areaSeleccionada = areas.find(a => a.id_area.toString() === selectedArea);
   const nivelSeleccionado = areaSeleccionada?.niveles.find(
     n => n.id_nivel.toString() === selectedNivel
   );
 
-  // Filtrar competidores por búsqueda
+  // Filtrar competidores por búsqueda y bloquear el que está en modal
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredCompetidores(competidores);
-      return;
+    let resultados = competidores;
+
+    // Si no hay búsqueda válida, mostrar todos
+    if (esBusquedaValida(searchTerm)) {
+      resultados = competidores.filter((c) => {
+        const nombreCompleto = formatearNombreCompleto(c.nombre, c.apellido).toLowerCase();
+        return nombreCompleto.includes(searchTerm.toLowerCase());
+      });
     }
 
-    const filtered = competidores.filter((c) => {
-      const nombreCompleto = formatearNombreCompleto(c.nombre, c.apellido).toLowerCase();
-      return nombreCompleto.includes(searchTerm.toLowerCase());
-    });
-
-    setFilteredCompetidores(filtered);
-  }, [competidores, searchTerm]);
-
-  // Cargar competidores cuando se selecciona área y nivel
-  const handleBuscar = () => {
-    if (!selectedArea || !selectedNivel) {
-      return;
+    // Si hay un competidor en modal, bloquearlo visualmente
+    if (competidorEnModal) {
+      resultados = resultados.map(c => 
+        c.ci === competidorEnModal 
+          ? { ...c, estado: 'En Proceso' as const }
+          : c
+      );
     }
 
-    cargarCompetidores(parseInt(selectedArea), parseInt(selectedNivel));
-  };
+    setFilteredCompetidores(resultados);
+  }, [competidores, searchTerm, competidorEnModal]);
 
-  // Auto-buscar cuando se selecciona área y nivel
+  // Auto-cargar competidores cuando se selecciona área y nivel
   useEffect(() => {
     if (selectedArea && selectedNivel) {
-      handleBuscar();
+      cargarCompetidores(parseInt(selectedArea), parseInt(selectedNivel));
+    } else {
+      setFilteredCompetidores([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedArea, selectedNivel]);
 
-  // Manejar apertura del modal de calificación
+  // Polling silencioso en segundo plano (cada 1 segundo)
+  useEffect(() => {
+    if (!selectedArea || !selectedNivel) return;
+
+    const interval = setInterval(() => {
+      actualizarEstadosCompetidores();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [selectedArea, selectedNivel, actualizarEstadosCompetidores]);
+
+  // Manejar clic en calificar
   const handleCalificar = async (competidor: Competidor) => {
-    // Si ya está calificado, permitir ver/editar directamente
     if (competidor.estado === 'Calificado') {
-      setSelectedCompetidor(competidor);
+      toast.error('Este competidor ya ha sido calificado');
       return;
     }
 
-    // Si está en calificación por otro evaluador, bloquear
-    if (competidor.estado === 'En calificacion') {
-      toast.error('Este competidor está siendo calificado por otro evaluador');
-      return;
-    }
-
-    // Intentar bloquear el competidor
-    setBloqueando(true);
-    const bloqueado = await intentarBloquear(competidor.ci);
-    setBloqueando(false);
-
-    if (bloqueado) {
-      setSelectedCompetidor(competidor);
-    }
-  };
-
-  // Manejar cierre del modal (cancelar)
-  const handleCloseModal = async () => {
-    if (selectedCompetidor) {
-      // Si no estaba calificado, desbloquear
-      if (selectedCompetidor.estado !== 'Calificado') {
-        await desbloquearCompetidor(selectedCompetidor.ci);
+    if (competidor.estado === 'En Proceso') {
+      if (competidor.bloqueado_por === idEvaluadorAN || competidor.bloqueado_por === userId) {
+        setSelectedCompetidor(competidor);
+        setCompetidorEnModal(competidor.ci);
+        return;
+      } else {
+        toast.error('Este competidor está siendo calificado por otro evaluador');
+        return;
       }
     }
-    setSelectedCompetidor(null);
+
+    // Bloquear visualmente sin cambiar estado real
+    setCompetidorEnModal(competidor.ci);
+    
+    // Iniciar evaluación en el backend
+    const resultado = await iniciarEvaluacion(competidor);
+
+    if (resultado.success) {
+      const competidorActualizado = competidores.find(c => c.ci === competidor.ci);
+      if (competidorActualizado) {
+        setSelectedCompetidor(competidorActualizado);
+      }
+    } else {
+      // Si falla, desbloquear
+      setCompetidorEnModal(null);
+    }
   };
 
-  // Si no es evaluador, mostrar mensaje de acceso denegado
+  // Manejar clic en editar nota (al hacer clic en la nota)
+  const handleEditarNota = async (competidor: Competidor) => {
+    // Bloquear visualmente
+    setCompetidorEnModal(competidor.ci);
+    
+    // Abrir modal de edición directamente
+    setCompetidorAEditar(competidor);
+  };
+
+  // Cerrar modal de calificación
+  const handleCloseModal = () => {
+    setSelectedCompetidor(null);
+    setCompetidorEnModal(null);
+    actualizarEstadosCompetidores();
+  };
+
+  // Cerrar modal de edición
+  const handleCloseModalEdicion = () => {
+    setCompetidorAEditar(null);
+    setCompetidorEnModal(null);
+    actualizarEstadosCompetidores();
+  };
+
   if (!isEvaluador) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <h2 className="text-xl font-bold text-red-800 mb-2">Acceso Denegado</h2>
           <p className="text-red-600">
-            No tienes permisos para acceder a esta sección. Solo los evaluadores pueden
-            registrar evaluaciones.
+            No tienes permisos para acceder a esta sección.
           </p>
         </div>
       </div>
     );
   }
 
-  // Si está cargando las áreas iniciales
   if (loading) {
     return (
       <div className="p-6">
@@ -134,7 +173,6 @@ export function PaginaRegistrarEvaluacion() {
     );
   }
 
-  // Si no tiene áreas asignadas
   if (areas.length === 0) {
     return (
       <div className="p-6">
@@ -153,14 +191,6 @@ export function PaginaRegistrarEvaluacion() {
 
   return (
     <div className="p-6">
-      {/* Indicador de bloqueo en proceso */}
-      {bloqueando && (
-        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center z-50">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-          <span>Verificando disponibilidad...</span>
-        </div>
-      )}
-
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900">Registrar Evaluación</h1>
         <p className="text-gray-600 mt-2">
@@ -172,7 +202,7 @@ export function PaginaRegistrarEvaluacion() {
         <h2 className="text-lg font-semibold mb-4">Selección de Área y Nivel</h2>
 
         <AreaNivelSelector
-          areas={areas}
+          areas={areasOrdenadas} // ⬅️ Usar áreas ordenadas
           selectedArea={selectedArea}
           selectedNivel={selectedNivel}
           onAreaChange={setSelectedArea}
@@ -183,7 +213,6 @@ export function PaginaRegistrarEvaluacion() {
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          onSearch={handleBuscar}
           disabled={!selectedArea || !selectedNivel || loadingCompetidores}
         />
       </div>
@@ -191,9 +220,13 @@ export function PaginaRegistrarEvaluacion() {
       <CompetidoresTable
         competidores={filteredCompetidores}
         onCalificar={handleCalificar}
+        onEditarNota={handleEditarNota}
         loading={loadingCompetidores}
+        esBusqueda={esBusquedaValida(searchTerm)}
+        areaSeleccionada={!!selectedArea && !!selectedNivel}
       />
 
+      {/* Modal de Calificación (nueva evaluación) */}
       {selectedCompetidor && (
         <CalificacionModal
           competidor={selectedCompetidor}
@@ -201,6 +234,17 @@ export function PaginaRegistrarEvaluacion() {
           nivelSeleccionado={nivelSeleccionado?.nombre || ''}
           onClose={handleCloseModal}
           onSave={guardarEvaluacion}
+        />
+      )}
+
+      {/* Modal de Edición (modificar nota existente) */}
+      {competidorAEditar && (
+        <ModificarNotaModal
+          competidor={competidorAEditar}
+          areaSeleccionada={areaSeleccionada?.nombre_area || ''}
+          nivelSeleccionado={nivelSeleccionado?.nombre || ''}
+          onClose={handleCloseModalEdicion}
+          onSave={modificarNota}
         />
       )}
     </div>
