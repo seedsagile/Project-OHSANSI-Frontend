@@ -284,7 +284,7 @@ export const useEvaluaciones = () => {
         )
       );
 
-      toast.success('Evaluación guardada exitosamente');
+      // ✅ NO mostrar toast - el modal de éxito lo maneja
     } catch (error: any) {
       console.error('❌ Error al guardar evaluación:', error);
       const errorMsg = error?.response?.data?.message || 'Error al guardar la evaluación';
@@ -369,7 +369,7 @@ export const useEvaluaciones = () => {
         )
       );
 
-      toast.success('Nota modificada exitosamente');
+      // ✅ NO mostrar toast - el modal de éxito lo maneja
     } catch (error: any) {
       console.error('❌ Error al modificar nota:', error);
       const errorMsg = error?.response?.data?.message || 'Error al modificar la nota';

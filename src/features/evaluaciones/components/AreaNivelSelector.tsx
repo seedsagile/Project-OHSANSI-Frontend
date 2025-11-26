@@ -21,7 +21,11 @@ export const AreaNivelSelector = ({
   disabled = false,
 }: AreaNivelSelectorProps) => {
   const areaSeleccionada = areas.find(a => a.id_area.toString() === selectedArea);
-  const niveles = areaSeleccionada?.niveles || [];
+  
+  // ✅ ORDENAR NIVELES ALFABÉTICAMENTE (A-Z)
+  const niveles = areaSeleccionada?.niveles 
+    ? [...areaSeleccionada.niveles].sort((a, b) => a.nombre.localeCompare(b.nombre))
+    : [];
 
   const handleAreaChange = (idArea: string) => {
     onAreaChange(idArea);

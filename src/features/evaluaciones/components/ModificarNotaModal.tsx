@@ -1,3 +1,5 @@
+// src/features/evaluaciones/components/ModificarNotaModal.tsx
+
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import type { Competidor } from '../types/evaluacion.types';
@@ -24,9 +26,11 @@ export const ModificarNotaModal = ({
   onSave,
 }: ModificarNotaModalProps) => {
   const [calificacion, setCalificacion] = useState(
-    competidor.calificacion?.toString() || ''
+    //competidor.calificacion?.toString() || '' 
+    ''
   );
-  const [justificacion, setJustificacion] = useState(competidor.observaciones || '');
+  //const [justificacion, setJustificacion] = useState(competidor.observaciones || '');
+  const [justificacion, setJustificacion] =useState('');
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
   
@@ -35,57 +39,55 @@ export const ModificarNotaModal = ({
   const [modalError, setModalError] = useState(false);
   const [mensajeError, setMensajeError] = useState('');
 
-  // ➡️ Lógica de manejo de entrada para la nota (punto, máximo 2 decimales, máximo 100)
-  const handleCalificacionChange = (value: string) => {
-    // 1. FILTRO INICIAL: Reemplazar comas (,) por puntos (.) y eliminar caracteres no válidos
-    let valorLimpio = value.replace(/,/g, '.').replace(/[^\d.]/g, '');
+// ➡️ Validación en tiempo real para Observaciones (MODIFICACIÓN)
+  const handleJustificacionChange = (value: string) => {
+    setJustificacion(value);
 
-    // 2. RESTRICCIÓN DE PUNTOS Y DECIMALES
-    
-    // a) Evitar que el punto sea el primer carácter (lo convierte en "0.")
-    if (valorLimpio.startsWith('.')) {
-        valorLimpio = `0${valorLimpio}`;
+    // Limpiar error previo
+    setErrores(prev => {
+      const newErrores = { ...prev };
+      delete newErrores.observaciones;
+      return newErrores;
+    });
+
+    // Si está vacío, mostrar error inmediatamente (es obligatorio en modificación)
+    if (value.trim().length === 0 && value.length > 0) {
+      setErrores(prev => ({
+        ...prev,
+        observaciones: 'El campo Observaciones no puede contener solo espacios.'
+      }));
+      return;
     }
 
-    // b) Dividir la cadena en partes (entera y decimal)
-    const partes = valorLimpio.split('.');
+    // Si tiene contenido, validar caracteres permitidos en tiempo real
+    if (value.length > 0) {
+      // Verificar caracteres especiales no permitidos
+      const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s,;.]+$/;
+      if (!regex.test(value)) {
+        setErrores(prev => ({
+          ...prev,
+          observaciones: 'El campo Observaciones solo puede contener letras, números y los caracteres especiales: coma (,), punto y coma (;) y punto (.).'
+        }));
+        return;
+      }
 
-    // c) Asegurar que solo haya una parte decimal (un solo punto)
-    if (partes.length > 2) {
-        valorLimpio = `${partes[0]}.${partes[1]}`;
-    }
+      // Verificar espacios dobles o múltiples
+      if (/\s{2,}/.test(value)) {
+        setErrores(prev => ({
+          ...prev,
+          observaciones: 'No se permiten espacios múltiples consecutivos.'
+        }));
+        return;
+      }
 
-    // d) BLOQUEAR MÁS DE DOS DECIMALES
-    if (partes.length === 2 && partes[1].length > 2) {
-        // Cortamos la cadena para dejar solo los primeros dos decimales.
-        valorLimpio = `${partes[0]}.${partes[1].substring(0, 2)}`;
-    }
-    
-    // 3. RESTRICCIÓN DE RANGO (Solo la parte entera, para evitar entradas como 101)
-    if (partes[0].length > 3) {
-        valorLimpio = valorLimpio.substring(0, 3);
-    }
-    
-    const valorNumerico = parseFloat(valorLimpio);
-
-    // Si la nota supera 100, la forzamos a 100 o 100.00
-    if (!isNaN(valorNumerico) && valorNumerico > 100) {
-        if (valorLimpio.includes('.')) {
-            valorLimpio = '100.00';
-        } else {
-            valorLimpio = '100';
-        }
-    }
-
-    setCalificacion(valorLimpio);
-    
-    // Limpiar error al escribir
-    if (errores.nota) {
-      setErrores(prev => {
-        const newErrores = { ...prev };
-        delete newErrores.nota;
-        return newErrores;
-      });
+      // Verificar longitud máxima
+      if (value.length > 300) {
+        setErrores(prev => ({
+          ...prev,
+          observaciones: 'Las observaciones no pueden exceder 300 caracteres.'
+        }));
+        return;
+      }
     }
   };
 
@@ -242,14 +244,23 @@ export const ModificarNotaModal = ({
                 Nueva Nota <span className="text-red-500">*</span>
               </label>
               <input
-                type="text" // ⬅️ Cambiado de "number" a "text" para controlar mejor la entrada decimal
+                type="number"
                 min="0"
                 max="100"
                 step="0.01"
                 value={calificacion}
-                onChange={(e) => handleCalificacionChange(e.target.value)} // ⬅️ Usando el nuevo handler
+                onChange={(e) => {
+                  setCalificacion(e.target.value);
+                  if (errores.nota) {
+                    setErrores(prev => {
+                      const newErrores = { ...prev };
+                      delete newErrores.nota;
+                      return newErrores;
+                    });
+                  }
+                }}
                 disabled={loading}
-                placeholder="Ej: 100.00"
+                placeholder="Ej: 100"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 text-sm ${
                   errores.nota 
                     ? 'border-red-300 focus:ring-red-500' 
@@ -268,16 +279,7 @@ export const ModificarNotaModal = ({
               </label>
               <textarea
                 value={justificacion}
-                onChange={(e) => {
-                  setJustificacion(e.target.value);
-                  if (errores.observaciones) {
-                    setErrores(prev => {
-                      const newErrores = { ...prev };
-                      delete newErrores.observaciones;
-                      return newErrores;
-                    });
-                  }
-                }}
+                onChange={(e) => handleJustificacionChange(e.target.value)}
                 disabled={loading}
                 rows={4}
                 maxLength={300}
