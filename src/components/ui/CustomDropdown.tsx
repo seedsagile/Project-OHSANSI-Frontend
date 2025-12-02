@@ -6,15 +6,18 @@ type Option = {
   label: string;
 };
 
-type CustomDropdownProps = {
+// Se actualiza la interfaz para aceptar 'id'
+interface CustomDropdownProps {
+  id?: string;
   options: Option[];
   selectedValue: string | number | null;
   onSelect: (value: string | number) => void;
   placeholder?: string;
   disabled?: boolean;
-};
+}
 
 export function CustomDropdown({
+  id,
   options,
   selectedValue,
   onSelect,
@@ -45,6 +48,7 @@ export function CustomDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
+        id={id} // Usar el ID en el botón
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className="w-full flex justify-between items-center bg-principal-500 hover:bg-principal-600 transition-colors px-4 py-3 font-semibold text-white rounded-t-xl"

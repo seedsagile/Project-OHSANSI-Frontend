@@ -1,4 +1,5 @@
 export type TipoAccion = 'Modificar' | 'Calificar' | 'Desclasificar';
+
 export interface HistorialCambio {
   readonly id_historial: number;
   readonly fecha_hora: string;
@@ -26,4 +27,14 @@ export interface ReporteResponse {
   success: boolean;
   data: HistorialCambio[];
   meta: MetaPaginacion;
+}
+
+export interface AreaFiltro {
+  id_area: number;
+  nombre: string;
+}
+
+export interface NivelFiltro {
+  id_nivel: number;
+  nombre: string;
 }

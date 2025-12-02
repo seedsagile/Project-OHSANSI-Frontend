@@ -65,18 +65,20 @@ export const TablaHistorial = ({
           );
         },
         size: 60,
+        enableSorting: false,
       },
       {
         accessorKey: 'fecha_hora',
         header: 'FECHA Y HORA',
         cell: (info) => {
           const dateStr = info.getValue() as string;
-          const fecha = new Date(dateStr).toLocaleDateString('es-BO', {
+          const date = new Date(dateStr);
+          const fecha = date.toLocaleDateString('es-BO', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
           });
-          const hora = new Date(dateStr).toLocaleTimeString('es-BO', {
+          const hora = date.toLocaleTimeString('es-BO', {
             hour: '2-digit',
             minute: '2-digit',
           });
@@ -89,6 +91,7 @@ export const TablaHistorial = ({
             </div>
           );
         },
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'nombre_evaluador',
@@ -98,6 +101,7 @@ export const TablaHistorial = ({
             {info.getValue() as string}
           </span>
         ),
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'nombre_olimpista',
@@ -107,25 +111,31 @@ export const TablaHistorial = ({
             {info.getValue() as string}
           </span>
         ),
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'area',
         header: 'ÁREA',
         cell: (info) => <span className="text-sm text-neutro-700">{info.getValue() as string}</span>,
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'nivel',
         header: 'NIVEL',
         cell: (info) => (
-          <span className="text-xs font-semibold bg-neutro-100 px-2 py-1 rounded text-neutro-600 border border-neutro-200 whitespace-nowrap">
+          <span 
+            className="text-xs font-semibold bg-principal-50 px-2 py-1 rounded text-principal-700 border border-principal-200 whitespace-nowrap"
+          >
             {info.getValue() as string}
           </span>
         ),
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'accion',
         header: 'ACCIÓN',
         cell: (info) => <ActionBadge accion={info.getValue() as TipoAccion} />,
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'descripcion',
@@ -138,6 +148,7 @@ export const TablaHistorial = ({
             {info.getValue() as string}
           </div>
         ),
+        enableSorting: false, // Deshabilitado
       },
       {
         accessorKey: 'observacion',
@@ -155,6 +166,7 @@ export const TablaHistorial = ({
             <span className="text-neutro-300 text-xs italic">-</span>
           );
         },
+        enableSorting: false, // Deshabilitado
       },
     ],
     [pagination]
@@ -183,7 +195,7 @@ export const TablaHistorial = ({
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 bg-blanco rounded-xl border-2 border-dashed border-neutro-200 text-neutro-500 min-h-[400px]">
+      <div className="flex flex-col items-center justify-center py-20 px-4 bg-blanco rounded-xl border-2 border-dashed border-neutro-200 text-neutro-500 min-h-[400px] text-center">
         <div className="bg-neutro-50 p-4 rounded-full mb-4">
           <AlertCircle size={40} className="text-neutro-400" />
         </div>
@@ -207,10 +219,16 @@ export const TablaHistorial = ({
                     <th
                       key={header.id}
                       className="p-4 text-xs font-bold tracking-wider uppercase text-center whitespace-nowrap"
+                      // ✅ Remover manejador de clic
+                      // onClick={header.column.getToggleSortingHandler()}
                     >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                      <div className="flex items-center justify-center gap-1.5">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                          
+                        {/* Se remueven los iconos de ordenamiento */}
+                      </div>
                     </th>
                   ))}
                 </tr>
