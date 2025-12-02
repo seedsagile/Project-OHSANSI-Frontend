@@ -98,7 +98,7 @@ export function PaginaReporteCambios() {
       <div className="max-w-7xl mx-auto">
         
         <h1 className="text-3xl font-extrabold text-negro tracking-tight mb-8 text-center md:text-left">
-          Reporte de Auditoría de Calificaciones
+          Reporte de Cambio de Calificaciones
         </h1>
 
         <div className="bg-white rounded-xl shadow-sm border border-neutro-200 p-6 space-y-6">
