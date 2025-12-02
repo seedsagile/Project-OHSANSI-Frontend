@@ -25,7 +25,6 @@ const obtenerGestionActual = (): string => {
 };
 
 const GESTION_ACTUAL = obtenerGestionActual();
-//const GESTION_ACTUAL = "2024";
 
 export function useAsignarNiveles() {
   const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
@@ -69,7 +68,7 @@ export function useAsignarNiveles() {
     queryFn: asignacionesService.obtenerGradosEscolaridad,
   });
 
-  // Cargar niveles y grados ya asignados al área seleccionada
+  // ACTUALIZADO: Cargar niveles y grados ya asignados al área seleccionada
   const { data: datosAsignados, refetch: refetchAsignados } = useQuery({
     queryKey: ['area-niveles-grados', areaSeleccionadaId, GESTION_ACTUAL],
     queryFn: () => 
@@ -102,15 +101,16 @@ export function useAsignarNiveles() {
     return nivelesNuevos.length > 0;
   }, [nivelesSeleccionados, nivelesOriginales]);
 
-  // Sincronizar niveles y grados asignados
+  // ACTUALIZADO: Sincronizar niveles y grados asignados con la nueva estructura
   useEffect(() => {
     if (areaSeleccionadaId && datosAsignados?.data) {
       const nivelesAsignados = new Set<number>();
       const gradosPorNivelAsignados: GradosPorNivel = {};
 
-      datosAsignados.data.niveles_con_grados_agrupados.forEach((nivelData) => {
-        nivelesAsignados.add(nivelData.id_nivel);
-        gradosPorNivelAsignados[nivelData.id_nivel] = new Set(
+      // CAMBIO: usar niveles_con_grados con la nueva estructura
+      datosAsignados.data.niveles_con_grados.forEach((nivelData) => {
+        nivelesAsignados.add(nivelData.nivel.id_nivel);
+        gradosPorNivelAsignados[nivelData.nivel.id_nivel] = new Set(
           nivelData.grados.map(g => g.id_grado_escolaridad)
         );
       });
