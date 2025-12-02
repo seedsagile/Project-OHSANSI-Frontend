@@ -31,7 +31,6 @@ export type ApiResponse<T> = {
   distribucion?: Record<string, number>;
 };
 
-// ACTUALIZADO: Payload con id_grado_escolaridad
 export type AsignacionPayload = {
   id_area: number;
   id_nivel: number;
@@ -81,10 +80,13 @@ export type ModalGradosState = {
   isLoading: boolean;
 };
 
-// NUEVO: Tipos para el GET de niveles y grados asignados
+// ACTUALIZADO: Tipos para el nuevo GET
 export type NivelConGrados = {
-  id_nivel: number;
-  nombre_nivel: string;
+  id_area_nivel: number;
+  nivel: {
+    id_nivel: number;
+    nombre: string;
+  };
   grados: {
     id_grado_escolaridad: number;
     nombre: string;
@@ -103,15 +105,15 @@ export type AreaNivelesResponse = {
       gestion: string;
       nombre: string;
     };
-    niveles_con_grados_agrupados: NivelConGrados[];
-    total_relaciones: number;
+    niveles_con_grados: NivelConGrados[];
     total_niveles: number;
+    total_relaciones: number;
   };
   message: string;
 };
 
-// NUEVO: Tipo para la respuesta de áreas con validación de proceso
-export type AreasResponse = {
+// NUEVO: Tipo para obtener todas las áreas (sin niveles)
+export type AreasSimpleResponse = {
   success: boolean;
   message: string;
   data: Area[];
