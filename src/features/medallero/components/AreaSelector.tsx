@@ -30,7 +30,7 @@ export const AreaSelector = ({
           className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg flex items-center justify-between hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="font-medium">
-            {selectedArea ? selectedArea.nombre : 'Seleccionar Área'}
+            {selectedArea ? selectedArea.nombre_area : 'Seleccionar Área'}
           </span>
           <svg className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -48,8 +48,7 @@ export const AreaSelector = ({
                 }}
                 className="w-full text-left px-6 py-3 hover:bg-blue-50 transition-colors first:rounded-t-lg last:rounded-b-lg"
               >
-                <div className="font-medium">{area.nombre}</div>
-                <div className="text-sm text-gray-500">Gestión {area.gestion}</div>
+                <div className="font-medium">{area.nombre_area}</div>
               </button>
             ))}
           </div>

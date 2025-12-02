@@ -1,5 +1,4 @@
 // src/features/medallero/types/medallero.types.ts
-
 export interface MedalData {
   id_area_nivel: number;
   nombre_nivel: string;
@@ -12,7 +11,7 @@ export interface MedalData {
 
 export interface Area {
   id_area: number;
-  nombre: string;
+  nombre_area: string;
   gestion: string;
 }
 
@@ -49,3 +48,4 @@ export interface MedalleroSaveData {
   bronce: number;
   menciones: number;
 }
+
