@@ -418,21 +418,14 @@ export function useGestionResponsable() {
           return;
         }
         
-        // SOLUCIÓN AL BUG DE GESTIÓN PASADA:
-        // Filtramos las áreas que ya están ocupadas por OTROS ANTES de enviar.
-        const areasParaEnviar = formData.areas.filter(id => {
-          const esPreAsignada = preAsignadasSet.has(id);
-          const esOcupadaPorOtro = ocupadasSet.has(id);
-          
-          // Se envía si:
-          // 1. Es pre-asignada (ya era de este responsable)
-          // 2. NO es pre-asignada Y NO está ocupada por otro (es una nueva área válida)
-          return esPreAsignada || (!esPreAsignada && !esOcupadaPorOtro);
-        });
-
+        // MODIFICADO: Permitimos enviar todas las áreas seleccionadas en el formulario
+        // No filtramos por 'esOcupadaPorOtro', permitiendo asignación múltiple.
+        // Solo filtramos si hay alguna lógica de negocio extra, pero en este caso
+        // queremos enviar exactamente lo que el usuario marcó.
+        
         const payload: AsignarResponsablePayload = {
           id_olimpiada: ID_OLIMPIADA_ACTUAL,
-          areas: areasParaEnviar, // Usamos la lista filtrada
+          areas: formData.areas, // Se envía directo lo seleccionado
         };
         asignarResponsable({ ci: ciVerificado, payload });
       } else {
@@ -455,8 +448,7 @@ export function useGestionResponsable() {
       asignarResponsable,
       crearResponsable,
       handleMutationError,
-      preAsignadasSet,
-      ocupadasSet,
+      // preAsignadasSet y ocupadasSet ya no son necesarios en el array de dependencias para el filtro
     ]
   );
 

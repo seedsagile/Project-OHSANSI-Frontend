@@ -1,3 +1,4 @@
+// src/features/usuarios/responsables/hooks/useSeleccionAreasResponsable.ts
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import isEqual from 'lodash.isequal';
@@ -13,7 +14,7 @@ interface UseSeleccionAreasProps {
     isLoading: boolean;
   };
   preAsignadas: Set<number>;
-  ocupadasSet: Set<number>; // <-- 1. ACEPTAR LA NUEVA PROP
+  ocupadasSet: Set<number>;
   rolesPorGestion: ApiGestionRoles[];
 }
 
@@ -23,7 +24,7 @@ export function useSeleccionAreasResponsable({
   isReadOnly,
   areasDisponiblesQuery,
   preAsignadas = new Set(),
-  ocupadasSet = new Set(), // <-- 2. USAR LA NUEVA PROP
+  ocupadasSet = new Set(),
   rolesPorGestion = [],
 }: UseSeleccionAreasProps) {
   const { setValue, getValues, control } = formMethods;
@@ -36,7 +37,6 @@ export function useSeleccionAreasResponsable({
   const prevGestionAnioRef = useRef<string | null>(undefined);
   const prevAreasDisponiblesRef = useRef<Area[] | undefined>(undefined);
 
-  // Este useEffect es seguro. Solo se re-ejecuta si sus dependencias (props/datos de query) cambian.
   useEffect(() => {
     const gestionAnioChanged =
       prevGestionAnioRef.current !== gestionPasadaSeleccionadaAnio;
@@ -72,21 +72,17 @@ export function useSeleccionAreasResponsable({
 
       const idsAreasActualesSet = new Set(areasDisponibles.map((a) => a.id_area));
       
-      // Lista para los iconos (History) - Muestra todas las históricas que existen hoy
       const idsComunesHistoricos = areasPasadasIds.filter((idPasada) =>
         idsAreasActualesSet.has(idPasada)
       );
 
-      // --- INICIO DE LA CORRECCIÓN ---
-      // Lista para AÑADIR AL FORMULARIO
-      // Filtramos las que ya están asignadas a ESTE usuario (preAsignadas)
-      // Y también filtramos las que están asignadas a OTRO usuario (ocupadasSet)
+      // MODIFICADO: Permitimos cargar áreas aunque estén ocupadas (multi-responsable)
+      // Solo filtramos las que YA tiene este usuario asignadas.
       const idsComunesCargables = idsComunesHistoricos.filter(
-        (id) => !preAsignadas.has(id) && !ocupadasSet.has(id)
+        (id) => !preAsignadas.has(id)
       );
-      // --- FIN DE LA CORRECCIÓN ---
 
-      const newAreasLoadedFromPast = new Set(idsComunesHistoricos); // El icono se muestra igual
+      const newAreasLoadedFromPast = new Set(idsComunesHistoricos);
 
       if (
         gestionAnioChanged ||
@@ -95,7 +91,6 @@ export function useSeleccionAreasResponsable({
       ) {
         setAreasLoadedFromPast(newAreasLoadedFromPast);
 
-        // El valor del formulario SÓLO incluye las pre-asignadas + las cargables (válidas)
         const newValue = [...new Set([...idsPreAsignados, ...idsComunesCargables])];
         const currentFormAreas = getValues('areas') || [];
 
@@ -124,13 +119,13 @@ export function useSeleccionAreasResponsable({
     getValues,
     areasLoadedFromPast,
     preAsignadas,
-    ocupadasSet, // <-- 3. AÑADIR DEPENDENCIA
+    ocupadasSet,
   ]);
 
   const handleSeleccionarArea = useCallback(
     (areaId: number, seleccionado: boolean) => {
-      // 4. AÑADIR LÓGICA DE BLOQUEO AQUÍ TAMBIÉN
-      if (isReadOnly || preAsignadas.has(areaId) || ocupadasSet.has(areaId)) return;
+      // MODIFICADO: Eliminamos la restricción `ocupadasSet.has(areaId)`
+      if (isReadOnly || preAsignadas.has(areaId)) return;
 
       const currentAreas = watchedAreas || [];
       const nuevasAreas = seleccionado
@@ -138,7 +133,7 @@ export function useSeleccionAreasResponsable({
         : currentAreas.filter((id) => id !== areaId);
       setValue('areas', nuevasAreas, { shouldValidate: true, shouldDirty: true });
     },
-    [isReadOnly, setValue, watchedAreas, preAsignadas, ocupadasSet] // <-- 5. AÑADIR DEPENDENCIA
+    [isReadOnly, setValue, watchedAreas, preAsignadas]
   );
 
   const handleToggleSeleccionarTodas = useCallback(
