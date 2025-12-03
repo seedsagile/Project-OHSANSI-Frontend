@@ -22,8 +22,9 @@ export function TablaResultados({ data, columns, invalidHeaders }: TablaResultad
       `Fila ${fila.numeroDeFila} - Errores:\n` +
       Object.entries(fila.errores)
         .map(([key, value]) => {
+          const mappingKey = key as keyof typeof reverseHeaderMapping;
           const displayName =
-            reverseHeaderMapping[key] || key.charAt(0).toUpperCase() + key.slice(1);
+            reverseHeaderMapping[mappingKey] || key.charAt(0).toUpperCase() + key.slice(1);
           return `• ${displayName}: ${value}`;
         })
         .join('\n');
