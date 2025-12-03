@@ -14,8 +14,7 @@ export const useEvaluaciones = () => {
   const [loadingCompetidores, setLoadingCompetidores] = useState(false);
   const [idCompetenciaActual, setIdCompetenciaActual] = useState<number | null>(null);
   const [idEvaluadorAN, setIdEvaluadorAN] = useState<number | null>(null);
-  const [areaActual, setAreaActual] = useState<number | null>(null);
-  const [nivelActual, setNivelActual] = useState<number | null>(null);
+  const [idAreaNivelActual, setIdAreaNivelActual] = useState<number | null>(null);
 
   // Cargar áreas y niveles del evaluador
   useEffect(() => {
@@ -25,18 +24,28 @@ export const useEvaluaciones = () => {
       try {
         setLoading(true);
         const response = await evaluacionService.getAreasNivelesByEvaluador(userId);
-        setAreas(response.areas);
         
-        // 👇 GUARDAR id_evaluador del backend
+        console.log('📚 Respuesta completa del servicio:', response);
+        
+        // Validar que areas sea un array
+        if (Array.isArray(response.areas)) {
+          setAreas(response.areas);
+          console.log('✅ Áreas cargadas:', response.areas);
+        } else {
+          console.error('❌ La respuesta no contiene un array de áreas:', response);
+          setAreas([]);
+          toast.error('Error: Formato de datos incorrecto');
+        }
+        
+        // Guardar id_evaluador del backend
         if (response.evaluador?.id_evaluador) {
           setIdEvaluadorAN(response.evaluador.id_evaluador);
           console.log('🆔 ID Evaluador obtenido:', response.evaluador.id_evaluador);
         }
-        
-        console.log('📚 Áreas y niveles cargadas:', response);
       } catch (error) {
-        console.error('Error al cargar áreas y niveles:', error);
+        console.error('❌ Error al cargar áreas y niveles:', error);
         toast.error('Error al cargar las áreas y niveles asignados');
+        setAreas([]);
       } finally {
         setLoading(false);
       }
@@ -55,7 +64,7 @@ export const useEvaluaciones = () => {
       let idEvaluadorAsignado: number | undefined = undefined;
 
       if (comp.evaluaciones && comp.evaluaciones.length > 0) {
-        // 👇 ORDENAR por id_evaluacion DESC para obtener la MÁS RECIENTE primero
+        // Ordenar por id_evaluacion DESC para obtener la más reciente primero
         const evaluacionesOrdenadas = [...comp.evaluaciones].sort(
           (a: any, b: any) => b.id_evaluacion - a.id_evaluacion
         );
@@ -99,14 +108,15 @@ export const useEvaluaciones = () => {
     });
   };
 
-  // Cargar competidores por área y nivel
-  const cargarCompetidores = async (idArea: number, idNivel: number) => {
+  // Cargar competidores por id_area_nivel
+  const cargarCompetidores = async (idAreaNivel: number) => {
     try {
       setLoadingCompetidores(true);
-      setAreaActual(idArea);
-      setNivelActual(idNivel);
+      setIdAreaNivelActual(idAreaNivel);
       
-      const response = await evaluacionService.getCompetidoresByAreaNivel(idArea, idNivel);
+      console.log('🔍 Cargando competidores para id_area_nivel:', idAreaNivel);
+      
+      const response = await evaluacionService.getCompetidoresByAreaNivel(idAreaNivel);
       
       if (response.success && response.data.competidores.length > 0) {
         const primerCompetidor = response.data.competidores[0];
@@ -126,7 +136,7 @@ export const useEvaluaciones = () => {
         toast(`No se encontraron competidores`, { icon: 'ℹ️' });
       }
     } catch (error) {
-      console.error('Error al cargar competidores:', error);
+      console.error('❌ Error al cargar competidores:', error);
       toast.error('Error al cargar los competidores');
       setCompetidores([]);
       setIdCompetenciaActual(null);
@@ -137,10 +147,10 @@ export const useEvaluaciones = () => {
 
   // Actualización silenciosa en segundo plano (sin loading)
   const actualizarEstadosCompetidores = async () => {
-    if (!areaActual || !nivelActual) return;
+    if (!idAreaNivelActual) return;
 
     try {
-      const response = await evaluacionService.getCompetidoresByAreaNivel(areaActual, nivelActual);
+      const response = await evaluacionService.getCompetidoresByAreaNivel(idAreaNivelActual);
       
       if (response.success && response.data.competidores.length > 0) {
         const competidoresMapeados = mapearCompetidores(response.data.competidores);
@@ -164,7 +174,6 @@ export const useEvaluaciones = () => {
 
   // PASO 1: Crear evaluación al hacer clic en "Calificar"
   const iniciarEvaluacion = async (competidor: Competidor): Promise<{ success: boolean; idEvaluacion?: number }> => {
-    // ✅ Validar que tenemos el id_evaluador
     if (!idEvaluadorAN) {
       console.error('❌ No se encontró idEvaluadorAN');
       toast.error('No se pudo identificar el ID del evaluador');
@@ -191,7 +200,6 @@ export const useEvaluaciones = () => {
         id_evaluadorAN: idEvaluadorAN,
       });
 
-      // 👇 HACER LA PETICIÓN POST
       const response = await evaluacionService.crearEvaluacion(idCompetenciaActual, {
         id_competidor: competidor.id_competidor,
         id_evaluadorAN: idEvaluadorAN,
@@ -283,8 +291,6 @@ export const useEvaluaciones = () => {
             : c
         )
       );
-
-      // ✅ NO mostrar toast - el modal de éxito lo maneja
     } catch (error: any) {
       console.error('❌ Error al guardar evaluación:', error);
       const errorMsg = error?.response?.data?.message || 'Error al guardar la evaluación';
@@ -368,8 +374,6 @@ export const useEvaluaciones = () => {
             : c
         )
       );
-
-      // ✅ NO mostrar toast - el modal de éxito lo maneja
     } catch (error: any) {
       console.error('❌ Error al modificar nota:', error);
       const errorMsg = error?.response?.data?.message || 'Error al modificar la nota';
