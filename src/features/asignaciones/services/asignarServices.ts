@@ -4,10 +4,11 @@ import type {
   AreaConNiveles, 
   AreaNivel, 
   AsignacionPayload,
+  //Area,
   Nivel,
   Grado,
   AreaNivelesResponse,
-  AreasSimpleResponse,
+  AreasResponse
 } from '../types';
 
 type GradosResponse = {
@@ -16,9 +17,9 @@ type GradosResponse = {
 };
 
 export const asignacionesService = {
-  // GET /api/area/gestion/{gestion} - Obtener solo las áreas
-  async obtenerAreas(gestion: string): Promise<AreasSimpleResponse> {
-    const response = await apiClient.get<AreasSimpleResponse>(`/area/gestion/${gestion}`);
+  // GET /api/area/gestion/{gestion} - Obtener todas las áreas con validación de proceso
+  async obtenerAreas(gestion: string): Promise<AreasResponse> {
+    const response = await apiClient.get<AreasResponse>(`/area/gestion/${gestion}`);
     return response.data;
   },
 
@@ -34,8 +35,7 @@ export const asignacionesService = {
     return response.data.data;
   },
 
-  // GET /api/area-nivel/gestion/{gestion}/area/{id_area}
-  // Devuelve los niveles y grados YA ASIGNADOS a un área específica
+  // NUEVO: GET /api/area-nivel/gestion/{gestion}/area/{id_area}
   async obtenerNivelesYGradosAsignados(gestion: string, id_area: number): Promise<AreaNivelesResponse> {
     const response = await apiClient.get<AreaNivelesResponse>(
       `/area-nivel/gestion/${gestion}/area/${id_area}`
@@ -43,16 +43,13 @@ export const asignacionesService = {
     return response.data;
   },
 
-  // POST /api/area-nivel - Crear asignaciones (sin la "s")
+  // POST /api/area-nivel - Crear asignaciones (ACTUALIZADO con grados)
   async crearAsignacionesDeArea(payload: AsignacionPayload[]): Promise<ApiResponse<AreaNivel[]>> {
     const response = await apiClient.post<ApiResponse<AreaNivel[]>>('/area-nivel', payload);
     return response.data;
   },
 
-  // =========================================
-  // APIs antiguas (mantener por compatibilidad)
-  // =========================================
-  
+  // Mantener APIs antiguas
   async obtenerAreasConNiveles(): Promise<AreaConNiveles[]> {
     const response = await apiClient.get<ApiResponse<AreaConNiveles[]>>('/areas-con-niveles');
     return response.data.data;
