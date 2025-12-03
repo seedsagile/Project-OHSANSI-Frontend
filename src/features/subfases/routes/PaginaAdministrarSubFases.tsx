@@ -56,7 +56,7 @@ export function PaginaAdministrarSubFases() {
     openConfirmation(
       `¿Iniciar fase "${fase.nombre}"?`,
       <div className="text-left text-sm text-neutro-600 space-y-3">
-        <p>Al iniciar esta fase, ocurrirá lo siguiente:</p>
+        <p>Al iniciar este Examen, ocurrirá lo siguiente:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Se habilitará el registro de notas para <strong>{fase.cant_evaluadores} evaluadores</strong>.</li>
           <li>El estado cambiará a "En Evaluación".</li>
@@ -75,7 +75,7 @@ export function PaginaAdministrarSubFases() {
           <div>
             <strong className="block text-xs uppercase tracking-wider mb-1">Acción Irreversible</strong>
             <p className="text-xs leading-relaxed">
-              Una vez finalizada, no se podrán cargar ni modificar más notas para esta fase.
+              Una vez finalizada, no se podrán cargar ni modificar más notas para este examen.
             </p>
           </div>
         </div>
@@ -102,7 +102,7 @@ export function PaginaAdministrarSubFases() {
             <Layers className="text-principal-600" size={32} />
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-negro tracking-tight">
-            Administrar Sub-Fases
+            Habilitar Examen por Area/Nivel
           </h1>
           <p className="text-neutro-600 max-w-2xl mx-auto text-lg">
             Gestione el flujo de evaluación, inicie etapas y finalice procesos por Área y Nivel.
@@ -165,15 +165,15 @@ export function PaginaAdministrarSubFases() {
           {areaId && nivelId && isLoading && (
             <div className="flex flex-col items-center justify-center py-24">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-principal-200 border-t-principal-600 mb-4"></div>
-              <p className="text-neutro-600 font-medium animate-pulse">Sincronizando fases...</p>
+              <p className="text-neutro-600 font-medium animate-pulse">Sincronizando examenes...</p>
             </div>
           )}
 
           {areaId && nivelId && !isLoading && subFases.length === 0 && (
             <div className="text-center py-24 bg-white rounded-xl shadow-sm border border-neutro-100">
-              <p className="font-bold text-xl text-neutro-700 mb-2">No se encontraron fases</p>
+              <p className="font-bold text-xl text-neutro-700 mb-2">No se encontraron examenes</p>
               <p className="text-neutro-500 max-w-md mx-auto">
-                No hay sub-fases configuradas para este nivel. Contacte al administrador si cree que esto es un error.
+                No hay examenes configuradas para este nivel. Contacte al administrador si cree que esto es un error.
               </p>
             </div>
           )}
@@ -182,10 +182,10 @@ export function PaginaAdministrarSubFases() {
             <div className="animate-slide-up">
               <div className="flex items-center justify-between mb-6 px-1">
                 <h2 className="text-xl font-bold text-negro flex items-center gap-2">
-                  Fases del proceso
+                  Examenes en proceso
                 </h2>
                 <span className="text-xs font-bold text-principal-700 bg-principal-50 px-3 py-1.5 rounded-full border border-principal-200 uppercase tracking-wider">
-                  {subFases.length} Etapas Totales
+                  {subFases.length} Examenes Totales
                 </span>
               </div>
               
