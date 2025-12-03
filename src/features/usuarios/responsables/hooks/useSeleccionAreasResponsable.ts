@@ -1,4 +1,3 @@
-// src/features/usuarios/responsables/hooks/useSeleccionAreasResponsable.ts
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import isEqual from 'lodash.isequal';
@@ -76,8 +75,6 @@ export function useSeleccionAreasResponsable({
         idsAreasActualesSet.has(idPasada)
       );
 
-      // MODIFICADO: Permitimos cargar áreas aunque estén ocupadas (multi-responsable)
-      // Solo filtramos las que YA tiene este usuario asignadas.
       const idsComunesCargables = idsComunesHistoricos.filter(
         (id) => !preAsignadas.has(id)
       );
@@ -124,7 +121,6 @@ export function useSeleccionAreasResponsable({
 
   const handleSeleccionarArea = useCallback(
     (areaId: number, seleccionado: boolean) => {
-      // MODIFICADO: Eliminamos la restricción `ocupadasSet.has(areaId)`
       if (isReadOnly || preAsignadas.has(areaId)) return;
 
       const currentAreas = watchedAreas || [];

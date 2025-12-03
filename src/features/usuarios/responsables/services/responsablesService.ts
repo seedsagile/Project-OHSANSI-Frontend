@@ -23,7 +23,6 @@ type ApiErrorResponse = {
   errors?: Record<string, string[]>;
 };
 
-// --- TIPO PARA LA NUEVA API ---
 type ApiResponseAreasOcupadas = {
   message: string;
   data: Area[];
@@ -60,17 +59,11 @@ export const verificarCI = async (
   }
 };
 
-// --- FUNCIÓN AÑADIDA ---
-/**
- * Obtiene las áreas que YA TIENEN un responsable asignado
- * en la gestión actual.
- */
 export const obtenerAreasOcupadasActuales = async (): Promise<Area[]> => {
   try {
     const response = await apiClient.get<ApiResponseAreasOcupadas>(
       `/responsables/areas/ocupadas/gestion/actual`
     );
-    // Devolvemos solo el array de áreas
     return response.data?.data || [];
   } catch (error) {
     const axiosError = error as AxiosError<ApiErrorResponse>;
@@ -83,7 +76,6 @@ export const obtenerAreasOcupadasActuales = async (): Promise<Area[]> => {
     );
   }
 };
-// --- FIN DE FUNCIÓN AÑADIDA ---
 
 export const obtenerAreasActuales = async (): Promise<Area[]> => {
   try {
@@ -117,12 +109,6 @@ export const obtenerAreasActuales = async (): Promise<Area[]> => {
   }
 };
 
-/**
- * Registra un nuevo responsable de área (POST - Escenario 1) (API 1).
- * @param payload Datos completos del nuevo responsable (personales + áreas).
- * @returns La respuesta de la API tras la creación.
- * @throws {AxiosError} Si la API devuelve un error (409, 422, 500, etc.).
- */
 export const crearResponsable = async (
   payload: CrearResponsablePayload
 ): Promise<ResponsableCreado> => {
