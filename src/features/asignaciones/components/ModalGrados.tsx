@@ -169,6 +169,7 @@ export function ModalGrados({
           {!procesoIniciado && (
             <button
               onClick={handleSave}
+              disabled={gradosTemp.size === 0}
               className="flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-principal-500 text-blanco hover:bg-principal-600 transition-colors disabled:bg-principal-300 disabled:cursor-not-allowed"
             >
               <Save className="h-5 w-5" />
