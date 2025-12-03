@@ -3,91 +3,73 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { FileRejection } from 'react-dropzone';
-
-// Importar los tipos API específicos y los tipos internos
 import type {
   ApiErrorResponse,
   CompetidorCSV,
-  InscripcionPayload, // Este es el tipo renombrado InscripcionPayloadAPI
+  InscripcionPayload,
   FilaProcesada,
   ApiResponseAreas,
-  CompetidorIndividualPayloadAPI // Tipo específico mapeado para la API
-} from '../types/indexInscritos'; //
-import { importarCompetidoresAPI, obtenerAreasConNivelesAPI } from '../services/ApiInscripcion'; //
-import { mapCSVRenglonToPayload } from '../utils/apiMapper'; //
+  CompetidorIndividualPayloadAPI,
+  ImportacionResponse
+} from '../types/indexInscritos';
+import { importarCompetidoresAPI, obtenerAreasConNivelesAPI } from '../services/ApiInscripcion';
+import { mapCSVRenglonToPayload } from '../utils/apiMapper';
 import {
   headerMapping,
   normalizarEncabezado,
   type ProcesamientoCSVResult,
-  reverseHeaderMapping // Asegúrate que se exporte si se usa en TablaResultados
-} from '../utils/csvProcessor'; //
+  reverseHeaderMapping
+} from '../utils/csvProcessor';
 
-// Exportar reverseHeaderMapping si es necesario en otro lugar (ej. TablaResultados)
 export { reverseHeaderMapping };
 
-// Definición del estado del Modal
 export type ModalState = {
   isOpen: boolean;
   title: string;
-  message: string;
-  type: 'success' | 'error' | 'info' | 'confirmation';
+  message: string | React.ReactNode;
+  type: 'success' | 'error' | 'info' | 'confirmation' | 'warning'; 
   onConfirm?: () => void;
 };
 
-// Estado inicial del Modal
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
-// Fallback para la gestión actual si la API no la devuelve
-const GESTION_ACTUAL_FALLBACK = "2025"; // Considerar obtener esto de forma más dinámica
+const GESTION_ACTUAL_FALLBACK = "2025";
 
-/**
- * Hook personalizado para gestionar la lógica de importación de competidores desde CSV.
- */
 export function useImportarCompetidores() {
-  // --- Estados Locales ---
-  const [filas, setFilas] = useState<FilaProcesada[]>([]); // Datos procesados del CSV
-  const [isParsing, setIsParsing] = useState<boolean>(false); // Indicador de parseo del CSV
-  const [nombreArchivo, setNombreArchivo] = useState<string | null>(null); // Nombre del archivo cargado
-  const [modalState, setModalState] = useState<ModalState>(initialModalState); // Estado del modal de feedback/confirmación
-  const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]); // Definiciones de columnas para la tabla
-  const [invalidHeaders, setInvalidHeaders] = useState<string[]>([]); // Lista de cabeceras no válidas encontradas
-  const [gestionActual, setGestionActual] = useState<string | null>(null); // Gestión obtenida de la API o fallback
+  const [filas, setFilas] = useState<FilaProcesada[]>([]);
+  const [isParsing, setIsParsing] = useState<boolean>(false);
+  const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
+  const [modalState, setModalState] = useState<ModalState>(initialModalState);
+  const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]);
+  const [invalidHeaders, setInvalidHeaders] = useState<string[]>([]);
+  const [gestionActual, setGestionActual] = useState<string | null>(null);
 
-  // --- Refs ---
-  const workerRef = useRef<Worker | null>(null); // Referencia al Web Worker para procesar CSV
-  const modalTimerRef = useRef<number | undefined>(undefined); // Timer para cerrar modales automáticamente
+  const workerRef = useRef<Worker | null>(null);
+  const modalTimerRef = useRef<number | undefined>(undefined);
 
-  // --- Query para obtener Áreas y Niveles (y la Gestión Actual) ---
   const { data: apiResponseAreas, isLoading: isLoadingData } = useQuery({
-    queryKey: ['areasConNiveles'], // Clave de caché para React Query
-    queryFn: obtenerAreasConNivelesAPI, // Función que llama al servicio API
-    // Selecciona y transforma la respuesta de la API
+    queryKey: ['areasConNiveles'],
+    queryFn: obtenerAreasConNivelesAPI,
     select: (data: ApiResponseAreas) => ({
-        areasConNiveles: data.data || [], // Extrae el array de áreas
-        gestion: data.olimpiada_actual || GESTION_ACTUAL_FALLBACK // Extrae la gestión o usa el fallback
+        areasConNiveles: data.data || [],
+        gestion: data.olimpiada_actual || GESTION_ACTUAL_FALLBACK
     })
   });
 
-  // Memoizar los datos extraídos para optimización
   const areasConNiveles = useMemo(() => apiResponseAreas?.areasConNiveles || [], [apiResponseAreas]);
 
-  // Efecto para actualizar el estado de gestionActual cuando la query cargue o cambie
   useEffect(() => {
     if (apiResponseAreas?.gestion) {
         setGestionActual(apiResponseAreas.gestion);
-        console.log("Gestión actual establecida:", apiResponseAreas.gestion); // Log útil para depuración
-    } else if (!isLoadingData) { // Solo si ya terminó de cargar y no obtuvo gestión
-        console.warn("No se pudo obtener la gestión actual de la API, usando fallback:", GESTION_ACTUAL_FALLBACK);
-        setGestionActual(GESTION_ACTUAL_FALLBACK); // Asegurar que siempre haya una gestión
+    } else if (!isLoadingData) {
+        setGestionActual(GESTION_ACTUAL_FALLBACK);
     }
   }, [apiResponseAreas, isLoadingData]);
 
-  // --- Callbacks para manejo de estado ---
   const reset = useCallback(() => {
     setFilas([]);
     setNombreArchivo(null);
     setColumnasDinamicas([]);
     setInvalidHeaders([]);
-    // No reseteamos gestionActual aquí
   }, []);
 
   const closeModal = useCallback(() => {
@@ -95,252 +77,295 @@ export function useImportarCompetidores() {
     clearTimeout(modalTimerRef.current);
   }, []);
 
-  // --- Mutación para enviar datos a la API ---
-  const { mutate, isPending: isSubmitting } = useMutation< // Renombrar isPending a isSubmitting para claridad
-    { message: string }, // Tipo de respuesta en éxito
-    AxiosError<ApiErrorResponse>, // Tipo de error
-    { gestion: string; payload: InscripcionPayload } // Argumentos que recibe la función de mutación
+  const { mutate, isPending: isSubmitting } = useMutation<
+    ImportacionResponse,
+    AxiosError<ApiErrorResponse>,
+    { gestion: string; payload: InscripcionPayload }
   >({
-    mutationFn: ({ gestion, payload }) => importarCompetidoresAPI(gestion, payload), // Llama al servicio API
+    mutationFn: ({ gestion, payload }) => importarCompetidoresAPI(gestion, payload),
     onSuccess: (data) => {
-      // Mostrar modal de éxito
+      const { resumen } = data.data;
+      const duplicados = data.detalles_duplicados || [];
+      
+      let tipoModal: ModalState['type'] = 'success';
+      let tituloModal = '¡Proceso Finalizado!';
+      
+      if (resumen.total_registrados === 0 && resumen.total_duplicados > 0) {
+        tipoModal = 'warning';
+        tituloModal = 'Atención: No se registraron nuevos competidores';
+      } else if (resumen.total_errores > 0) {
+        tipoModal = 'info';
+      }
+
+      const mensajeResumen = (
+        <div className="text-left space-y-3">
+          <p className="font-medium text-center mb-2 text-lg">{data.message}</p>
+          
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm space-y-2 shadow-sm">
+            <div className="flex justify-between border-b border-gray-200 pb-2">
+              <span className="text-gray-600">Total Procesados:</span>
+              <span className="font-bold text-gray-900">{resumen.total_procesados}</span>
+            </div>
+            <div className="flex justify-between text-green-700 font-medium">
+              <span>✅ Registrados Exitosamente:</span>
+              <span className="font-bold">{resumen.total_registrados}</span>
+            </div>
+            {resumen.total_duplicados > 0 && (
+              <div className="flex justify-between text-amber-600 font-medium">
+                <span>⚠️ Duplicados (Omitidos):</span>
+                <span className="font-bold">{resumen.total_duplicados}</span>
+              </div>
+            )}
+            {resumen.total_errores > 0 && (
+              <div className="flex justify-between text-red-600 font-medium">
+                <span>❌ Errores de Servidor:</span>
+                <span className="font-bold">{resumen.total_errores}</span>
+              </div>
+            )}
+          </div>
+
+          {duplicados.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">
+                Detalle de Duplicados ({duplicados.length}):
+              </p>
+              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md bg-white scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-50">
+                <ul className="divide-y divide-gray-100">
+                  {duplicados.map((d, idx) => (
+                    <li key={idx} className="px-3 py-2 text-xs hover:bg-gray-50">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:gap-2">
+                        <span className="font-bold text-gray-700">{d.ci}</span>
+                        <span className="text-gray-600 truncate">{d.nombre_completo}</span>
+                      </div>
+                      <span className="text-[10px] text-gray-400 italic block mt-0.5">
+                        {d.motivo}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
       setModalState({
         isOpen: true,
-        type: 'success',
-        title: '¡Registro Exitoso!',
-        message: data.message || 'Competidores registrados correctamente.',
+        type: tipoModal,
+        title: tituloModal,
+        message: mensajeResumen,
       });
-      // Cerrar modal automáticamente después de un tiempo
-      modalTimerRef.current = window.setTimeout(closeModal, 1500);
-      reset(); // Limpiar la UI
+
+      if (resumen.total_registrados > 0 && resumen.total_errores === 0 && resumen.total_duplicados === 0) {
+        modalTimerRef.current = window.setTimeout(closeModal, 3000);
+      }
+      
+      reset();
     },
     onError: (error) => {
-        // --- Manejo de Errores Mejorado ---
         let errorMessage = 'Ocurrió un error inesperado al guardar.';
         const errorData = error.response?.data;
 
         if (errorData) {
-            // Intentar formatear errores específicos de validación del backend
             if (errorData.errors && typeof errorData.errors === 'object') {
                 const formattedErrors = Object.entries(errorData.errors)
                     .map(([key, messages]) => {
                         const match = key.match(/competidores\.(\d+)\.(.+)/);
-                        if (match && filas.length > 0) { // Asegurarse que filas tenga datos
+                        if (match && filas.length > 0) {
                             const index = parseInt(match[1], 10);
                             const fieldPath = match[2].replace(/\./g, ' -> ');
-                            const filaAfectada = filas[index]; // Asume correlación índice API y array local
-                            const ci = filaAfectada?.datos?.ci || `Fila CSV ${filaAfectada?.numeroDeFila || index + 1}`; // Usar CI o número de fila
-                            return `  - Competidor (${ci}), Campo '${fieldPath}': ${(messages as string[]).join(', ')}`;
+                            const filaAfectada = filas[index];
+                            const ci = filaAfectada?.datos?.ci || `Fila ${filaAfectada?.numeroDeFila || index + 1}`;
+                            return `• Competidor (${ci}), Campo '${fieldPath}': ${(messages as string[]).join(', ')}`;
                         }
-                        return `  - ${key}: ${(messages as string[]).join(', ')}`; // Fallback si no coincide el formato
+                        return `• ${key}: ${(messages as string[]).join(', ')}`;
                     })
                     .join('\n');
+                
                 if (formattedErrors) {
-                   errorMessage = "Se encontraron errores de validación:\n" + formattedErrors;
+                  errorMessage = "Se encontraron errores de validación en el servidor:\n" + formattedErrors;
                 } else if (errorData.message) {
-                   errorMessage = errorData.message; // Usar mensaje general si el formato de errors no es útil
+                  errorMessage = errorData.message;
                 }
 
             } else if (errorData.message) {
-                errorMessage = errorData.message; // Mensaje general del backend
-            } else if (errorData.error) {
-                errorMessage = errorData.error; // Otro campo posible para mensajes
+                errorMessage = errorData.message;
             }
         } else if (error.request) {
             errorMessage = 'No se recibió respuesta del servidor. Verifique la conexión.';
         } else {
-            errorMessage = error.message; // Error genérico (ej. configuración)
+            errorMessage = error.message;
         }
 
-        // Mostrar modal de error
         setModalState({
             isOpen: true,
             type: 'error',
-            title: '¡Ups! Algo Salió Mal',
+            title: 'Error en el Registro',
             message: errorMessage,
         });
-        // No hacer reset() aquí, para que el usuario vea los datos y posibles errores en tabla
     },
   });
 
-  // --- Efecto para inicializar y manejar el Web Worker ---
   useEffect(() => {
-    // Crear instancia del worker
     workerRef.current = new Worker(new URL('../utils/csv.worker.ts', import.meta.url), {
       type: 'module',
-    }); //
+    });
 
-    // Manejador de mensajes recibidos del worker
     workerRef.current.onmessage = (
       e: MessageEvent<{ type: string; payload: ProcesamientoCSVResult | string }>
     ) => {
       const { type, payload } = e.data;
-      setIsParsing(false); // Indicar que el parseo terminó
+      setIsParsing(false);
 
-      if (type === 'SUCCESS' && typeof payload !== 'string') { // Éxito en el worker
-        if (payload.errorGlobal) { // Error global detectado (ej. cabeceras)
+      if (type === 'SUCCESS' && typeof payload !== 'string') {
+        if (payload.errorGlobal) {
           setModalState({
             isOpen: true, type: 'error', title: 'Error Crítico en Archivo', message: payload.errorGlobal,
           });
           setNombreArchivo(null); setFilas([]); setColumnasDinamicas([]);
           setInvalidHeaders(payload.invalidHeaders || []);
-        } else { // Procesamiento exitoso
-          // Definir columna fija para el número de fila
+        } else {
           const numeroDeFilaColumn: ColumnDef<FilaProcesada> = {
-            id: 'numeroDeFila', // Añadir un ID único
+            id: 'numeroDeFila',
             header: 'Nº',
-            // Usar 'nro' del CSV si existe, sino el número de fila real
             cell: ({ row }) => row.original.datos.nro || row.original.numeroDeFila,
-            size: 60, // Tamaño sugerido para la columna N°
+            size: 60,
           };
 
-          // Crear columnas dinámicamente basadas en las cabeceras del CSV
           const columnasDesdeArchivo: ColumnDef<FilaProcesada>[] = payload.headers
-            .filter((header) => { // Excluir cabeceras de número de fila
+            .filter((header) => {
               const normalized = normalizarEncabezado(header);
               return normalized !== 'n' && normalized !== 'no' && normalized !== 'nro' && normalized !== 'numero';
             })
             .map((header) => {
               const normalizedHeader = normalizarEncabezado(header);
-              const key = headerMapping[normalizedHeader]; // Obtener clave interna si es válida
-              // Acceder a 'datos.key' si la cabecera es válida, sino a 'rawData.header'
+              const key = headerMapping[normalizedHeader];
               const accessorKey = key ? `datos.${key}` : `rawData.${header}`;
               return {
-                id: header, // Usar cabecera original como ID único
-                header, // Mostrar cabecera original
-                accessorKey, // Cómo obtener el dato de la fila
+                id: header,
+                header,
+                accessorKey,
               };
             });
 
-          // Actualizar estado con columnas y filas procesadas
           setColumnasDinamicas([numeroDeFilaColumn, ...columnasDesdeArchivo]);
           setFilas(payload.filasProcesadas);
-          setInvalidHeaders(payload.invalidHeaders || []); // Guardar cabeceras inválidas
+          setInvalidHeaders(payload.invalidHeaders || []);
         }
-      } else if (type === 'ERROR') { // Error dentro del worker
+      } else if (type === 'ERROR') {
         setModalState({ isOpen: true, type: 'error', title: 'Error de Procesamiento', message: payload as string });
-        reset(); // Limpiar UI en caso de error irrecuperable en worker
+        reset();
       }
     };
 
-    // Función de limpieza: terminar el worker al desmontar el componente
     return () => {
       workerRef.current?.terminate();
-      clearTimeout(modalTimerRef.current); // Limpiar timer del modal
+      clearTimeout(modalTimerRef.current);
     };
-  }, [reset]); // Dependencia 'reset'
+  }, [reset]);
 
-  // --- Callback para manejar el drop de archivos (react-dropzone) ---
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      reset(); // Limpiar estado previo
-      // Rechazar si no es CSV
+      reset();
       if (fileRejections.length > 0) {
-        setModalState({ isOpen: true, type: 'error', title: 'Archivo no válido', message: 'Formato no válido. Solo se permiten archivos .csv.' });
+        setModalState({ 
+            isOpen: true, 
+            type: 'error', 
+            title: 'Archivo no válido', 
+            message: 'Archivo no válido- Formato no válido. Sólo se permiten archivos .csv'
+        });
         return;
       }
       const file = acceptedFiles[0];
-      if (!file) return; // Si no hay archivo aceptado
+      if (!file) return;
 
-      setIsParsing(true); // Indicar inicio de parseo
-      setNombreArchivo(file.name); // Guardar nombre
+      setIsParsing(true);
+      setNombreArchivo(file.name);
 
-      // Leer contenido del archivo
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        // Enviar texto y datos de validación (áreas/niveles) al worker
         if (workerRef.current) {
-             workerRef.current.postMessage({
+            workerRef.current.postMessage({
                 csvText: text,
-                areasConNiveles: areasConNiveles, // Pasar datos actuales
-             });
+                areasConNiveles: areasConNiveles,
+            });
         } else {
-             console.error("Worker no inicializado al leer archivo.");
-             setIsParsing(false);
-             setModalState({ isOpen: true, type: 'error', title: 'Error Interno', message: 'El procesador de archivos no está listo.' });
+            console.error("Worker no inicializado.");
+            setIsParsing(false);
         }
       };
-      reader.onerror = () => { // Manejar error de lectura
+      reader.onerror = () => {
         setModalState({ isOpen: true, type: 'error', title: 'Error de Lectura', message: 'No se pudo leer el archivo.' });
         setIsParsing(false);
       };
-      reader.readAsText(file, 'UTF-8'); // Leer como UTF-8
+      reader.readAsText(file, 'UTF-8');
     },
-    [reset, areasConNiveles] // Depender de areasConNiveles para pasar datos actualizados
+    [reset, areasConNiveles]
   );
 
-  // --- Callback para manejar el guardado ---
   const handleSave = () => {
-    // Validaciones previas
-    if (!gestionActual) {
-       setModalState({ isOpen: true, type: 'error', title: 'Error Interno', message: 'No se pudo determinar la gestión actual.' }); return;
-    }
-    if (!nombreArchivo) {
-       setModalState({ isOpen: true, type: 'error', title: 'Error Interno', message: 'No se encontró el nombre del archivo.' }); return;
-    }
+    if (!gestionActual || !nombreArchivo) return;
+    
     if (invalidHeaders.length > 0) {
-      setModalState({ isOpen: true, type: 'error', title: 'Cabeceras no válidas', message: 'El archivo contiene columnas no reconocidas. Corríjalas antes de guardar.' });
+      setModalState({ isOpen: true, type: 'error', title: 'Cabeceras no válidas', message: 'El archivo contiene columnas no reconocidas.' });
       return;
     }
+    
     const filasValidas = filas.filter((f) => f.esValida);
-    if (filas.length === 0 || filasValidas.length === 0) {
-      setModalState({ isOpen: true, type: 'info', title: 'Sin datos', message: 'No hay filas válidas para guardar.' });
-       modalTimerRef.current = window.setTimeout(closeModal, 1500); // Cerrar modal info automáticamente
-      return;
-    }
-    // No permitir guardar si hay filas con errores
-    if (filasValidas.length !== filas.length) {
-      setModalState({ isOpen: true, type: 'error', title: 'Datos Inválidos', message: 'No se puede guardar porque hay filas con errores. Revise los datos marcados.' });
+    
+    if (filas.length === 0) {
+      setModalState({ isOpen: true, type: 'info', title: 'Sin datos', message: 'El archivo .csv no contiene datos de los competidores.' });
       return;
     }
 
-    // Mostrar modal de confirmación antes de enviar
+    if (filasValidas.length === 0) {
+      setModalState({ isOpen: true, type: 'info', title: 'Sin datos válidos', message: 'No hay filas válidas para guardar.' });
+      return;
+    }
+
+    if (filasValidas.length !== filas.length) {
+      setModalState({ isOpen: true, type: 'error', title: 'Datos Inválidos', message: 'No se puede guardar porque hay filas con errores.' });
+      return;
+    }
+
     setModalState({
       isOpen: true,
       type: 'confirmation',
-      title: 'Confirmar Registro',
-      message: `¿Está seguro de que desea registrar ${filasValidas.length} competidores para la gestión ${gestionActual}?`,
-      onConfirm: () => { // Función que se ejecuta si el usuario confirma
-        // Mapear filas válidas al payload esperado por la API
+      title: 'Confirmar registro',
+      message: `Confirmar registro- ¿Está seguro que desea registrar a ${filasValidas.length} competidores?`,
+      onConfirm: () => {
         const competidoresIndividuales = filasValidas.map((fila) =>
           mapCSVRenglonToPayload(fila.datos as CompetidorCSV) as CompetidorIndividualPayloadAPI
         );
-        // Crear el payload final
         const payload: InscripcionPayload = {
-          nombre_archivo: nombreArchivo, // Incluir nombre del archivo
+          nombre_archivo: nombreArchivo,
           competidores: competidoresIndividuales,
         };
-        // Ejecutar la mutación pasando la gestión y el payload
         mutate({ gestion: gestionActual, payload });
       },
     });
   };
 
-  // Memoizar si el archivo es válido para guardar (optimización)
   const esArchivoValido = useMemo(() =>
     filas.length > 0 && invalidHeaders.length === 0 && filas.every((f) => f.esValida),
     [filas, invalidHeaders]
   );
 
-  // --- Retorno del Hook ---
   return {
-    // Datos y Estado
     datos: filas,
     nombreArchivo,
-    esArchivoValido, // Indica si se puede presionar Guardar
-    isParsing, // CSV procesándose en worker
-    isLoadingData, // Cargando áreas/niveles iniciales
-    isSubmitting, // Enviando a la API
-    modalState, // Estado del modal
-    columnasDinamicas, // Columnas para la tabla
-    invalidHeaders, // Cabeceras inválidas encontradas
-    gestionActual, // Gestión detectada
-
-    // Callbacks y Acciones
-    onDrop, // Para react-dropzone
-    handleSave, // Para el botón Guardar
-    handleCancel: reset, // Para el botón Limpiar/Cancelar
-    closeModal, // Para cerrar el modal manualmente
+    esArchivoValido,
+    isParsing,
+    isLoadingData,
+    isSubmitting,
+    modalState,
+    columnasDinamicas,
+    invalidHeaders,
+    gestionActual,
+    onDrop,
+    handleSave,
+    handleCancel: reset,
+    closeModal,
   };
 }

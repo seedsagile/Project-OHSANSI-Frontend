@@ -129,7 +129,7 @@ export const SubFaseCard = ({
           ) : (
             <Play size={18} fill={puedeIniciar ? "currentColor" : "none"} />
           )}
-          <span>Iniciar Fase</span>
+          <span>Iniciar</span>
         </button>
 
         <button

@@ -20,6 +20,18 @@ type ApiErrorResponse = {
   errors?: Record<string, string[]>;
 };
 
+interface ApiResponseAreasNiveles {
+  areas: {
+    id_area: string | number;
+    area: string;
+    niveles: {
+      id_area_nivel: string | number;
+      id_nivel: string | number;
+      nombre: string;
+    }[];
+  }[];
+}
+
 const _handleMutationError = (error: unknown): Error => {
   const axiosError = error as AxiosError<ApiErrorResponse>;
   let errorMessage = 'No se pudo completar la operación.';
@@ -70,22 +82,22 @@ export const verificarCI = async (
 
 export const obtenerAreasYNivelesActuales = async (): Promise<AreaParaAsignar[]> => {
   try {
-    const response = await apiClient.get<any[]>(`/area-nivel/actuales`);
+    const response = await apiClient.get<ApiResponseAreasNiveles>(`/area-nivel/actuales`);
 
-    return (
-      response.data?.map(
-        (area): AreaParaAsignar => ({
-          id_area: Number(area.id_area),
-          area: area.area,
-          niveles: Array.isArray(area.niveles)
-            ? area.niveles.map((nivel: any) => ({
-                id_area_nivel: Number(nivel.id_area_nivel),
-                id_nivel: Number(nivel.id_nivel),
-                nombre: nivel.nombre,
-              }))
-            : [],
-        })
-      ) || []
+    const areasRaw = response.data?.areas || [];
+
+    return areasRaw.map(
+      (area): AreaParaAsignar => ({
+        id_area: Number(area.id_area),
+        area: area.area,
+        niveles: Array.isArray(area.niveles)
+          ? area.niveles.map((nivel) => ({
+              id_area_nivel: Number(nivel.id_area_nivel),
+              id_nivel: Number(nivel.id_nivel),
+              nombre: nivel.nombre,
+            }))
+          : [],
+      })
     );
   } catch (error) {
     const axiosError = error as AxiosError;
@@ -109,9 +121,7 @@ export const crearEvaluador = async (
     password: payload.password || 'password_predeterminado',
     id_olimpiada: payload.id_olimpiada ?? ID_OLIMPIADA_ACTUAL,
     area_nivel_ids: payload.area_nivel_ids,
-    // --- INICIO DE LA MODIFICACIÓN (CA 56) ---
     force_create_role: payload.force_create_role ?? false,
-    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   try {

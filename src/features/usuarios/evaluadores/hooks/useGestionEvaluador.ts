@@ -24,7 +24,6 @@ import type {
   CrearEvaluadorPayload,
   AsignarEvaluadorPayload,
 } from '../types';
-// Se importa 'EvaluadorFormData' desde 'validations' para corregir el error TS2305
 import type { EvaluadorFormData } from '../utils/validations';
 
 const initialModalState: ModalFeedbackState = {
@@ -34,7 +33,6 @@ const initialModalState: ModalFeedbackState = {
   type: 'info',
 };
 
-// Definir el tipo de error de backend
 type BackendValidationError = {
   errors?: Record<keyof EvaluadorFormData | string, string[]>;
   message?: string;
@@ -70,7 +68,6 @@ export function useGestionEvaluador() {
   >(undefined);
 
   const modalTimerRef = useRef<number | undefined>(undefined);
-  // Se declara una sola vez (corrige TS2451)
   const handleCancelarCallbackRef = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
@@ -92,11 +89,9 @@ export function useGestionEvaluador() {
     clearTimeout(modalTimerRef.current);
   }, [closeModalFeedback, navigate]);
 
-  // --- INICIO DE LA CORRECCIÓN LÓGICA (CA 57) ---
   const handleVerificationComplete = useCallback(
     (data: VerificacionUsuarioCompleta | null) => {
       
-      // Función interna para establecer el estado y avanzar
       const proceedToForm = (verificacionData: VerificacionUsuarioCompleta | null) => {
         if (verificacionData) {
           setDatosPersona(verificacionData.datosPersona);
@@ -106,7 +101,6 @@ export function useGestionEvaluador() {
           setRolesPorGestion(verificacionData.rolesPorGestion);
           setEsResponsableExistente(verificacionData.esResponsableExistente);
         } else {
-          // Escenario 1: Usuario Nuevo
           setDatosPersona(null);
           setIsAssignedToCurrentGestion(false);
           setInitialAsignaciones([]);
@@ -114,13 +108,10 @@ export function useGestionEvaluador() {
           setRolesPorGestion([]);
           setEsResponsableExistente(false);
         }
-        // Solo ahora se mueve al Paso 2
         setPasoActual('FORMULARIO_DATOS');
       };
 
-      // (CA 57) Comprobar la condición ANTES de cambiar de paso
       if (data && data.esResponsableExistente && !data.isAssignedToCurrentGestion) {
-        // Es Responsable. Mostrar modal de confirmación en el Paso 1.
         setModalFeedback({
           isOpen: true,
           type: 'confirmation',
@@ -128,24 +119,18 @@ export function useGestionEvaluador() {
           message:
             'Ya existe el usuario ingresado como responsable de área. ¿Desea registrarlo también como Evaluador?',
           onConfirm: () => {
-            // Usuario hizo clic en "Sí"
             closeModalFeedback();
-            proceedToForm(data); // Establecer estado y avanzar al Paso 2
+            proceedToForm(data);
           },
-          // Si el usuario hace clic en "No" o cierra el modal, se llamará a 'onClose',
-          // que está vinculado a 'closeModalFeedback'. Esto simplemente cierra el modal
-          // y mantiene al usuario en el Paso 1 (VERIFICACION_CI), lo cual es correcto.
           confirmText: 'Sí',
           cancelText: 'No',
         });
       } else {
-        // No es Responsable (o es un caso simple). Avanzar al Paso 2 directamente.
         proceedToForm(data);
       }
     },
-    [closeModalFeedback] // Dependencia del callback
+    [closeModalFeedback]
   );
-  // --- FIN DE LA CORRECCIÓN LÓGICA ---
 
   const handleVerificationError = useCallback((message: string) => {
     setModalFeedback({
@@ -154,9 +139,9 @@ export function useGestionEvaluador() {
       title: 'Error de Verificación',
       message:
         message ||
-        'No se pudo completar la verificación. Revise su conexión o intente más tarde.', // (CA 8)
+        'No se pudo completar la verificación. Revise su conexión o intente más tarde.',
     });
-    setPasoActual('VERIFICACION_CI'); // (CA 9)
+    setPasoActual('VERIFICACION_CI');
   }, []);
 
   const {
@@ -170,9 +155,6 @@ export function useGestionEvaluador() {
     handleVerificationError
   );
 
-  // --- INICIO CORRECCIÓN DE ORDEN (TS2448) ---
-  // Se inicializa 'useFormularioPrincipalEvaluador' ANTES de
-  // definir las funciones de mutación que dependen de él.
   const {
     formMethodsPrincipal,
     areasDisponiblesQuery,
@@ -188,13 +170,11 @@ export function useGestionEvaluador() {
     isReadOnly: !!datosPersona,
     initialAsignaciones: initialAsignaciones,
     gestionesPasadas: gestionesPasadas,
-    onFormSubmit: (formData) => handleFormSubmit(formData), // Se pasa 'handleFormSubmit'
+    onFormSubmit: (formData) => handleFormSubmit(formData),
   });
 
-  // Ahora 'formMethodsPrincipal' SÍ existe y puede ser usado.
   const handleFormSubmitSuccess = useCallback(
     (data: EvaluadorCreado | EvaluadorAsignado, esActualizacion: boolean) => {
-      // (CA 41 y 47)
       const message = esActualizacion
         ? data.message ||
           '¡Asignación exitosa! - El evaluador fue asignado a sus áreas y niveles.'
@@ -223,11 +203,10 @@ export function useGestionEvaluador() {
 
   const handleMutationError = useCallback(
     (error: AxiosError<BackendValidationError>) => {
-      let errorMessage = 'No se pudo guardar el evaluador. Por favor, intente de nuevo.'; // (CA 52)
+      let errorMessage = 'No se pudo guardar el evaluador. Por favor, intente de nuevo.';
       const errorData = error.response?.data;
-      const { setError, setFocus, getValues } = formMethodsPrincipal; // Ahora es seguro usar esto
+      const { setError, setFocus, getValues } = formMethodsPrincipal;
 
-      // (CA 56)
       if (
         error.response?.status === 409 &&
         errorData?.message?.includes('responsable')
@@ -249,7 +228,7 @@ export function useGestionEvaluador() {
               email: formData.correo,
               telefono: formData.celular,
               area_nivel_ids: formData.area_nivel_ids,
-              force_create_role: true, // <-- Forzar creación
+              force_create_role: true,
             };
             if (crearEvaluadorMutateRef.current) {
               crearEvaluadorMutateRef.current(payload);
@@ -261,7 +240,6 @@ export function useGestionEvaluador() {
         return;
       }
 
-      // (CA 30) y (Corrección TS2345)
       if (error.response?.status === 422 && errorData?.errors) {
         let firstFieldWithError: keyof EvaluadorFormData | null = null;
         Object.entries(errorData.errors).forEach(([field, messages]) => {
@@ -340,8 +318,7 @@ export function useGestionEvaluador() {
           );
           return;
         }
-        
-        // (Corrección TS7006)
+
         const idsParaEnviar = isAssignedToCurrentGestion
           ? formData.area_nivel_ids.filter(
               (id: number) => !initialAsignaciones.map((a) => a.id_area_nivel).includes(id)
@@ -354,7 +331,7 @@ export function useGestionEvaluador() {
         };
         asignarEvaluador({ ci: ciVerificado, payload });
       } else {
-        // Escenario 1
+
         const payload: CrearEvaluadorPayload = {
           nombre: formData.nombres,
           apellido: formData.apellidos,
@@ -362,7 +339,7 @@ export function useGestionEvaluador() {
           email: formData.correo,
           telefono: formData.celular,
           area_nivel_ids: formData.area_nivel_ids,
-          force_create_role: esResponsableExistente, // (CA 56/57)
+          force_create_role: esResponsableExistente,
         };
         crearEvaluador(payload);
       }
@@ -378,8 +355,7 @@ export function useGestionEvaluador() {
       handleMutationError,
     ]
   );
-  // --- FIN CORRECCIÓN 3 ---
-  
+
   const preAsignadasSet = useMemo(() => {
     if (!isAssignedToCurrentGestion || initialAsignaciones.length === 0) {
       return new Set<number>();
@@ -422,7 +398,7 @@ export function useGestionEvaluador() {
     closeModalFeedback,
   ]);
 
-  handleCancelarCallbackRef.current = handleCancelar; // Se asigna después de la definición
+  handleCancelarCallbackRef.current = handleCancelar;
 
   const isLoading =
     areasDisponiblesQuery.isLoading || isLoadingSeleccion;

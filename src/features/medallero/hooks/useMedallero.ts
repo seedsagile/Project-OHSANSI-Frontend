@@ -22,7 +22,7 @@ export const useMedallero = (userId: number | undefined) => {
       if (response.success && response.data.areas.length > 0) {
         // Ordenar áreas alfabéticamente (A-Z)
         const sortedAreas = response.data.areas.sort((a, b) => 
-          a.nombre.localeCompare(b.nombre)
+          a.nombre_area.localeCompare(b.nombre_area)
         );
         setAreas(sortedAreas);
       } else {

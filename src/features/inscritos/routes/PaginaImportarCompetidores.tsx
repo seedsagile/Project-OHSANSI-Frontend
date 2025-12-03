@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useImportarCompetidores } from '../hooks/useRegistrarCompetidores';
-import { Modal } from '../../../components/ui/Modal';
+import { Modal1 } from '../../../components/ui/Modal1';
 import { Save, X, LoaderCircle } from 'lucide-react';
 import { DropzoneArea } from '../components/DropzoneArea';
 import { TablaResultados } from '../components/TablaResultados';
@@ -133,16 +133,17 @@ export function PaginaImportarCompetidores() {
         </main>
       </div>
 
-      <Modal
+      <Modal1
         isOpen={modalState.isOpen}
         onClose={closeModal}
         onConfirm={modalState.onConfirm}
         title={modalState.title}
         type={modalState.type}
         loading={isSubmitting}
+        understoodText="Entendido"
       >
         {modalState.message}
-      </Modal>
+      </Modal1>
     </>
   );
 }

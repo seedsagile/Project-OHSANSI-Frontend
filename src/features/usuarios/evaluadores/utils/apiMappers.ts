@@ -40,10 +40,7 @@ export const mapApiUsuarioToVerificacionCompleta = (
 
   let isAssignedToCurrentGestion = false;
   let initialAsignaciones: ApiAsignacionDetalle[] = [];
-  
-  // --- INICIO DE LA MODIFICACIÓN (CA 57) ---
-  let esResponsableExistente = false; 
-  // --- FIN DE LA MODIFICACIÓN ---
+  let esResponsableExistente = false;
 
   const gestionActual = apiData.roles_por_gestion.find(
     (g) => g.gestion === GESTION_ACTUAL_ANIO
@@ -53,14 +50,10 @@ export const mapApiUsuarioToVerificacionCompleta = (
     const rolEvaluador = gestionActual.roles.find(
       (r) => r.rol === 'Evaluador'
     );
-
-    // --- INICIO DE LA MODIFICACIÓN (CA 57) ---
-    // Verificamos si el rol "Responsable Area" existe en la gestión actual
     const rolResponsable = gestionActual.roles.find(
-      (r) => r.rol === 'Responsable Area' // Asegúrate que este string coincida con el de la API
+      (r) => r.rol === 'Responsable Area' 
     );
     esResponsableExistente = !!rolResponsable;
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const detalles = rolEvaluador?.detalles as ApiRolDetalle | undefined;
 
@@ -80,7 +73,7 @@ export const mapApiUsuarioToVerificacionCompleta = (
     initialAsignaciones,
     gestionesPasadas,
     rolesPorGestion: apiData.roles_por_gestion,
-    esResponsableExistente, // <-- CAMBIO APLICADO: Devolvemos el nuevo estado
+    esResponsableExistente,
   };
 };
 

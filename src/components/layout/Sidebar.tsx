@@ -197,8 +197,9 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Configuraciones
           </p>
-          <NavLink to="/configuracionFasesGlobales" icon={<SettingsIcon /> } label="Configuración de Fases Globales" onClick={() => setOpen(false)} />
-          <NavLink to="/configuracionSubFases" icon={<SettingsIcon /> } label="Administrar Sub-Fases" onClick={() => setOpen(false)} />
+          <NavLink to="/configuracionFasesGlobales" icon={<SettingsIcon /> } label="Configuración de Actividades de Fases" onClick={() => setOpen(false)} />
+          <NavLink to="/configuracionSubFases" icon={<SettingsIcon /> } label="Examenes" onClick={() => setOpen(false)} />
+          <NavLink to="/configuracionCronograma" icon={<SettingsIcon /> } label="Configuracion de Cronograma" onClick={() => setOpen(false)} />
           <p className="px-3 mt-3 mb-1 text-xs font-semibold text-principal-300 uppercase tracking-wider">
             Reportes
           </p>

@@ -34,13 +34,7 @@ export function useVerificacionResponsable(
     },
     onError: (error) => {
       setCiVerificado('');
-      // 🔽 --- CORRECCIÓN DEL BUG ---
-      // Se elimina la lógica de fallback '||'.
-      // Ahora simplemente pasamos el 'error.message' (que puede ser '')
-      // al hook 'useGestionResponsable', que es el encargado
-      // de interpretarlo y mostrar el mensaje genérico del CA #8.
       onError(error.message);
-      // 🔽 --- FIN DE CORRECCIÓN ---
     },
   });
 

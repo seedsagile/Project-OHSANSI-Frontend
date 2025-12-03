@@ -2,39 +2,30 @@ import { useState, useCallback } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { reporteService } from '../services/reporteService';
 import type { MetaPaginacion } from '../types';
-const REGEX_SOLO_NUMEROS = /^[0-9]+$/;
-const REGEX_SOLO_ESPECIALES = /^[^a-zA-Z0-9]+$/;
 
 export function useReporteCambios() {
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
   const [selectedNiveles, setSelectedNiveles] = useState<Set<number>>(new Set());
-  const [terminoBusqueda, setTerminoBusqueda] = useState<string>('');
-  const [isShowingAll, setIsShowingAll] = useState<boolean>(false);
+  const [isShowingAll, setIsShowingAll] = useState<boolean>(true);
+  
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
 
-  const searchTermToUse = 
-    REGEX_SOLO_NUMEROS.test(terminoBusqueda) || REGEX_SOLO_ESPECIALES.test(terminoBusqueda)
-      ? '' 
-      : terminoBusqueda;
-
   const {
     data: response,
     isLoading,
     isError,
-    error,
     isPlaceholderData,
     refetch,
   } = useQuery({
     queryKey: [
       'reporteHistorial',
       isShowingAll ? 'ALL' : selectedAreaId,
-      isShowingAll ? 'ALL' : Array.from(selectedNiveles).sort().join(','),
+      isShowingAll ? 'ALL' : Array.from(selectedNiveles).sort((a, b) => a - b).join(','),
       pagination.pageIndex,
-      pagination.pageSize,
-      searchTermToUse
+      pagination.pageSize
     ],
     
     queryFn: () => {
@@ -44,43 +35,41 @@ export function useReporteCambios() {
         return reporteService.obtenerHistorial(null, [], apiPage, pagination.pageSize);
       }
       
-      return selectedAreaId
-        ? reporteService.obtenerHistorial(
+      if (selectedAreaId || selectedNiveles.size > 0) {
+        return reporteService.obtenerHistorial(
             selectedAreaId, 
             Array.from(selectedNiveles), 
             apiPage, 
             pagination.pageSize
-          )
-        : Promise.resolve({ 
-            success: true, 
-            data: [], 
-            meta: { total: 0, page: 1, limit: 10, totalPages: 0 } 
-          });
+          );
+      }
+
+      return Promise.resolve({ 
+        success: true, data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } 
+      });
     },
 
     placeholderData: keepPreviousData,
-    
-    enabled: isShowingAll || (!!selectedAreaId && selectedNiveles.size > 0),
-    
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 1, 
     retry: 1,
     refetchOnWindowFocus: false,
+    enabled: isShowingAll || !!selectedAreaId || selectedNiveles.size > 0,
   });
 
   const historialData = response?.data || [];
-  const metaData: MetaPaginacion = response?.meta || { 
-    total: 0, page: 1, limit: 10, totalPages: 0 
-  };
+  const metaData: MetaPaginacion = response?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
+  const rowCount = metaData.total;
 
-  const _resetPagination = () => setPagination(prev => ({ ...prev, pageIndex: 0 }));
-
+  const _resetPagination = useCallback(() => setPagination(prev => ({ ...prev, pageIndex: 0 })), []);
+  
   const handleAreaChange = useCallback((areaId: number) => {
-    setIsShowingAll(false);
+    if (selectedAreaId !== areaId) {
+      setIsShowingAll(false);
+      setSelectedNiveles(new Set());
+    }
     setSelectedAreaId(areaId);
-    setSelectedNiveles(new Set());
-    setTerminoBusqueda('');
     _resetPagination();
-  }, []);
+  }, [selectedAreaId, _resetPagination]);
 
   const handleToggleNivel = useCallback((nivelId: number) => {
     setIsShowingAll(false);
@@ -91,7 +80,7 @@ export function useReporteCambios() {
       return next;
     });
     _resetPagination();
-  }, []);
+  }, [_resetPagination]);
 
   const handleToggleAllNiveles = useCallback((idsNivelesDisponibles: number[]) => {
     setIsShowingAll(false);
@@ -100,49 +89,34 @@ export function useReporteCambios() {
       return allSelected ? new Set() : new Set(idsNivelesDisponibles);
     });
     _resetPagination();
-  }, []);
+  }, [_resetPagination]);
 
   const handleMostrarTodo = useCallback(() => {
     setIsShowingAll(true);
     setSelectedAreaId(null);
     setSelectedNiveles(new Set());
-    setTerminoBusqueda('');
     _resetPagination();
-  }, []);
+  }, [_resetPagination]);
 
-  const handleSearch = useCallback((term: string) => {
-    setTerminoBusqueda(term);
-    _resetPagination();
-  }, []);
+  const isFilteredModeActive = !!selectedAreaId || selectedNiveles.size > 0;
 
   return {
-    // Estados para UI
     selectedAreaId,
     selectedNiveles,
-    terminoBusqueda,
     isShowingAll,
-    
-    // Datos y Paginación para la Tabla
     historialData,
     metaData,
     pagination,
-    setPagination, // Función para que la tabla controle el cambio de pág
-
-    // Estados de Carga
-    isLoading: isLoading || (isPlaceholderData && !isError),
+    setPagination,
+    rowCount,
+    isLoading: isLoading || (isPlaceholderData && !isError), 
     isError,
-    error,
-
-    // Acciones
     handleAreaChange,
     handleToggleNivel,
     handleToggleAllNiveles,
     handleMostrarTodo,
-    handleSearch,
-    refetch,
-
-    // Helpers
+    refetch: () => refetch(),
     hasResultados: historialData.length > 0,
-    hasFiltrosRequeridos: isShowingAll || (!!selectedAreaId && selectedNiveles.size > 0),
+    hasFiltrosRequeridos: isFilteredModeActive,
   };
 }

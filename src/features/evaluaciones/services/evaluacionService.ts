@@ -10,29 +10,105 @@ import type {
   FinalizarEvaluacionResponse,
   BloqueoCompetidorRequest,
   BloqueoCompetidorResponse,
+  Area,
 } from '../types/evaluacion.types';
+
+// 📌 Tipo para la respuesta RAW del backend
+interface BackendAreaNivelItem {
+  id_evaluador_an: number;
+  id_area_nivel: number;
+  area: string;
+  nivel: string;
+  gestion: string;
+}
+
+interface BackendAreasNivelesResponse {
+  success: boolean;
+  message: string;
+  data: BackendAreaNivelItem[];
+}
 
 class EvaluacionService {
   /**
    * Obtiene las áreas y niveles asignados a un evaluador
+   * 🔄 Transforma la respuesta del backend al formato esperado por el frontend
    */
   async getAreasNivelesByEvaluador(idEvaluador: number): Promise<EvaluadorAreasNiveles> {
-    const response = await apiClient.get<EvaluadorAreasNiveles>(
+    const response = await apiClient.get<BackendAreasNivelesResponse>(
       `/evaluadores/${idEvaluador}/areas-niveles`
     );
-    return response.data;
+
+    // 🔄 Transformar la respuesta del backend
+    const areasMap = new Map<string, Area>();
+
+    response.data.data.forEach((item) => {
+      const areaKey = item.area;
+
+      if (!areasMap.has(areaKey)) {
+        // Crear nueva área
+        areasMap.set(areaKey, {
+          id_area: item.id_area_nivel, // Usar id_area_nivel como id_area temporal
+          nombre_area: item.area,
+          niveles: [],
+        });
+      }
+
+      // Agregar nivel al área
+      const area = areasMap.get(areaKey)!;
+      
+      // Verificar si el nivel ya existe para evitar duplicados
+      const nivelExiste = area.niveles.some(n => 
+        n.nombre === item.nivel && n.id_nivel === item.id_area_nivel
+      );
+
+      if (!nivelExiste) {
+        area.niveles.push({
+          id_nivel: item.id_area_nivel, // Usar id_area_nivel como id_nivel
+          nombre: item.nivel,
+        });
+      }
+    });
+
+    // Convertir Map a Array y ordenar
+    const areas = Array.from(areasMap.values()).sort((a, b) => 
+      a.nombre_area.localeCompare(b.nombre_area)
+    );
+
+    // Ordenar niveles dentro de cada área
+    areas.forEach(area => {
+      area.niveles.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    });
+
+    console.log('🔄 Datos transformados:', {
+      backend_raw: response.data.data,
+      frontend_transformed: areas,
+    });
+
+    return {
+      evaluador: {
+        id_usuario: idEvaluador,
+        nombre_completo: 'Evaluador', // El backend no devuelve nombre
+        id_evaluador: idEvaluador, // Usar el mismo ID
+      },
+      areas,
+    };
   }
 
   /**
    * Obtiene los competidores por área y nivel
+   * ⚠️ IMPORTANTE: Ahora recibe id_area_nivel en lugar de idArea e idNivel separados
    */
   async getCompetidoresByAreaNivel(
-    idArea: number,
-    idNivel: number
+    idAreaNivel: number,
+    _idNivel?: number // Parámetro opcional para mantener compatibilidad
   ): Promise<CompetidoresResponse> {
+    // 🔍 Si tenemos el id_area_nivel, usarlo directamente
+    // De lo contrario, necesitarías implementar lógica para obtenerlo
+    
     const response = await apiClient.get<CompetidoresResponse>(
-      `/competidores/area/${idArea}/nivel/${idNivel}`
+      `/competidores/area-nivel/${idAreaNivel}`
     );
+    
     return response.data;
   }
 

@@ -33,17 +33,18 @@ export function PaginaRegistrarEvaluacion() {
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
   const [competidorAEditar, setCompetidorAEditar] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
-  const [competidorEnModal, setCompetidorEnModal] = useState<string | null>(null); // CI del competidor en modal
+  const [competidorEnModal, setCompetidorEnModal] = useState<string | null>(null);
 
   const isEvaluador = user?.role === 'evaluador';
 
-  // ➡️ CORRECCIÓN: Ordenar áreas por nombre
-  const areasOrdenadas = [...areas].sort((a, b) => 
-    a.nombre_area.localeCompare(b.nombre_area)
-  );
+  // Validar que areas sea un array antes de ordenar
+  const areasOrdenadas = Array.isArray(areas) 
+    ? [...areas].sort((a, b) => a.nombre_area.localeCompare(b.nombre_area))
+    : [];
 
-  const areaSeleccionada = areas.find(a => a.id_area.toString() === selectedArea);
-  const nivelSeleccionado = areaSeleccionada?.niveles.find(
+  const areaSeleccionada = areasOrdenadas.find(a => a.id_area.toString() === selectedArea);
+  
+  const nivelSeleccionado = areaSeleccionada?.niveles?.find(
     n => n.id_nivel.toString() === selectedNivel
   );
 
@@ -51,7 +52,6 @@ export function PaginaRegistrarEvaluacion() {
   useEffect(() => {
     let resultados = competidores;
 
-    // Si no hay búsqueda válida, mostrar todos
     if (esBusquedaValida(searchTerm)) {
       resultados = competidores.filter((c) => {
         const nombreCompleto = formatearNombreCompleto(c.nombre, c.apellido).toLowerCase();
@@ -59,7 +59,6 @@ export function PaginaRegistrarEvaluacion() {
       });
     }
 
-    // Si hay un competidor en modal, bloquearlo visualmente
     if (competidorEnModal) {
       resultados = resultados.map(c => 
         c.ci === competidorEnModal 
@@ -71,25 +70,28 @@ export function PaginaRegistrarEvaluacion() {
     setFilteredCompetidores(resultados);
   }, [competidores, searchTerm, competidorEnModal]);
 
-  // Auto-cargar competidores cuando se selecciona área y nivel
+  // Auto-cargar competidores cuando se selecciona nivel
+  // 🔄 CAMBIO CLAVE: Usar el id_nivel que ahora contiene id_area_nivel
   useEffect(() => {
-    if (selectedArea && selectedNivel) {
-      cargarCompetidores(parseInt(selectedArea), parseInt(selectedNivel));
+    if (selectedNivel) {
+      const idAreaNivel = parseInt(selectedNivel);
+      console.log('🔍 Cargando competidores con id_area_nivel:', idAreaNivel);
+      cargarCompetidores(idAreaNivel);
     } else {
       setFilteredCompetidores([]);
     }
-  }, [selectedArea, selectedNivel]);
+  }, [selectedNivel]);
 
   // Polling silencioso en segundo plano (cada 1 segundo)
   useEffect(() => {
-    if (!selectedArea || !selectedNivel) return;
+    if (!selectedNivel) return;
 
     const interval = setInterval(() => {
       actualizarEstadosCompetidores();
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [selectedArea, selectedNivel, actualizarEstadosCompetidores]);
+  }, [selectedNivel, actualizarEstadosCompetidores]);
 
   // Manejar clic en calificar
   const handleCalificar = async (competidor: Competidor) => {
@@ -109,10 +111,8 @@ export function PaginaRegistrarEvaluacion() {
       }
     }
 
-    // Bloquear visualmente sin cambiar estado real
     setCompetidorEnModal(competidor.ci);
     
-    // Iniciar evaluación en el backend
     const resultado = await iniciarEvaluacion(competidor);
 
     if (resultado.success) {
@@ -121,17 +121,13 @@ export function PaginaRegistrarEvaluacion() {
         setSelectedCompetidor(competidorActualizado);
       }
     } else {
-      // Si falla, desbloquear
       setCompetidorEnModal(null);
     }
   };
 
-  // Manejar clic en editar nota (al hacer clic en la nota)
+  // Manejar clic en editar nota
   const handleEditarNota = async (competidor: Competidor) => {
-    // Bloquear visualmente
     setCompetidorEnModal(competidor.ci);
-    
-    // Abrir modal de edición directamente
     setCompetidorAEditar(competidor);
   };
 
@@ -173,7 +169,7 @@ export function PaginaRegistrarEvaluacion() {
     );
   }
 
-  if (areas.length === 0) {
+  if (areasOrdenadas.length === 0) {
     return (
       <div className="p-6">
         <h1 className="text-4xl font-bold mb-8 text-gray-900">Registrar Evaluación</h1>
@@ -202,7 +198,7 @@ export function PaginaRegistrarEvaluacion() {
         <h2 className="text-lg font-semibold mb-4">Selección de Área y Nivel</h2>
 
         <AreaNivelSelector
-          areas={areasOrdenadas} // ⬅️ Usar áreas ordenadas
+          areas={areasOrdenadas}
           selectedArea={selectedArea}
           selectedNivel={selectedNivel}
           onAreaChange={setSelectedArea}
@@ -213,7 +209,7 @@ export function PaginaRegistrarEvaluacion() {
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          disabled={!selectedArea || !selectedNivel || loadingCompetidores}
+          disabled={!selectedNivel || loadingCompetidores}
         />
       </div>
 
@@ -223,10 +219,9 @@ export function PaginaRegistrarEvaluacion() {
         onEditarNota={handleEditarNota}
         loading={loadingCompetidores}
         esBusqueda={esBusquedaValida(searchTerm)}
-        areaSeleccionada={!!selectedArea && !!selectedNivel}
+        areaSeleccionada={!!selectedNivel}
       />
 
-      {/* Modal de Calificación (nueva evaluación) */}
       {selectedCompetidor && (
         <CalificacionModal
           competidor={selectedCompetidor}
@@ -237,7 +232,6 @@ export function PaginaRegistrarEvaluacion() {
         />
       )}
 
-      {/* Modal de Edición (modificar nota existente) */}
       {competidorAEditar && (
         <ModificarNotaModal
           competidor={competidorAEditar}

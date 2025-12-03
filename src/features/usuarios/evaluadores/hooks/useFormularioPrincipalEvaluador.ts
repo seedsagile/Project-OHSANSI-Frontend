@@ -31,9 +31,6 @@ interface UseFormularioPrincipalProps {
   onFormSubmit: (data: EvaluadorFormData) => void;
 }
 
-// --- TIPO "BackendValidationError" ELIMINADO ---
-// Ya no es necesario en este archivo, la lógica de mutación está en el hook padre.
-
 export function useFormularioPrincipalEvaluador({
   ciVerificado,
   datosPersonaVerificada,
@@ -62,7 +59,6 @@ export function useFormularioPrincipalEvaluador({
         .array(z.number())
         .superRefine((selectedAreaNivelIDs, ctx) => {
           if (isAssignedToCurrentGestion) {
-            // Escenario 3: Debe seleccionar al menos una *nueva*
             const tieneNuevasAsignaciones = selectedAreaNivelIDs.some(
               (id) => !initialAreaNivelIds.has(id)
             );
@@ -73,7 +69,6 @@ export function useFormularioPrincipalEvaluador({
               });
             }
           } else {
-            // Escenario 1 y 2: Debe seleccionar al menos una
             if (selectedAreaNivelIDs.length === 0) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -103,8 +98,6 @@ export function useFormularioPrincipalEvaluador({
     enabled: true,
   });
 
-  // Este useEffect es seguro y no causará bucles.
-  // Resetea el formulario solo cuando el usuario verificado cambia (un evento discreto).
   useEffect(() => {
     const resetValuesBase: EvaluadorFormInput = {
       ...defaultFormValues,
@@ -113,7 +106,6 @@ export function useFormularioPrincipalEvaluador({
     };
 
     if (isAssignedToCurrentGestion) {
-      // Escenario 3
       resetPrincipalForm({
         nombres: datosPersonaVerificada?.Nombres || '',
         apellidos: datosPersonaVerificada?.Apellidos || '',
@@ -123,7 +115,6 @@ export function useFormularioPrincipalEvaluador({
         area_nivel_ids: Array.from(initialAreaNivelIds),
       });
     } else if (datosPersonaVerificada) {
-      // Escenario 2
       resetPrincipalForm({
         nombres: datosPersonaVerificada?.Nombres || '',
         apellidos: datosPersonaVerificada?.Apellidos || '',
@@ -133,11 +124,9 @@ export function useFormularioPrincipalEvaluador({
         area_nivel_ids: [],
       });
     } else if (ciVerificado) {
-      // Escenario 1
       resetPrincipalForm(resetValuesBase);
       setTimeout(() => primerInputRef.current?.focus(), 100);
     } else {
-      // Estado inicial
       resetPrincipalForm(defaultFormValues);
     }
 
@@ -151,8 +140,6 @@ export function useFormularioPrincipalEvaluador({
     resetPrincipalForm,
   ]);
 
-  // Esta función es segura, solo depende de 'gestionesPasadas'
-  // que es una prop estable cargada una vez.
   const handleGestionSelect = useCallback(
     (selectedValue: string | number | null) => {
       const id =
@@ -174,7 +161,6 @@ export function useFormularioPrincipalEvaluador({
     [gestionesPasadas]
   );
 
-  // El submit ahora solo pasa los datos al hook padre
   const onSubmitFormularioPrincipal: SubmitHandler<EvaluadorFormData> =
     useCallback(
       (formData) => {

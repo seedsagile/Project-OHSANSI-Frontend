@@ -1,17 +1,5 @@
-import { MOCK_HISTORIAL } from '../utils/mocks';
-import type { HistorialCambio } from '../types';
-export interface MetaPaginacion {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface ReporteResponse {
-  success: boolean;
-  data: HistorialCambio[];
-  meta: MetaPaginacion;
-}
+import apiClient from '@/api/ApiPhp';
+import type { ReporteResponse, AreaFiltro, NivelFiltro, HistorialCambio } from '../types';
 
 export const reporteService = {
 
@@ -21,71 +9,50 @@ export const reporteService = {
     page: number = 1,
     limit: number = 10
   ): Promise<ReporteResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    let resultados = [...MOCK_HISTORIAL];
-    if (areaId !== null) {
-      if (!nivelesIds || nivelesIds.length === 0) {
-        return {
-          success: true,
-          data: [],
-          meta: { total: 0, page, limit, totalPages: 0 }
-        };
-      }
-
-      resultados = resultados.filter((item) => {
-        const perteneceAlArea = item.id_area === areaId;
-        const perteneceANivel = nivelesIds.includes(item.id_nivel);
-        return perteneceAlArea && perteneceANivel;
-      });
-    }
-
-    const total = resultados.length;
-    const totalPages = Math.ceil(total / limit);
-
-    const safePage = totalPages > 0 ? Math.max(1, Math.min(page, totalPages)) : 1;
     
-    const startIndex = (safePage - 1) * limit;
-    const endIndex = startIndex + limit;
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    
+    if (areaId) params.append('id_area', areaId.toString());
+    if (nivelesIds.length > 0) params.append('ids_niveles', nivelesIds.join(','));
 
-    const dataPaginada = resultados.slice(startIndex, endIndex);
-
-    return {
-      success: true,
-      data: dataPaginada,
-      meta: {
-        total,
-        page: safePage,
-        limit,
-        totalPages
-      }
-    };
-
-    /* ---------------------------------------------------------
-     * CÓDIGO PARA PRODUCCIÓN (INTEGRACIÓN REAL):
-     * Cuando el backend esté listo, descomenta esto y borra lo anterior.
-     * ---------------------------------------------------------
-     * try {
-     * const params = {
-     * id_area: areaId,
-     * // Si es null, no enviamos ids_niveles o enviamos string vacío según requiera el back
-     * ids_niveles: areaId ? nivelesIds.join(',') : undefined, 
-     * page,
-     * limit
-     * };
-     * * const response = await apiClient.get<ReporteResponse>(
-     * '/reportes/historial-calificaciones', 
-     * { params }
-     * );
-     * * return response.data;
-     * } catch (error) {
-     * console.error('[reporteService] Error API:', error);
-     * throw error; 
-     * }
-     */
+    const { data } = await apiClient.get<ReporteResponse>('/reportes/historial-calificaciones', { params });
+    return data;
   },
 
-  async exportarExcelBackend(areaId: number, nivelesIds: number[]): Promise<Blob> {
-    console.info('[reporteService] Solicitando exportación backend...', { areaId, nivelesIds });
-    throw new Error("Método no implementado. Usando exportación local.");
+  async obtenerTodoParaExportar(
+    areaId: number | null,
+    nivelesIds: number[]
+  ): Promise<HistorialCambio[]> {
+    const params = new URLSearchParams();
+    
+    params.append('page', '1');
+    params.append('limit', '10000'); 
+    
+    if (areaId) params.append('id_area', areaId.toString());
+    if (nivelesIds.length > 0) params.append('ids_niveles', nivelesIds.join(','));
+    
+    try {
+      const { data } = await apiClient.get<ReporteResponse>('/reportes/historial-calificaciones', { params });
+      return data.data;
+    } catch (error) {
+      console.error("Error al obtener datos para exportación:", error);
+      throw error;
+    }
+  },
+  
+  async obtenerAreasFiltro(): Promise<AreaFiltro[]> {
+    try {
+      const { data } = await apiClient.get<{ data: AreaFiltro[] }>('/reportes/areas');
+      return data.data || [];
+    } catch { return []; }
+  },
+
+  async obtenerNivelesPorAreaFiltro(idArea: number): Promise<NivelFiltro[]> {
+    try {
+      const { data } = await apiClient.get<{ data: NivelFiltro[] }>(`/reportes/areas/${idArea}/niveles`);
+      return data.data || [];
+    } catch { return []; }
   }
 };

@@ -81,7 +81,7 @@ export type CrearEvaluadorPayload = {
   password?: string;
   id_olimpiada?: number;
   area_nivel_ids: number[];
-  force_create_role?: boolean; // <-- CAMBIO APLICADO
+  force_create_role?: boolean;
 };
 
 export type AsignarEvaluadorPayload = {
@@ -109,7 +109,7 @@ export type ModalFeedbackState = {
   isOpen: boolean;
   title: string;
   message: string;
-  type: 'success' | 'error' | 'info' | 'confirmation'; // <-- Añadido 'confirmation'
+  type: 'success' | 'error' | 'info' | 'confirmation';
   onConfirm?: () => void;
   confirmText?: string;
   cancelText?: string;

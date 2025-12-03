@@ -1,3 +1,5 @@
+// src/features/medallero/components/PaginaMedallero.tsx
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save } from 'lucide-react';
@@ -6,7 +8,7 @@ import { useMedallero } from '../hooks/useMedallero';
 import { AreaSelector } from '../components/AreaSelector';
 import { MedalTable } from '../components/MedalTable';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { SuccessModal } from '../components/SuccessModal';
+import { ModalConfirmacion } from '../components/ModalConfirmacion';
 
 export const PaginaMedallero = () => {
   const navigate = useNavigate();
@@ -39,10 +41,15 @@ export const PaginaMedallero = () => {
     const success = await saveMedallero();
     if (success) {
       setShowSuccess(true);
+      // Cerrar modal automáticamente después de 3 segundos
       setTimeout(() => {
         setShowSuccess(false);
       }, 3000);
     }
+  };
+
+  const handleCloseSuccess = () => {
+    setShowSuccess(false);
   };
 
   if (loading && areas.length === 0) {
@@ -118,23 +125,17 @@ export const PaginaMedallero = () => {
         </div>
       </div>
 
-      <SuccessModal isOpen={showSuccess} areaName={selectedArea?.nombre || ''} />
-
-      <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-      `}</style>
+      <ModalConfirmacion
+        isOpen={showSuccess}
+        onClose={handleCloseSuccess}
+        title="Registro Exitoso"
+        type="success"
+      >
+        <p>
+          Se parametrizó el medallero para los niveles del área{' '}
+          <strong>{selectedArea?.nombre_area}</strong>.
+        </p>
+      </ModalConfirmacion>
     </>
   );
 };

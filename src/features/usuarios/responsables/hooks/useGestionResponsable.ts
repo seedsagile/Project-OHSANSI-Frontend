@@ -39,11 +39,6 @@ type BackendValidationError = {
   message?: string;
 };
 
-/**
- * Hook orquestador principal para toda la lógica de la página
- * "Registrar Responsable". Gestiona el estado del flujo (pasos),
- * los modales, y centraliza las mutaciones de API y el manejo de errores.
- */
 export function useGestionResponsable() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -73,8 +68,6 @@ export function useGestionResponsable() {
     | undefined
   >(undefined);
 
-  // Hook de efecto para limpiar el timer si el componente se desmonta.
-  // Seguro: Array de dependencias vacío, solo se ejecuta en mount/unmount.
   useEffect(() => {
     return () => clearTimeout(modalTimerRef.current);
   }, []);
@@ -84,10 +77,6 @@ export function useGestionResponsable() {
     clearTimeout(modalTimerRef.current);
   }, []);
 
-  /**
-   * Función helper interna para cargar los datos del usuario en el estado
-   * y avanzar al Paso 2 (Formulario).
-   */
   const proceedToFormulario = useCallback(
     (data: VerificacionUsuarioCompleta | null) => {
       if (data) {
@@ -104,21 +93,14 @@ export function useGestionResponsable() {
         setGestionesPasadas([]);
         setRolesPorGestion([]);
       }
-      // Solo ahora avanzamos al Paso 2
       setPasoActual('FORMULARIO_DATOS');
     },
-    [] // Las funciones `set` de useState son estables
+    []
   );
 
-  /**
-   * Callback que se ejecuta cuando la verificación de CI (Paso 1) es exitosa.
-   * Comprueba el escenario de conflicto (Evaluador) ANTES de cambiar de paso.
-   */
   const handleVerificationComplete = useCallback(
     (data: VerificacionUsuarioCompleta | null) => {
-      // Comprobar el escenario de conflicto (Evaluador existente)
       if (data && data.esEvaluadorExistente && !data.esResponsableExistente) {
-        // ¡Conflicto! Mostrar modal DE CONFIRMACIÓN mientras aún estamos en Paso 1.
         setModalFeedback({
           isOpen: true,
           type: 'confirmation',
@@ -126,26 +108,19 @@ export function useGestionResponsable() {
           message:
             'Ya existe el usuario ingresado como evaluador. ¿Desea registrarlo también como Responsable de área?',
           onConfirm: () => {
-            // Usuario hizo clic en "Sí"
             closeModalFeedback();
-            proceedToFormulario(data); // Cargar datos y AHORA SÍ avanzar al Paso 2
+            proceedToFormulario(data);
           },
-          // Si el usuario presiona "No", se llama a closeModalFeedback y nunca
-          // se avanza al Paso 2, permaneciendo en "VERIFICACION_CI".
           confirmText: 'Sí',
           cancelText: 'No',
         });
       } else {
-        // No hay conflicto, proceder directamente al Paso 2.
         proceedToFormulario(data);
       }
     },
     [closeModalFeedback, proceedToFormulario]
   );
 
-  /**
-   * Callback para manejar errores de red o 500 durante la verificación.
-   */
   const handleVerificationError = useCallback((message: string) => {
     let finalMessage: string;
     const isNetworkError =
@@ -167,7 +142,6 @@ export function useGestionResponsable() {
     setPasoActual('VERIFICACION_CI');
   }, []);
 
-  // Hook para el Paso 1
   const {
     isVerifying,
     formMethodsVerificacion,
@@ -179,10 +153,9 @@ export function useGestionResponsable() {
     handleVerificationError
   );
 
-  // Hook para el formulario principal (Paso 2)
   const {
     formMethodsPrincipal,
-    areasDisponiblesQuery, // Query para TODAS las áreas (.../2025/areas)
+    areasDisponiblesQuery,
     handleGestionSelect,
     gestionPasadaSeleccionadaId,
     gestionPasadaSeleccionadaAnio,
@@ -198,7 +171,6 @@ export function useGestionResponsable() {
     pasoActual: pasoActual,
   });
 
-  // Query para las áreas OCUPADAS (.../areas/ocupadas)
   const areasOcupadasQuery = useQuery<Area[], Error>({
     queryKey: ['areasOcupadasActuales'],
     queryFn: responsableService.obtenerAreasOcupadasActuales,
@@ -207,20 +179,16 @@ export function useGestionResponsable() {
     enabled: pasoActual === 'FORMULARIO_DATOS',
   });
 
-  // Set memoizado de IDs de áreas ocupadas
   const ocupadasSet = useMemo(() => {
     return new Set(areasOcupadasQuery.data?.map((a) => a.id_area) || []);
   }, [areasOcupadasQuery.data]);
 
-  // Set memoizado de IDs de áreas pre-asignadas (Escenario 3)
-  // DECLARADO AQUÍ para solucionar el error TS2448
   const preAsignadasSet = useMemo(() => {
     return isAssignedToCurrentGestion
       ? new Set(initialAreasReadOnly)
       : new Set<number>();
   }, [isAssignedToCurrentGestion, initialAreasReadOnly]);
 
-  // Hook para cancelar y volver al inicio
   const handleCancelar = useCallback(() => {
     resetVerification();
     resetFormularioPrincipal(true);
@@ -239,16 +207,14 @@ export function useGestionResponsable() {
     closeModalFeedback,
   ]);
 
-  // Ref para el callback de cancelar (para usar en el timer del modal de éxito)
   handleCancelarCallbackRef.current = handleCancelar;
 
   const finalizeSuccessAction = useCallback(() => {
     if (handleCancelarCallbackRef.current) {
       handleCancelarCallbackRef.current();
     }
-  }, [handleCancelar]); // handleCancelar es estable
+  }, [handleCancelar]);
 
-  // Callback para éxito al guardar
   const handleFormSubmitSuccess = useCallback(
     (data: ResponsableCreado | ResponsableAsignado, esActualizacion: boolean) => {
       const message =
@@ -264,7 +230,6 @@ export function useGestionResponsable() {
         message,
       });
 
-      // Invalidar cachés de TanStack Query
       queryClient.invalidateQueries({ queryKey: ['responsables'] });
       if (ciVerificado) {
         queryClient.invalidateQueries({
@@ -280,7 +245,6 @@ export function useGestionResponsable() {
         }
       }
       
-      // SOLUCIÓN AL BUG DE CACHÉ: Invalidar AMBAS queries de áreas
       queryClient.invalidateQueries({ queryKey: ['areasActuales'] });
       queryClient.invalidateQueries({ queryKey: ['areasOcupadasActuales'] });
 
@@ -290,7 +254,6 @@ export function useGestionResponsable() {
     [queryClient, ciVerificado, finalizeSuccessAction]
   );
 
-  // Callback para error al guardar
   const handleMutationError = useCallback(
     (error: AxiosError<BackendValidationError>) => {
       let errorMessage =
@@ -298,7 +261,6 @@ export function useGestionResponsable() {
       const errorData = error.response?.data;
       const { setError, setFocus, getValues } = formMethodsPrincipal;
 
-      // Conflicto 409 (Usuario es Evaluador)
       if (
         error.response?.status === 409 &&
         errorData?.message?.includes('evaluador')
@@ -332,7 +294,6 @@ export function useGestionResponsable() {
         return;
       }
 
-      // Error de validación 422
       if (error.response?.status === 422 && errorData?.errors) {
         let firstFieldWithError: keyof ResponsableFormData | null = null;
         Object.entries(errorData.errors).forEach(([field, messages]) => {
@@ -369,7 +330,6 @@ export function useGestionResponsable() {
     [formMethodsPrincipal, closeModalFeedback]
   );
 
-  // Mutación para Escenario 1 (Crear)
   const { mutate: crearResponsable, isPending: isCreatingResponsable } =
     useMutation<
       ResponsableCreado,
@@ -383,7 +343,6 @@ export function useGestionResponsable() {
       onError: handleMutationError,
     });
 
-  // Mutación para Escenarios 2 y 3 (Asignar)
   const { mutate: asignarResponsable, isPending: isAsigningResponsable } =
     useMutation<
       ResponsableAsignado,
@@ -398,19 +357,15 @@ export function useGestionResponsable() {
       onError: handleMutationError,
     });
 
-  // useEffect para actualizar la ref de la mutación.
-  // Seguro: 'crearResponsable' es una función estable de useMutation.
   useEffect(() => {
     crearResponsableMutateRef.current = crearResponsable;
   }, [crearResponsable]);
 
   const isSaving = isCreatingResponsable || isAsigningResponsable;
 
-  // Lógica de Submit principal
   const handleFormSubmit = useCallback(
     (formData: ResponsableFormData) => {
       if (datosPersona) {
-        // Escenario 2 o 3
         if (!ciVerificado) {
           handleMutationError(
             new AxiosError('Error: No se encontró el CI para asignar.') as any
@@ -418,25 +373,12 @@ export function useGestionResponsable() {
           return;
         }
         
-        // SOLUCIÓN AL BUG DE GESTIÓN PASADA:
-        // Filtramos las áreas que ya están ocupadas por OTROS ANTES de enviar.
-        const areasParaEnviar = formData.areas.filter(id => {
-          const esPreAsignada = preAsignadasSet.has(id);
-          const esOcupadaPorOtro = ocupadasSet.has(id);
-          
-          // Se envía si:
-          // 1. Es pre-asignada (ya era de este responsable)
-          // 2. NO es pre-asignada Y NO está ocupada por otro (es una nueva área válida)
-          return esPreAsignada || (!esPreAsignada && !esOcupadaPorOtro);
-        });
-
         const payload: AsignarResponsablePayload = {
           id_olimpiada: ID_OLIMPIADA_ACTUAL,
-          areas: areasParaEnviar, // Usamos la lista filtrada
+          areas: formData.areas,
         };
         asignarResponsable({ ci: ciVerificado, payload });
       } else {
-        // Escenario 1 (Usuario Nuevo)
         const payload: CrearResponsablePayload = {
           nombre: formData.nombres,
           apellido: formData.apellidos,
@@ -455,13 +397,9 @@ export function useGestionResponsable() {
       asignarResponsable,
       crearResponsable,
       handleMutationError,
-      preAsignadasSet,
-      ocupadasSet,
     ]
   );
 
-  // useEffect para el manejo de errores (¡SEGURO!)
-  // No hay riesgo de bucle.
   useEffect(() => {
     if (
       (areasDisponiblesQuery.isError || areasOcupadasQuery.isError) &&
@@ -481,7 +419,6 @@ export function useGestionResponsable() {
     pasoActual,
   ]);
 
-  // Hook para la lógica de selección de áreas (checkboxes)
   const {
     handleSeleccionarArea,
     handleToggleSeleccionarTodas,
@@ -492,7 +429,7 @@ export function useGestionResponsable() {
     gestionPasadaSeleccionadaAnio,
     isReadOnly: false,
     preAsignadas: preAsignadasSet,
-    ocupadasSet: ocupadasSet, // Le pasamos las áreas ocupadas
+    ocupadasSet: ocupadasSet,
     areasDisponiblesQuery,
     rolesPorGestion: rolesPorGestion,
   });
@@ -510,7 +447,6 @@ export function useGestionResponsable() {
     ? 'CARGANDO_GUARDADO'
     : pasoActual;
 
-  // Retorno de todo el estado y funciones para la UI
   return {
     pasoActual: pasoActualUI,
     datosPersona,

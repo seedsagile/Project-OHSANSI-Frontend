@@ -6,14 +6,13 @@ import { FormularioDatosResponsable } from '../components/FormularioDatosRespons
 import { TablaAsignacionAreas } from '../components/TablaAsignacionAreas';
 import { Modal1 } from '@/components/ui/Modal1';
 import { Alert } from '@/components/ui/Alert';
-// import { useMemo } from 'react'; // <--- ELIMINADO (Corrige error TS6133)
 
 export function PaginaRegistrarResponsable() {
   const {
     pasoActual,
     formMethodsVerificacion,
     formMethodsPrincipal,
-    areasDisponibles, // <-- Esta es la lista COMPLETA (7 áreas)
+    areasDisponibles,
     areasDisponiblesQuery,
     gestionesPasadas,
     datosPersona,
@@ -31,12 +30,11 @@ export function PaginaRegistrarResponsable() {
     gestionPasadaSeleccionadaId,
     isReadOnly: isDataFormReadOnly,
     isAssignedToCurrentGestion,
-    // initialAreasReadOnly, // <--- ELIMINADO (Corrige error TS6133)
     handleToggleSeleccionarTodas,
     areasLoadedFromPast,
     finalizeSuccessAction,
     preAsignadasSet,
-    ocupadasSet, // <-- Este es el Set de áreas OCUPADAS (6 áreas)
+    ocupadasSet,
     areasOcupadasQuery,
   } = useGestionResponsable();
 
@@ -51,7 +49,6 @@ export function PaginaRegistrarResponsable() {
     pasoActual.startsWith('FORMULARIO') || pasoActual === 'CARGANDO_GUARDADO';
   const pasoVerificacionCompletado = !pasoVerificacionActivo;
 
-  // Comprueba si CUALQUIERA de las queries de datos falló
   const falloCargaAreas =
     areasDisponiblesQuery.isError || areasOcupadasQuery.isError;
 
@@ -63,7 +60,6 @@ export function PaginaRegistrarResponsable() {
     <>
       <div className="bg-neutro-100 min-h-screen p-4 md:p-8 font-display flex justify-center items-start pt-12 md:pt-16">
         <main className="bg-blanco w-full max-w-4xl rounded-xl shadow-sombra-3 p-6 md:p-8 relative transition-all duration-300 ease-in-out">
-          {/* --- Overlay de Carga --- */}
           {(isProcessing || mostrarCargaPagina) && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col justify-center items-center z-20 rounded-xl transition-opacity duration-200">
               <LoaderCircle className="animate-spin h-12 w-12 text-principal-500" />
@@ -81,7 +77,6 @@ export function PaginaRegistrarResponsable() {
             </h1>
           </header>
 
-          {/* --- Stepper Visual --- */}
           <div className="flex justify-center items-center space-x-2 sm:space-x-4 mb-8 text-sm sm:text-base">
             <span
               className={`flex items-center gap-2 font-semibold ${
@@ -134,7 +129,6 @@ export function PaginaRegistrarResponsable() {
             {pasoFormularioActivo && (
               <FormProvider {...formMethodsPrincipal}>
                 <form onSubmit={onSubmitFormularioPrincipal} noValidate>
-                  {/* CA: Alerta Escenario 2 */}
                   {datosPersona?.Id_usuario &&
                     !isAssignedToCurrentGestion &&
                     !falloCargaAreas && (
@@ -171,14 +165,7 @@ export function PaginaRegistrarResponsable() {
                   />
 
                   <hr className="my-8 border-t border-neutro-200" />
-
-                  {/*
-                   * --- CORRECCIÓN CLAVE DEL BUG ---
-                   * Aquí nos aseguramos de pasar `areasDisponibles` (la lista completa de 7)
-                   * a la prop `areas` de la tabla, para que renderice todas las filas.
-                   * `ocupadasSet` (el set de 6) se pasa a `areasOcupadas` para que la tabla
-                   * sepa cuáles bloquear.
-                   */}
+                  
                   <TablaAsignacionAreas
                     areas={areasDisponibles}
                     onSeleccionarArea={handleSeleccionarArea}

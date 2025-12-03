@@ -12,7 +12,7 @@ export interface MedalData {
 
 export interface Area {
   id_area: number;
-  nombre: string;
+  nombre_area: string;
   gestion: string;
 }
 
