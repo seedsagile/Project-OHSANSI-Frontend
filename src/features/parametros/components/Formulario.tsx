@@ -97,8 +97,8 @@ export const Formulario: React.FC<FormularioProps> = ({
       const area_niveles = nivelesSeleccionados.flatMap((nivel) =>
         (nivel.areaNiveles ?? []).map((id_area_nivel) => ({
           id_area_nivel,
-          nota_min_clasif: parseFloat(data.notaMinima.replace(',', '.')),
-          cantidad_max_apro: forceNull ? null : parseInt(data.cantidadMaxCompetidores!, 10),
+          nota_min_aprobacion: parseFloat(data.notaMinima.replace(',', '.')),
+          cantidad_maxima: forceNull ? null : parseInt(data.cantidadMaxCompetidores!, 10),
         }))
       );
 

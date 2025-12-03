@@ -62,6 +62,7 @@ export const obtenerNivelesPorAreaAPI = async (id_area: number): Promise<Nivel[]
     return niveles;
   } catch (error) {
     console.error('Error al obtener niveles por área:', error);
+
     throw error;
   }
 };
