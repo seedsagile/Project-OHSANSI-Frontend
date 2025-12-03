@@ -118,7 +118,7 @@ export const PaginaMedallero = () => {
         </div>
       </div>
 
-      <SuccessModal isOpen={showSuccess} areaName={selectedArea?.nombre || ''} />
+      <SuccessModal isOpen={showSuccess} areaName={selectedArea?.nombre_area || ''} />
 
       <style>{`
         @keyframes fade-in {
