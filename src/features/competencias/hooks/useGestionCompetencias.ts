@@ -25,48 +25,43 @@ export function useGestionCompetencias() {
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
   const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(initialConfirmationState);
 
-  // Debug: Ver si el userId existe
   useEffect(() => {
-    console.log('🔍 [useGestionCompetencias] userId:', userId);
+    console.log(' [useGestionCompetencias] userId:', userId);
   }, [userId]);
 
-  // Obtener áreas con niveles para el usuario logueado
   const { data: areasConNiveles, isLoading: isLoadingAreas, error } = useQuery({
     queryKey: ['areasConNiveles', userId],
     queryFn: async () => {
-      console.log('📡 [useGestionCompetencias] Llamando API con userId:', userId);
+      console.log(' [useGestionCompetencias] Llamando API con userId:', userId);
       const result = await competenciasService.obtenerAreasConNiveles(userId!);
-      console.log('✅ [useGestionCompetencias] Datos recibidos:', result);
+      console.log('[useGestionCompetencias] Datos recibidos:', result);
       return result;
     },
     enabled: !!userId,
   });
 
-  // Debug: Ver si hay error en la query
   useEffect(() => {
     if (error) {
       console.error('❌ [useGestionCompetencias] Error en query:', error);
     }
   }, [error]);
 
-  // Debug: Ver los datos de áreas cuando cambian
+
   useEffect(() => {
     if (areasConNiveles) {
-      console.log('📋 [useGestionCompetencias] Áreas disponibles:', areasConNiveles.areas);
-      console.log('📊 [useGestionCompetencias] Total de áreas:', areasConNiveles.areas?.length || 0);
+      console.log(' [useGestionCompetencias] Áreas disponibles:', areasConNiveles.areas);
+      console.log(' [useGestionCompetencias] Total de áreas:', areasConNiveles.areas?.length || 0);
     }
   }, [areasConNiveles]);
 
-  // Mutation para crear competencia
   const { mutate, isPending: isCreating } = useMutation({
     mutationFn: competenciasService.crearCompetencia,
     onSuccess: (data) => {
-      console.log('✅ [useGestionCompetencias] Competencia creada exitosamente:', data);
+      console.log(' [useGestionCompetencias] Competencia creada exitosamente:', data);
       
-      // Guardar el ID de la competencia en localStorage
       if (data.id_competencia) {
         localStorage.setItem('ultima_competencia_id', data.id_competencia.toString());
-        console.log('💾 [useGestionCompetencias] ID guardado en localStorage:', data.id_competencia);
+        console.log(' [useGestionCompetencias] ID guardado en localStorage:', data.id_competencia);
       }
       
       queryClient.invalidateQueries({ queryKey: ['competencias'] });
@@ -97,17 +92,17 @@ export function useGestionCompetencias() {
   });
 
   const handleGuardarCompetencia = (data: CrearCompetenciaData) => {
-    console.log('💾 [useGestionCompetencias] Guardando competencia:', data);
+    console.log(' [useGestionCompetencias] Guardando competencia:', data);
     mutate(data);
   };
 
   const abrirModalCrear = () => {
-    console.log('🚪 [useGestionCompetencias] Abriendo modal');
+    console.log(' [useGestionCompetencias] Abriendo modal');
     setModalCrearAbierto(true);
   };
 
   const cerrarModalCrear = () => {
-    console.log('🚪 [useGestionCompetencias] Cerrando modal');
+    console.log(' [useGestionCompetencias] Cerrando modal');
     setModalCrearAbierto(false);
   };
 

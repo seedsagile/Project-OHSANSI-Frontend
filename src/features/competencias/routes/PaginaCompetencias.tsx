@@ -1,4 +1,4 @@
-// src/features/competencias/routes/PaginaCompetencias.tsx
+
 import { useMemo } from 'react';
 import {
   useReactTable,
@@ -58,7 +58,6 @@ export function PaginaCompetencias() {
     []
   );
 
-  // Convertir las áreas con niveles a filas de tabla
   const filasTabla = useMemo(() => {
     if (!areasConNiveles || areasConNiveles.length === 0) {
       return [];

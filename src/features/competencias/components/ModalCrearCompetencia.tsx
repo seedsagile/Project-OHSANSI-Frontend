@@ -1,4 +1,4 @@
-// src/features/competencias/components/ModalCrearCompetencia.tsx
+
 import { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
 import type { CrearCompetenciaData, AreaConNiveles } from '../types';
@@ -22,24 +22,22 @@ export const ModalCrearCompetencia = ({
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [error, setError] = useState('');
-
-  // Debug: Ver qué datos llegan al modal
   useEffect(() => {
     if (isOpen) {
-      console.log('🔍 [Modal] Modal abierto');
-      console.log('📋 [Modal] areasConNiveles recibidos:', areasConNiveles);
-      console.log('📊 [Modal] Total de áreas:', areasConNiveles?.length || 0);
+      console.log(' [Modal] Modal abierto');
+      console.log(' [Modal] areasConNiveles recibidos:', areasConNiveles);
+      console.log('[Modal] Total de áreas:', areasConNiveles?.length || 0);
       
       if (areasConNiveles && areasConNiveles.length > 0) {
         areasConNiveles.forEach((area, index) => {
-          console.log(`🎯 [Modal] Área ${index}:`, {
+          console.log(` [Modal] Área ${index}:`, {
             id_area: area.id_area,
             nombre: area.area,
             niveles: area.niveles?.length || 0
           });
           
           area.niveles?.forEach((nivel, nivelIndex) => {
-            console.log(`  📌 [Modal] Nivel ${nivelIndex}:`, {
+            console.log(`  [Modal] Nivel ${nivelIndex}:`, {
               id_area_nivel: nivel.id_area_nivel,
               id_nivel: nivel.id_nivel,
               nombre: nivel.nombre
@@ -47,7 +45,7 @@ export const ModalCrearCompetencia = ({
           });
         });
       } else {
-        console.warn('⚠️ [Modal] No hay áreas disponibles');
+        console.warn(' [Modal] No hay áreas disponibles');
       }
     }
   }, [isOpen, areasConNiveles]);
@@ -57,7 +55,7 @@ export const ModalCrearCompetencia = ({
   const handleGuardar = () => {
     setError('');
 
-    console.log('💾 [Modal] Intentando guardar:', {
+    console.log('[Modal] Intentando guardar:', {
       idAreaNivel,
       fechaInicio,
       fechaFin
@@ -131,7 +129,7 @@ export const ModalCrearCompetencia = ({
         {!areasConNiveles || areasConNiveles.length === 0 ? (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-sm text-yellow-700">
-              ⚠️ No hay áreas disponibles. Verifica que el usuario tenga áreas asignadas.
+               No hay áreas disponibles. Verifica que el usuario tenga áreas asignadas.
             </p>
           </div>
         ) : null}
@@ -146,7 +144,7 @@ export const ModalCrearCompetencia = ({
               value={idAreaNivel}
               onChange={(e) => {
                 const valor = Number(e.target.value);
-                console.log('🔄 [Modal] Seleccionado id_area_nivel:', valor);
+                console.log(' [Modal] Seleccionado id_area_nivel:', valor);
                 setIdAreaNivel(valor);
                 setError('');
               }}
