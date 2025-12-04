@@ -25,19 +25,16 @@ export function useGestionExamenes() {
     useState<ConfirmationModalState>(initialConfirmationState);
   const [idCompetencia, setIdCompetencia] = useState<number | null>(null);
 
-  // Obtener el id_competencia del localStorage cuando se monta el componente
   useEffect(() => {
     const competenciaId = localStorage.getItem('ultima_competencia_id');
     if (competenciaId) {
       const id = Number(competenciaId);
       setIdCompetencia(id);
-      console.log('🔍 [useGestionExamenes] ID de competencia obtenido:', id);
+      console.log(' [useGestionExamenes] ID de competencia obtenido:', id);
     } else {
-      console.warn('⚠️ [useGestionExamenes] No se encontró ID de competencia');
+      console.warn(' [useGestionExamenes] No se encontró ID de competencia');
     }
   }, []);
-
-  // Obtener exámenes de la competencia
   const {
     data: examenes,
     isLoading: isLoadingExamenes,
@@ -47,23 +44,18 @@ export function useGestionExamenes() {
     queryFn: () => examenesService.obtenerExamenesPorCompetencia(idCompetencia!),
     enabled: !!idCompetencia,
   });
-
-  // Debug: Ver si hay error en la query
   useEffect(() => {
     if (error) {
-      console.error('❌ [useGestionExamenes] Error en query:', error);
+      console.error('[useGestionExamenes] Error en query:', error);
     }
   }, [error]);
 
-  // Debug: Ver los exámenes cuando cambian
   useEffect(() => {
     if (examenes) {
-      console.log('📋 [useGestionExamenes] Exámenes obtenidos:', examenes);
-      console.log('📊 [useGestionExamenes] Total de exámenes:', examenes?.length || 0);
+      console.log('[useGestionExamenes] Exámenes obtenidos:', examenes);
+      console.log('[useGestionExamenes] Total de exámenes:', examenes?.length || 0);
     }
   }, [examenes]);
-
-  // Mutation para crear examen
   const { mutate, isPending: isCreating } = useMutation({
     mutationFn: (data: CrearExamenData) => {
       if (!idCompetencia) {
@@ -72,7 +64,7 @@ export function useGestionExamenes() {
       return examenesService.crearExamen(idCompetencia, data);
     },
     onSuccess: (data) => {
-      console.log('✅ [useGestionExamenes] Examen creado exitosamente:', data);
+      console.log('[useGestionExamenes] Examen creado exitosamente:', data);
       queryClient.invalidateQueries({ queryKey: ['examenes', idCompetencia] });
       setModalCrearAbierto(false);
 
@@ -90,7 +82,7 @@ export function useGestionExamenes() {
       }, 250);
     },
     onError: (error: Error) => {
-      console.error('❌ [useGestionExamenes] Error al crear:', error);
+      console.error('[useGestionExamenes] Error al crear:', error);
       setConfirmationModal({
         isOpen: true,
         title: 'Error',
@@ -101,17 +93,17 @@ export function useGestionExamenes() {
   });
 
   const handleGuardarExamen = (data: CrearExamenData) => {
-    console.log('💾 [useGestionExamenes] Guardando examen:', data);
+    console.log('[useGestionExamenes] Guardando examen:', data);
     mutate(data);
   };
 
   const abrirModalCrear = () => {
-    console.log('🚪 [useGestionExamenes] Abriendo modal');
+    console.log('[useGestionExamenes] Abriendo modal');
     setModalCrearAbierto(true);
   };
 
   const cerrarModalCrear = () => {
-    console.log('🚪 [useGestionExamenes] Cerrando modal');
+    console.log('[useGestionExamenes] Cerrando modal');
     setModalCrearAbierto(false);
   };
 

@@ -1,4 +1,3 @@
-// src/features/examenes/routes/PaginaExamenes.tsx
 import { useMemo } from 'react';
 import {
   useReactTable,
@@ -63,8 +62,6 @@ export function PaginaExamenes() {
     ],
     []
   );
-
-  // Convertir exámenes a filas de tabla
   const filasTabla = useMemo(() => {
     if (!examenes || examenes.length === 0) {
       return [];
