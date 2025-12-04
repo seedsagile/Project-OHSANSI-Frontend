@@ -175,6 +175,18 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             Evaluación y Clasificación
           </p>
           <NavLink
+            to="/competencias"
+            icon={<UserCheck />}
+            label="Registrar competencia"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/examenes"
+            icon={<UserCheck />}
+            label="examenes"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
             to="/evaluaciones"
             icon={<UserCheck />}
             label="Registrar Evaluación"

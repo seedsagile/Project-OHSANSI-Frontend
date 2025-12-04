@@ -19,6 +19,9 @@ import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/P
 import { PaginaAdministrarSubFases } from '@/features/subfases/routes/PaginaAdministrarSubFases';
 import { PaginaReporteCambios } from '../features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios';
 import { PaginaCronograma } from '@/features/cronograma/routes/PaginaCronograma';
+import { PaginaCompetencias } from '../features/competencias/routes/PaginaCompetencias';
+//import { PaginaExamenes } from '../features/examenes/routes/PaginaExamenes';
+
 
 const LoginRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -50,6 +53,8 @@ const router = createBrowserRouter([
       { path: 'niveles', element: <PaginaNiveles /> },
       { path: 'asignarNiveles', element: <PaginaAsignarNiveles /> },
       { path: 'listaCompetidores', element: <ListaCompetidores /> },
+      { path: 'competencias', element: <PaginaCompetencias /> },
+      //{ path: 'examenes', element: <PaginaExamenes /> },
       { path: 'evaluaciones', element: <PaginaRegistrarEvaluacion /> },
       { path: 'parametrosCalificaciones', element: <Parametro /> },
       { path: 'medallero', element: <PaginaMedallero /> },
