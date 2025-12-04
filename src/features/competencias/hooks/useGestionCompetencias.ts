@@ -60,8 +60,15 @@ export function useGestionCompetencias() {
   // Mutation para crear competencia
   const { mutate, isPending: isCreating } = useMutation({
     mutationFn: competenciasService.crearCompetencia,
-    onSuccess: () => {
-      console.log('✅ [useGestionCompetencias] Competencia creada exitosamente');
+    onSuccess: (data) => {
+      console.log('✅ [useGestionCompetencias] Competencia creada exitosamente:', data);
+      
+      // Guardar el ID de la competencia en localStorage
+      if (data.id_competencia) {
+        localStorage.setItem('ultima_competencia_id', data.id_competencia.toString());
+        console.log('💾 [useGestionCompetencias] ID guardado en localStorage:', data.id_competencia);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['competencias'] });
       setModalCrearAbierto(false);
 
