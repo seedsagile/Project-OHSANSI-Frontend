@@ -1,35 +1,9 @@
 // src/features/evaluaciones/types/evaluacion.types.ts
 
-export interface Evaluacion {
-  id_evaluacion: number;
-  nota: string;
-  observaciones: string | null;
-  fecha_evaluacion: string;
-  estado: string;
-  id_competidor: number;
-  id_competencia: number;
-  id_evaluadorAN: number | null;
-  id_parametro: number | null;
-}
-
-export interface Competidor {
-  id_competidor?: number;
-  apellido: string;
+export interface Nivel {
+  id_nivel: number;
   nombre: string;
-  genero: string;
-  ci: string;
-  departamento: string;
-  colegio: string;
-  area: string;
-  nivel: string;
-  grado: string;
-  id_olimpiada?: number;
-  evaluaciones?: Evaluacion[];
-  estado?: 'Pendiente' | 'En Proceso' | 'Calificado';
-  calificacion?: number;
-  observaciones?: string;
-  bloqueado_por?: number;
-  id_evaluacion?: number;
+  id_area_nivel: number;
 }
 
 export interface Area {
@@ -38,74 +12,95 @@ export interface Area {
   niveles: Nivel[];
 }
 
-export interface Nivel {
-  id_nivel: number;
-  nombre: string;
+export interface BackendAreaNivelItem {
+  id_evaluador_an: number;
+  id_area_nivel: number;
+  area: string;
+  nivel: string;
+  gestion: string;
+}
+
+export interface Evaluador {
+  id_usuario: number;
+  nombre_completo: string;
+  id_evaluador: number;
 }
 
 export interface EvaluadorAreasNiveles {
-  evaluador: {
-    id_usuario: number;
-    nombre_completo: string;
-    id_evaluador: number; // 👈 Este es el que necesitamos para crear evaluaciones
-  };
+  evaluador: Evaluador;
   areas: Area[];
+  mappings: BackendAreaNivelItem[];
 }
+
+export type Competencia = {
+  id_competencia: number;
+  id_area_nivel: number;
+  nombre: string; // Asumiendo que la competencia tiene un nombre
+  fecha_inicio: string;
+  fecha_fin: string;
+  estado: boolean;
+  examenes: Examen[];
+};
+
+export type Examen = {
+  id_examen_conf: number;
+  id_competencia: number;
+  nombre: string;
+  ponderacion: number;
+  maxima_nota: number;
+};
+
+export interface Competidor {
+  id_competidor: number;
+  nombre: string;
+  apellido: string;
+  ci: string;
+  estado: 'Calificado' | 'En Proceso' | 'Pendiente' | 'DESCALIFICADO' | 'disponible para calificar';
+  calificacion?: number;
+}
+
+export interface CompetidoresResponse {
+  success: boolean;
+  data: Competidor[];
+}
+
+export interface DescalificarCompetidorRequest {
+  observaciones: string;
+}
+
+export interface DescalificarCompetidorResponse {
+  success: boolean;
+  message: string;
+}
+
+// ==================== Tipos para el Flujo de Calificación ====================
 
 export interface CrearEvaluacionRequest {
   id_competidor: number;
-  id_evaluadorAN: number; // 👈 Este debe ser el id_evaluador de la respuesta anterior
+  id_evaluador_an: number;
 }
 
 export interface CrearEvaluacionResponse {
   id_evaluacion: number;
   id_competidor: number;
-  id_evaluadorAN: number;
-  id_competencia: number;
-  id_parametro: number;
-  estado: string;
+  id_examen_conf: number;
+  id_evaluador_an: number;
   nota: string;
-  fecha_evaluacion: string;
+  estado_competidor: string;
+  fecha: string;
+  estado: boolean;
   created_at: string;
   updated_at: string;
-  observaciones?: string;
 }
 
 export interface FinalizarEvaluacionRequest {
   nota: number;
-  observaciones?: string;
+  observaciones: string;
 }
 
 export interface FinalizarEvaluacionResponse {
-  id_evaluacion: number;
+  success: boolean;
+  message: string;
   nota: string;
   observaciones: string;
-  fecha_evaluacion: string;
-  estado: string;
-  id_competidor: number;
-  id_competencia: number;
-  id_evaluadorAN: number;
-  id_parametro: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CompetidoresResponse {
-  success: boolean;
-  data: {
-    competidores: Competidor[];
-  };
-  message: string;
-}
-
-export interface BloqueoCompetidorRequest {
-  ci: string;
-  id_evaluador: number;
-  accion: 'bloquear' | 'desbloquear';
-}
-
-export interface BloqueoCompetidorResponse {
-  success: boolean;
-  message: string;
-  bloqueado_por?: number;
 }

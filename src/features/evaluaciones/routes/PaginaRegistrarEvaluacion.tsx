@@ -1,6 +1,4 @@
-// src/features/evaluaciones/routes/PaginaRegistrarEvaluacion.tsx
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
 import { useEvaluaciones } from '../hooks/useEvaluaciones';
 import { AreaNivelSelector } from '../components/AreaNivelSelector';
@@ -8,9 +6,11 @@ import { SearchBar } from '../components/SearchBar';
 import { CompetidoresTable } from '../components/CompetidoresTable';
 import { CalificacionModal } from '../components/CalificacionModal';
 import { ModificarNotaModal } from '../components/ModificarNotaModal';
-import type { Competidor } from '../types/evaluacion.types';
+import { DescalificarModal } from '../components/DescalificarModal';
+import type { Competidor, Competencia } from '../types/evaluacion.types';
 import { formatearNombreCompleto, esBusquedaValida } from '../utils/validations';
 import toast from 'react-hot-toast';
+import { evaluacionService } from '../services/evaluacionService';
 
 export function PaginaRegistrarEvaluacion() {
   const { user, userId } = useAuth();
@@ -19,36 +19,80 @@ export function PaginaRegistrarEvaluacion() {
     competidores,
     loading,
     loadingCompetidores,
-    idEvaluadorAN,
     cargarCompetidores,
     actualizarEstadosCompetidores,
     iniciarEvaluacion,
     guardarEvaluacion,
     modificarNota,
+    setCompetencia,
+    descalificarCompetidor,
   } = useEvaluaciones();
 
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedNivel, setSelectedNivel] = useState('');
+  const [selectedCompetencia, setSelectedCompetencia] = useState('');
+  const [selectedExamen, setSelectedExamen] = useState('');
+  const [competencias, setCompetencias] = useState<Competencia[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompetidor, setSelectedCompetidor] = useState<Competidor | null>(null);
   const [competidorAEditar, setCompetidorAEditar] = useState<Competidor | null>(null);
+  const [competidorADescalificar, setCompetidorADescalificar] = useState<Competidor | null>(null);
   const [filteredCompetidores, setFilteredCompetidores] = useState<Competidor[]>([]);
   const [competidorEnModal, setCompetidorEnModal] = useState<string | null>(null);
 
   const isEvaluador = user?.role === 'evaluador';
 
-  // Validar que areas sea un array antes de ordenar
-  const areasOrdenadas = Array.isArray(areas) 
-    ? [...areas].sort((a, b) => a.nombre_area.localeCompare(b.nombre_area))
-    : [];
-
-  const areaSeleccionada = areasOrdenadas.find(a => a.id_area.toString() === selectedArea);
-  
-  const nivelSeleccionado = areaSeleccionada?.niveles?.find(
-    n => n.id_nivel.toString() === selectedNivel
+  const areasOrdenadas = useMemo(() =>
+    Array.isArray(areas)
+      ? [...areas].sort((a, b) => a.nombre_area.localeCompare(b.nombre_area))
+      : [],
+    [areas]
   );
 
-  // Filtrar competidores por búsqueda y bloquear el que está en modal
+  const areaSeleccionada = useMemo(() =>
+    areasOrdenadas.find(a => a.id_area.toString() === selectedArea),
+    [areasOrdenadas, selectedArea]
+  );
+
+  const nivelSeleccionado = useMemo(() =>
+    areaSeleccionada?.niveles?.find(
+      n => n.id_nivel.toString() === selectedNivel
+    ),
+    [areaSeleccionada, selectedNivel]
+  );
+
+  useEffect(() => {
+    const idAreaNivel = nivelSeleccionado?.id_area_nivel;
+
+    const fetchCompetencias = async () => {
+      if (idAreaNivel) {
+        const toastId = toast.loading('Cargando competencias...');
+        try {
+          const data = await evaluacionService.getCompetenciasPorAreaNivel(idAreaNivel);
+          setCompetencias(data);
+          toast.dismiss(toastId);
+          toast.success('Competencias cargadas');
+        } catch (error) {
+          console.error("Error al cargar competencias", error);
+          toast.dismiss(toastId);
+          toast.error('Error al cargar competencias');
+        }
+      } else {
+        setSelectedCompetencia('');
+        setSelectedExamen('');
+        setCompetencias([]);
+      }
+    };
+
+    fetchCompetencias();
+  }, [nivelSeleccionado?.id_area_nivel]);
+
+  const handleCompetenciaChange = (idCompetencia: string) => {
+    setSelectedCompetencia(idCompetencia);
+    setSelectedExamen('');
+    setCompetencia(idCompetencia ? Number(idCompetencia) : null);
+  };
+
   useEffect(() => {
     let resultados = competidores;
 
@@ -60,8 +104,8 @@ export function PaginaRegistrarEvaluacion() {
     }
 
     if (competidorEnModal) {
-      resultados = resultados.map(c => 
-        c.ci === competidorEnModal 
+      resultados = resultados.map(c =>
+        c.ci === competidorEnModal
           ? { ...c, estado: 'En Proceso' as const }
           : c
       );
@@ -70,38 +114,52 @@ export function PaginaRegistrarEvaluacion() {
     setFilteredCompetidores(resultados);
   }, [competidores, searchTerm, competidorEnModal]);
 
-  // Auto-cargar competidores cuando se selecciona nivel
-  // 🔄 CAMBIO CLAVE: Usar el id_nivel que ahora contiene id_area_nivel
   useEffect(() => {
-    if (selectedNivel) {
-      const idAreaNivel = parseInt(selectedNivel);
-      console.log('🔍 Cargando competidores con id_area_nivel:', idAreaNivel);
-      cargarCompetidores(idAreaNivel);
+    console.log('Competitor loading effect triggered.');
+    if (selectedArea && selectedNivel && selectedCompetencia) {
+      const idArea = parseInt(selectedArea, 10);
+      const idNivel = parseInt(selectedNivel, 10);
+      const idCompetencia = parseInt(selectedCompetencia, 10);
+
+      if (!isNaN(idArea) && !isNaN(idNivel) && !isNaN(idCompetencia)) {
+        console.log(`Calling cargarCompetidores with: idCompetencia=${idCompetencia}, idArea=${idArea}, idNivel=${idNivel}`);
+        cargarCompetidores(idCompetencia, idArea, idNivel);
+      }
     } else {
+      console.log('Clearing competitors list.');
       setFilteredCompetidores([]);
     }
-  }, [selectedNivel]);
+  }, [selectedArea, selectedNivel, selectedCompetencia]);
 
-  // Polling silencioso en segundo plano (cada 1 segundo)
   useEffect(() => {
-    if (!selectedNivel) return;
+    if (!selectedCompetencia) return;
 
     const interval = setInterval(() => {
       actualizarEstadosCompetidores();
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [selectedNivel, actualizarEstadosCompetidores]);
+  }, [selectedCompetencia, actualizarEstadosCompetidores]);
 
-  // Manejar clic en calificar
-  const handleCalificar = async (competidor: Competidor) => {
+  const handleCalificar = async (competidor: Competidor, idExamen: number) => {
+    if (!selectedExamen) {
+      toast.error('Por favor, seleccione un examen para calificar.');
+      return;
+    }
+
+    const idAreaNivel = nivelSeleccionado?.id_area_nivel;
+    if (!idAreaNivel) {
+      toast.error('El nivel seleccionado no es válido o no tiene un ID de asignación.');
+      return;
+    }
+
     if (competidor.estado === 'Calificado') {
       toast.error('Este competidor ya ha sido calificado');
       return;
     }
 
     if (competidor.estado === 'En Proceso') {
-      if (competidor.bloqueado_por === idEvaluadorAN || competidor.bloqueado_por === userId) {
+      if (competidor.bloqueado_por?.toString() === userId?.toString()) {
         setSelectedCompetidor(competidor);
         setCompetidorEnModal(competidor.ci);
         return;
@@ -112,8 +170,8 @@ export function PaginaRegistrarEvaluacion() {
     }
 
     setCompetidorEnModal(competidor.ci);
-    
-    const resultado = await iniciarEvaluacion(competidor);
+
+    const resultado = await iniciarEvaluacion(competidor, idExamen, idAreaNivel);
 
     if (resultado.success) {
       const competidorActualizado = competidores.find(c => c.ci === competidor.ci);
@@ -125,23 +183,33 @@ export function PaginaRegistrarEvaluacion() {
     }
   };
 
-  // Manejar clic en editar nota
   const handleEditarNota = async (competidor: Competidor) => {
     setCompetidorEnModal(competidor.ci);
     setCompetidorAEditar(competidor);
   };
 
-  // Cerrar modal de calificación
+  const handleDescalificar = (competidor: Competidor) => {
+    setCompetidorADescalificar(competidor);
+  };
+
   const handleCloseModal = () => {
-    setSelectedCompetidor(null);
+    if (window.confirm('¿Estás seguro de que quieres salir? La calificación no se ha guardado.')) {
+      if (window.confirm('¡ALERTA! Si sales ahora, otro evaluador podría tomar a este competidor. ¿Estás completamente seguro?')) {
+        setSelectedCompetidor(null);
+        setCompetidorEnModal(null);
+        actualizarEstadosCompetidores();
+      }
+    }
+  };
+
+  const handleCloseModalEdicion = () => {
+    setCompetidorAEditar(null);
     setCompetidorEnModal(null);
     actualizarEstadosCompetidores();
   };
 
-  // Cerrar modal de edición
-  const handleCloseModalEdicion = () => {
-    setCompetidorAEditar(null);
-    setCompetidorEnModal(null);
+  const handleCloseModalDescalificar = () => {
+    setCompetidorADescalificar(null);
     actualizarEstadosCompetidores();
   };
 
@@ -185,6 +253,7 @@ export function PaginaRegistrarEvaluacion() {
     );
   }
 
+  console.log('Competidores from hook:', competidores);
   return (
     <div className="p-6">
       <div className="mb-8">
@@ -195,7 +264,7 @@ export function PaginaRegistrarEvaluacion() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Selección de Área y Nivel</h2>
+        <h2 className="text-lg font-semibold mb-4">Selección de Prueba</h2>
 
         <AreaNivelSelector
           areas={areasOrdenadas}
@@ -203,13 +272,18 @@ export function PaginaRegistrarEvaluacion() {
           selectedNivel={selectedNivel}
           onAreaChange={setSelectedArea}
           onNivelChange={setSelectedNivel}
+          competencias={competencias}
+          selectedCompetencia={selectedCompetencia}
+          selectedExamen={selectedExamen}
+          onCompetenciaChange={handleCompetenciaChange}
+          onExamenChange={setSelectedExamen}
           disabled={loading}
         />
 
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          disabled={!selectedNivel || loadingCompetidores}
+          disabled={!selectedCompetencia || loadingCompetidores}
         />
       </div>
 
@@ -217,9 +291,11 @@ export function PaginaRegistrarEvaluacion() {
         competidores={filteredCompetidores}
         onCalificar={handleCalificar}
         onEditarNota={handleEditarNota}
+        onDescalificar={handleDescalificar}
         loading={loadingCompetidores}
         esBusqueda={esBusquedaValida(searchTerm)}
-        areaSeleccionada={!!selectedNivel}
+        isReadyToGrade={!!selectedExamen}
+        idExamenSeleccionado={Number(selectedExamen)}
       />
 
       {selectedCompetidor && (
@@ -239,6 +315,14 @@ export function PaginaRegistrarEvaluacion() {
           nivelSeleccionado={nivelSeleccionado?.nombre || ''}
           onClose={handleCloseModalEdicion}
           onSave={modificarNota}
+        />
+      )}
+
+      {competidorADescalificar && (
+        <DescalificarModal
+          competidor={competidorADescalificar}
+          onClose={handleCloseModalDescalificar}
+          onConfirm={descalificarCompetidor}
         />
       )}
     </div>

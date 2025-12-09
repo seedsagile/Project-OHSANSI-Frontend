@@ -4,20 +4,24 @@ import type { Competidor } from '../types/evaluacion.types';
 
 interface CompetidoresTableProps {
   competidores: Competidor[];
-  onCalificar: (competidor: Competidor) => void;
+  onCalificar: (competidor: Competidor, idExamen: number) => void;
   onEditarNota: (competidor: Competidor) => void;
+  onDescalificar: (competidor: Competidor) => void;
+  idExamenSeleccionado?: number;
   loading?: boolean;
   esBusqueda?: boolean;
-  areaSeleccionada?: boolean;
+  isReadyToGrade?: boolean;
 }
 
 export const CompetidoresTable = ({
   competidores,
   onCalificar,
   onEditarNota,
+  onDescalificar,
+  idExamenSeleccionado,
   loading = false,
   esBusqueda = false,
-  areaSeleccionada = false,
+  isReadyToGrade = false,
 }: CompetidoresTableProps) => {
   if (loading) {
     return (
@@ -31,11 +35,11 @@ export const CompetidoresTable = ({
   }
 
   // Mensaje cuando NO hay área y nivel seleccionados
-  if (!areaSeleccionada) {
+  if (!isReadyToGrade) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
         <p className="text-gray-500">
-          Seleccione un área y un nivel, para ver el registro de estudiantes y comenzar a calificar
+          Seleccione un área, nivel, competencia y examen para comenzar a calificar
         </p>
       </div>
     );
@@ -74,7 +78,7 @@ export const CompetidoresTable = ({
               <th className="px-4 py-3 text-left text-sm font-semibold">APELLIDOS</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">CI</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">ESTADO</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold">CALIFICACIÓN</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold">ACCIONES</th>
             </tr>
           </thead>
           <tbody>
@@ -94,6 +98,8 @@ export const CompetidoresTable = ({
                         ? 'bg-green-100 text-green-800'
                         : competidor.estado === 'En Proceso'
                         ? 'bg-yellow-100 text-yellow-800'
+                        : competidor.estado === 'DESCALIFICADO'
+                        ? 'bg-red-100 text-red-800'
                         : 'bg-gray-200 text-gray-700'
                     }`}
                   >
@@ -101,28 +107,59 @@ export const CompetidoresTable = ({
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  {competidor.estado === 'Calificado' ? (
-                    <button
-                      onClick={() => onEditarNota(competidor)}
-                      className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-green-100 text-green-800 text-sm font-semibold hover:bg-green-200 transition-colors cursor-pointer"
-                      title="Clic para editar nota"
-                    >
-                      {competidor.calificacion?.toFixed(2) || '0.00'}
-                    </button>
-                  ) : competidor.estado === 'En Proceso' ? (
-                    <button
-                      disabled
-                      className="px-4 py-1.5 rounded text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
-                    >
-                      Calificar
-                    </button>
+                  {competidor.estado === 'DESCALIFICADO' ? (
+                    <span className="text-red-600 font-semibold">Descalificado</span>
                   ) : (
-                    <button
-                      onClick={() => onCalificar(competidor)}
-                      className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      Calificar
-                    </button>
+                    <div className="flex items-center justify-center space-x-2">
+                      {competidor.estado === 'Calificado' ? (
+                        <button
+                          onClick={() => onEditarNota(competidor)}
+                          className="inline-flex items-center justify-center px-3 py-1.5 rounded bg-green-100 text-green-800 text-sm font-semibold hover:bg-green-200 transition-colors cursor-pointer"
+                          title="Clic para editar nota"
+                        >
+                          {competidor.calificacion?.toFixed(2) || '0.00'}
+                        </button>
+                      ) : competidor.estado === 'En Proceso' ? (
+                        <button
+                          onClick={() => {
+                            if (idExamenSeleccionado) {
+                              onCalificar(competidor, idExamenSeleccionado);
+                            }
+                          }}
+                          className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-amber-500 text-white hover:bg-amber-600"
+                          title="Continuar calificación"
+                        >
+                          En calificación
+                        </button>
+                      ) : (competidor.estado === 'Pendiente' || competidor.estado === 'disponible para calificar') ? (
+                        <button
+                          onClick={() => {
+                            if (idExamenSeleccionado) {
+                              onCalificar(competidor, idExamenSeleccionado);
+                            }
+                          }}
+                          disabled={!idExamenSeleccionado}
+                          className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+                            !idExamenSeleccionado
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                          title={!idExamenSeleccionado ? 'Seleccione un examen para calificar' : 'Calificar'}
+                        >
+                          Calificar
+                        </button>
+                      ) : null}
+                      
+                      {competidor.estado !== 'Calificado' && competidor.estado !== 'En Proceso' && (
+                        <button
+                          onClick={() => onDescalificar(competidor)}
+                          className="px-4 py-1.5 rounded text-sm font-medium transition-colors bg-red-600 text-white hover:bg-red-700"
+                          title="Descalificar competidor"
+                        >
+                          Descalificar
+                        </button>
+                      )}
+                    </div>
                   )}
                 </td>
               </tr>

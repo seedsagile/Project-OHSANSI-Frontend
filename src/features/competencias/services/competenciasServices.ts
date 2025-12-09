@@ -56,6 +56,27 @@ export const competenciasService = {
     }
   },
 
+  
+  // Obtener competencias por nivel
+  obtenerCompetenciasPorNivel: async (idNivel: number): Promise<Competencia[]> => {
+    try {
+      console.log('📡 [Service] Obteniendo competencias para el nivel:', idNivel);
+      const response = await axios.get(`${API_BASE_URL}/niveles/${idNivel}/competencias`);
+      console.log('✅ [Service] Competencias recibidas:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ [Service] Error en obtenerCompetenciasPorNivel:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('📋 [Service] Detalles del error:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
+      }
+      throw error;
+    }
+  },
+
   // Crear nueva competencia
   crearCompetencia: async (data: CrearCompetenciaData): Promise<Competencia> => {
     try {

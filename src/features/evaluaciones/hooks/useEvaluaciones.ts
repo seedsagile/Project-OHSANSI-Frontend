@@ -1,9 +1,9 @@
 // src/features/evaluaciones/hooks/useEvaluaciones.ts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
 import { evaluacionService } from '../services/evaluacionService';
-import type { Area, Competidor } from '../types/evaluacion.types';
+import type { Area, BackendAreaNivelItem, Competidor } from '../types/evaluacion.types';
 import toast from 'react-hot-toast';
 
 export const useEvaluaciones = () => {
@@ -13,8 +13,32 @@ export const useEvaluaciones = () => {
   const [loading, setLoading] = useState(false);
   const [loadingCompetidores, setLoadingCompetidores] = useState(false);
   const [idCompetenciaActual, setIdCompetenciaActual] = useState<number | null>(null);
-  const [idEvaluadorAN, setIdEvaluadorAN] = useState<number | null>(null);
-  const [idAreaNivelActual, setIdAreaNivelActual] = useState<number | null>(null);
+  const [areaNivelMappings, setAreaNivelMappings] = useState<BackendAreaNivelItem[]>([]);
+  const [idAreaActual, setIdAreaActual] = useState<number | null>(null);
+  const [idNivelActual, setIdNivelActual] = useState<number | null>(null);
+
+  // Cargar ID de competencia desde localStorage al iniciar
+  useEffect(() => {
+    const storedId = localStorage.getItem('ultima_competencia_id');
+    if (storedId) {
+      setIdCompetenciaActual(parseInt(storedId, 10));
+      console.log('🏆 ID Competencia cargado desde localStorage:', storedId);
+    } else {
+      console.warn('⚠️ No se encontró "ultima_competencia_id" en localStorage');
+    }
+  }, []);
+
+  // Función para actualizar la competencia seleccionada
+  const setCompetencia = (idCompetencia: number | null) => {
+    setIdCompetenciaActual(idCompetencia);
+    if (idCompetencia) {
+      localStorage.setItem('ultima_competencia_id', idCompetencia.toString());
+      console.log('💾 ID Competencia guardado en localStorage:', idCompetencia);
+    } else {
+      localStorage.removeItem('ultima_competencia_id');
+      console.log('🗑️ ID Competencia removido de localStorage');
+    }
+  };
 
   // Cargar áreas y niveles del evaluador
   useEffect(() => {
@@ -24,9 +48,9 @@ export const useEvaluaciones = () => {
       try {
         setLoading(true);
         const response = await evaluacionService.getAreasNivelesByEvaluador(userId);
-        
+
         console.log('📚 Respuesta completa del servicio:', response);
-        
+
         // Validar que areas sea un array
         if (Array.isArray(response.areas)) {
           setAreas(response.areas);
@@ -36,11 +60,10 @@ export const useEvaluaciones = () => {
           setAreas([]);
           toast.error('Error: Formato de datos incorrecto');
         }
-        
-        // Guardar id_evaluador del backend
-        if (response.evaluador?.id_evaluador) {
-          setIdEvaluadorAN(response.evaluador.id_evaluador);
-          console.log('🆔 ID Evaluador obtenido:', response.evaluador.id_evaluador);
+
+        if (Array.isArray(response.mappings)) {
+          setAreaNivelMappings(response.mappings);
+          console.log('✅ Mappings de Area/Nivel cargados:', response.mappings);
         }
       } catch (error) {
         console.error('❌ Error al cargar áreas y niveles:', error);
@@ -55,13 +78,18 @@ export const useEvaluaciones = () => {
   }, [userId]);
 
   // Función para mapear competidores
-  const mapearCompetidores = (competidoresRaw: any[]) => {
-    return competidoresRaw.map((comp) => {
-      let estadoFinal: 'Pendiente' | 'En Proceso' | 'Calificado' = 'Pendiente';
+  const mapearCompetidores = (competidoresRaw: Competidor[]) => {
+    return competidoresRaw.map(comp => {
+      let estadoFinal: 'Pendiente' | 'En Proceso' | 'Calificado' | 'DESCALIFICADO' = 'Pendiente';
       let notaFinal: number | undefined = undefined;
       let observacionesFinal: string | undefined = undefined;
       let idEvaluacionFinal: number | undefined = undefined;
       let idEvaluadorAsignado: number | undefined = undefined;
+
+      if (comp.estado_competidor === 'descalificado') {
+        estadoFinal = 'DESCALIFICADO';
+        observacionesFinal = comp.observaciones_descalificacion || undefined;
+      }
 
       if (comp.evaluaciones && comp.evaluaciones.length > 0) {
         // Ordenar por id_evaluacion DESC para obtener la más reciente primero
@@ -69,34 +97,25 @@ export const useEvaluaciones = () => {
           (a: any, b: any) => b.id_evaluacion - a.id_evaluacion
         );
 
-        // Buscar la evaluación más reciente que esté calificada
-        const evaluacionCalificada = evaluacionesOrdenadas.find(
-          (ev: any) => ev.estado === "1" || ev.estado === "Calificado" || parseFloat(ev.nota) > 0
-        );
+        // La evaluación más reciente es la primera en la lista ordenada
+        const evaluacionMasReciente = evaluacionesOrdenadas[0];
 
-        // Buscar si hay alguna evaluación en proceso
-        const evaluacionEnProceso = evaluacionesOrdenadas.find(
-          (ev: any) => ev.estado === "En Proceso"
-        );
-
-        if (evaluacionCalificada) {
-          estadoFinal = 'Calificado';
-          notaFinal = parseFloat(evaluacionCalificada.nota);
-          observacionesFinal = evaluacionCalificada.observaciones || undefined;
-          idEvaluacionFinal = evaluacionCalificada.id_evaluacion;
-          
-          console.log(`📊 Competidor ${comp.nombre} ${comp.apellido}:`, {
-            total_evaluaciones: comp.evaluaciones.length,
-            id_evaluacion_mas_reciente: evaluacionCalificada.id_evaluacion,
-            nota_mostrada: notaFinal,
-          });
-        } else if (evaluacionEnProceso) {
-          estadoFinal = 'En Proceso';
-          idEvaluacionFinal = evaluacionEnProceso.id_evaluacion;
-          idEvaluadorAsignado = evaluacionEnProceso.id_evaluadorAN || undefined;
+        if (evaluacionMasReciente) {
+          // El estado `true` o `1` significa "Calificado"
+          // El estado `false` o `0` significa "En Proceso"
+          if (evaluacionMasReciente.estado) {
+            estadoFinal = 'Calificado';
+            notaFinal = parseFloat(evaluacionMasReciente.nota);
+            observacionesFinal = evaluacionMasReciente.observacion || undefined;
+            idEvaluacionFinal = evaluacionMasReciente.id_evaluacion;
+          } else {
+            estadoFinal = 'En Proceso';
+            idEvaluacionFinal = evaluacionMasReciente.id_evaluacion;
+            idEvaluadorAsignado = evaluacionMasReciente.id_evaluador_an || undefined;
+          }
         }
       }
-      
+
       return {
         ...comp,
         estado: estadoFinal,
@@ -108,81 +127,84 @@ export const useEvaluaciones = () => {
     });
   };
 
-  // Cargar competidores por id_area_nivel
-  const cargarCompetidores = async (idAreaNivel: number) => {
+  // Cargar competidores por id_area e id_nivel
+  const cargarCompetidores = async (idCompetencia: number, idArea: number, idNivel: number) => {
+    if (!idCompetencia) {
+      toast.error('No se ha seleccionado una competencia.');
+      setCompetidores([]);
+      return;
+    }
     try {
       setLoadingCompetidores(true);
-      setIdAreaNivelActual(idAreaNivel);
-      
-      console.log('🔍 Cargando competidores para id_area_nivel:', idAreaNivel);
-      
-      const response = await evaluacionService.getCompetidoresByAreaNivel(idAreaNivel);
-      
-      if (response.success && response.data.competidores.length > 0) {
-        const primerCompetidor = response.data.competidores[0];
-        const idOlimpiada = primerCompetidor.id_olimpiada;
-        
-        if (idOlimpiada) {
-          setIdCompetenciaActual(idOlimpiada);
-          console.log('🏆 ID Competencia actual:', idOlimpiada);
-        }
+      setIdAreaActual(idArea);
+      setIdNivelActual(idNivel);
 
+      console.log('🔍 Cargando competidores para:', { idCompetencia, idArea, idNivel });
+
+      const response = await evaluacionService.getCompetidores(idCompetencia, idArea, idNivel);
+
+      if (response.success && response.data.competidores.length > 0) {
         const competidoresMapeados = mapearCompetidores(response.data.competidores);
         setCompetidores(competidoresMapeados);
         toast.success(`Se encontraron ${competidoresMapeados.length} competidores`);
       } else {
         setCompetidores([]);
-        setIdCompetenciaActual(null);
-        toast(`No se encontraron competidores`, { icon: 'ℹ️' });
+        toast(`No se encontraron competidores para el área y nivel seleccionados.`, { icon: 'ℹ️' });
       }
     } catch (error) {
       console.error('❌ Error al cargar competidores:', error);
       toast.error('Error al cargar los competidores');
       setCompetidores([]);
-      setIdCompetenciaActual(null);
     } finally {
       setLoadingCompetidores(false);
     }
   };
 
   // Actualización silenciosa en segundo plano (sin loading)
-  const actualizarEstadosCompetidores = async () => {
-    if (!idAreaNivelActual) return;
+  const actualizarEstadosCompetidores = useCallback(async () => {
+    if (!idAreaActual || !idNivelActual || !idCompetenciaActual) return;
 
     try {
-      const response = await evaluacionService.getCompetidoresByAreaNivel(idAreaNivelActual);
-      
+      const response = await evaluacionService.getCompetidores(
+        idCompetenciaActual,
+        idAreaActual,
+        idNivelActual
+      );
+
       if (response.success && response.data.competidores.length > 0) {
         const competidoresMapeados = mapearCompetidores(response.data.competidores);
-        
-        // Solo actualizar si hay cambios reales
+
+        // Solo actualizar si hay cambios reales para evitar re-renders innecesarios
         setCompetidores(prev => {
-          const hayDiferencias = prev.some((prevComp, index) => {
-            const nuevoComp = competidoresMapeados[index];
-            return prevComp.estado !== nuevoComp?.estado || 
-                   prevComp.calificacion !== nuevoComp?.calificacion;
-          });
-          
-          return hayDiferencias ? competidoresMapeados : prev;
+          if (JSON.stringify(prev) !== JSON.stringify(competidoresMapeados)) {
+            return competidoresMapeados;
+          }
+          return prev;
         });
       }
     } catch (error) {
       console.error('Error al actualizar estados:', error);
       // No mostrar error al usuario para no interrumpir
     }
-  };
+  }, [idAreaActual, idNivelActual, idCompetenciaActual]);
 
   // PASO 1: Crear evaluación al hacer clic en "Calificar"
-  const iniciarEvaluacion = async (competidor: Competidor): Promise<{ success: boolean; idEvaluacion?: number }> => {
-    if (!idEvaluadorAN) {
-      console.error('❌ No se encontró idEvaluadorAN');
-      toast.error('No se pudo identificar el ID del evaluador');
+  const iniciarEvaluacion = async (
+    competidor: Competidor,
+    idExamen: number,
+    idAreaNivel: number
+  ): Promise<{ success: boolean; idEvaluacion?: number }> => {
+    const mapping = areaNivelMappings.find(m => m.id_area_nivel === idAreaNivel);
+    const id_evaluador_an = mapping?.id_evaluador_an;
+
+    if (!id_evaluador_an) {
+      toast.error('No se pudo encontrar el ID de asignación del evaluador para esta área/nivel.');
       return { success: false };
     }
 
-    if (!idCompetenciaActual) {
-      console.error('❌ No se encontró idCompetenciaActual');
-      toast.error('No se encontró el ID de competencia');
+    if (!idExamen) {
+      console.error('❌ No se recibió idExamen');
+      toast.error('No se ha seleccionado un examen para la evaluación');
       return { success: false };
     }
 
@@ -196,13 +218,13 @@ export const useEvaluaciones = () => {
       console.log('🚀 Iniciando evaluación para:', {
         id_competidor: competidor.id_competidor,
         nombre: `${competidor.nombre} ${competidor.apellido}`,
-        id_competencia: idCompetenciaActual,
-        id_evaluadorAN: idEvaluadorAN,
+        id_examen: idExamen,
+        id_evaluador_an: id_evaluador_an,
       });
 
-      const response = await evaluacionService.crearEvaluacion(idCompetenciaActual, {
+      const response = await evaluacionService.crearEvaluacion(idExamen, {
         id_competidor: competidor.id_competidor,
-        id_evaluadorAN: idEvaluadorAN,
+        id_evaluador_an: id_evaluador_an,
       });
 
       console.log('✅ Evaluación creada exitosamente:', response);
@@ -211,11 +233,11 @@ export const useEvaluaciones = () => {
       setCompetidores(prev =>
         prev.map(c =>
           c.ci === competidor.ci
-            ? { 
-                ...c, 
+            ? {
+                ...c,
                 estado: 'En Proceso' as const,
                 id_evaluacion: response.id_evaluacion,
-                bloqueado_por: response.id_evaluadorAN,
+                bloqueado_por: response.id_evaluador_an,
               }
             : c
         )
@@ -231,7 +253,7 @@ export const useEvaluaciones = () => {
       });
 
       let errorMsg = 'Error al iniciar la evaluación';
-      
+
       if (error?.response?.data?.message) {
         errorMsg = error.response.data.message;
       } else if (error?.response?.data?.error) {
@@ -281,8 +303,8 @@ export const useEvaluaciones = () => {
       setCompetidores(prev =>
         prev.map(c =>
           c.ci === ci
-            ? { 
-                ...c, 
+            ? {
+                ...c,
                 calificacion: parseFloat(response.nota),
                 observaciones: response.observaciones,
                 estado: 'Calificado' as const,
@@ -305,9 +327,25 @@ export const useEvaluaciones = () => {
     nuevaNota: number,
     justificacion: string
   ): Promise<void> => {
-    if (!idEvaluadorAN) {
-      toast.error('No se pudo identificar el ID del evaluador');
-      throw new Error('ID de evaluador no identificado');
+    const competidor = competidores.find(c => c.ci === ci);
+    if (!competidor) {
+      throw new Error('Competidor no encontrado');
+    }
+    const idAreaNivel = areaNivelMappings.find(
+      m => m.area === competidor.area && m.nivel === competidor.nivel
+    )?.id_area_nivel;
+
+    if (!idAreaNivel) {
+      toast.error('No se pudo determinar el área/nivel para la modificación.');
+      throw new Error('idAreaNivel no encontrado para modificación');
+    }
+    
+    const mapping = areaNivelMappings.find(m => m.id_area_nivel === idAreaNivel);
+    const id_evaluador_an = mapping?.id_evaluador_an;
+
+    if (!id_evaluador_an) {
+      toast.error('No se pudo identificar el ID del evaluador para la modificación.');
+      throw new Error('ID de evaluador no identificado para modificación');
     }
 
     if (!idCompetenciaActual) {
@@ -316,11 +354,6 @@ export const useEvaluaciones = () => {
     }
 
     try {
-      const competidor = competidores.find(c => c.ci === ci);
-      if (!competidor) {
-        throw new Error('Competidor no encontrado');
-      }
-
       if (!competidor.id_competidor) {
         throw new Error('ID de competidor no válido');
       }
@@ -329,15 +362,16 @@ export const useEvaluaciones = () => {
         id_competidor: competidor.id_competidor,
         nombre: `${competidor.nombre} ${competidor.apellido}`,
         id_competencia: idCompetenciaActual,
-        id_evaluadorAN: idEvaluadorAN,
+        id_evaluador_an: id_evaluador_an,
         nota_anterior: competidor.calificacion,
         nota_nueva: nuevaNota,
       });
 
       // PASO 1: Crear nueva evaluación
+      // FIXME: modificarNota no tiene un idExamen, se está pasando idCompetenciaActual incorrectamente
       const responseCrear = await evaluacionService.crearEvaluacion(idCompetenciaActual, {
         id_competidor: competidor.id_competidor,
-        id_evaluadorAN: idEvaluadorAN,
+        id_evaluador_an: id_evaluador_an,
       });
 
       console.log('✅ PASO 1/2 completado - Nueva evaluación creada:', responseCrear);
@@ -363,8 +397,8 @@ export const useEvaluaciones = () => {
       setCompetidores(prev =>
         prev.map(c =>
           c.ci === ci
-            ? { 
-                ...c, 
+            ? {
+                ...c,
                 calificacion: parseFloat(responseFinalizar.nota),
                 observaciones: responseFinalizar.observaciones,
                 estado: 'Calificado' as const,
@@ -382,6 +416,26 @@ export const useEvaluaciones = () => {
     }
   };
 
+  const descalificarCompetidor = async (idCompetidor: number, observaciones: string) => {
+    const toastId = toast.loading('Descalificando competidor...');
+    try {
+      await evaluacionService.descalificarCompetidor(idCompetidor, { observaciones });
+
+      setCompetidores(prev =>
+        prev.map(c =>
+          c.id_competidor === idCompetidor ? { ...c, estado: 'DESCALIFICADO' as const } : c
+        )
+      );
+
+      toast.success('Competidor descalificado correctamente', { id: toastId });
+    } catch (error: any) {
+      console.error('❌ Error al descalificar competidor:', error);
+      const errorMsg = error?.response?.data?.message || 'Error al descalificar al competidor';
+      toast.error(errorMsg, { id: toastId });
+      throw error;
+    }
+  };
+
   return {
     userId,
     user,
@@ -389,11 +443,13 @@ export const useEvaluaciones = () => {
     competidores,
     loading,
     loadingCompetidores,
-    idEvaluadorAN,
+    areaNivelMappings,
     cargarCompetidores,
     actualizarEstadosCompetidores,
     iniciarEvaluacion,
     guardarEvaluacion,
     modificarNota,
+    setCompetencia,
+    descalificarCompetidor,
   };
 };

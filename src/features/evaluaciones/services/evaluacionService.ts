@@ -1,6 +1,8 @@
 // src/features/evaluaciones/services/evaluacionService.ts
 
 import apiClient from '@/api/ApiPhp';
+import { areasService } from '../../areas/services/areasService';
+import { nivelesService } from '../../niveles/services/nivelesService';
 import type {
   EvaluadorAreasNiveles,
   CompetidoresResponse,
@@ -11,16 +13,12 @@ import type {
   BloqueoCompetidorRequest,
   BloqueoCompetidorResponse,
   Area,
+  Competencia,
+  Examen,
+  DescalificarCompetidorRequest,
+  DescalificarCompetidorResponse,
+  BackendAreaNivelItem,
 } from '../types/evaluacion.types';
-
-// 📌 Tipo para la respuesta RAW del backend
-interface BackendAreaNivelItem {
-  id_evaluador_an: number;
-  id_area_nivel: number;
-  area: string;
-  nivel: string;
-  gestion: string;
-}
 
 interface BackendAreasNivelesResponse {
   success: boolean;
@@ -34,43 +32,55 @@ class EvaluacionService {
    * 🔄 Transforma la respuesta del backend al formato esperado por el frontend
    */
   async getAreasNivelesByEvaluador(idEvaluador: number): Promise<EvaluadorAreasNiveles> {
-    const response = await apiClient.get<BackendAreasNivelesResponse>(
-      `/evaluadores/${idEvaluador}/areas-niveles`
-    );
+    const [response, areasFull, nivelesFull] = await Promise.all([
+      apiClient.get<BackendAreasNivelesResponse>(`/evaluadores/${idEvaluador}/areas-niveles`),
+      areasService.obtenerAreas(),
+      nivelesService.obtenerNiveles(),
+    ]);
 
-    // 🔄 Transformar la respuesta del backend
+    const rawMappings = response.data.data;
     const areasMap = new Map<string, Area>();
+    const areaNameToId = new Map(areasFull.map(a => [a.nombre, a.id_area]));
+    const nivelNameToId = new Map(nivelesFull.map(n => [n.nombre, n.id_nivel]));
 
-    response.data.data.forEach((item) => {
+    rawMappings.forEach(item => {
       const areaKey = item.area;
+      const idArea = areaNameToId.get(item.area);
+
+      if (!idArea) {
+        console.warn(`No se encontró ID para el área: ${item.area}`);
+        return;
+      }
 
       if (!areasMap.has(areaKey)) {
-        // Crear nueva área
         areasMap.set(areaKey, {
-          id_area: item.id_area_nivel, // Usar id_area_nivel como id_area temporal
+          id_area: idArea,
           nombre_area: item.area,
           niveles: [],
         });
       }
 
-      // Agregar nivel al área
       const area = areasMap.get(areaKey)!;
-      
-      // Verificar si el nivel ya existe para evitar duplicados
-      const nivelExiste = area.niveles.some(n => 
-        n.nombre === item.nivel && n.id_nivel === item.id_area_nivel
-      );
+      const idNivel = nivelNameToId.get(item.nivel);
+
+      if (!idNivel) {
+        console.warn(`No se encontró ID para el nivel: ${item.nivel}`);
+        return;
+      }
+
+      const nivelExiste = area.niveles.some(n => n.id_nivel === idNivel);
 
       if (!nivelExiste) {
         area.niveles.push({
-          id_nivel: item.id_area_nivel, // Usar id_area_nivel como id_nivel
+          id_nivel: idNivel,
           nombre: item.nivel,
+          id_area_nivel: item.id_area_nivel,
         });
       }
     });
 
     // Convertir Map a Array y ordenar
-    const areas = Array.from(areasMap.values()).sort((a, b) => 
+    const areas = Array.from(areasMap.values()).sort((a, b) =>
       a.nombre_area.localeCompare(b.nombre_area)
     );
 
@@ -80,7 +90,7 @@ class EvaluacionService {
     });
 
     console.log('🔄 Datos transformados:', {
-      backend_raw: response.data.data,
+      backend_raw: rawMappings,
       frontend_transformed: areas,
     });
 
@@ -91,22 +101,48 @@ class EvaluacionService {
         id_evaluador: idEvaluador, // Usar el mismo ID
       },
       areas,
+      mappings: rawMappings,
     };
+  }
+
+
+  /**
+   * Obtiene las competencias por ID de área-nivel.
+   * La respuesta de la API incluye los exámenes anidados en cada competencia.
+   * También genera un nombre para cada competencia, ya que la API no lo proporciona.
+   */
+  async getCompetenciasPorAreaNivel(idAreaNivel: number): Promise<Competencia[]> {
+    const response = await apiClient.get<Competencia[]>(`/area-nivel/${idAreaNivel}/competencias`);
+    
+    // La API devuelve un array directamente.
+    // Además, generamos el `nombre` que no viene en la respuesta.
+    return response.data.map(c => ({
+      ...c,
+      nombre: `Competencia ${c.id_competencia}`,
+    }));
+  }
+
+  async getExamenesPorCompetencia(idCompetencia: number): Promise<Examen[]> {
+    const response = await apiClient.get<Examen[]>(`/competencias/${idCompetencia}/examenes`);
+    return response.data || [];
+  }
+  
+  async getExamenById(idExamen: number): Promise<Examen> {
+    const response = await apiClient.get<Examen>(`/examenes/${idExamen}`);
+    return response.data;
   }
 
   /**
    * Obtiene los competidores por área y nivel
    * ⚠️ IMPORTANTE: Ahora recibe id_area_nivel en lugar de idArea e idNivel separados
    */
-  async getCompetidoresByAreaNivel(
-    idAreaNivel: number,
-    _idNivel?: number // Parámetro opcional para mantener compatibilidad
+  async getCompetidores(
+    idCompetencia: number,
+    idArea: number,
+    idNivel: number
   ): Promise<CompetidoresResponse> {
-    // 🔍 Si tenemos el id_area_nivel, usarlo directamente
-    // De lo contrario, necesitarías implementar lógica para obtenerlo
-    
     const response = await apiClient.get<CompetidoresResponse>(
-      `/competidores/area-nivel/${idAreaNivel}`
+      `/competencias/${idCompetencia}/area/${idArea}/nivel/${idNivel}/competidores`
     );
     
     return response.data;
@@ -117,11 +153,15 @@ class EvaluacionService {
    * Estado inicial: "En Proceso"
    */
   async crearEvaluacion(
-    idCompetencia: number,
+    idExamen: number,
     data: CrearEvaluacionRequest
   ): Promise<CrearEvaluacionResponse> {
+    console.log('DEBUG: Enviando a /examenes/{idExamen}/evaluaciones', {
+      idExamen,
+      payload: data,
+    });
     const response = await apiClient.post<CrearEvaluacionResponse>(
-      `/competencias/${idCompetencia}/evaluacion`,
+      `/examenes/${idExamen}/evaluaciones`,
       data
     );
     return response.data;
@@ -180,6 +220,22 @@ class EvaluacionService {
         bloqueado_por: undefined,
       };
     }
+  }
+  
+    /**
+   * ================= DESCALIFICAR COMPETIDOR (ADMINISTRATIVO) =================
+   * Descalifica a un competidor en cualquier momento, sin necesidad de una evaluación en curso.
+   * Esto actualiza el estado del competidor a 'DESCALIFICADO' y crea un registro de auditoría.
+   */
+  async descalificarCompetidor(
+    idCompetidor: number,
+    data: DescalificarCompetidorRequest
+  ): Promise<DescalificarCompetidorResponse> {
+    const response = await apiClient.post<DescalificarCompetidorResponse>(
+      `/competidores/${idCompetidor}/descalificar`,
+      data
+    );
+    return response.data;
   }
 }
 
