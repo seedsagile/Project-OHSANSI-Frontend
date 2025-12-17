@@ -229,7 +229,7 @@ export const Formulario: React.FC<FormularioProps> = ({
             disabled={formularioBloqueado || loading}
             className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
               formularioBloqueado || loading
-                ? 'bg-neutro-400 cursor-not-allowed'
+                ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-gray-400 hover:bg-gray-300'
             }`}
           >
@@ -241,7 +241,7 @@ export const Formulario: React.FC<FormularioProps> = ({
             disabled={formularioBloqueado || loading}
             className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
               formularioBloqueado || loading
-                ? 'bg-neutro-400 cursor-not-allowed'
+                ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-principal-500 hover:bg-principal-600'
             }`}
           >

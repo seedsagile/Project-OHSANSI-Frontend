@@ -54,10 +54,6 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
     fetchParametros();
   }, []);
 
-  if (loading) {
-    return <p className="text-center text-neutro-600">Cargando datos...</p>;
-  }
-
   return (
     <div className="mt-10">
       <h2 className="text-2xl font-bold text-negro mb-4 text-center">
@@ -79,8 +75,13 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
             </thead>
 
             <tbody className="text-neutro-800 bg-white">
-              {/* Si no hay niveles seleccionados */}
-              {nivelesSeleccionados.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-6 text-neutro-600">
+                    Cargando gestiones...
+                  </td>
+                </tr>
+              ) : nivelesSeleccionados.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-6 text-neutro-600">
                     No se seleccionó ningún nivel. Selecciona al menos un nivel para ver sus
@@ -88,21 +89,17 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                   </td>
                 </tr>
               ) : (
-                // Por cada nivel seleccionado, mostrar encabezado y sus datos (o fila de "no tiene datos")
                 nivelesSeleccionados.map((nivel) => {
-                  // Filtrar parámetros por área seleccionada y por nombre de nivel
-                  // Nota: nivel.nombre debe coincidir con p.nivel (según tu API)
                   const filasParaNivel = parametros.filter((p) => {
                     const mismoNivel = p.nivel?.trim() === nivel.nombre?.trim();
                     const mismaArea = areaSeleccionadaNombre
                       ? p.area?.trim() === areaSeleccionadaNombre.trim()
-                      : true; // si no hay área seleccionada, no filtrar por área
+                      : true;
                     return mismoNivel && mismaArea;
                   });
 
                   return (
                     <React.Fragment key={nivel.id}>
-                      {/* fila separadora con el nombre del nivel */}
                       <tr className="bg-principal-100 border-t border-principal-300">
                         <td
                           colSpan={6}
@@ -112,7 +109,6 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                         </td>
                       </tr>
 
-                      {/* filas con datos si existen */}
                       {filasParaNivel.length > 0 ? (
                         filasParaNivel.map((p) => (
                           <tr
@@ -120,8 +116,6 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                             className="border-t border-neutro-200 hover:bg-neutro-100 transition"
                           >
                             <td className="py-2 px-4">{p.gestion}</td>
-                            {/* <td className="py-2 px-4">{p.area}</td>
-                            <td className="py-2 px-4">{p.nivel}</td> */}
                             <td className="py-2 px-4 text-center">{p.notaMinima}</td>
                             <td className="py-2 px-4 text-center">{p.cantidadMaxima}</td>
                             <td className="py-2 px-4 text-center">
@@ -148,7 +142,6 @@ export const TablaGestiones: React.FC<TablaGestionesProps> = ({
                           </tr>
                         ))
                       ) : (
-                        // Si no hay datos para ese nivel (en esa área)
                         <tr>
                           <td colSpan={6} className="text-center py-4 text-neutro-600 italic">
                             No tiene datos para este nivel.
