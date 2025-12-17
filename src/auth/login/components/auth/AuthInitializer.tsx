@@ -1,31 +1,35 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { authService } from '../../services/authService';
+import { useSyncSistema } from '@/hooks/useSyncSistema';
 
 export const AuthInitializer: React.FC = () => {
-  const { setLoading, setUser, logout } = useAuthStore();
+  useSyncSistema(); 
+
+  const { setUser, setLoading, logout } = useAuthStore();
 
   useEffect(() => {
-    const initialToken = useAuthStore.getState().token;
+    const initApp = async () => {
+      const token = useAuthStore.getState().token;
 
-    const validateToken = async () => {
-      if (!initialToken) {
+      if (!token) {
         setLoading(false);
         return;
       }
+
       try {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
-      } catch {
-        console.error('Token inválido. Se limpiará la sesión.');
+      } catch (error) {
+        console.error('Error al inicializar aplicación:', error);
         logout();
       } finally {
         setLoading(false);
       }
     };
 
-    validateToken();
-  }, []);
+    initApp();
+  }, [setUser, setLoading, logout]);
 
   return null;
 };
