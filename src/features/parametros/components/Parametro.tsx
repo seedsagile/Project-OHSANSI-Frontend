@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   obtenerAreasAPI,
   obtenerNivelesPorAreaAPI,
@@ -17,7 +17,7 @@ export const Parametro = () => {
   const [loading, setLoading] = useState(false);
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Nivel[]>([]);
   const [valoresCopiadosManualmente, setValoresCopiadosManualmente] = useState(false);
-  const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, string[]>>([]);
+  const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, string[]>>({});
   const [gestionSeleccionada, setGestionSeleccionada] = useState<number | null>(null);
   const [modalSuccessOpen, setModalSuccessOpen] = useState(false);
   const [hoveredGrado, setHoveredGrado] = useState<{
@@ -29,15 +29,6 @@ export const Parametro = () => {
 
   const [successType, setSuccessType] = useState<'notaYCantidad' | 'soloNota'>('notaYCantidad');
 
-  useEffect(() => {
-    if (modalSuccessOpen) {
-      const timer = setTimeout(() => {
-        setModalSuccessOpen(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [modalSuccessOpen]);
-
   const [valoresCopiados, setValoresCopiados] = useState<{
     notaMinima: number | '';
     notaMaxima: number | '';
@@ -48,162 +39,147 @@ export const Parametro = () => {
     cantidadMaxima: '',
   });
 
-  const copiarValores = (valores: {
-    notaMinima: number;
-    notaMaxima: number;
-    cantidadMaxima: number;
-  }) => {
+  /* =======================
+     EFECTO: cerrar modal
+  ======================== */
+  useEffect(() => {
+    if (!modalSuccessOpen) return;
+    const timer = setTimeout(() => setModalSuccessOpen(false), 3000);
+    return () => clearTimeout(timer);
+  }, [modalSuccessOpen]);
+
+  /* =======================
+     ÁREAS (1 sola vez)
+  ======================== */
+  useEffect(() => {
+    obtenerAreasAPI().then((data) => {
+      const ordenadas = data.sort((a, b) =>
+        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      );
+      setAreas(ordenadas);
+    });
+  }, []);
+
+  /* =======================
+     MAPA áreas por id (useMemo)
+  ======================== */
+  const areaMap = useMemo(() => {
+    const map = new Map<number, Area>();
+    areas.forEach((a) => map.set(a.id, a));
+    return map;
+  }, [areas]);
+
+  /* =======================
+     PARÁMETROS ACTUALES
+     (solo cuando ya hay áreas)
+  ======================== */
+  useEffect(() => {
+    if (areas.length === 0) return;
+
+    obtenerParametrosGestionActualAPI().then((parametros) => {
+      const map: Record<number, string[]> = {};
+
+      parametros.forEach((p: any) => {
+        const areaNombre = p.area_nivel.area.nombre;
+        const nivelNombre = p.area_nivel.nivel.nombre.trim();
+        const area = areas.find((a) => a.nombre === areaNombre);
+        if (!area) return;
+
+        map[area.id] ??= [];
+        map[area.id].push(nivelNombre);
+      });
+
+      setNivelesConParametros(map);
+    });
+  }, [areas]);
+
+  /* =======================
+     HANDLERS MEMOIZADOS
+  ======================== */
+  const toggleAccordion = useCallback(() => {
+    setIsOpen((prev) => !prev);
+  }, []);
+
+  const handleSelectArea = useCallback(async (id: number) => {
+    setAreaSeleccionada(id);
+    setLoading(true);
+    setNivelesSeleccionados([]);
+    setValoresCopiadosManualmente(false);
+
+    try {
+      const data = await obtenerNivelesPorAreaAPI(id);
+      const ordenados = data.sort((a: Nivel, b: Nivel) => {
+        const na = parseInt(a.nombre.match(/\d+/)?.[0] || '0');
+        const nb = parseInt(b.nombre.match(/\d+/)?.[0] || '0');
+        return na !== nb ? na - nb : a.nombre.localeCompare(b.nombre, 'es');
+      });
+      setNiveles(ordenados);
+    } finally {
+      setLoading(false);
+      setIsOpen(false);
+    }
+  }, []);
+
+  const handleCheckboxChange = useCallback((nivel: Nivel, checked: boolean) => {
+    setNivelesSeleccionados((prev) =>
+      checked ? [...prev, nivel] : prev.filter((n) => n.id !== nivel.id)
+    );
+  }, []);
+
+  const handleMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLTableCellElement>, grados: { id: number; nombre: string }[]) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setHoveredGrado({
+        visible: true,
+        grados,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+      });
+    },
+    []
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    setHoveredGrado({ visible: false, grados: [], x: 0, y: 0 });
+  }, []);
+
+  const copiarValores = useCallback((valores: any) => {
     setValoresCopiados({
       notaMinima: valores.notaMinima,
       notaMaxima: valores.notaMaxima,
       cantidadMaxima: valores.cantidadMaxima,
     });
     setValoresCopiadosManualmente(true);
-    //toast.success('Valores copiados correctamente');
-  };
-
-  const toggleAccordion = () => setIsOpen(!isOpen);
-
-  // ✅ Obtener áreas disponibles
-  useEffect(() => {
-    const fetchAreas = async () => {
-      try {
-        const data = await obtenerAreasAPI();
-
-        // 🔤 Ordenar de A a Z por nombre
-        const areasOrdenadas = data.sort((a: Area, b: Area) =>
-          a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
-        );
-
-        setAreas(areasOrdenadas);
-        //toast.success('Áreas cargadas correctamente');
-      } catch (error) {
-        //console.error('Error al obtener áreas:', error);
-        //toast.error('Error al obtener áreas');
-      }
-    };
-    fetchAreas();
   }, []);
 
-  // ✅ Obtener parámetros existentes para gestión actual
-  useEffect(() => {
-    const fetchParametrosActuales = async () => {
-      try {
-        const parametrosActuales = await obtenerParametrosGestionActualAPI();
-
-        const nivelesMap: Record<number, string[]> = {};
-
-        parametrosActuales.forEach((p: any) => {
-          const areaNombre = p.area_nivel.area.nombre;
-          const nivelNombre = p.area_nivel.nivel.nombre;
-
-          const area = areas.find((a) => a.nombre === areaNombre);
-          if (!area) return;
-
-          if (!nivelesMap[area.id]) nivelesMap[area.id] = [];
-          nivelesMap[area.id].push(nivelNombre.trim());
-        });
-
-        setNivelesConParametros(nivelesMap);
-        //toast.success('Niveles con parámetros cargados');
-      } catch (error) {
-        console.error('Error al obtener parámetros gestión actual:', error);
-        //toast.error('Error al obtener parámetros');
-      }
-    };
-
-    fetchParametrosActuales();
-  }, [areas]);
-
-  const limpiarGestionSeleccionada = () => {
+  const limpiarValoresCopiados = useCallback(() => {
     setGestionSeleccionada(null);
-  };
-
-  const handleSelectArea = async (id: number) => {
-    setAreaSeleccionada(id);
     setValoresCopiadosManualmente(false);
-    setLoading(true);
-    setNivelesSeleccionados([]);
+    setValoresCopiados({ notaMinima: '', notaMaxima: '', cantidadMaxima: '' });
+  }, []);
 
-    try {
-      const nivelesData = await obtenerNivelesPorAreaAPI(id);
-      // 🔢 Ordenar niveles considerando el número dentro del nombre
-      const nivelesOrdenados = nivelesData.sort((a: Nivel, b: Nivel) => {
-        // Extraer número del texto, ej: "1ro de Secundaria" -> 1
-        const numA = parseInt(a.nombre.match(/\d+/)?.[0] || '0', 10);
-        const numB = parseInt(b.nombre.match(/\d+/)?.[0] || '0', 10);
-
-        // Si ambos tienen número, ordenar por número; si no, por nombre alfabético
-        if (!isNaN(numA) && !isNaN(numB) && numA !== numB) return numA - numB;
-
-        // Si son iguales o no hay número, usar orden alfabético
-        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
-      });
-      setNiveles(nivelesOrdenados);
-      //toast.success('Niveles cargados correctamente');
-    } catch (error) {
-      console.error('Error al obtener niveles por área:', error);
-      //toast.error('Error al obtener niveles');
-      setNiveles([]);
-    } finally {
-      setLoading(false);
-      setIsOpen(false);
-    }
-  };
-
-  const handleCheckboxChange = (nivel: Nivel, checked: boolean) => {
-    setNivelesSeleccionados((prev) => {
-      if (checked) {
-        return [...prev, nivel];
-      } else {
-        return prev.filter((n) => n.id !== nivel.id);
-      }
-    });
-  };
-
-  const handleCerrarModal = () => setNivelesSeleccionados([]);
-
-  const marcarNivelEnviado = (nombreNivel: string, idArea: number) => {
+  const marcarNivelEnviado = useCallback((nombreNivel: string, idArea: number) => {
     setNivelesConParametros((prev) => {
-      const actualizados = {
-        ...prev,
-        [idArea]: [...(prev[idArea] || []), nombreNivel.trim()],
-      };
+      const actualizados = { ...prev, [idArea]: [...(prev[idArea] || []), nombreNivel.trim()] };
       return actualizados;
     });
-    //toast.success('Parámetro registrado correctamente');
-  };
+  }, []);
 
-  const handleMouseEnter = (
-    e: React.MouseEvent<HTMLTableCellElement>,
-    grados: { id: number; nombre: string }[]
-  ) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setHoveredGrado({
-      visible: true,
-      grados,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setHoveredGrado({ visible: false, grados: [], x: 0, y: 0 });
-  };
-
-  const limpiarValoresCopiados = () => {
-    setValoresCopiados({
-      notaMinima: '',
-      notaMaxima: '',
-      cantidadMaxima: '',
-    });
-    setValoresCopiadosManualmente(false);
+  const limpiarGestionSeleccionada = useCallback(() => {
     setGestionSeleccionada(null);
-  };
+  }, []);
+
+  /* =======================
+     NOMBRE ÁREA SELECCIONADA
+     (SIN find en JSX)
+  ======================== */
+  const nombreAreaSeleccionada = useMemo(
+    () => (areaSeleccionada ? (areaMap.get(areaSeleccionada)?.nombre ?? null) : null),
+    [areaSeleccionada, areaMap]
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 font-display relative">
-      {/* <Toaster position="top-right" richColors /> */}
       <main className="bg-blanco w-full max-w-6xl rounded-2xl shadow-sombra-3 p-6 sm:p-10 border border-neutro-200 relative">
         <header className="mb-6 sm:mb-10 text-center">
           <h1 className="text-2xl sm:text-4xl font-extrabold text-negro tracking-tight">
@@ -222,7 +198,7 @@ export const Parametro = () => {
               >
                 <span>
                   {areaSeleccionada
-                    ? `Seleccionar Área: ${areas.find((a) => a.id === areaSeleccionada)?.nombre}`
+                    ? `Seleccionar Área: ${nombreAreaSeleccionada}`
                     : 'Seleccionar Área'}
                 </span>
                 <svg
@@ -304,9 +280,7 @@ export const Parametro = () => {
                           <td
                             className="py-2 px-2 sm:px-4 relative"
                             onMouseEnter={(e) =>
-                              nivel.grados && nivel.grados.length > 0
-                                ? handleMouseEnter(e, nivel.grados)
-                                : null
+                              nivel.grados?.length ? handleMouseEnter(e, nivel.grados) : null
                             }
                             onMouseLeave={handleMouseLeave}
                           >
@@ -350,7 +324,7 @@ export const Parametro = () => {
             <Formulario
               nivelesSeleccionados={nivelesSeleccionados}
               idArea={areaSeleccionada ?? 0}
-              onCerrar={handleCerrarModal}
+              onCerrar={() => setNivelesSeleccionados([])}
               onMarcarEnviado={marcarNivelEnviado}
               valoresCopiados={valoresCopiados}
               valoresCopiadosManualmente={valoresCopiadosManualmente}
@@ -359,7 +333,7 @@ export const Parametro = () => {
                 setSuccessType(type);
                 setModalSuccessOpen(true);
               }}
-              onLimpiarGestionSeleccionada={() => setGestionSeleccionada(null)}
+              onLimpiarGestionSeleccionada={limpiarGestionSeleccionada}
             />
           </div>
         </div>
@@ -367,17 +341,17 @@ export const Parametro = () => {
         {/* TABLA GESTIONES */}
         <TablaGestiones
           gestionSeleccionada={gestionSeleccionada}
-          onSelectGestion={(id) => setGestionSeleccionada(id)}
+          onSelectGestion={setGestionSeleccionada}
           formularioHabilitado={nivelesSeleccionados.length > 0}
           onCopiarValores={copiarValores}
           nivelesSeleccionados={nivelesSeleccionados}
-          areaSeleccionadaNombre={areas.find((a) => a.id === areaSeleccionada)?.nombre ?? null}
+          areaSeleccionadaNombre={nombreAreaSeleccionada}
           onLimpiarValores={limpiarValoresCopiados}
         />
       </main>
 
       {/* Tooltip Mejorado */}
-      {hoveredGrado.visible && hoveredGrado.grados && hoveredGrado.grados.length > 0 && (
+      {hoveredGrado.visible && hoveredGrado.grados?.length ? (
         <div
           className="fixed z-[9999] bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg p-2 sm:p-3 transition-opacity duration-200"
           style={{
@@ -389,14 +363,14 @@ export const Parametro = () => {
           <p className="font-semibold mb-1">Grados:</p>
           <ul className="list-disc pl-4 space-y-1">
             {hoveredGrado.grados
-              .slice() // copia para no mutar el original
-              .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { numeric: true })) // ordena alfabéticamente o numéricamente
+              .slice()
+              .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { numeric: true }))
               .map((grado) => (
                 <li key={grado.id}>{grado.nombre}</li>
               ))}
           </ul>
         </div>
-      )}
+      ) : null}
 
       <Modal
         isOpen={modalSuccessOpen}
@@ -404,13 +378,9 @@ export const Parametro = () => {
         title="¡Registro exitoso!"
         type="success"
       >
-        {successType === 'notaYCantidad' ? (
-          <>
-            La Cantidad máxima y la Nota mínima de clasificados han sido registradas correctamente.
-          </>
-        ) : (
-          <>La Nota mínima de clasificados ha sido registrada correctamente.</>
-        )}
+        {successType === 'notaYCantidad'
+          ? 'La Cantidad máxima y Nota mínima fueron registradas.'
+          : 'La Nota mínima fue registrada.'}
       </Modal>
     </div>
   );

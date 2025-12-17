@@ -16,6 +16,9 @@ const esquemaNotas = z.object({
     })
     .refine((val) => /^(\d+(\.\d+)?)$/.test(limpiarEspacios(val)), {
       message: 'Formato invalido',
+    })
+    .refine((val) => parseFloat(val.replace(',', '.')) <= 100, {
+      message: 'La nota mínima no puede ser mayor a 100',
     }),
 
   cantidadMaxCompetidores: z.string().optional(), // <-- PERMITIMOS VACÍO PORQUE VALIDARÁ EL MODAL
@@ -184,7 +187,7 @@ export const Formulario: React.FC<FormularioProps> = ({
           <input
             type="text"
             {...register('notaMinima')}
-            maxLength={4}
+            maxLength={3}
             onInput={(e) => {
               e.currentTarget.value = e.currentTarget.value
                 .replace(/[^0-9.]/g, '')
