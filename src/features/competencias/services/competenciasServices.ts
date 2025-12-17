@@ -1,82 +1,51 @@
-// src/features/competencias/services/competenciasService.ts
-import axios from 'axios';
-import type { 
-  Competencia, 
-  CrearCompetenciaData, 
-  AreasConNivelesResponse 
-} from '../types';
-
-const API_BASE_URL = 'http://localhost:8000/api';
+import apiClient from '@/api/ApiPhp';
+import type { Competencia, CrearCompetenciaPayload, AreaFiltro, FaseGlobal, NivelFiltro } from '../types';
 
 export const competenciasService = {
-  // Obtener áreas con niveles del responsable usando su ID
-  obtenerAreasConNiveles: async (idResponsable: number): Promise<AreasConNivelesResponse> => {
-    try {
-      console.log(' [Service] Llamando API:', `${API_BASE_URL}/responsables/${idResponsable}/areas-con-niveles/olimpiada-actual`);
-      
-      const response = await axios.get(
-        `${API_BASE_URL}/responsables/${idResponsable}/areas-con-niveles/olimpiada-actual`
-      );
-      
-      console.log('[Service] Respuesta recibida:', response.data);
-      console.log('[Service] Status:', response.status);
-      
-      // Verificar estructura de datos
-      if (!response.data || !response.data.areas) {
-        console.error('[Service] Estructura de datos incorrecta:', response.data);
-        throw new Error('El API no devolvió la estructura esperada');
-      }
-      
-      // Convertir los IDs de string a number si es necesario
-      const datosConvertidos: AreasConNivelesResponse = {
-        areas: response.data.areas.map((area: any) => ({
-          id_area: Number(area.id_area),
-          area: area.area,
-          niveles: area.niveles.map((nivel: any) => ({
-            id_area_nivel: Number(nivel.id_area_nivel),
-            id_nivel: Number(nivel.id_nivel),
-            nombre: nivel.nombre,
-          })),
-        })),
-      };
-      
-      console.log('[Service] Datos convertidos:', datosConvertidos);
-      
-      return datosConvertidos;
-    } catch (error) {
-      console.error('[Service] Error en obtenerAreasConNiveles:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('[Service] Detalles del error:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-      }
-      throw error;
-    }
+  async obtenerAreasResponsable(idResponsable: number): Promise<AreaFiltro[]> {
+    const { data } = await apiClient.get<AreaFiltro[]>(`/competencias/responsable/${idResponsable}/areas/actuales`);
+    return data;
   },
 
-  // Crear nueva competencia
-  crearCompetencia: async (data: CrearCompetenciaData): Promise<Competencia> => {
-    try {
-      console.log('[Service] Creando competencia:', data);
-      
-      const response = await axios.post(`${API_BASE_URL}/competencias`, data);
-      
-      console.log('[Service] Competencia creada:', response.data);
-      
-      return response.data;
-    } catch (error) {
-      console.error('[Service] Error al crear competencia:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('[Service] Detalles del error:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-        throw new Error(error.response?.data?.message || 'Error al crear la competencia');
-      }
-      throw error;
-    }
+  async listarCompetencias(idResponsable: number, idArea: number): Promise<Competencia[]> {
+    const { data } = await apiClient.get<Competencia[]>(`/competencias/responsable/${idResponsable}/area/${idArea}`);
+    return data.sort((a, b) => b.id_competencia - a.id_competencia);
   },
+
+  // 3. Crear Competencia
+  async crearCompetencia(payload: CrearCompetenciaPayload): Promise<Competencia> {
+    const { data } = await apiClient.post<Competencia>('/competencias', payload);
+    return data;
+  },
+
+  // 4. Acciones de Estado (Máquina de Estados)
+  async publicarCompetencia(id: number): Promise<void> {
+    await apiClient.patch(`/competencias/${id}/publicar`);
+  },
+
+  async iniciarCompetencia(id: number): Promise<void> {
+    await apiClient.patch(`/competencias/${id}/iniciar`);
+  },
+
+  async cerrarCompetencia(id: number): Promise<void> {
+    await apiClient.post(`/competencias/${id}/cerrar`);
+  },
+
+  async avalarCompetencia(id: number, userIdSimulado: number, passwordConfirmacion: string): Promise<void> {
+    await apiClient.post(`/competencias/${id}/avalar`, {
+      user_id_simulado: userIdSimulado,
+      password_confirmacion: passwordConfirmacion
+    });
+  },
+
+  // 5. Helpers para el Modal de Creación
+  async obtenerFasesGlobales(): Promise<FaseGlobal[]> {
+    const { data } = await apiClient.get<FaseGlobal[]>('/competencias/fase-global/clasificatoria/actuales');
+    return data;
+  },
+
+  async obtenerNivelesPorArea(idArea: number): Promise<NivelFiltro[]> {
+    const { data } = await apiClient.get<NivelFiltro[]>(`/competencias/area/${idArea}/niveles`);
+    return data;
+  }
 };

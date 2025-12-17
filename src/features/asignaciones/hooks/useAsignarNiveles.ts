@@ -25,7 +25,6 @@ const obtenerGestionActual = (): string => {
 };
 
 const GESTION_ACTUAL = obtenerGestionActual();
-//const GESTION_ACTUAL = "2024";
 
 export function useAsignarNiveles() {
   const [areaSeleccionadaId, setAreaSeleccionadaId] = useState<number | undefined>();
@@ -38,24 +37,11 @@ export function useAsignarNiveles() {
   const [mensajeProcesoIniciado, setMensajeProcesoIniciado] = useState<string>('');
   const modalTimerRef = useRef<number | undefined>(undefined);
 
-  // Cargar áreas con validación de proceso
-  const { data: respuestaAreas, isLoading: isLoadingAreas } = useQuery({
-    queryKey: ['areas', GESTION_ACTUAL],
-    queryFn: () => asignacionesService.obtenerAreas(GESTION_ACTUAL),
+  // Cargar áreas
+  const { data: todasLasAreas = [], isLoading: isLoadingAreas } = useQuery({
+    queryKey: ['areas'],
+    queryFn: asignacionesService.obtenerAreas,
   });
-
-  // Determinar si el proceso ha iniciado basado en el mensaje de la API
-  useEffect(() => {
-    if (respuestaAreas) {
-      const procesoHaIniciado = respuestaAreas.message.includes('proceso de evaluación ha iniciado');
-      setProcesoIniciado(procesoHaIniciado);
-      if (procesoHaIniciado) {
-        setMensajeProcesoIniciado(respuestaAreas.message);
-      }
-    }
-  }, [respuestaAreas]);
-
-  const todasLasAreas = useMemo(() => respuestaAreas?.data || [], [respuestaAreas]);
 
   // Cargar niveles
   const { data: todosLosNiveles = [], isLoading: isLoadingNiveles } = useQuery({
@@ -69,7 +55,7 @@ export function useAsignarNiveles() {
     queryFn: asignacionesService.obtenerGradosEscolaridad,
   });
 
-  // Cargar niveles y grados ya asignados al área seleccionada
+  // Cargar validación de proceso iniciado y niveles/grados asignados
   const { data: datosAsignados, refetch: refetchAsignados } = useQuery({
     queryKey: ['area-niveles-grados', areaSeleccionadaId, GESTION_ACTUAL],
     queryFn: () => 
@@ -78,6 +64,20 @@ export function useAsignarNiveles() {
         : Promise.resolve(null),
     enabled: !!areaSeleccionadaId,
   });
+
+  // Determinar si el proceso ha iniciado basado en el mensaje de la API
+  useEffect(() => {
+    if (datosAsignados) {
+      const procesoHaIniciado = datosAsignados.message?.includes('proceso de evaluación ha iniciado') || false;
+      setProcesoIniciado(procesoHaIniciado);
+      if (procesoHaIniciado) {
+        setMensajeProcesoIniciado(datosAsignados.message);
+      } else {
+        setProcesoIniciado(false);
+        setMensajeProcesoIniciado('');
+      }
+    }
+  }, [datosAsignados]);
 
   const areasOrdenadas = useMemo(
     () => [...todasLasAreas].sort((a, b) => a.nombre.localeCompare(b.nombre)),
@@ -138,7 +138,6 @@ export function useAsignarNiveles() {
   };
 
   const handleAbrirModalGrados = (nivelId: number, nombreNivel: string) => {
-    // Ordenar grados alfabéticamente antes de mostrarlos
     const gradosOrdenados = [...gradosEscolaridad].sort((a, b) => {
       return a.nombre.localeCompare(b.nombre, 'es', { numeric: true });
     });
@@ -154,14 +153,11 @@ export function useAsignarNiveles() {
   };
 
   const handleCerrarModalGrados = () => {
-    // Si el proceso ha iniciado, no validar ni desmarcar nada
     if (procesoIniciado) {
       setModalGradosState(initialModalGradosState);
       return;
     }
 
-    // Al cerrar el modal con "Cancelar", verificar si el nivel tiene grados
-    // Si NO tiene grados, desmarcarlo
     if (modalGradosState.nivelId !== null) {
       const gradosDelNivel = gradosPorNivel[modalGradosState.nivelId];
       
@@ -179,16 +175,13 @@ export function useAsignarNiveles() {
 
   const handleGuardarGrados = (gradosSeleccionados: Set<number>) => {
     if (modalGradosState.nivelId !== null) {
-      // Obtener los grados originales del nivel
       const gradosOriginales = gradosPorNivel[modalGradosState.nivelId] || new Set();
       
-      // Verificar si hubo cambios
       const huboCambios = !isEqual(
         Array.from(gradosOriginales).sort(),
         Array.from(gradosSeleccionados).sort()
       );
 
-      // Si no hubo cambios, mostrar mensaje
       if (!huboCambios) {
         setModalState({
           isOpen: true,
@@ -202,7 +195,6 @@ export function useAsignarNiveles() {
         return;
       }
 
-      // Actualizar gradosPorNivel ANTES de cerrar
       if (gradosSeleccionados.size === 0) {
         setNivelesSeleccionados((prev) => {
           const newSet = new Set(prev);
@@ -223,7 +215,6 @@ export function useAsignarNiveles() {
       }
     }
     
-    // Cerrar modal directamente (sin validación, porque ya guardamos)
     setModalGradosState(initialModalGradosState);
   };
 

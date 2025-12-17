@@ -13,7 +13,7 @@ import { Parametro } from '../features/parametros/components/Parametro';
 import { PaginaRegistrarResponsable } from '@/features/usuarios/responsables/routes/PaginaRegistrarResponsable';
 import { Dashboard } from '@/features/dashboard/components/Dashboard';
 import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador';
-import { PaginaRegistrarEvaluacion } from '@/features/evaluaciones/routes/PaginaRegistrarEvaluacion';
+import { PaginaEvaluacionSala } from '@/features/evaluaciones/routes/PaginaEvaluacionSala.tsx';
 import { PaginaMedallero } from '@/features/medallero/routes/PaginaMedallero';
 import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/PaginaConfiguracionFases';
 import { PaginaAdministrarSubFases } from '@/features/subfases/routes/PaginaAdministrarSubFases';
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
       { path: 'listaCompetidores', element: <ListaCompetidores /> },
       { path: 'competencias', element: <PaginaCompetencias /> },
       { path: 'examenes', element: <PaginaExamenes /> },
-      { path: 'evaluaciones', element: <PaginaRegistrarEvaluacion /> },
+      { path: 'evaluaciones', element: <PaginaEvaluacionSala /> },
       { path: 'parametrosCalificaciones', element: <Parametro /> },
       { path: 'medallero', element: <PaginaMedallero /> },
       { path: 'configuracionFasesGlobales', element: <PaginaConfiguracionFases/> },

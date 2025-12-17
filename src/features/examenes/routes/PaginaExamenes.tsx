@@ -1,245 +1,243 @@
-import { useMemo } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from '@tanstack/react-table';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { useGestorExamenes } from '../hooks/useGestorExamenes';
+import { CustomDropdown } from '@/components/ui/CustomDropdown';
+import { ExamenCard } from '../components/ExamenCard';
 import { ModalCrearExamen } from '../components/ModalCrearExamen';
-import { ModalConfirmacion } from '../../competencias/components/ModalConfirmacion';
-import { useGestionExamenes } from '../hooks/useGestionExamens';
-import type { ExamenTabla } from '../types';
+import { Modal1, type ModalType } from '@/components/ui/Modal1'; 
+import { FileQuestion, AlertCircle, Plus } from 'lucide-react';
+import type { Examen, CrearExamenPayload, EditarExamenPayload } from '../types';
+
+type FeedbackState = {
+  isOpen: boolean;
+  type: ModalType;
+  title: string;
+  message: string;
+};
 
 export function PaginaExamenes() {
-  const {
-    examenes,
-    isLoadingExamenes,
-    isCreating,
-    modalCrearAbierto,
-    confirmationModal,
-    idCompetencia,
-    abrirModalCrear,
-    cerrarModalCrear,
-    cerrarModalConfirmacion,
-    handleGuardarExamen,
-  } = useGestionExamenes();
+  const { 
+    estructura, 
+    examenes, 
+    isLoading, 
+    selectedAreaId, 
+    setSelectedAreaId,
+    selectedNivelId,
+    setSelectedNivelId,
+    competenciaId,
+    acciones
+  } = useGestorExamenes();
 
-  const columns = useMemo<ColumnDef<ExamenTabla>[]>(
-    () => [
-      {
-        accessorKey: 'nro',
-        header: 'NRO',
-        cell: (info) => (
-          <span className="font-medium text-gray-700">
-            {info.getValue() as number}
-          </span>
-        ),
+  const [modalCrearOpen, setModalCrearOpen] = useState(false);
+  const [modalConfirmar, setModalConfirmar] = useState<{ isOpen: boolean, id: number | null }>({ isOpen: false, id: null });
+  const [examenAEditar, setExamenAEditar] = useState<Examen | null>(null);
+  
+  const [feedback, setFeedback] = useState<FeedbackState>({ isOpen: false, type: 'info', title: '', message: '' });
+
+  const areasOptions = estructura.map((e) => ({ value: e.id_area, label: e.area }));
+  const nivelesOptions = selectedAreaId 
+    ? estructura.find((e) => e.id_area === selectedAreaId)?.niveles.map((n) => ({ value: n.id_area_nivel, label: n.nombre_nivel })) || []
+    : [];
+
+  const showFeedback = (type: ModalType, title: string, message: string) => {
+    setFeedback({ isOpen: true, type, title, message });
+  };
+
+  const extractErrorMessage = (err: any) => {
+    const data = err.response?.data;
+    if (data?.error) return data.error;
+    if (data?.message) return data.message;
+    return 'Ocurrió un error inesperado al procesar la solicitud.';
+  };
+
+  const handleCrear = (data: CrearExamenPayload) => {
+    acciones.crear.mutate(data, {
+      onSuccess: () => {
+        setModalCrearOpen(false);
+        showFeedback('success', 'Examen Creado', 'El examen se ha registrado correctamente.');
       },
-      {
-        accessorKey: 'nombre',
-        header: 'NOMBRE DEL EXAMEN',
-        cell: (info) => (
-          <span className="font-medium text-gray-800">
-            {info.getValue() as string}
-          </span>
-        ),
+      onError: (err: any) => {
+        showFeedback('error', 'No se pudo crear', extractErrorMessage(err));
+      }
+    });
+  };
+
+  const handleEditar = (data: CrearExamenPayload) => {
+    if(!examenAEditar) return;
+    
+    const payloadEdicion: EditarExamenPayload = {
+        id_examen: examenAEditar.id_examen,
+        nombre: data.nombre,
+        ponderacion: data.ponderacion,
+        fecha_hora_inicio: data.fecha_hora_inicio,
+        tipo_regla: data.tipo_regla,
+        configuracion_reglas: data.configuracion_reglas
+    };
+
+    acciones.editar.mutate(payloadEdicion, {
+      onSuccess: () => {
+        setModalCrearOpen(false);
+        setExamenAEditar(null);
+        showFeedback('success', 'Examen Actualizado', 'Los cambios se han guardado correctamente.');
       },
-      {
-        accessorKey: 'ponderacion',
-        header: 'PONDERACIÓN (%)',
-        cell: (info) => (
-          <span className="text-gray-700">{info.getValue() as number}%</span>
-        ),
-      },
-      {
-        accessorKey: 'maxima_nota',
-        header: 'NOTA MÁXIMA',
-        cell: (info) => (
-          <span className="text-gray-700">{info.getValue() as number}</span>
-        ),
-      },
-    ],
-    []
-  );
-  const filasTabla = useMemo(() => {
-    if (!examenes || examenes.length === 0) {
-      return [];
+      onError: (err: any) => {
+        showFeedback('error', 'Error al Editar', extractErrorMessage(err));
+      }
+    });
+  };
+
+  const confirmarEliminacion = () => {
+    if (modalConfirmar.id) {
+      acciones.eliminar.mutate(modalConfirmar.id, {
+        onSuccess: () => {
+          setModalConfirmar({ isOpen: false, id: null });
+          showFeedback('success', 'Examen Eliminado', 'El examen ha sido eliminado correctamente.');
+        },
+        onError: (err: any) => {
+          setModalConfirmar({ isOpen: false, id: null });
+          showFeedback('error', 'Error al Eliminar', extractErrorMessage(err));
+        }
+      });
     }
+  };
 
-    return examenes.map((examen, index) => ({
-      nro: index + 1,
-      nombre: examen.nombre,
-      ponderacion: examen.ponderacion,
-      maxima_nota: examen.maxima_nota,
-    }));
-  }, [examenes]);
+  const handleIniciar = (id: number) => {
+    acciones.iniciar.mutate(id, {
+      onSuccess: () => showFeedback('success', 'Examen Iniciado', 'La sala de evaluación está abierta.'),
+      onError: (err: any) => showFeedback('error', 'No se pudo iniciar', extractErrorMessage(err))
+    });
+  };
 
-  const table = useReactTable({
-    data: filasTabla,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const handleFinalizar = (id: number) => {
+    acciones.finalizar.mutate(id, {
+      onSuccess: () => showFeedback('success', 'Examen Finalizado', 'Se han cerrado las evaluaciones.'),
+      onError: (err: any) => showFeedback('error', 'No se pudo finalizar', extractErrorMessage(err))
+    });
+  };
+
+  const puedeCrear = !!competenciaId; 
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 flex flex-col items-center justify-center">
-      <div className="w-full max-w-5xl">
-        {/* Encabezado con botón de regreso */}
-        <div className="mb-6">
-          <button
-            onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Volver a Competencias
-          </button>
-          
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-neutro-50 p-6 font-display">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        <header>
+          <h1 className="text-3xl font-extrabold text-negro flex items-center gap-3">
+            <FileQuestion className="text-principal-600" size={32}/> 
+            Gestión de Exámenes
+          </h1>
+          <p className="text-neutro-500 mt-1">Configura las pruebas y evaluaciones de la competencia.</p>
+        </header>
+
+        <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6 z-20 relative">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Área</label>
+            <CustomDropdown 
+              options={areasOptions} 
+              selectedValue={selectedAreaId} 
+              onSelect={(val) => { setSelectedAreaId(Number(val)); setSelectedNivelId(null); }}
+              placeholder="Seleccionar Área"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nivel</label>
+            <CustomDropdown 
+              options={nivelesOptions} 
+              selectedValue={selectedNivelId} 
+              onSelect={(val) => setSelectedNivelId(Number(val))}
+              placeholder={!selectedAreaId ? "Primero elija un área" : "Seleccionar Nivel"}
+              disabled={!selectedAreaId}
+            />
+          </div>
+        </section>
+
+        <section className="relative min-h-[400px]">
+          {!selectedNivelId ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center opacity-50">
+                <FileQuestion size={64} className="mb-4 text-gray-300"/>
+                <p className="text-xl font-bold text-gray-400">Selecciona un Nivel para ver los exámenes</p>
+            </div>
+          ) : isLoading ? (
+            <div className="text-center py-20 animate-pulse text-neutro-500 font-medium">Cargando exámenes...</div>
+          ) : (
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-                Registrar Exámenes
-              </h1>
-              {idCompetencia && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Competencia ID: <span className="font-semibold">{idCompetencia}</span>
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Alerta si no hay ID de competencia */}
-        {!idCompetencia && (
-          <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
-            <div className="flex items-start gap-3">
-              <span className="text-yellow-600 text-2xl">⚠️</span>
-              <div>
-                <h3 className="font-semibold text-yellow-800">
-                  No se encontró una competencia activa
-                </h3>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Por favor, crea primero una competencia antes de registrar exámenes.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tabla de exámenes */}
-        <div className="mb-4 overflow-hidden rounded-lg shadow-md border border-gray-200">
-          <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
-            <table className="w-full">
-              <thead className="sticky top-0 bg-blue-500 text-white z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="text-left py-3 px-4 font-semibold text-sm uppercase tracking-wide"
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {isLoadingExamenes ? (
-                  <tr>
-                    <td colSpan={columns.length} className="text-center py-10">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-                        <span className="text-gray-500 font-medium">
-                          Cargando exámenes...
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filasTabla.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length} className="text-center py-10">
-                      <div className="flex flex-col items-center gap-2">
-                        <span className="text-gray-400 text-lg">📝</span>
-                        <span className="text-gray-500 font-medium">
-                          No hay exámenes registrados
-                        </span>
-                        <span className="text-gray-400 text-sm">
-                          Crea tu primer examen para esta competencia
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row, index) => (
-                    <tr
-                      key={row.id}
-                      className={`${
-                        index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                      } hover:bg-blue-50 transition-colors`}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Exámenes Registrados ({examenes.length})
+                  </h2>
+                  
+                  {puedeCrear ? (
+                    <button 
+                      onClick={() => { setExamenAEditar(null); setModalCrearOpen(true); }}
+                      className="bg-principal-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-principal-700 flex items-center gap-2 shadow-sm transition-all active:scale-95"
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="py-3 px-4 text-sm">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
+                      <Plus size={20}/> Nuevo Examen
+                    </button>
+                  ) : (
+                    <div className="text-sm text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center gap-2">
+                      <AlertCircle size={16}/>
+                      <span>Para agregar exámenes, asegúrese de que la competencia exista.</span>
+                    </div>
+                  )}
+                </div>
+
+                {examenes.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+                      <p className="text-gray-500 mb-2">No hay exámenes configurados para este nivel.</p>
+                      {puedeCrear && <p className="text-sm text-principal-600 font-medium">¡Crea el primero ahora!</p>}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {examenes.map(examen => (
+                        <ExamenCard 
+                          key={examen.id_examen}
+                          examen={examen}
+                          isProcessing={acciones.iniciar.isPending || acciones.finalizar.isPending || acciones.eliminar.isPending}
+                          onEditar={(ex) => { setExamenAEditar(ex); setModalCrearOpen(true); }}
+                          onEliminar={(id) => setModalConfirmar({ isOpen: true, id })}
+                          onIniciar={handleIniciar}
+                          onFinalizar={handleFinalizar}
+                        />
                       ))}
-                    </tr>
-                  ))
+                  </div>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+            </div>
+          )}
+        </section>
 
-        {/* Información y botón */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-gray-600">
-            {filasTabla.length > 0 && (
-              <span>
-                Mostrando{' '}
-                <span className="font-semibold">{filasTabla.length}</span>{' '}
-                examen{filasTabla.length !== 1 ? 'es' : ''}
-              </span>
-            )}
-          </div>
-
-          <button
-            onClick={abrirModalCrear}
-            disabled={isLoadingExamenes || !idCompetencia}
-            className="inline-flex items-center gap-2 px-6 py-2.5 font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base shadow-md hover:shadow-lg transform hover:scale-105"
-            title={
-              !idCompetencia
-                ? 'Primero debes crear una competencia'
-                : 'Crear nuevo examen'
-            }
-          >
-            <Plus className="w-5 h-5" />
-            Nuevo Examen
-          </button>
-        </div>
       </div>
 
-      <ModalCrearExamen
-        isOpen={modalCrearAbierto}
-        onClose={cerrarModalCrear}
-        onGuardar={handleGuardarExamen}
-        loading={isCreating}
+      <ModalCrearExamen 
+        isOpen={modalCrearOpen}
+        onClose={() => setModalCrearOpen(false)}
+        onSubmit={examenAEditar ? handleEditar : handleCrear}
+        examenAEditar={examenAEditar}
+        idCompetencia={competenciaId || 0}
+        isProcessing={acciones.crear.isPending || acciones.editar.isPending}
       />
 
-      <ModalConfirmacion
-        isOpen={confirmationModal.isOpen}
-        onClose={cerrarModalConfirmacion}
-        title={confirmationModal.title}
-        type={confirmationModal.type}
-        loading={isCreating}
+      <Modal1
+        isOpen={modalConfirmar.isOpen}
+        onClose={() => setModalConfirmar({ isOpen: false, id: null })}
+        type="confirmation"
+        title="¿Eliminar Examen?"
+        onConfirm={confirmarEliminacion}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        loading={acciones.eliminar.isPending}
       >
-        {confirmationModal.message}
-      </ModalConfirmacion>
+        Esta acción no se puede deshacer. Se perderán las configuraciones y notas asociadas a este examen.
+      </Modal1>
+
+      <Modal1
+        isOpen={feedback.isOpen}
+        onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
+        title={feedback.title}
+        type={feedback.type}
+        confirmText="Entendido"
+      >
+        {feedback.message}
+      </Modal1>
+
     </div>
   );
 }

@@ -1,239 +1,259 @@
+import { useEffect } from 'react';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { X, Save, LoaderCircle, Calendar, Layers, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { competenciasService } from '../services/competenciasServices';
+import type { CrearCompetenciaPayload } from '../types';
 
-import { useState, useEffect } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
-import type { CrearCompetenciaData, AreaConNiveles } from '../types';
+const schema = z.object({
+  id_fase_global: z.string().min(1, 'Debe seleccionar una fase'),
+  id_area_nivel: z.string().min(1, 'Debe seleccionar un nivel'),
+  fecha_inicio: z.string().min(1, 'La fecha de inicio es requerida'),
+  fecha_fin: z.string().min(1, 'La fecha de fin es requerida'),
+  criterio_clasificacion: z.string().min(1, 'El criterio es requerido'),
+}).refine((data) => {
+  const inicio = new Date(data.fecha_inicio);
+  const fin = new Date(data.fecha_fin);
+  return fin >= inicio;
+}, {
+  message: "La fecha de fin no puede ser anterior al inicio",
+  path: ["fecha_fin"],
+});
 
-type ModalCrearCompetenciaProps = {
+type FormData = z.infer<typeof schema>;
+
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onGuardar: (data: CrearCompetenciaData) => void;
-  areasConNiveles: AreaConNiveles[];
-  loading?: boolean;
-};
+  areaId: number | null;
+}
 
-export const ModalCrearCompetencia = ({
-  isOpen,
-  onClose,
-  onGuardar,
-  areasConNiveles,
-  loading = false,
-}: ModalCrearCompetenciaProps) => {
-  const [idAreaNivel, setIdAreaNivel] = useState<number>(0);
-  const [fechaInicio, setFechaInicio] = useState('');
-  const [fechaFin, setFechaFin] = useState('');
-  const [error, setError] = useState('');
+export function ModalCrearCompetencia({ isOpen, onClose, areaId }: ModalProps) {
+  const queryClient = useQueryClient();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      criterio_clasificacion: 'suma_ponderada',
+      id_fase_global: '',
+      id_area_nivel: '',
+      fecha_inicio: '',
+      fecha_fin: ''
+    }
+  });
+
+  const fasesQuery = useQuery({
+    queryKey: ['fasesGlobales', 'clasificatoria'],
+    queryFn: competenciasService.obtenerFasesGlobales,
+    enabled: isOpen,
+  });
+
+  const nivelesQuery = useQuery({
+    queryKey: ['nivelesPorArea', areaId],
+    queryFn: () => areaId ? competenciasService.obtenerNivelesPorArea(areaId) : Promise.resolve([]),
+    enabled: isOpen && !!areaId,
+  });
+
+  const fechaInicioWatch = watch('fecha_inicio');
+  const fechaFinWatch = watch('fecha_fin');
+
   useEffect(() => {
-    if (isOpen) {
-      console.log(' [Modal] Modal abierto');
-      console.log(' [Modal] areasConNiveles recibidos:', areasConNiveles);
-      console.log('[Modal] Total de áreas:', areasConNiveles?.length || 0);
-      
-      if (areasConNiveles && areasConNiveles.length > 0) {
-        areasConNiveles.forEach((area, index) => {
-          console.log(` [Modal] Área ${index}:`, {
-            id_area: area.id_area,
-            nombre: area.area,
-            niveles: area.niveles?.length || 0
-          });
-          
-          area.niveles?.forEach((nivel, nivelIndex) => {
-            console.log(`  [Modal] Nivel ${nivelIndex}:`, {
-              id_area_nivel: nivel.id_area_nivel,
-              id_nivel: nivel.id_nivel,
-              nombre: nivel.nombre
-            });
-          });
-        });
-      } else {
-        console.warn(' [Modal] No hay áreas disponibles');
-      }
+    if (fechaInicioWatch && !fechaFinWatch) {
+      setValue('fecha_fin', fechaInicioWatch);
     }
-  }, [isOpen, areasConNiveles]);
+  }, [fechaInicioWatch, fechaFinWatch, setValue]);
 
-  if (!isOpen) return null;
-
-  const handleGuardar = () => {
-    setError('');
-
-    console.log('[Modal] Intentando guardar:', {
-      idAreaNivel,
-      fechaInicio,
-      fechaFin
-    });
-
-    // Validaciones
-    if (idAreaNivel === 0 || !fechaInicio || !fechaFin) {
-      setError('Por favor complete todos los campos');
-      return;
+  const crearMutation = useMutation({
+    mutationFn: (data: FormData) => {
+      const payload: CrearCompetenciaPayload = {
+        id_fase_global: Number(data.id_fase_global),
+        id_area_nivel: Number(data.id_area_nivel),
+        fecha_inicio: data.fecha_inicio,
+        fecha_fin: data.fecha_fin,
+        criterio_clasificacion: data.criterio_clasificacion,
+      };
+      return competenciasService.crearCompetencia(payload);
+    },
+    onSuccess: () => {
+      toast.success('Competencia creada exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['competencias'] });
+      handleClose();
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Error al crear la competencia';
+      toast.error(msg);
     }
+  });
 
-    // Validar que fecha_fin sea posterior a fecha_inicio
-    if (new Date(fechaFin) <= new Date(fechaInicio)) {
-      setError('La fecha de fin debe ser posterior a la fecha de inicio');
-      return;
-    }
-
-    onGuardar({
-      id_area_nivel: idAreaNivel,
-      fecha_inicio: fechaInicio,
-      fecha_fin: fechaFin,
-    });
-
-    // Limpiar formulario
-    limpiarFormulario();
+  const onSubmit: SubmitHandler<FormData> = (data) => {
+    crearMutation.mutate(data);
   };
 
-  const limpiarFormulario = () => {
-    setIdAreaNivel(0);
-    setFechaInicio('');
-    setFechaFin('');
-    setError('');
-  };
-
-  const handleCancelar = () => {
-    limpiarFormulario();
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  useEffect(() => {
+    if (isOpen) reset();
+  }, [isOpen, reset]);
+
+  if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={handleCancelar}
-    >
-      <div
-        className="bg-white rounded-xl shadow-2xl border border-gray-900 w-full max-w-md p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-6 border-b pb-3">
-          <h2 className="text-2xl font-bold text-gray-800">Crear Nueva Competencia</h2>
-          <button
-            onClick={handleCancelar}
-            className="text-gray-400 hover:text-gray-600 transition-colors rounded-full p-1"
-            disabled={loading}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        
+        <header className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Nueva Competencia</h2>
+            <p className="text-xs text-gray-500 mt-1">Configura los detalles del evento</p>
+          </div>
+          <button 
+            type="button"
+            onClick={handleClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+            aria-label="Cerrar modal"
           >
-            <X className="w-6 h-6" />
+            <X size={20} />
           </button>
+        </header>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto">
+          {!areaId ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center text-amber-600 bg-amber-50 rounded-lg border border-amber-100">
+              <AlertCircle size={32} className="mb-2" />
+              <p className="font-medium">Selecciona un Área primero</p>
+              <p className="text-sm opacity-80">Cierra este modal y elige un área en el filtro superior para continuar.</p>
+            </div>
+          ) : (
+            <form id="form-competencia" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Layers size={16} className="text-principal-500" /> Fase Global
+                </label>
+                <select 
+                  {...register('id_fase_global')}
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 outline-none transition-all"
+                  disabled={fasesQuery.isLoading}
+                >
+                  <option value="">Seleccione una fase...</option>
+                  {fasesQuery.data?.map(fase => (
+                    <option key={fase.id_fase_global} value={fase.id_fase_global}>
+                      {fase.nombre} ({fase.codigo})
+                    </option>
+                  ))}
+                </select>
+                {errors.id_fase_global && (
+                  <p className="text-xs text-red-500">{errors.id_fase_global.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700">Nivel Académico</label>
+                <select 
+                  {...register('id_area_nivel')}
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal-500 focus:border-principal-500 outline-none transition-all"
+                  disabled={nivelesQuery.isLoading}
+                >
+                  <option value="">Seleccione un nivel...</option>
+                  {nivelesQuery.data?.map(n => (
+                    <option key={n.id_area_nivel} value={n.id_area_nivel}>
+                      {n.nivel}
+                    </option>
+                  ))}
+                </select>
+                {errors.id_area_nivel && (
+                  <p className="text-xs text-red-500">{errors.id_area_nivel.message}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Calendar size={16} className="text-principal-500"/> Inicio
+                  </label>
+                  <input 
+                    type="date" 
+                    {...register('fecha_inicio')}
+                    className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal-500 outline-none"
+                  />
+                  {errors.fecha_inicio && (
+                    <p className="text-xs text-red-500">{errors.fecha_inicio.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Calendar size={16} className="text-principal-500"/> Fin
+                  </label>
+                  <input 
+                    type="date" 
+                    {...register('fecha_fin')}
+                    className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal-500 outline-none"
+                  />
+                  {errors.fecha_fin && (
+                    <p className="text-xs text-red-500">{errors.fecha_fin.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700">Criterio de Clasificación</label>
+                <select 
+                  {...register('criterio_clasificacion')}
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 focus:outline-none"
+                >
+                  <option value="suma_ponderada">Suma Ponderada (Por Defecto)</option>
+                  <option value="promedio">Promedio Simple</option>
+                </select>
+              </div>
+
+            </form>
+          )}
         </div>
 
-        {/* Mensaje de error */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Mensaje de debug si no hay áreas */}
-        {!areasConNiveles || areasConNiveles.length === 0 ? (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-700">
-               No hay áreas disponibles. Verifica que el usuario tenga áreas asignadas.
-            </p>
-          </div>
-        ) : null}
-
-        <div className="space-y-4">
-          {/* Select de Área y Nivel */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Área y Nivel: <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={idAreaNivel}
-              onChange={(e) => {
-                const valor = Number(e.target.value);
-                console.log(' [Modal] Seleccionado id_area_nivel:', valor);
-                setIdAreaNivel(valor);
-                setError('');
-              }}
-              disabled={loading || !areasConNiveles || areasConNiveles.length === 0}
-              className="w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-4 transition-colors text-lg shadow-inner border-gray-300 focus:ring-blue-100 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value={0}>Seleccione un Área y Nivel</option>
-              {areasConNiveles && areasConNiveles.length > 0 ? (
-                areasConNiveles.map((area) =>
-                  area.niveles && area.niveles.length > 0 ? (
-                    area.niveles.map((nivel) => (
-                      <option 
-                        key={`area-${area.id_area}-nivel-${nivel.id_area_nivel}`} 
-                        value={Number(nivel.id_area_nivel)}
-                      >
-                        {area.area} - {nivel.nombre}
-                      </option>
-                    ))
-                  ) : null
-                )
-              ) : null}
-            </select>
-          </div>
-
-          {/* Fecha de Inicio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Inicio: <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => {
-                setFechaInicio(e.target.value);
-                setError('');
-              }}
-              min={today}
-              disabled={loading}
-              className="w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-4 transition-colors text-lg shadow-inner border-gray-300 focus:ring-blue-100 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Fecha de Fin */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Fin: <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => {
-                setFechaFin(e.target.value);
-                setError('');
-              }}
-              min={fechaInicio || today}
-              disabled={loading}
-              className="w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none focus:ring-4 transition-colors text-lg shadow-inner border-gray-300 focus:ring-blue-100 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div className="flex gap-4 justify-end pt-4 mt-6">
+        <footer className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
           <button
             type="button"
-            onClick={handleCancelar}
-            disabled={loading}
-            className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            onClick={handleClose}
+            className="px-5 py-2.5 rounded-lg text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+            disabled={crearMutation.isPending}
           >
-            <X className="w-5 h-5" />
-            <span>Cancelar</span>
+            Cancelar
           </button>
+          
           <button
-            type="button"
-            onClick={handleGuardar}
-            disabled={loading || idAreaNivel === 0 || !fechaInicio || !fechaFin}
-            className="flex items-center gap-2 font-semibold py-2.5 px-8 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            type="submit"
+            form="form-competencia"
+            disabled={crearMutation.isPending || !areaId}
+            className="px-6 py-2.5 bg-principal-600 text-white rounded-lg font-bold hover:bg-principal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm"
           >
-            {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            {crearMutation.isPending ? (
+              <>
+                <LoaderCircle size={18} className="animate-spin" /> Guardando...
+              </>
             ) : (
               <>
-                <Save className="w-5 h-5" />
-                <span>Guardar</span>
+                <Save size={18} /> Crear Competencia
               </>
             )}
           </button>
-        </div>
+        </footer>
+
       </div>
     </div>
   );
-};
+}

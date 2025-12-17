@@ -7,7 +7,7 @@ export type UserRole =
   | 'desconocido';
 
 export interface User {
-  id_usuario: number;  //editado por clau
+  id_usuario: number;
   email: string;
   nombre: string;
   apellido: string;
@@ -25,4 +25,21 @@ export interface AuthContextType {
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
+}
+
+export interface LoginApiResponse {
+  access_token: string;
+  token_type: string;
+  user: {
+    id_usuario: number;
+    nombre: string;
+    apellido: string;
+    email: string;
+    roles: string[];
+  };
+}
+
+export interface MeApiResponse {
+  message: string;
+  user: LoginApiResponse['user'];
 }
