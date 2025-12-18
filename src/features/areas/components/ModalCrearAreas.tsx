@@ -1,4 +1,4 @@
-//src/features/components/ModalCrearAareas.tsx
+// src/features/components/ModalCrearAareas.tsx
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +34,7 @@ export const ModalCrearArea = ({
   const [touched, setTouched] = useState(false);
   const valorNombre = watch('nombre');
 
+  // Reset del formulario al abrir/cerrar modal
   useEffect(() => {
     if (isOpen) {
       reset({ nombre: '' });
@@ -65,25 +66,24 @@ export const ModalCrearArea = ({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const input = document.getElementById('nombre') as HTMLInputElement;
-    const valorActual = input?.value || '';
+    const valorActual = valorNombre || '';
 
-    // Validación 2: Si solo contiene espacios
+    // Validación si solo contiene espacios
     if (valorActual.trim() === '') {
       setValue('nombre', '', { shouldValidate: true });
       setTouched(true);
       return;
     }
 
-    // Validación 12: No permitir guardar con datos inválidos
+    // Validación de caracteres inválidos
     const tieneNumeros = /\d/.test(valorActual);
     const tieneCaracteresEspeciales = /[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/.test(valorActual);
 
     if (tieneNumeros || tieneCaracteresEspeciales) {
-      return; // No permitir el envío
+      return; // No permitir envío
     }
 
-    // Validación 13: Si pasa todas las validaciones, continuar
+    // Guardar si pasa todas las validaciones
     handleSubmit(onGuardar)(e);
   };
 
@@ -95,26 +95,21 @@ export const ModalCrearArea = ({
   };
 
   const handleClickOutside = () => {
-    // Mostrar error inmediatamente si el campo está vacío al hacer clic fuera
-    setTouched(true);
-    if (!valorNombre || valorNombre.trim() === '') {
-      setValue('nombre', '', { shouldValidate: true });
+    // Validar solo si el campo tiene valor; no mostrar error si modal se está cerrando
+    if (!isOpen) return;
+    if (valorNombre && valorNombre.trim() !== '') {
+      setTouched(true);
     }
   };
 
   const handleBlur = () => {
-    // Marcar como tocado y validar cuando el usuario sale del campo
     setTouched(true);
-    if (!valorNombre || valorNombre.trim() === '') {
-      setValue('nombre', '', { shouldValidate: true });
-    }
   };
 
   if (!isOpen) return null;
 
-  // Mostrar error de validación en tiempo real o error de react-hook-form
-  const mensajeError =
-    errorTiempoReal || (touched && errors.nombre?.message) || errors.nombre?.message;
+  // Mostrar error solo si hay interacción (touched) o error en tiempo real
+  const mensajeError = errorTiempoReal || (touched ? errors.nombre?.message : '');
 
   return (
     <div
@@ -123,17 +118,7 @@ export const ModalCrearArea = ({
     >
       <div
         className="bg-white rounded-lg shadow-lg border-2 border-black w-full max-w-md p-6"
-        onClick={(e) => {
-          e.stopPropagation();
-          // Si se hace clic en cualquier parte del modal (no en el input)
-          const target = e.target as HTMLElement;
-          if (target.tagName !== 'INPUT') {
-            setTouched(true);
-            if (!valorNombre || valorNombre.trim() === '') {
-              setValue('nombre', '', { shouldValidate: true });
-            }
-          }
-        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-semibold text-center mb-6">Crear Nueva Área</h2>
 
@@ -154,9 +139,7 @@ export const ModalCrearArea = ({
               autoFocus
               disabled={loading}
               maxLength={30}
-              {...register('nombre', {
-                onBlur: handleBlur,
-              })}
+              {...register('nombre', { onBlur: handleBlur })}
             />
             <div className="h-12 mt-1">
               {mensajeError && (
@@ -171,7 +154,10 @@ export const ModalCrearArea = ({
           <div className="flex gap-4 justify-center mt-8">
             <button
               type="button"
-              onClick={handleCancelar}
+              onClick={(e) => {
+                e.stopPropagation(); // evita que llegue al fondo del modal
+                handleCancelar();
+              }}
               disabled={loading}
               className="flex items-center gap-2 font-semibold py-2.5 px-6 rounded-lg bg-neutro-200 text-neutro-700 hover:bg-neutro-300 transition-colors"
             >
