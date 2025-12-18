@@ -64,6 +64,8 @@ export interface FormularioProps {
   idArea: number;
   onCerrar: () => void;
   onMarcarEnviado: (nombreNivel: string, idArea: number) => void;
+  nivelesConParametros: Record<number, string[]>; // <-- Asegúrate de definir su tipo
+
   valoresCopiados?: {
     notaMinima: number | '';
     cantidadMaxima: number | '';

@@ -187,7 +187,7 @@ export const Formulario: React.FC<FormularioProps> = ({
           <input
             type="text"
             {...register('notaMinima')}
-            maxLength={3}
+            maxLength={4}
             onInput={(e) => {
               e.currentTarget.value = e.currentTarget.value
                 .replace(/[^0-9.]/g, '')

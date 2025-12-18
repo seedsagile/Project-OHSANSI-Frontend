@@ -106,6 +106,7 @@ export const Parametro = () => {
     setNivelesSeleccionados([]);
     setValoresCopiadosManualmente(false);
 
+    setIsOpen(false);
     try {
       const data = await obtenerNivelesPorAreaAPI(id);
       const ordenados = data.sort((a: Nivel, b: Nivel) => {
@@ -218,7 +219,7 @@ export const Parametro = () => {
                   style={{ maxHeight: '200px' }}
                 >
                   {areas.length === 0 ? (
-                    <p className="text-neutro-700 text-sm">No hay áreas disponibles.</p>
+                    <p className="text-neutro-700 text-sm">Cargando Areas...</p>
                   ) : (
                     <div className="space-y-2">
                       {areas.map((area) => (
@@ -380,8 +381,8 @@ export const Parametro = () => {
         type="success"
       >
         {successType === 'notaYCantidad'
-          ? 'La Cantidad máxima y Nota mínima fueron registradas.'
-          : 'La Nota mínima fue registrada.'}
+          ? '¡Registro Exitoso! - La Cantidad máxima y la Nota mínima de clasificados han sido registradas correctamente.'
+          : '¡Registro Exitoso! - La Nota mínima de clasificacion ha sido registrada correctamente'}
       </Modal>
     </div>
   );
