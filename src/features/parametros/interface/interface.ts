@@ -14,6 +14,7 @@ export interface Nivel {
   id: number;
   nombre: string;
   grados?: Grado[];
+
   areaNiveles: number[];
 }
 
@@ -63,8 +64,8 @@ export interface FormularioProps {
   nivelesSeleccionados: Nivel[];
   idArea: number;
   onCerrar: () => void;
-  onMarcarEnviado: (nombreNivel: string, idArea: number) => void;
-  nivelesConParametros: Record<number, string[]>; // <-- Asegúrate de definir su tipo
+  onMarcarEnviado: (idNivel: number, idArea: number) => void;
+  nivelesConParametros: Record<number, number[]>; // <-- Asegúrate de definir su tipo
 
   valoresCopiados?: {
     notaMinima: number | '';

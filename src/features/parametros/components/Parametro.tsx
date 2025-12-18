@@ -17,7 +17,7 @@ export const Parametro = () => {
   const [loading, setLoading] = useState(false);
   const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Nivel[]>([]);
   const [valoresCopiadosManualmente, setValoresCopiadosManualmente] = useState(false);
-  const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, string[]>>({});
+  const [nivelesConParametros, setNivelesConParametros] = useState<Record<number, number[]>>({});
   const [gestionSeleccionada, setGestionSeleccionada] = useState<number | null>(null);
   const [modalSuccessOpen, setModalSuccessOpen] = useState(false);
   const [hoveredGrado, setHoveredGrado] = useState<{
@@ -73,20 +73,22 @@ export const Parametro = () => {
      PARÁMETROS ACTUALES
      (solo cuando ya hay áreas)
   ======================== */
+  // Cuando obtienes parámetros actuales, crea un map de ids:
   useEffect(() => {
     if (areas.length === 0) return;
 
-    obtenerParametrosGestionActualAPI().then((parametros) => {
-      const map: Record<number, string[]> = {};
+    obtenerParametrosGestionActualAPI().then((response) => {
+      const parametros = response.parametros ?? response.data.parametros ?? response.data; // depende de la estructura exacta
+
+      const map: Record<number, number[]> = {}; // area_id -> array de id_area_nivel
 
       parametros.forEach((p: any) => {
-        const areaNombre = p.area_nivel.area.nombre;
-        const nivelNombre = p.area_nivel.nivel.nombre.trim();
-        const area = areas.find((a) => a.nombre === areaNombre);
+        // Buscar el area por nombre
+        const area = areas.find((a) => a.nombre === p.area);
         if (!area) return;
 
         map[area.id] ??= [];
-        map[area.id].push(nivelNombre);
+        map[area.id].push(p.id_area_nivel); // ✅ usar el id_area_nivel que devuelve tu backend
       });
 
       setNivelesConParametros(map);
@@ -159,11 +161,11 @@ export const Parametro = () => {
     setValoresCopiados({ notaMinima: '', notaMaxima: '', cantidadMaxima: '' });
   }, []);
 
-  const marcarNivelEnviado = useCallback((nombreNivel: string, idArea: number) => {
-    setNivelesConParametros((prev) => {
-      const actualizados = { ...prev, [idArea]: [...(prev[idArea] || []), nombreNivel.trim()] };
-      return actualizados;
-    });
+  const marcarNivelEnviado = useCallback((idAreaNivel: number, idArea: number) => {
+    setNivelesConParametros((prev) => ({
+      ...prev,
+      [idArea]: [...new Set([...(prev[idArea] || []), idAreaNivel])],
+    }));
   }, []);
 
   const limpiarGestionSeleccionada = useCallback(() => {
@@ -288,28 +290,27 @@ export const Parametro = () => {
                             {nivel.nombre}
                           </td>
                           <td className="py-2 px-2 sm:px-4 text-center">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 sm:w-5 sm:h-5 accent-principal-500"
-                              checked={
-                                nivelesSeleccionados.some((n) => n.id === nivel.id) ||
-                                !!(
-                                  areaSeleccionada &&
-                                  nivelesConParametros[areaSeleccionada]?.includes(
-                                    nivel.nombre.trim()
-                                  )
-                                )
-                              }
-                              onChange={(e) => handleCheckboxChange(nivel, e.target.checked)}
-                              disabled={
-                                !!(
-                                  areaSeleccionada &&
-                                  nivelesConParametros[areaSeleccionada]?.includes(
-                                    nivel.nombre.trim()
-                                  )
-                                )
-                              }
-                            />
+                            {(() => {
+                              const nivelYaGuardado =
+                                !!areaSeleccionada &&
+                                nivelesConParametros[areaSeleccionada]?.some((id) =>
+                                  nivel.areaNiveles.includes(id)
+                                );
+
+                              const nivelSeleccionado = nivelesSeleccionados.some(
+                                (n) => n.id === nivel.id
+                              );
+
+                              return (
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 sm:w-5 sm:h-5 accent-principal-500"
+                                  checked={nivelYaGuardado || nivelSeleccionado}
+                                  disabled={nivelYaGuardado}
+                                  onChange={(e) => handleCheckboxChange(nivel, e.target.checked)}
+                                />
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))

@@ -109,7 +109,7 @@ export const Formulario: React.FC<FormularioProps> = ({
 
       await crearParametroAPI(payload);
 
-      nivelesSeleccionados.forEach((n) => onMarcarEnviado(n.nombre, idArea));
+      nivelesSeleccionados.forEach((n) => onMarcarEnviado(n.id, idArea));
 
       reset({ notaMinima: '', cantidadMaxCompetidores: '' });
       if (onLimpiarSeleccion) onLimpiarSeleccion();
