@@ -175,9 +175,11 @@ export const Formulario: React.FC<FormularioProps> = ({
         </h1>
 
         {formularioBloqueado && (
-          <p className="text-center text-red-500 font-medium text-sm sm:text-base">
-            Selecciona un nivel para habilitar el formulario.
-          </p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-center text-red-600 font-medium text-sm sm:text-base">
+              Selecciona un nivel para habilitar el formulario.
+            </p>
+          </div>
         )}
 
         <div>
@@ -232,7 +234,7 @@ export const Formulario: React.FC<FormularioProps> = ({
             disabled={formularioBloqueado || loading}
             className={`flex items-center justify-center py-2 px-6 sm:px-8 rounded-md text-white font-semibold transition text-sm sm:text-base ${
               formularioBloqueado || loading
-                ? 'bg-blue-400 cursor-not-allowed'
+                ? 'bg-blue-400 cursor-not-allowed caret-acento-500'
                 : 'bg-gray-400 hover:bg-gray-300'
             }`}
           >
