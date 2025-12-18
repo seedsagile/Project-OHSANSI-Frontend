@@ -70,7 +70,7 @@ export const ModalCrearNivel = ({
             <div className="h-6 mt-1">
               {errors.nombre && (
                 <div className="flex items-center gap-2 text-red-600 text-sm">
-                  <AlertCircle size={15} />
+                  <AlertCircle size={15} className="flex-shrink-0" />
                   <span>{errors.nombre.message}</span>
                 </div>
               )}
