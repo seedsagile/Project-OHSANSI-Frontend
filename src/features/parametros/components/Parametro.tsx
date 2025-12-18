@@ -324,6 +324,7 @@ export const Parametro = () => {
             <Formulario
               nivelesSeleccionados={nivelesSeleccionados}
               idArea={areaSeleccionada ?? 0}
+              nivelesConParametros={nivelesConParametros} // <--- PASARLO AQUÍ
               onCerrar={() => setNivelesSeleccionados([])}
               onMarcarEnviado={marcarNivelEnviado}
               valoresCopiados={valoresCopiados}
