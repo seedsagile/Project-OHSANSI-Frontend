@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { cn } from '@/utils/cn';
 import { SystemStatusBar } from './SystemStatusBar';
+import { cn } from '@/utils/cn';
 
 const HamburgerIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -17,7 +17,6 @@ export function RootLayout() {
 
   return (
     <div className="relative min-h-screen flex bg-slate-50 overflow-hidden">
-      {/* Sidebar - */}
       <Sidebar 
         isOpen={isSidebarOpen} 
         setOpen={setSidebarOpen} 
@@ -28,28 +27,31 @@ export function RootLayout() {
         "flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out bg-blanco",
         mainContentPaddingClass
       )}>
-        
-        <header className="h-16 border-b border-slate-100 flex items-center px-4 shrink-0 bg-blanco/80 backdrop-blur-md sticky top-0 z-40">
-          <div className="flex items-center gap-4 w-full">
+        {/* HEADER ÚNICO COMPACTO */}
+        <header className="h-14 border-b border-slate-100 flex items-center px-4 shrink-0 bg-blanco sticky top-0 z-40">
+          <div className="flex items-center gap-3 w-full">
             <button
               onClick={() => setIsSidebarVisible(!isSidebarVisible)}
-              className="p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600 hidden lg:block transition-all active:scale-95"
+              className="p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600 hidden lg:block"
+              aria-label="Toggle Sidebar"
             >
               <HamburgerIcon />
             </button>
-
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600 lg:hidden"
+              aria-label="Open Menu"
             >
               <HamburgerIcon />
             </button>
 
+            {/* Componente de estado integrado en el header */}
             <SystemStatusBar />
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        {/* ÁREA DE CONTENIDO LIBRE */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </div>
       </main>
