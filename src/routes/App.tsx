@@ -16,7 +16,6 @@ import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes
 import { PaginaEvaluacionSala } from '@/features/evaluaciones/routes/PaginaEvaluacionSala.tsx';
 import { PaginaMedallero } from '@/features/medallero/routes/PaginaMedallero';
 import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/PaginaConfiguracionFases';
-import { PaginaAdministrarSubFases } from '@/features/subfases/routes/PaginaAdministrarSubFases';
 import { PaginaReporteCambios } from '../features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios';
 import { PaginaCronograma } from '@/features/cronograma/routes/PaginaCronograma';
 import { PaginaCompetencias } from '../features/competencias/routes/PaginaCompetencias';
@@ -59,7 +58,6 @@ const router = createBrowserRouter([
       { path: 'parametrosCalificaciones', element: <Parametro /> },
       { path: 'medallero', element: <PaginaMedallero /> },
       { path: 'configuracionFasesGlobales', element: <PaginaConfiguracionFases/> },
-      { path: 'configuracionSubFases', element: <PaginaAdministrarSubFases/> },
       {path: 'reportesCambiosCalificaciones', element: <PaginaReporteCambios/> },
       {path: 'configuracionCronograma', element: <PaginaCronograma/> },
     ],
