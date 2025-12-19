@@ -3,7 +3,8 @@ import type {
   AreaEvaluador, 
   ExamenCombo, 
   CompetidorSala, 
-  GuardarNotaPayload 
+  GuardarNotaPayload,
+  DescalificarPayload
 } from '../types/sala.types';
 
 export const salaService = {
@@ -45,5 +46,10 @@ export const salaService = {
   // 6. LIBERAR: Desbloquear (Cancelar)
   async desbloquearCompetidor(idEvaluacion: number, userId: number): Promise<void> {
     await apiClient.post(`/sala-evaluacion/${idEvaluacion}/desbloquear`, { user_id: userId });
+  },
+
+  // 7. DESCALIFICAR
+  async descalificarCompetidor(idEvaluacion: number, payload: DescalificarPayload): Promise<void> {
+    await apiClient.post(`/sala-evaluacion/${idEvaluacion}/descalificar`, payload);
   }
 };

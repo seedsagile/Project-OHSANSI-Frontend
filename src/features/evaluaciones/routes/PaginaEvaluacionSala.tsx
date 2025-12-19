@@ -3,8 +3,9 @@ import { useSalaEvaluacion } from '../hooks/useSalaEvaluacion';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { TablaSalaEvaluacion } from '../components/TablaSalaEvaluacion';
 import { CalificacionModal } from '../components/CalificacionModal';
-import { Modal1, type ModalType } from '@/components/ui/Modal1'; // Importamos Modal1 y su tipo
+import { Modal1, type ModalType } from '@/components/ui/Modal1'; // Asegúrate de que Modal1 soporte un children de tipo ReactNode
 import { Gavel, AlertCircle, RefreshCw } from 'lucide-react'; // AlertCircle ahora se usa
+import toast from 'react-hot-toast';
 import type { CompetidorSala, GuardarNotaPayload } from '../types/sala.types';
 
 // Estado para el modal de feedback
@@ -103,6 +104,33 @@ export function PaginaEvaluacionSala() {
       acciones.desbloquear.mutate(competidorSeleccionado.id_evaluacion);
     }
     setModalCalificarOpen(false);
+    setCompetidorSeleccionado(null);
+  };
+
+  // Manejador para Descalificar
+  const handleDescalificar = (comp: CompetidorSala) => {
+    setCompetidorSeleccionado(comp);
+    showFeedback(
+      'warning', 
+      'Confirmar Descalificación', 
+      `¿Está seguro que desea descalificar a ${comp.nombre_completo}?`
+    );
+    // El modal de feedback ahora tendrá un input para el motivo.
+    // La lógica de confirmación se moverá al `onConfirm` del Modal1.
+  };
+
+  const confirmarDescalificacion = (motivo: string) => {
+    if (!competidorSeleccionado || !motivo.trim()) {
+      toast.error("Debe proporcionar un motivo para la descalificación.");
+      return;
+    }
+    if (motivo.trim().length < 10) {
+      toast.error("El motivo debe tener al menos 10 caracteres.");
+      return;
+    }
+
+    acciones.descalificar.mutate({ idEvaluacion: competidorSeleccionado.id_evaluacion, motivo });
+    setFeedback(prev => ({ ...prev, isOpen: false })); // Cerrar modal de confirmación
     setCompetidorSeleccionado(null);
   };
 
@@ -205,6 +233,7 @@ export function PaginaEvaluacionSala() {
                     competidores={competidores}
                     isLoading={isLoadingCompetidores}
                     onCalificar={handleIntentarCalificar}
+                    onDescalificar={handleDescalificar} // <-- Pasar la función
                  />
               </div>
            )}
@@ -229,9 +258,25 @@ export function PaginaEvaluacionSala() {
         onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
         title={feedback.title}
         type={feedback.type}
-        confirmText="Entendido"
+        // Lógica condicional para el modal de descalificación
+        onConfirm={feedback.type === 'warning' && competidorSeleccionado ? () => {
+          const motivoInput = document.getElementById('motivo-descalificacion') as HTMLInputElement;
+          confirmarDescalificacion(motivoInput?.value || '');
+        } : undefined}
+        confirmText={feedback.type === 'warning' && competidorSeleccionado ? 'Confirmar' : 'Entendido'}
       >
-        {feedback.message}
+        <p>{feedback.message}</p>
+        {/* Mostrar input de motivo solo para el modal de descalificación */}
+        {feedback.type === 'warning' && competidorSeleccionado && (
+          <div className="mt-4">
+            <label htmlFor="motivo-descalificacion" className="block text-sm font-bold text-gray-700 mb-1">Motivo (requerido)</label>
+            <textarea
+              id="motivo-descalificacion"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none bg-white min-h-[80px]"
+              placeholder="Escriba una justificación clara (mín. 10 caracteres)..."
+            />
+          </div>
+        )}
       </Modal1>
 
     </div>

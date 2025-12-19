@@ -64,8 +64,10 @@ export function CalificacionModal({ isOpen, onClose, onGuardar, competidor, isPr
   // Cargar datos iniciales
   useEffect(() => {
     if (isOpen && competidor) {
+      // Lógica para inferir si el competidor estuvo ausente:
+      // Si ya fue calificado y su nota es 0, se asume que fue por ausencia.
       reset({
-        nota: Number(competidor.nota_actual),
+        nota: competidor.nota_actual ? Number(competidor.nota_actual) : undefined,
         estado_participacion: Number(competidor.nota_actual) === 0 && competidor.estado_evaluacion === 'Calificado' ? 'ausente' : 'presente',
         motivo_cambio: ''
       });

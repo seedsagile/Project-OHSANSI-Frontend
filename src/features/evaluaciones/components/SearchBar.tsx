@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react';
 import { validarBusqueda } from '../utils/validations';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface SearchBarProps {
   searchTerm: string;
@@ -20,7 +20,7 @@ export const SearchBar = ({
     setInputValue(searchTerm);
   }, [searchTerm]);
 
-  const handleInputChange = (value: string) => {
+  const handleInputChange = useCallback((value: string) => {
     // ➡️ 1. RESTRICCIÓN INMEDIATA: Filtrar solo letras, acentos, ñ y espacios
     // Utiliza una regex para reemplazar cualquier carácter que NO sea una letra (incluye acentos y ñ) o un espacio.
     const regexSoloLetrasYEspacios = /[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g;
@@ -31,14 +31,14 @@ export const SearchBar = ({
     setError('');
 
     // Si el valor filtrado está vacío, limpiar la búsqueda en el componente padre
-    if (valorFiltrado.trim().length === 0) {
+    if (valorFiltrado.trim() === '') {
       onSearchChange('');
       return;
     }
 
     // 2. VALIDACIÓN LÓGICA (usando la función que verifica espacios dobles, etc.)
     const validacion = validarBusqueda(valorFiltrado);
-    
+
     if (!validacion.valido && validacion.mensaje) {
       setError(validacion.mensaje);
       // No se llama a onSearchChange, manteniendo el estado filtrado pero con error visual
@@ -47,7 +47,7 @@ export const SearchBar = ({
 
     // 3. Si es válido (solo letras, espacios, y pasa la validación de formato), actualizar búsqueda
     onSearchChange(valorFiltrado);
-  };
+  }, [onSearchChange]);
 
   return (
     <div className="mb-6">

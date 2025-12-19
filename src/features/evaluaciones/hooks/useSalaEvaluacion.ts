@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { salaService } from '../services/salaService';
 import { useAuth } from '@/auth/login/hooks/useAuth';
-import { echo } from '@/lib/echo';
+import { echo } from '@/lib/echo'; // Asegúrate de que echo esté configurado correctamente
 import type { CompetidorSala } from '../types/sala.types';
 
 // Tipos de los eventos de WebSocket
@@ -173,6 +173,31 @@ export function useSalaEvaluacion() {
     mutationFn: (idEvaluacion: number) => salaService.desbloquearCompetidor(idEvaluacion, userId!),
   });
 
+  const descalificarMutation = useMutation({
+    mutationFn: ({ idEvaluacion, motivo }: { idEvaluacion: number, motivo: string }) => 
+      salaService.descalificarCompetidor(idEvaluacion, { user_id: userId!, motivo }),
+
+    onSuccess: (_, variables) => {
+      const { idEvaluacion } = variables;
+      queryClient.setQueryData<CompetidorSala[]>(['salaCompetidores', selectedExamenId], (oldData) => {
+        if (!oldData) return [];
+        return oldData.map(comp => {
+          if (comp.id_evaluacion === idEvaluacion) {
+            return {
+              ...comp,
+              estado_evaluacion: 'Descalificado',
+              es_bloqueado: false,
+              bloqueado_por_mi: false,
+            };
+          }
+          return comp;
+        });
+      });
+      toast.success('Competidor descalificado');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'No se pudo descalificar'),
+  });
+
   return {
     areas: areasQuery.data || [],
     examenes: examenesQuery.data || [],
@@ -195,7 +220,8 @@ export function useSalaEvaluacion() {
     acciones: {
       bloquear: bloquearMutation,
       guardar: guardarMutation,
-      desbloquear: desbloquearMutation
+      desbloquear: desbloquearMutation,
+      descalificar: descalificarMutation
     }
   };
 }

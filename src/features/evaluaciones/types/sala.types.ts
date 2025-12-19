@@ -28,6 +28,12 @@ export interface GuardarNotaPayload {
   motivo_cambio?: string; // Solo si se edita
 }
 
+// Para el payload de descalificar
+export interface DescalificarPayload {
+  user_id: number;
+  motivo: string;
+}
+
 // Respuesta limpia para los selectores de Area/Nivel del Evaluador
 export interface AreaEvaluador {
   id_area: number;
