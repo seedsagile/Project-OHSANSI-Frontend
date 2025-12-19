@@ -1,170 +1,80 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { cronogramaService } from '../services/cronogramaServices';
-import type { 
-  FaseGlobal, 
-  CronogramaFase, 
-  FaseCalendario, 
-  CrearCronogramaPayload, 
-  ActualizarCronogramaPayload 
-} from '../types';
-
-type FormularioFechas = {
-  fecha_inicio: string;
-  fecha_fin: string;
-};
+import type { FaseGlobal, CrearFasePayload, ActualizarCronogramaPayload } from '../types';
 
 export function useGestorCronograma() {
   const queryClient = useQueryClient();
   
   const [modalOpen, setModalOpen] = useState(false);
-  const [faseSeleccionada, setFaseSeleccionada] = useState<FaseCalendario | null>(null);
-  
-  const [restricciones, setRestricciones] = useState<{ minStart: string, maxEnd?: string }>({
-    minStart: '',
-    maxEnd: undefined
-  });
+  const [modoCreacion, setModoCreacion] = useState(false);
+  const [faseSeleccionada, setFaseSeleccionada] = useState<FaseGlobal | null>(null);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const fasesQuery = useQuery<FaseGlobal[]>({
+  const { data: fases = [], isLoading, isError: isQueryError } = useQuery<FaseGlobal[]>({
     queryKey: ['fasesGlobales'],
-    queryFn: cronogramaService.obtenerFasesGlobales,
-    staleTime: 1000 * 60 * 60,
+    queryFn: cronogramaService.obtenerFasesActuales,
+    staleTime: 0, 
   });
 
-  const cronogramaQuery = useQuery<CronogramaFase[]>({
-    queryKey: ['cronogramaFases'],
-    queryFn: cronogramaService.obtenerCronogramaActual,
-    staleTime: 0,
+  const abrirModalCrear = useCallback(() => { setFaseSeleccionada(null); setModoCreacion(true); setModalOpen(true); }, []);
+  const abrirModalEditar = useCallback((fase: FaseGlobal) => { setFaseSeleccionada(fase); setModoCreacion(false); setModalOpen(true); }, []);
+  const cerrarModal = useCallback(() => { setModalOpen(false); setModoCreacion(false); setTimeout(() => setFaseSeleccionada(null), 300); }, []);
+  const cerrarModalError = () => setErrorModalOpen(false);
+  const mostrarError = (msg: string) => {
+    setErrorMessage(msg);
+    setErrorModalOpen(true);
+  };
+
+  const crearMutation = useMutation({
+    mutationFn: cronogramaService.configurarFase,
+    onSuccess: () => { toast.success('Fase creada correctamente.'); queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); cerrarModal(); },
+    onError: (err: any) => mostrarError(err.response?.data?.message || 'Error crítico al crear la fase.')
   });
 
-  const isLoading = fasesQuery.isLoading || cronogramaQuery.isLoading;
-  const isError = fasesQuery.isError || cronogramaQuery.isError;
+  const updateMutation = useMutation({
+    mutationFn: (vals: { id: number; data: ActualizarCronogramaPayload }) => cronogramaService.actualizarFaseCronograma(vals.id, vals.data),
+    onSuccess: () => { toast.success('Cronograma actualizado.'); queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); cerrarModal(); },
+    onError: (err: any) => mostrarError(err.response?.data?.message || 'Error al actualizar las fechas.')
+  });
 
-  const fasesCalendario: FaseCalendario[] = useMemo(() => {
-    const fases = fasesQuery.data || [];
-    const cronogramas = cronogramaQuery.data || [];
+  const activarMutation = useMutation({
+    mutationFn: (idFaseGlobal: number) => cronogramaService.actualizarFaseCronograma(idFaseGlobal, { estado: 1 }),
+    onSuccess: () => { toast.success('¡Fase activada!'); queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); },
+    onError: (err: any) => mostrarError(err.response?.data?.message || 'No se pudo activar la fase.')
+  });
 
-    if (fases.length === 0) return [];
+  const handleGuardar = (valores: any) => {
+    const formatToSQL = (isoDateTime: string) => isoDateTime.replace('T', ' ') + ':00';
 
-    return fases.map((faseGlobal) => {
-      const configExistente = cronogramas.find(
-        (c) => c.id_fase_global === faseGlobal.id_fase_global
-      );
-
-      return {
-        id_fase_global: faseGlobal.id_fase_global,
-        nombre: faseGlobal.nombre,
-        codigo: faseGlobal.codigo,
-        orden: faseGlobal.orden,
-        id_cronograma_fase: configExistente?.id_cronograma_fase,
-        fecha_inicio: configExistente?.fecha_inicio,
-        fecha_fin: configExistente?.fecha_fin,
-        estado: configExistente?.estado,
-        esta_configurada: !!configExistente,
+    if (modoCreacion) {
+      const payload: CrearFasePayload = {
+        nombre: valores.nombre,
+        codigo: valores.codigo,
+        orden: Number(valores.orden),
+        fecha_inicio: formatToSQL(valores.fecha_inicio),
+        fecha_fin: formatToSQL(valores.fecha_fin),
+        activar_ahora: valores.activar_ahora
       };
-    }).sort((a, b) => a.orden - b.orden);
-  }, [fasesQuery.data, cronogramaQuery.data]);
-
-  const calcularRestricciones = useCallback((faseActual: FaseCalendario, listaFases: FaseCalendario[]) => {
-    const hoy = new Date();
-    
-    let minStartData = hoy;
-
-    if (faseActual.orden > 1) {
-      const faseAnterior = listaFases.find(f => f.orden === faseActual.orden - 1);
-      
-      if (faseAnterior && faseAnterior.esta_configurada && faseAnterior.fecha_fin) {
-        const finAnterior = new Date(faseAnterior.fecha_fin.split('T')[0] + 'T00:00:00');
-        finAnterior.setDate(finAnterior.getDate() + 1);
-
-        if (finAnterior > minStartData) {
-          minStartData = finAnterior;
-        }
-      }
+      crearMutation.mutate(payload);
+    } else {
+      if (!faseSeleccionada) return;
+      const payload: ActualizarCronogramaPayload = {
+        fecha_inicio: formatToSQL(valores.fecha_inicio),
+        fecha_fin: formatToSQL(valores.fecha_fin)
+      };
+      updateMutation.mutate({ id: faseSeleccionada.id_fase_global, data: payload });
     }
-
-    let maxEndString: string | undefined = undefined;
-
-    const faseSiguiente = listaFases.find(f => f.orden === faseActual.orden + 1);
-
-    if (faseSiguiente && faseSiguiente.esta_configurada && faseSiguiente.fecha_inicio) {
-      const inicioSiguiente = new Date(faseSiguiente.fecha_inicio.split('T')[0] + 'T00:00:00');
-      inicioSiguiente.setDate(inicioSiguiente.getDate() - 1);
-      
-      maxEndString = inicioSiguiente.toISOString().split('T')[0];
-    }
-
-    return {
-      minStart: minStartData.toISOString().split('T')[0],
-      maxEnd: maxEndString
-    };
-  }, []);
-
-  const abrirModalProgramar = useCallback((fase: FaseCalendario) => {
-    setFaseSeleccionada(fase);
-    
-    const constraints = calcularRestricciones(fase, fasesCalendario);
-    setRestricciones(constraints);
-
-    setModalOpen(true);
-  }, [fasesCalendario, calcularRestricciones]);
-
-  const cerrarModal = useCallback(() => {
-    setModalOpen(false);
-    setTimeout(() => setFaseSeleccionada(null), 300);
-  }, []);
-
-  const mutation = useMutation({
-    mutationFn: async (valores: FormularioFechas) => {
-      if (!faseSeleccionada) throw new Error("No se seleccionó ninguna fase.");
-
-      if (faseSeleccionada.esta_configurada && faseSeleccionada.id_cronograma_fase) {
-        const payload: ActualizarCronogramaPayload = {
-          fecha_inicio: valores.fecha_inicio,
-          fecha_fin: valores.fecha_fin,
-        };
-        return cronogramaService.editarCronograma({
-          id_cronograma_fase: faseSeleccionada.id_cronograma_fase,
-          id_fase_global: faseSeleccionada.id_fase_global,
-          ...payload
-        });
-      } else {
-        const payload: CrearCronogramaPayload = {
-          id_fase_global: faseSeleccionada.id_fase_global,
-          fecha_inicio: valores.fecha_inicio,
-          fecha_fin: valores.fecha_fin,
-          descripcion: `Configuración inicial de ${faseSeleccionada.nombre}`
-        };
-        return cronogramaService.crearCronograma(payload);
-      }
-    },
-    onSuccess: () => {
-      const accion = faseSeleccionada?.esta_configurada ? 'actualizado' : 'programado';
-      toast.success(`Cronograma ${accion} exitosamente.`);
-      queryClient.invalidateQueries({ queryKey: ['cronogramaFases'] });
-      cerrarModal();
-    },
-    onError: (error: any) => {
-      const mensaje = error.response?.data?.message || 'Error al guardar.';
-      toast.error(mensaje);
-    }
-  });
-
-  const handleGuardarFechas = (valores: FormularioFechas) => {
-    mutation.mutate(valores);
   };
 
   return {
-    fasesCalendario,
-    isLoading,
-    isError,
-    isSaving: mutation.isPending,
-    modalOpen,
-    faseSeleccionada,
-    restricciones,
-    abrirModalProgramar,
-    cerrarModal,
-    handleGuardarFechas,
+    fases, isLoading, isError: isQueryError,
+    isSaving: crearMutation.isPending || updateMutation.isPending,
+    modalOpen, modoCreacion, faseSeleccionada,
+    errorModalOpen, errorMessage, cerrarModalError,
+    abrirModalCrear, abrirModalEditar, cerrarModal,
+    handleGuardar, handleActivar: activarMutation.mutate
   };
 }

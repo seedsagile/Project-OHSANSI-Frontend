@@ -1,58 +1,33 @@
-export interface FaseGlobal {
-  id_fase_global: number;
-  id_olimpiada: number;
-  codigo: string;
-  nombre: string;
-  orden: number;
-  created_at: string;
-  updated_at: string;
-}
+export type CodigoFase = 'CONFIGURACION' | 'EVALUACION' | 'FINAL';
 
 export interface CronogramaFase {
   id_cronograma_fase: number;
   id_fase_global: number;
   fecha_inicio: string;
   fecha_fin: string;
-  estado: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  fase_global: {
-    id_fase_global: number;
-    nombre: string;
-    codigo: string;
-    orden: number;
-  };
+  estado: number;
 }
 
-
-export interface FaseCalendario {
+export interface FaseGlobal {
   id_fase_global: number;
+  id_olimpiada: number;
+  codigo: CodigoFase;
   nombre: string;
-  codigo: string;
   orden: number;
-
-  id_cronograma_fase?: number; 
-  fecha_inicio?: string;
-  fecha_fin?: string;
-  estado?: string | null;
-
-  esta_configurada: boolean;
+  cronograma?: CronogramaFase | null; 
 }
 
-export interface CrearCronogramaPayload {
-  id_fase_global: number;
+export interface CrearFasePayload {
+  nombre: string;
+  codigo: CodigoFase;
+  orden: number;
   fecha_inicio: string;
   fecha_fin: string;
-  descripcion?: string;
+  activar_ahora: boolean;
 }
 
 export interface ActualizarCronogramaPayload {
-  fecha_inicio: string;
-  fecha_fin: string;
-  estado?: string | null;
-}
-
-export interface EditarCronogramaPayload extends ActualizarCronogramaPayload {
-  id_cronograma_fase: number;
-  id_fase_global: number;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  estado?: number;
 }
