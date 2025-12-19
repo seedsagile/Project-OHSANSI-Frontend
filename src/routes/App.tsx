@@ -20,6 +20,8 @@ import { PaginaReporteCambios } from '../features/reportes/cambiosCalificaciones
 import { PaginaCronograma } from '@/features/cronograma/routes/PaginaCronograma';
 import { PaginaCompetencias } from '../features/competencias/routes/PaginaCompetencias';
 import { PaginaExamenes } from '../features/examenes/routes/PaginaExamenes';
+import { PaginaOlimpiada } from '@/features/olimpiada/routes/PaginaOlimpiada';
+
 
 
 const LoginRoute = () => {
@@ -60,6 +62,7 @@ const router = createBrowserRouter([
       { path: 'configuracionFasesGlobales', element: <PaginaConfiguracionFases/> },
       {path: 'reportesCambiosCalificaciones', element: <PaginaReporteCambios/> },
       {path: 'configuracionCronograma', element: <PaginaCronograma/> },
+      { path: 'olimpiada', element: <PaginaOlimpiada /> },
     ],
   },
 ]);

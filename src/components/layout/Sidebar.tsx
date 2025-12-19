@@ -8,7 +8,7 @@ import {
   UserCheck,
   UserSquare,
   UserPlus,
-  Medal, //calu añadio
+  Medal,Award, //calu añadio
   ListChecks,
   SlidersHorizontal,
   LogOut as LogoutIcon,
@@ -122,6 +122,12 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           <p className="px-3 text-xs font-semibold text-principal-300 uppercase tracking-wider mt-3 mb-1">
             Gestión de la Olimpiada
           </p>
+          <NavLink
+            to="/olimpiada"
+            icon={<Award />}
+            label="Olimpiadas"
+            onClick={() => setOpen(false)}
+          />
           <NavLink to="/areas" icon={<LayoutGrid />} label="Áreas" onClick={() => setOpen(false)} />
           <NavLink
             to="/niveles"
