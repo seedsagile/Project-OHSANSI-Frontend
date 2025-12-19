@@ -31,7 +31,7 @@ export function normalizarParaGuardar(str: string): string {
 
 export function normalizarParaComparar(str: string): string {
   if (!str) return '';
-  
+
   // 1. Normalizar: trim, lowercase, quitar acentos
   let textoNormalizado = str
     .trim()
@@ -58,7 +58,6 @@ export function normalizarParaComparar(str: string): string {
   return textoNormalizado.trim();
 }
 
-
 export const crearNivelEsquema = z.object({
   nombre: z
     .string()
@@ -67,7 +66,8 @@ export const crearNivelEsquema = z.object({
     // 1. Valida los caracteres permitidos en general
     .refine((val) => /^[a-zA-Z0-9\s.\-áéíóúÁÉÍÓÚñÑüÜ]+$/.test(val), {
       //message: 'Contiene caracteres no permitidos.',
-      message: 'El campo Nombre del Nivel contiene caracteres especiales. Solo se permiten los caracteres especiales "." y "-"',
+      message:
+        'El campo Nombre del Nivel contiene caracteres especiales. Solo se permiten los caracteres especiales "." y "-"',
     })
     // 2. Valida que el primer carácter sea una letra o número
     .refine((val) => /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ]/.test(val), {
@@ -81,10 +81,14 @@ export const crearNivelEsquema = z.object({
     .refine((val) => /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ]/.test(val), {
       message: 'El nombre debe contener al menos una letra o número.',
     })
-    //no permite registrar solo numero 
+    //no permite registrar solo numero
     .refine((val) => !/^[0-9\s.\-]+$/.test(val), {
       message: 'No se puede registrar un nivel compuesto solo por números.',
     })
+    .refine((val) => !/[.\-]{2,}/.test(val), {
+      message: 'No se permiten símbolos consecutivos.',
+    })
+
     .transform((val) => normalizarParaGuardar(val))
     .pipe(
       z

@@ -32,7 +32,8 @@ export function useAsignarNiveles() {
   const [modalState, setModalState] = useState<ModalState>(initialModalState);
   const [nivelesOriginales, setNivelesOriginales] = useState<Set<number>>(new Set());
   const [gradosPorNivel, setGradosPorNivel] = useState<GradosPorNivel>({});
-  const [modalGradosState, setModalGradosState] = useState<ModalGradosState>(initialModalGradosState);
+  const [modalGradosState, setModalGradosState] =
+    useState<ModalGradosState>(initialModalGradosState);
   const [procesoIniciado, setProcesoIniciado] = useState<boolean>(false);
   const [mensajeProcesoIniciado, setMensajeProcesoIniciado] = useState<string>('');
   const modalTimerRef = useRef<number | undefined>(undefined);
@@ -58,8 +59,8 @@ export function useAsignarNiveles() {
   // Cargar validación de proceso iniciado y niveles/grados asignados
   const { data: datosAsignados, refetch: refetchAsignados } = useQuery({
     queryKey: ['area-niveles-grados', areaSeleccionadaId, GESTION_ACTUAL],
-    queryFn: () => 
-      areaSeleccionadaId 
+    queryFn: () =>
+      areaSeleccionadaId
         ? asignacionesService.obtenerNivelesYGradosAsignados(GESTION_ACTUAL, areaSeleccionadaId)
         : Promise.resolve(null),
     enabled: !!areaSeleccionadaId,
@@ -68,7 +69,8 @@ export function useAsignarNiveles() {
   // Determinar si el proceso ha iniciado basado en el mensaje de la API
   useEffect(() => {
     if (datosAsignados) {
-      const procesoHaIniciado = datosAsignados.message?.includes('proceso de evaluación ha iniciado') || false;
+      const procesoHaIniciado =
+        datosAsignados.message?.includes('proceso de evaluación ha iniciado') || false;
       setProcesoIniciado(procesoHaIniciado);
       if (procesoHaIniciado) {
         setMensajeProcesoIniciado(datosAsignados.message);
@@ -85,7 +87,10 @@ export function useAsignarNiveles() {
   );
 
   const nivelesOrdenados = useMemo(
-    () => [...todosLosNiveles].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    () =>
+      [...todosLosNiveles].sort((a, b) =>
+        a.nombre.localeCompare(b.nombre, 'es', { numeric: true })
+      ),
     [todosLosNiveles]
   );
 
@@ -111,7 +116,7 @@ export function useAsignarNiveles() {
       datosAsignados.data.niveles_con_grados_agrupados.forEach((nivelData) => {
         nivelesAsignados.add(nivelData.id_nivel);
         gradosPorNivelAsignados[nivelData.id_nivel] = new Set(
-          nivelData.grados.map(g => g.id_grado_escolaridad)
+          nivelData.grados.map((g) => g.id_grado_escolaridad)
         );
       });
 
@@ -160,7 +165,7 @@ export function useAsignarNiveles() {
 
     if (modalGradosState.nivelId !== null) {
       const gradosDelNivel = gradosPorNivel[modalGradosState.nivelId];
-      
+
       if (!gradosDelNivel || gradosDelNivel.size === 0) {
         setNivelesSeleccionados((prev) => {
           const newSet = new Set(prev);
@@ -169,14 +174,14 @@ export function useAsignarNiveles() {
         });
       }
     }
-    
+
     setModalGradosState(initialModalGradosState);
   };
 
   const handleGuardarGrados = (gradosSeleccionados: Set<number>) => {
     if (modalGradosState.nivelId !== null) {
       const gradosOriginales = gradosPorNivel[modalGradosState.nivelId] || new Set();
-      
+
       const huboCambios = !isEqual(
         Array.from(gradosOriginales).sort(),
         Array.from(gradosSeleccionados).sort()
@@ -201,7 +206,7 @@ export function useAsignarNiveles() {
           newSet.delete(modalGradosState.nivelId!);
           return newSet;
         });
-        
+
         setGradosPorNivel((prev) => {
           const newGrados = { ...prev };
           delete newGrados[modalGradosState.nivelId!];
@@ -214,7 +219,7 @@ export function useAsignarNiveles() {
         }));
       }
     }
-    
+
     setModalGradosState(initialModalGradosState);
   };
 
@@ -224,43 +229,44 @@ export function useAsignarNiveles() {
     },
     onSuccess: (response) => {
       const nombreArea = areaActual ? areaActual.nombre : '';
-      
+
       if (response.success_count === 0 || response.created_count === 0) {
-        const erroresDetalle = response.errors && response.errors.length > 0 
-          ? response.errors.join('\n\n') 
-          : 'No se pudieron crear las asignaciones.';
-        
-        setModalState({ 
-          isOpen: true, 
-          type: 'info', 
-          title: '⚠️ Advertencia', 
+        const erroresDetalle =
+          response.errors && response.errors.length > 0
+            ? response.errors.join('\n\n')
+            : 'No se pudieron crear las asignaciones.';
+
+        setModalState({
+          isOpen: true,
+          type: 'info',
+          title: '⚠️ Advertencia',
           message: erroresDetalle,
         });
         return;
       }
-    
+
       const mensajeExito = `Los niveles y grados fueron asignados correctamente al área "${nombreArea}".`;
-      
-      setModalState({ 
-        isOpen: true, 
-        type: 'success', 
-        title: '¡Guardado!', 
-        message: mensajeExito 
+
+      setModalState({
+        isOpen: true,
+        type: 'success',
+        title: '¡Guardado!',
+        message: mensajeExito,
       });
-      
+
       refetchAsignados();
-      
+
       clearTimeout(modalTimerRef.current);
       modalTimerRef.current = window.setTimeout(() => closeModal(), 2000);
     },
     onError: (error: AxiosError<ApiErrorResponse>) => {
       clearTimeout(modalTimerRef.current);
       const errorMessage = error.response?.data?.message || 'No se pudieron guardar los cambios.';
-      setModalState({ 
-        isOpen: true, 
-        type: 'error', 
-        title: 'Error de Conexión', 
-        message: errorMessage
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: 'Error de Conexión',
+        message: errorMessage,
       });
     },
   });
@@ -314,7 +320,7 @@ export function useAsignarNiveles() {
     }
 
     const payload: AsignacionPayload[] = [];
-    
+
     nivelesNuevos.forEach((id_nivel) => {
       const gradosDelNivel = gradosPorNivel[id_nivel];
       if (gradosDelNivel) {

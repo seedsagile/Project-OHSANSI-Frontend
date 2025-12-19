@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { areasService } from '../services/areasService';
 import type { Area, CrearAreaData } from '../types';
 import toast from 'react-hot-toast';
+import { data } from 'react-router-dom';
 
 type ConfirmationModalState = {
   isOpen: boolean;
@@ -130,7 +131,7 @@ export function useGestionAreas() {
         setConfirmationModal({
           isOpen: true,
           title: 'Error de Duplicado',
-          message: 'El nombre del Área se encuentra registrado.',
+          message: `Nombre Duplicado - El nombre del Area "${data.name}" ya se encuentra registrado`,
           type: 'error',
         });
       } else {
@@ -150,7 +151,7 @@ export function useGestionAreas() {
       setConfirmationModal({
         isOpen: true,
         title: 'Error de Duplicado',
-        message: 'El nombre del Área se encuentra registrado.',
+        message: `Nombre Duplicado - El nombre del Area "${data.nombre}" ya se encuentra registrado`,
         type: 'error',
       });
       return;

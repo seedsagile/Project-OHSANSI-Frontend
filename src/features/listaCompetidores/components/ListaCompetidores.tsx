@@ -16,6 +16,7 @@ import { autoTable } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { excelIcon, pdfIcon } from '@/assets';
+import { Globe, List } from 'lucide-react';
 
 interface Competidor {
   apellido: string;
@@ -412,28 +413,14 @@ export const ListaCompetidores = () => {
                     className="flex items-center gap-2 w-full sm:w-[200px] px-5 py-2.5 rounded-xl bg-principal-500 text-white font-semibold 
                   hover:bg-principal-600 transition-all shadow-md hover:shadow-lg"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      className="lucide lucide-eye-icon lucide-eye"
-                    >
-                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
+                    <Globe size={20} />
                     Mostrar Todo
                   </button>
 
                   <button
                     onClick={descargarPDF}
                     className="w-full sm:w-[200px] px-5 py-2.5 rounded-xl border-2 border-principal-500 
-                  text-black font-semibold hover:bg-sky-400 transition-all shadow-sm hover:shadow-lg flex items-center gap-2"
+                  text-black font-semibold hover:bg-acento-50 hover:text-acento-700 hover:border-acento-300 transition-all shadow-sm hover:shadow-lg flex items-center gap-2"
                   >
                     <img src={pdfIcon} alt="PDF icon" className="w-5 h-5 object-contain" />
                     PDF
@@ -442,7 +429,7 @@ export const ListaCompetidores = () => {
                   <button
                     onClick={descargarExcel}
                     className="w-full sm:w-[200px] px-5 py-2.5 rounded-xl border-2 border-principal-500 
-                  text-black font-semibold hover:bg-green-300 transition-all shadow-sm hover:shadow-lg flex items-center gap-2"
+                  text-black font-semibold hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-all shadow-sm hover:shadow-lg flex items-center gap-2"
                   >
                     <img src={excelIcon} alt="Excel icon" className="w-5 h-5 object-contain" />
                     Excel

@@ -113,7 +113,7 @@ export function Modal({
             <button
               onClick={onConfirm}
               disabled={loading}
-              className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors w-40 ${buttonClass}`}
+              className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-6 rounded-lg text-blanco transition-colors  ${buttonClass}`}
             >
               {loading ? (
                 <LoaderCircle className="animate-spin h-5 w-5" />
