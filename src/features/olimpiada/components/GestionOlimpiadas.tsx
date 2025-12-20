@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trophy, ArrowLeft } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOlimpiadas } from '../hooks/useOlimpiadas';
 import { SelectorOlimpiada } from './SelectorOlimpiada';
