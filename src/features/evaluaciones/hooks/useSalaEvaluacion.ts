@@ -164,10 +164,10 @@ export function useSalaEvaluacion() {
       toast.success('Ficha bloqueada para ti');
     },
     
-    onError: (err: any) => {
-       toast.error('No se pudo bloquear');
-       // Si falla, recargamos la lista por seguridad
-       queryClient.invalidateQueries({ queryKey: ['salaCompetidores', selectedExamenId] });
+    onError: () => { 
+      toast.error('No se pudo bloquear');
+      // Si falla, recargamos la lista por seguridad
+      queryClient.invalidateQueries({ queryKey: ['salaCompetidores', selectedExamenId] });
     }
   });
 

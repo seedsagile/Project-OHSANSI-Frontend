@@ -2,37 +2,36 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { sistemaService } from '@/features/sistema/services/sistemaService';
 import { useSistemaStore } from '@/features/sistema/stores/useSistemaStore';
-import { SistemaEstado } from '@/features/sistema/types/sistema.types';
+import { SistemaStateData } from '@/features/sistema/types/sistema.types';
 import { echo } from '@/lib/echo';
 
 export const useSyncSistema = () => {
-  const { setConfig } = useSistemaStore();
+  const { setSystemData } = useSistemaStore();
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ['sistema-estado'],
-    queryFn: sistemaService.getUpdateEstado,
+    queryFn: sistemaService.obtenerEstadoSistema,
     staleTime: Infinity,
     enabled: !!localStorage.getItem('auth-storage'),
   });
 
   useEffect(() => {
     if (data) {
-      setConfig(data);
+      setSystemData(data);
     }
-  }, [data, setConfig]);
+  }, [data, setSystemData]);
 
   useEffect(() => {
     const channel = echo.channel('sistema-global');
-    
-    channel.listen('.EstadoSistemaActualizado', (e: { estado: SistemaEstado }) => {
+    channel.listen('.EstadoSistemaActualizado', (e: { estado: SistemaStateData }) => {
       console.log('Update de sistema recibido vía WebSocket:', e.estado);
-      setConfig(e.estado);
+      setSystemData(e.estado);
     });
 
     return () => {
       echo.leaveChannel('sistema-global');
     };
-  }, [setConfig]);
+  }, [setSystemData]);
 
   return { 
     config: data, 
