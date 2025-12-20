@@ -9,8 +9,12 @@ export const olimpiadaService = {
     return data.data;
   },
 
-  // Nueva función para el POST
   crearOlimpiada: async (nueva: { nombre: string; gestion: string }): Promise<void> => {
     await axios.post(API_URL, nueva);
+  },
+
+  // Nueva función para activar olimpiada
+  activarOlimpiada: async (id: number): Promise<void> => {
+    await axios.put(`${API_URL}/${id}/activar`);
   }
 };

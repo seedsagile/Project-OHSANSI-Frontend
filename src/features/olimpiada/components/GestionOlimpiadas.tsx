@@ -1,17 +1,39 @@
 import { useState } from 'react';
 import { Plus, Trophy, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOlimpiadas } from '../hooks/useOlimpiadas';
 import { SelectorOlimpiada } from './SelectorOlimpiada';
 import { ModalNuevaOlimpiada } from './ModalNuevaOlimpiada';
+import { olimpiadaService } from '../services/olimpiadaServices';
 
 export default function GestionOlimpiadas() {
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [idSeleccionado, setIdSeleccionado] = useState("");
 
-  // Traemos los datos de la API
   const { data: olimpiadas = [], isLoading, isError } = useOlimpiadas();
 
+  // Mutación para activar olimpiada
+  const mutationActivar = useMutation({
+    mutationFn: olimpiadaService.activarOlimpiada,
+    onSuccess: () => {
+      // Refresca la lista para actualizar el estado "esActual"
+      queryClient.invalidateQueries({ queryKey: ['olimpiadas'] });
+    },
+    onError: (error: any) => {
+      alert("Error al activar la olimpiada: " + (error.response?.data?.message || error.message));
+    }
+  });
+
   const olimpiadaActiva = olimpiadas.find(o => o.id.toString() === idSeleccionado);
+
+  // Handler para cuando se selecciona una olimpiada
+  const handleSeleccionarOlimpiada = (id: string) => {
+    setIdSeleccionado(id);
+    if (id) {
+      mutationActivar.mutate(parseInt(id));
+    }
+  };
 
   if (isLoading) return <div className="p-10 text-center font-bold text-blue-600">Cargando Olimpiadas...</div>;
   if (isError) return <div className="p-10 text-center text-red-500">Error al conectar con el servidor</div>;
@@ -34,7 +56,7 @@ export default function GestionOlimpiadas() {
           <SelectorOlimpiada 
             olimpiadas={olimpiadas} 
             seleccionada={idSeleccionado}
-            onSelect={setIdSeleccionado}
+            onSelect={handleSeleccionarOlimpiada}
           />
 
           {!olimpiadaActiva && (
@@ -61,7 +83,7 @@ export default function GestionOlimpiadas() {
             </button>
           </div>
         ) : (
-          /* TABLA GENERAL (Sin buscador por tu petición) */
+          /* TABLA GENERAL */
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-in fade-in">
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200 text-gray-400 text-xs font-bold uppercase tracking-wider">
@@ -78,7 +100,7 @@ export default function GestionOlimpiadas() {
                   <tr 
                     key={olimp.id} 
                     className="hover:bg-blue-50/40 cursor-pointer transition-colors"
-                    onClick={() => setIdSeleccionado(olimp.id.toString())}
+                    onClick={() => handleSeleccionarOlimpiada(olimp.id.toString())}
                   >
                     <td className="px-6 py-4 text-gray-400 font-mono text-sm">{olimp.id}</td>
                     <td className="px-6 py-4 font-bold text-gray-800">{olimp.nombre}</td>
