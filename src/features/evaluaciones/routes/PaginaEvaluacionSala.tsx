@@ -4,6 +4,7 @@ import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { TablaSalaEvaluacion } from '../components/TablaSalaEvaluacion';
 import { CalificacionModal } from '../components/CalificacionModal';
 import { Modal1, type ModalType } from '@/components/ui/Modal1'; // Asegúrate de que Modal1 soporte un children de tipo ReactNode
+import { SearchBar } from '../components/SearchBar';
 import { Gavel, AlertCircle, RefreshCw } from 'lucide-react'; // AlertCircle ahora se usa
 import toast from 'react-hot-toast';
 import type { CompetidorSala, GuardarNotaPayload } from '../types/sala.types';
@@ -31,6 +32,7 @@ export function PaginaEvaluacionSala() {
   // Estados Locales
   const [modalCalificarOpen, setModalCalificarOpen] = useState(false);
   const [competidorSeleccionado, setCompetidorSeleccionado] = useState<CompetidorSala | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Estado para Modal1 (Feedback)
   const [feedback, setFeedback] = useState<FeedbackState>({ 
@@ -134,6 +136,11 @@ export function PaginaEvaluacionSala() {
     setCompetidorSeleccionado(null);
   };
 
+  // Filtrado de competidores
+  const competidoresFiltrados = competidores.filter((comp) =>
+    comp.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-neutro-50 p-6 font-display">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -229,8 +236,14 @@ export function PaginaEvaluacionSala() {
                     </button>
                  </div>
 
+                 <SearchBar 
+                   searchTerm={searchTerm} 
+                   onSearchChange={setSearchTerm} 
+                   disabled={isLoadingCompetidores}
+                 />
+
                  <TablaSalaEvaluacion 
-                    competidores={competidores}
+                    competidores={competidoresFiltrados}
                     isLoading={isLoadingCompetidores}
                     onCalificar={handleIntentarCalificar}
                     onDescalificar={handleDescalificar} // <-- Pasar la función

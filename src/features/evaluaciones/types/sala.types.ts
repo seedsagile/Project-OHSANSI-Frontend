@@ -34,6 +34,18 @@ export interface DescalificarPayload {
   motivo: string;
 }
 
+// Para la lista de descalificados (API /descalificados)
+export interface DescalificadoItem {
+  tipo: string;
+  id_competidor: number;
+  nombre_completo: string;
+  ci: string;
+  institucion: string;
+  motivo: string;
+  fecha: string;
+  examen_afectado: string;
+}
+
 // Respuesta limpia para los selectores de Area/Nivel del Evaluador
 export interface AreaEvaluador {
   id_area: number;
