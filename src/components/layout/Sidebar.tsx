@@ -6,9 +6,10 @@ import {
   Shapes,
   Signal,
   Link2,
+  Award,
   Briefcase,
   UserCheck,
-  UserPlus,
+  UserPlus, 
   Users,
   Trophy,
   FileQuestion,
@@ -60,7 +61,6 @@ interface SidebarProps {
 export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
-  
   useEffect(() => {
     setOpen(false);
   }, [location.pathname, setOpen]);
@@ -117,11 +117,12 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
               onClick={() => setOpen(false)}
             />
           </div>
-
-          {/* ----- Gestión de la Olimpiada ----- */}
+          
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Gestión de la Olimpiada
           </p>
+          {/* Seccion genearl */}
+          <NavLink to="/olimpiada" icon={<Award />} label="Olimpiadas" onClick={() => setOpen(false)} />
           <NavLink to="/areas" icon={<Shapes />} label="Áreas" onClick={() => setOpen(false)} />
           <NavLink to="/niveles" icon={<Signal />} label="Niveles" onClick={() => setOpen(false)} />
           <NavLink to="/asignarNiveles" icon={<Link2 />} label="Asignar Niveles a Áreas" onClick={() => setOpen(false)} />
@@ -163,7 +164,7 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           </p>
           <NavLink to="/reportesCambiosCalificaciones" icon={<History />} label="Reporte de cambio de calificaciones" onClick={() => setOpen(false)} />
         </nav>
-        
+
         <footer className="flex-shrink-0 border-t border-principal-600 pt-4 mt-2 bg-principal-700">
           <div className="flex items-center gap-3 px-3 mb-3">
             <div className="h-10 w-10 rounded-full bg-principal-800 border border-principal-500 flex items-center justify-center flex-shrink-0 shadow-sm text-principal-200">

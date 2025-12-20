@@ -8,6 +8,7 @@ import { CronogramaGuard } from '@/features/cronograma/components/CronogramaGuar
 import { Dashboard } from '@/features/dashboard/components/Dashboard';
 import { PaginaCronograma } from '@/features/cronograma/routes/PaginaCronograma';
 import { PaginaConfiguracionFases } from '@/features/ConfiguracionFases/routes/PaginaConfiguracionFases';
+import { PaginaOlimpiada } from '@/features/olimpiada/routes/PaginaOlimpiada';
 import { PaginaRegistrarEvaluador } from '@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador';
 import { PaginaRegistrarResponsable } from '@/features/usuarios/responsables/routes/PaginaRegistrarResponsable';
 import { PaginaAreas } from '@/features/areas/routes/PaginaAreas';
@@ -22,6 +23,7 @@ import { Parametro } from '@/features/parametros/components/Parametro';
 import { PaginaMedallero } from '@/features/medallero/routes/PaginaMedallero';
 import { PaginaReporteCambios } from '@/features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios';
 
+
 const PublicLoginRoute = () => {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
@@ -33,7 +35,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<PublicLoginRoute />} />
-
         <Route
           element={
             <ProtectedRoute>
@@ -51,7 +52,6 @@ export default function App() {
               </div>
             } 
           />
-
           <Route
             element={
               <CronogramaGuard>
@@ -62,6 +62,7 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="olimpiada" element={<PaginaOlimpiada />} />
             <Route path="areas" element={<PaginaAreas />} />
             <Route path="niveles" element={<PaginaNiveles />} />
             <Route path="asignarNiveles" element={<PaginaAsignarNiveles />} />
