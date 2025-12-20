@@ -1,14 +1,44 @@
 import apiClient from '@/api/ApiPhp';
-import { SistemaEstado } from '../types/sistema.types';
+import { useAuthStore } from '@/auth/login/stores/authStore'; 
+import type { 
+  SistemaStateData, 
+  CrearGestionPayload, 
+  CrearGestionResponse 
+} from '../types/sistema.types';
 
 export const sistemaService = {
-  getUpdateEstado: async (): Promise<SistemaEstado> => {
-    try {
-      const { data } = await apiClient.get<SistemaEstado>('/sistema/estado');
-      return data;
-    } catch (error) {
-      console.error('Error al recuperar el estado del sistema:', error);
-      throw error;
-    }
+  
+  obtenerEstadoSistema: async (): Promise<SistemaStateData> => {
+    const { data } = await apiClient.get<SistemaStateData>('/sistema/estado');
+    return data;
   },
+
+  inicializarGestion: async (payload: CrearGestionPayload): Promise<CrearGestionResponse> => {
+    const user = useAuthStore.getState().user;
+
+    if (!user?.id_usuario) {
+      throw new Error("No se pudo identificar al usuario administrador.");
+    }
+
+    const body = {
+      nombre: payload.nombre,
+      gestion: payload.anio,
+      user_id: user.id_usuario,
+      estado: payload.activar ? 1 : 0
+    };
+
+    console.log('📦 Payload Creación:', body);
+
+    const { data } = await apiClient.post<CrearGestionResponse>('/olimpiadas/admin', body);
+    return data;
+  },
+
+  verificarSalud: async (): Promise<boolean> => {
+    try {
+      await apiClient.get('/ping'); 
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 };

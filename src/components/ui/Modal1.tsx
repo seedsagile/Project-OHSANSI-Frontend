@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, type ElementType } from 'react';
 import { AlertTriangle, CheckCircle, Info, XCircle, X, Check, LoaderCircle } from 'lucide-react';
 
 export type ModalType = 'success' | 'error' | 'warning' | 'info' | 'confirmation';
@@ -9,6 +9,7 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   type: ModalType;
+  icon?: ElementType; 
   onConfirm?: () => void;
   loading?: boolean;
   confirmText?: string;
@@ -50,6 +51,7 @@ export function Modal1({
   title,
   children,
   type,
+  icon, // Recibimos el prop
   onConfirm,
   loading = false,
   confirmText = 'Confirmar',
@@ -76,24 +78,25 @@ export function Modal1({
     return null;
   }
 
-  const { icon: IconComponent, className, buttonClass } = typeConfig[type];
+  const { icon: DefaultIcon, className, buttonClass } = typeConfig[type];
+  
+  // Prioridad: Si pasan un icon por props, se usa ese; si no, el default del tipo
+  const IconComponent = icon || DefaultIcon;
 
-  // Determine which button(s) to show
   const needsConfirmationButtons = type === 'confirmation';
-  // Show single button for success, error, warning, info
   const needsSingleActionButton = !needsConfirmationButtons;
 
   return (
     <div
       className="fixed inset-0 bg-negro/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
-      onClick={onClose} // Allow closing by clicking outside
+      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
         className="bg-blanco rounded-xl shadow-2xl w-full max-w-md p-6 sm:p-8 text-center animate-scaleIn"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
         <IconComponent className={`h-16 w-16 mx-auto ${className}`} aria-hidden="true" />
 
@@ -103,11 +106,9 @@ export function Modal1({
 
         <div className="text-neutro-600 mt-2 text-sm sm:text-base leading-relaxed whitespace-pre-line">{children}</div>
 
-        {/* --- Render Buttons Conditionally --- */}
         <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
           {needsConfirmationButtons && (
             <>
-              {/* Cancel Button (for confirmation) */}
               <button
                 onClick={onClose}
                 disabled={loading}
@@ -116,7 +117,7 @@ export function Modal1({
                 <X className="h-5 w-5" />
                 <span>{cancelText}</span>
               </button>
-              {/* Confirm Button (for confirmation) */}
+              
               <button
                 onClick={onConfirm}
                 disabled={loading}
@@ -133,18 +134,14 @@ export function Modal1({
           )}
 
           {needsSingleActionButton && (
-            // Single Action Button (Entendido/Aceptar for success, error, warning, info)
             <button
               onClick={onClose}
-              // Add disabled={loading} if these modals might also show a loading state
               className={`w-full sm:w-auto font-semibold py-2.5 px-8 rounded-lg text-blanco transition-colors ${buttonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {understoodText}
             </button>
           )}
         </div>
-        {/* --- End Render Buttons --- */}
-
       </div>
       <style>{`
         @keyframes fadeIn {

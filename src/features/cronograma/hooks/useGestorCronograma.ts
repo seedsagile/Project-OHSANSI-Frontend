@@ -5,24 +5,45 @@ import { cronogramaService } from '../services/cronogramaServices';
 import type { FaseGlobal, CrearFasePayload, ActualizarCronogramaPayload } from '../types';
 
 export function useGestorCronograma() {
+
   const queryClient = useQueryClient();
-  
   const [modalOpen, setModalOpen] = useState(false);
   const [modoCreacion, setModoCreacion] = useState(false);
   const [faseSeleccionada, setFaseSeleccionada] = useState<FaseGlobal | null>(null);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { data: fases = [], isLoading, isError: isQueryError } = useQuery<FaseGlobal[]>({
+  const { 
+    data: fases = [], 
+    isLoading, 
+    isError 
+  } = useQuery<FaseGlobal[]>({
     queryKey: ['fasesGlobales'],
     queryFn: cronogramaService.obtenerFasesActuales,
-    staleTime: 0, 
+    staleTime: 0,
+    retry: 1
   });
 
-  const abrirModalCrear = useCallback(() => { setFaseSeleccionada(null); setModoCreacion(true); setModalOpen(true); }, []);
-  const abrirModalEditar = useCallback((fase: FaseGlobal) => { setFaseSeleccionada(fase); setModoCreacion(false); setModalOpen(true); }, []);
-  const cerrarModal = useCallback(() => { setModalOpen(false); setModoCreacion(false); setTimeout(() => setFaseSeleccionada(null), 300); }, []);
-  const cerrarModalError = () => setErrorModalOpen(false);
+  const abrirModalCrear = useCallback(() => { 
+    setFaseSeleccionada(null); 
+    setModoCreacion(true); 
+    setModalOpen(true); 
+  }, []);
+
+  const abrirModalEditar = useCallback((fase: FaseGlobal) => { 
+    setFaseSeleccionada(fase); 
+    setModoCreacion(false); 
+    setModalOpen(true); 
+  }, []);
+
+  const cerrarModal = useCallback(() => { 
+    setModalOpen(false); 
+    setModoCreacion(false);
+    setTimeout(() => setFaseSeleccionada(null), 300); 
+  }, []);
+
+  const cerrarModalError = useCallback(() => setErrorModalOpen(false), []);
+
   const mostrarError = (msg: string) => {
     setErrorMessage(msg);
     setErrorModalOpen(true);
@@ -30,24 +51,49 @@ export function useGestorCronograma() {
 
   const crearMutation = useMutation({
     mutationFn: cronogramaService.configurarFase,
-    onSuccess: () => { toast.success('Fase creada correctamente.'); queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); cerrarModal(); },
-    onError: (err: any) => mostrarError(err.response?.data?.message || 'Error crítico al crear la fase.')
+    onSuccess: () => { 
+      toast.success('Fase creada y configurada correctamente.'); 
+      queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); 
+      cerrarModal(); 
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Error crítico al crear la fase.';
+      mostrarError(msg);
+    }
   });
 
   const updateMutation = useMutation({
-    mutationFn: (vals: { id: number; data: ActualizarCronogramaPayload }) => cronogramaService.actualizarFaseCronograma(vals.id, vals.data),
-    onSuccess: () => { toast.success('Cronograma actualizado.'); queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); cerrarModal(); },
-    onError: (err: any) => mostrarError(err.response?.data?.message || 'Error al actualizar las fechas.')
+    mutationFn: (vals: { id: number; data: ActualizarCronogramaPayload }) => 
+      cronogramaService.actualizarFaseCronograma(vals.id, vals.data),
+    onSuccess: () => { 
+      toast.success('Cronograma actualizado.'); 
+      queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); 
+      cerrarModal(); 
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Error al actualizar las fechas.';
+      mostrarError(msg);
+    }
   });
 
   const activarMutation = useMutation({
-    mutationFn: (idFaseGlobal: number) => cronogramaService.actualizarFaseCronograma(idFaseGlobal, { estado: 1 }),
-    onSuccess: () => { toast.success('¡Fase activada!'); queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); },
-    onError: (err: any) => mostrarError(err.response?.data?.message || 'No se pudo activar la fase.')
+    mutationFn: (idFaseGlobal: number) => 
+      cronogramaService.actualizarFaseCronograma(idFaseGlobal, { estado: 1 }),
+    onSuccess: () => { 
+      toast.success('¡Fase activada exitosamente!'); 
+      queryClient.invalidateQueries({ queryKey: ['fasesGlobales'] }); 
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'No se pudo activar la fase.';
+      mostrarError(msg);
+    }
   });
 
   const handleGuardar = (valores: any) => {
-    const formatToSQL = (isoDateTime: string) => isoDateTime.replace('T', ' ') + ':00';
+    const formatToSQL = (isoDateTime: string) => {
+      if (!isoDateTime) return '';
+      return isoDateTime.replace('T', ' ') + ':00';
+    };
 
     if (modoCreacion) {
       const payload: CrearFasePayload = {
@@ -65,16 +111,35 @@ export function useGestorCronograma() {
         fecha_inicio: formatToSQL(valores.fecha_inicio),
         fecha_fin: formatToSQL(valores.fecha_fin)
       };
-      updateMutation.mutate({ id: faseSeleccionada.id_fase_global, data: payload });
+      updateMutation.mutate({ 
+        id: faseSeleccionada.id_fase_global, 
+        data: payload 
+      });
     }
   };
 
   return {
-    fases, isLoading, isError: isQueryError,
+    // Data
+    fases,
+    isLoading,
+    isError,
+    
+    // Estados UI
+    modalOpen,
+    modoCreacion,
+    faseSeleccionada,
     isSaving: crearMutation.isPending || updateMutation.isPending,
-    modalOpen, modoCreacion, faseSeleccionada,
-    errorModalOpen, errorMessage, cerrarModalError,
-    abrirModalCrear, abrirModalEditar, cerrarModal,
-    handleGuardar, handleActivar: activarMutation.mutate
+    
+    // Estados Error
+    errorModalOpen,
+    errorMessage,
+    
+    // Acciones
+    abrirModalCrear,
+    abrirModalEditar,
+    cerrarModal,
+    cerrarModalError,
+    handleGuardar,
+    handleActivar: activarMutation.mutate
   };
 }

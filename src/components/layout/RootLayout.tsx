@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { SystemStatusBar } from './SystemStatusBar';
@@ -10,7 +10,11 @@ const HamburgerIcon = () => (
   </svg>
 );
 
-export function RootLayout() {
+interface RootLayoutProps {
+  children?: ReactNode;
+}
+
+export function RootLayout({ children }: RootLayoutProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const mainContentPaddingClass = isSidebarVisible ? 'lg:pl-72' : 'lg:pl-0';
@@ -27,7 +31,7 @@ export function RootLayout() {
         "flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out bg-blanco",
         mainContentPaddingClass
       )}>
-        {/* HEADER ÚNICO COMPACTO */}
+        {/* HEADER */}
         <header className="h-14 border-b border-slate-100 flex items-center px-4 shrink-0 bg-blanco sticky top-0 z-40">
           <div className="flex items-center gap-3 w-full">
             <button
@@ -45,14 +49,12 @@ export function RootLayout() {
               <HamburgerIcon />
             </button>
 
-            {/* Componente de estado integrado en el header */}
             <SystemStatusBar />
           </div>
         </header>
 
-        {/* ÁREA DE CONTENIDO LIBRE */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+          {children || <Outlet />}
         </div>
       </main>
     </div>
