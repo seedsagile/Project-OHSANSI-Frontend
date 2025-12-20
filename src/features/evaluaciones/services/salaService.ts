@@ -49,7 +49,8 @@ export const salaService = {
   },
 
   // 7. DESCALIFICAR
-  async descalificarCompetidor(idEvaluacion: number, payload: DescalificarPayload): Promise<void> {
-    await apiClient.post(`/sala-evaluacion/${idEvaluacion}/descalificar`, payload);
+  async descalificarCompetidor(idEvaluacion: number, payload: DescalificarPayload): Promise<CompetidorSala> {
+    const { data } = await apiClient.post<{ data: CompetidorSala }>(`/sala-evaluacion/${idEvaluacion}/descalificar`, payload);
+    return data.data;
   }
 };

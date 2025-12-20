@@ -171,27 +171,40 @@ export function useSalaEvaluacion() {
 
   const desbloquearMutation = useMutation({
     mutationFn: (idEvaluacion: number) => salaService.desbloquearCompetidor(idEvaluacion, userId!),
+    onSuccess: (_, idEvaluacion) => {
+      queryClient.setQueryData<CompetidorSala[]>(['salaCompetidores', selectedExamenId], (oldData) => {
+        if (!oldData) return [];
+        return oldData.map(comp => {
+          if (comp.id_evaluacion === idEvaluacion) {
+            return { 
+              ...comp, 
+              es_bloqueado: false, 
+              bloqueado_por_mi: false 
+            };
+          }
+          return comp;
+        });
+      });
+    }
   });
 
   const descalificarMutation = useMutation({
     mutationFn: ({ idEvaluacion, motivo }: { idEvaluacion: number, motivo: string }) => 
       salaService.descalificarCompetidor(idEvaluacion, { user_id: userId!, motivo }),
 
-    onSuccess: (_, variables) => {
-      const { idEvaluacion } = variables;
-      queryClient.setQueryData<CompetidorSala[]>(['salaCompetidores', selectedExamenId], (oldData) => {
-        if (!oldData) return [];
-        return oldData.map(comp => {
-          if (comp.id_evaluacion === idEvaluacion) {
-            return {
-              ...comp,
-              estado_evaluacion: 'Descalificado',
-              es_bloqueado: false,
-              bloqueado_por_mi: false,
-            };
-          }
-          return comp;
-        });
+    onSuccess: (competidorActualizado) => {
+      queryClient.setQueryData<CompetidorSala[]>(['salaCompetidores', selectedExamenId], (oldData = []) => {
+        return oldData.map(comp => 
+          comp.id_evaluacion === competidorActualizado.id_evaluacion 
+            ? {
+                ...comp, // 1. Mantenemos nombre, CI, grado, etc.
+                estado_evaluacion: 'Descalificado', // 2. Forzamos el estado visual correcto
+                nota_actual: 0, // 3. La nota es 0
+                es_bloqueado: false,
+                bloqueado_por_mi: false
+              }
+            : comp
+        );
       });
       toast.success('Competidor descalificado');
     },
