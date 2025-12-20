@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { salaService } from '../services/salaService';
@@ -49,6 +49,12 @@ export function useSalaEvaluacion() {
     queryFn: () => salaService.obtenerCompetidores(selectedExamenId!),
     enabled: !!selectedExamenId,
     staleTime: Infinity, // Importante: Evitar refetch automático que rompa la experiencia
+  });
+
+  // 3.5. Cargar Lista de Descalificados (Global)
+  const descalificadosQuery = useQuery({
+    queryKey: ['descalificados'],
+    queryFn: salaService.obtenerDescalificados,
   });
 
   // 4. 📻 WEBSOCKETS (CORREGIDO)
@@ -110,6 +116,28 @@ export function useSalaEvaluacion() {
       echo.leave(`examen.${selectedExamenId}`);
     };
   }, [selectedExamenId, queryClient]); // Dependencias correctas
+
+  // --- LÓGICA DE PROCESAMIENTO DE COMPETIDORES ---
+  // Cruzamos la lista de competidores con la lista de descalificados
+  const competidoresProcesados = useMemo(() => {
+    if (!competidoresQuery.data) return [];
+    
+    const listaDescalificados = descalificadosQuery.data || [];
+    const idsDescalificados = new Set(listaDescalificados.map(d => d.id_competidor));
+
+    return competidoresQuery.data.map(comp => {
+      // Si el competidor está en la lista negra, visualmente lo mostramos descalificado
+      if (idsDescalificados.has(comp.id_competidor)) {
+        return {
+          ...comp,
+          estado_evaluacion: 'Descalificado',
+          nota_actual: 0,
+          es_bloqueado: false
+        } as CompetidorSala;
+      }
+      return comp;
+    });
+  }, [competidoresQuery.data, descalificadosQuery.data]);
 
   // 5. Mutaciones
   const bloquearMutation = useMutation({
@@ -192,20 +220,10 @@ export function useSalaEvaluacion() {
     mutationFn: ({ idEvaluacion, motivo }: { idEvaluacion: number, motivo: string }) => 
       salaService.descalificarCompetidor(idEvaluacion, { user_id: userId!, motivo }),
 
-    onSuccess: (competidorActualizado) => {
-      queryClient.setQueryData<CompetidorSala[]>(['salaCompetidores', selectedExamenId], (oldData = []) => {
-        return oldData.map(comp => 
-          comp.id_evaluacion === competidorActualizado.id_evaluacion 
-            ? {
-                ...comp, // 1. Mantenemos nombre, CI, grado, etc.
-                estado_evaluacion: 'Descalificado', // 2. Forzamos el estado visual correcto
-                nota_actual: 0, // 3. La nota es 0
-                es_bloqueado: false,
-                bloqueado_por_mi: false
-              }
-            : comp
-        );
-      });
+    onSuccess: () => {
+      // Simplemente invalidamos las queries para que se vuelvan a pedir los datos
+      queryClient.invalidateQueries({ queryKey: ['descalificados'] });
+      queryClient.invalidateQueries({ queryKey: ['salaCompetidores', selectedExamenId] });
       toast.success('Competidor descalificado');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'No se pudo descalificar'),
@@ -214,7 +232,7 @@ export function useSalaEvaluacion() {
   return {
     areas: areasQuery.data || [],
     examenes: examenesQuery.data || [],
-    competidores: competidoresQuery.data || [],
+    competidores: competidoresProcesados, // Usamos la lista procesada
     
     isLoadingEstructura: areasQuery.isLoading || examenesQuery.isLoading,
     isLoadingCompetidores: competidoresQuery.isLoading,
