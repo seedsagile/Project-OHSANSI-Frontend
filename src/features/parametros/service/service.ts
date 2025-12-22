@@ -22,6 +22,27 @@ export const obtenerAreasAPI = async (): Promise<Area[]> => {
   }
 };
 
+export const obtenerAreasPorResponsableAPI = async (idResponsable: number): Promise<Area[]> => {
+  try {
+    const response = await apiClient.get(`/responsable/${idResponsable}`);
+
+    const areas = response.data?.data?.areas;
+
+    if (!Array.isArray(areas)) {
+      console.error('Formato inesperado de áreas:', areas);
+      return [];
+    }
+
+    return areas.map((a: any) => ({
+      id: a.id_area,
+      nombre: a.nombre,
+    }));
+  } catch (error) {
+    console.error('Error al obtener áreas por responsable:', error);
+    throw error;
+  }
+};
+
 // ===============================
 // 🟦 Crear Parámetro de Clasificación
 // ===============================

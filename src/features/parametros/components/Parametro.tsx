@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   obtenerAreasAPI,
+  obtenerAreasPorResponsableAPI,
   obtenerNivelesPorAreaAPI,
   obtenerParametrosGestionActualAPI,
 } from '../service/service';
@@ -52,7 +53,10 @@ export const Parametro = () => {
      ÁREAS (1 sola vez)
   ======================== */
   useEffect(() => {
-    obtenerAreasAPI().then((data) => {
+    const idResponsable = Number(localStorage.getItem('id_responsable'));
+    console.log(idResponsable);
+
+    obtenerAreasPorResponsableAPI(idResponsable).then((data) => {
       const ordenadas = data.sort((a, b) =>
         a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
       );
