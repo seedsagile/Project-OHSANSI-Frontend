@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import type { Area } from '../types/area-Type';
 import {
   getCompetidoresFiltradosAPI,
@@ -19,10 +19,8 @@ interface UseCompetidoresProps {
 export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
   const [areasSeleccionadas, setAreasSeleccionadas] = useState<Area[]>([]);
   const [competidores, setCompetidores] = useState<Competidor[]>([]);
-  const [loadingCompetidores, setLoadingCompetidores] = useState(true);
-  const [nivelesSeleccionados, setNivelesSeleccionados] = useState<{ [id_area: number]: number[] }>(
-    {}
-  );
+  const [loadingCompetidores, setLoadingCompetidores] = useState(false);
+  const [nivelesSeleccionados, setNivelesSeleccionados] = useState<Record<number, number[]>>({});
   const [gradoSeleccionado, setGradoSeleccionado] = useState<number[]>([]);
   const [generoSeleccionado, setGeneroSeleccionado] = useState<string[]>([]);
   const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string[]>([]);
@@ -30,6 +28,9 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
   const [orden, setOrden] = useState<Orden>({ columna: '', ascendente: true });
   const [mensajeSinCompetidores, setMensajeSinCompetidores] = useState<string | null>(null);
 
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  /* ================= NORMALIZADOR ================= */
   const normalizarCompetidor = (c: CompetidorListado): Competidor => ({
     id_competidor: 0,
     grado_escolar: c.grado,
@@ -43,7 +44,6 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
     id_nivel: 0,
     created_at: '',
     updated_at: '',
-
     persona: {
       id_persona: 0,
       nombre: c.nombre,
@@ -56,7 +56,6 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
       created_at: '',
       updated_at: '',
     },
-
     institucion: {
       id_institucion: 0,
       nombre: c.colegio,
@@ -69,7 +68,6 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
       created_at: null,
       updated_at: null,
     },
-
     area: {
       id_area: 0,
       nombre: c.area,
@@ -78,7 +76,6 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
       created_at: '',
       updated_at: '',
     },
-
     nivel: {
       id_nivel: 0,
       nombre: c.nivel,
@@ -89,120 +86,80 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
     },
   });
 
+  /* ================= FETCH BASE ================= */
   const fetchCompetidores = useCallback(async () => {
     try {
       setLoadingCompetidores(true);
-      const data = await getTodosCompetidoresPorResponsableAPI(responsableId);
-      const normalizados = data?.data?.competidores?.map(normalizarCompetidor) ?? [];
+      setMensajeSinCompetidores(null);
+
+      const res = await getTodosCompetidoresPorResponsableAPI(responsableId);
+      const normalizados = res?.data?.competidores?.map(normalizarCompetidor) ?? [];
+
       setCompetidores(normalizados);
-      console.log('Competidores:', normalizados);
-    } catch (error) {
-      console.error('Error al obtener competidores:', error);
+    } catch {
       setCompetidores([]);
+      setMensajeSinCompetidores('Error al cargar competidores');
     } finally {
       setLoadingCompetidores(false);
     }
   }, [responsableId]);
-
-  useEffect(() => {
-    fetchCompetidores();
-  }, [fetchCompetidores]);
-
-  const handleMostrarTodo = async () => {
-    setAreasSeleccionadas([]);
-    setNivelesSeleccionados({});
-    setGradoSeleccionado([]);
-    setGeneroSeleccionado([]);
-    setDepartamentoSeleccionado([]);
-    setBusqueda('');
-    fetchCompetidores();
-  };
 
   const actualizarCompetidores = useCallback(async () => {
     try {
       setLoadingCompetidores(true);
       setMensajeSinCompetidores(null);
 
-      let competidoresEncontrados: Competidor[] = [];
+      const requests: Promise<any>[] = [];
 
-      const generoParam = generoSeleccionado.length === 1 ? generoSeleccionado[0] : '';
-      const hayAlgunNivelSeleccionado = Object.values(nivelesSeleccionados).some(
-        (arr) => Array.isArray(arr) && arr.length > 0
-      );
-
-      const departamentos =
-        departamentoSeleccionado.length > 0 ? departamentoSeleccionado : [undefined];
+      const genero = generoSeleccionado.length === 1 ? generoSeleccionado[0] : '';
+      const grados = gradoSeleccionado.length ? gradoSeleccionado : [0];
+      const deps = departamentoSeleccionado.length > 0 ? departamentoSeleccionado : [undefined];
 
       if (areasSeleccionadas.length > 0) {
         for (const area of areasSeleccionadas) {
-          const niveles = nivelesSeleccionados[area.id_area] || [];
-          const idGrado = gradoSeleccionado.length > 0 ? gradoSeleccionado[0] : 0;
+          const niveles = nivelesSeleccionados[area.id_area] || [0];
 
-          if (hayAlgunNivelSeleccionado) {
-            if (!niveles || niveles.length === 0) continue;
-            for (const nivel of niveles) {
-              for (const dep of departamentos) {
-                const data = await getCompetidoresFiltradosAPI(
-                  responsableId,
-                  area.id_area.toString(),
-                  nivel,
-                  idGrado,
-                  generoParam,
-                  dep ? dep.toLowerCase() : undefined
-                );
-                competidoresEncontrados.push(
-                  ...(data.data?.competidores?.map(normalizarCompetidor) || [])
+          for (const nivel of niveles.length ? niveles : [0]) {
+            for (const grado of grados) {
+              for (const dep of deps) {
+                requests.push(
+                  getCompetidoresFiltradosAPI(
+                    responsableId,
+                    area.id_area.toString(),
+                    nivel,
+                    grado,
+                    genero,
+                    dep?.toLowerCase()
+                  )
                 );
               }
             }
-          } else {
-            for (const dep of departamentos) {
-              const data = await getCompetidoresFiltradosAPI(
-                responsableId,
-                area.id_area.toString(),
-                0,
-                idGrado,
-                generoParam,
-                dep ? dep.toLowerCase() : undefined
-              );
-              competidoresEncontrados.push(
-                ...(data.data?.competidores?.map(normalizarCompetidor) || [])
-              );
-            }
           }
         }
-
-        competidoresEncontrados = Array.from(
-          new Map(
-            competidoresEncontrados.filter((c) => c?.persona?.ci).map((c) => [c.persona.ci, c])
-          ).values()
-        );
       } else {
-        const idGrados = gradoSeleccionado.length > 0 ? gradoSeleccionado : [0];
-        for (const idGrado of idGrados) {
-          for (const dep of departamentos) {
-            const data = await getCompetidoresFiltradosAPI(
-              responsableId,
-              '0',
-              0,
-              idGrado,
-              generoParam,
-              dep ? dep.toLowerCase() : undefined
-            );
-            competidoresEncontrados.push(
-              ...(data.data?.competidores?.map(normalizarCompetidor) || [])
+        for (const grado of grados) {
+          for (const dep of deps) {
+            requests.push(
+              getCompetidoresFiltradosAPI(responsableId, '0', 0, grado, genero, dep?.toLowerCase())
             );
           }
         }
       }
 
-      if (competidoresEncontrados.length === 0) {
+      const responses = await Promise.all(requests);
+
+      const encontrados = responses.flatMap(
+        (r) => r?.data?.competidores?.map(normalizarCompetidor) ?? []
+      );
+
+      const unicos = Array.from(new Map(encontrados.map((c) => [c.persona.ci, c])).values());
+
+      if (!unicos.length) {
         setMensajeSinCompetidores('No hay competidores registrados');
       }
 
-      setCompetidores(competidoresEncontrados);
-    } catch (error) {
-      console.error('Error al actualizar competidores:', error);
+      setCompetidores(unicos);
+    } catch {
       setCompetidores([]);
       setMensajeSinCompetidores('Error al cargar competidores');
     } finally {
@@ -217,17 +174,23 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
     responsableId,
   ]);
 
+  /* ================= DEBOUNCE ================= */
   useEffect(() => {
-    if (
-      areasSeleccionadas.length === 0 &&
-      gradoSeleccionado.length === 0 &&
-      generoSeleccionado.length === 0 &&
-      departamentoSeleccionado.length === 0
-    ) {
-      fetchCompetidores();
-    } else {
-      actualizarCompetidores();
-    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      const sinFiltros =
+        !areasSeleccionadas.length &&
+        !gradoSeleccionado.length &&
+        !generoSeleccionado.length &&
+        !departamentoSeleccionado.length;
+
+      sinFiltros ? fetchCompetidores() : actualizarCompetidores();
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [
     areasSeleccionadas,
     nivelesSeleccionados,
@@ -238,63 +201,52 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
     actualizarCompetidores,
   ]);
 
-  const filtrarCompetidores = useCallback(() => {
+  /* ================= FILTRADO MEMO ================= */
+  const competidoresFiltrados = useMemo(() => {
     if (!busqueda) return competidores;
-    const texto = busqueda.toLowerCase();
+    const t = busqueda.toLowerCase();
+
     return competidores.filter(
       (c) =>
-        c.persona?.nombre.toLowerCase().includes(texto) ||
-        c.persona?.apellido.toLowerCase().includes(texto) ||
-        c.institucion?.nombre.toLowerCase().includes(texto)
+        c.persona.nombre.toLowerCase().includes(t) ||
+        c.persona.apellido.toLowerCase().includes(t) ||
+        c.institucion.nombre.toLowerCase().includes(t)
     );
   }, [busqueda, competidores]);
 
-  type ColumnaOrden =
-    | 'nombre'
-    | 'apellido'
-    | 'ci'
-    | 'colegio'
-    | 'area'
-    | 'nivel'
-    | 'genero'
-    | 'departamento'
-    | 'grado';
+  /* ================= ORDEN ================= */
+  const ordenarPorColumna = (columna: string) => {
+    const asc = orden.columna === columna ? !orden.ascendente : true;
 
-  const ordenarPorColumna = (columna: ColumnaOrden) => {
-    const ascendente = orden.columna === columna ? !orden.ascendente : true;
+    setCompetidores((prev) =>
+      [...prev].sort((a, b) => {
+        const A = String(
+          (a as any)?.persona?.[columna] ||
+            (a as any)?.institucion?.[columna] ||
+            (a as any)?.[columna] ||
+            ''
+        );
+        const B = String(
+          (b as any)?.persona?.[columna] ||
+            (b as any)?.institucion?.[columna] ||
+            (b as any)?.[columna] ||
+            ''
+        );
+        return asc ? A.localeCompare(B) : B.localeCompare(A);
+      })
+    );
 
-    const ordenados = [...competidores].sort((a, b) => {
-      const map: Record<ColumnaOrden, string> = {
-        nombre: a.persona?.nombre || '',
-        apellido: a.persona?.apellido || '',
-        ci: a.persona?.ci || '',
-        colegio: a.institucion?.nombre || '',
-        area: a.area?.nombre || '',
-        nivel: a.nivel?.nombre || '',
-        genero: a.persona?.genero || '',
-        departamento: a.departamento || '',
-        grado: String(a.grado_escolar),
-      };
+    setOrden({ columna, ascendente: asc });
+  };
 
-      const mapB: Record<ColumnaOrden, string> = {
-        nombre: b.persona?.nombre || '',
-        apellido: b.persona?.apellido || '',
-        ci: b.persona?.ci || '',
-        colegio: b.institucion?.nombre || '',
-        area: b.area?.nombre || '',
-        nivel: b.nivel?.nombre || '',
-        genero: b.persona?.genero || '',
-        departamento: b.departamento || '',
-        grado: String(b.grado_escolar),
-      };
-
-      return ascendente
-        ? map[columna].localeCompare(mapB[columna])
-        : mapB[columna].localeCompare(map[columna]);
-    });
-
-    setCompetidores(ordenados);
-    setOrden({ columna, ascendente });
+  const handleMostrarTodo = () => {
+    setAreasSeleccionadas([]);
+    setNivelesSeleccionados({});
+    setGradoSeleccionado([]);
+    setGeneroSeleccionado([]);
+    setDepartamentoSeleccionado([]);
+    setBusqueda('');
+    fetchCompetidores();
   };
 
   return {
@@ -310,9 +262,8 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
     setDepartamentoSeleccionado,
     busqueda,
     setBusqueda,
-    competidores,
+    competidoresFiltrados,
     loadingCompetidores,
-    filtrarCompetidores,
     ordenarPorColumna,
     orden,
     handleMostrarTodo,

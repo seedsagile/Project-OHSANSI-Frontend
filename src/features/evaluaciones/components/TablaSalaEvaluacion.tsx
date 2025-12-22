@@ -1,4 +1,4 @@
-import { Lock, Edit2,UserX } from 'lucide-react'; // Eliminado UserX
+import { Lock, Edit2} from 'lucide-react'; // Eliminado UserX
 import type { CompetidorSala } from '../types/sala.types';
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
   isLoading: boolean;
 }
 
-export const TablaSalaEvaluacion = ({ competidores, onCalificar,onDescalificar, isLoading }: Props) => {
+export const TablaSalaEvaluacion = ({ competidores, onCalificar, isLoading }: Props) => {
   
   if (isLoading) {
     return <div className="text-center py-20 text-gray-500 animate-pulse">Cargando sala...</div>;
@@ -103,25 +103,6 @@ export const TablaSalaEvaluacion = ({ competidores, onCalificar,onDescalificar, 
                     ) : (
                       <span>Calificar</span>
                     )}
-                  </button>
-
-                  {/* DESCALIFICAR */}
-                  <button
-                    onClick={() => onDescalificar(comp)}
-                    disabled={estaBloqueadoAjeno || esDescalificado}
-                    className={`
-                      px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all active:scale-95
-                      ${estaBloqueadoAjeno || esDescalificado
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'bg-red-600 text-white hover:bg-red-700'
-                      }
-                    `}
-                    title="Descalificar estudiante"
-                  >
-                    <span className="flex items-center gap-2">
-                      <UserX size={14} />
-                      Descalificar
-                    </span>
                   </button>
 
                 </div>

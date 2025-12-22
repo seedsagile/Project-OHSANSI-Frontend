@@ -26,7 +26,8 @@ export const CompetidoresPage = () => {
     departamentoSeleccionado,
     setDepartamentoSeleccionado,
     loadingCompetidores,
-    filtrarCompetidores,
+    //filtrarCompetidores,
+    competidoresFiltrados,
     ordenarPorColumna,
     orden,
     handleMostrarTodo,
@@ -62,7 +63,7 @@ export const CompetidoresPage = () => {
       'Nivel',
       'Grado',
     ];
-    const rows = filtrarCompetidores().map((c) => [
+    const rows = competidoresFiltrados.map((c) => [
       c.persona.apellido,
       c.persona.nombre,
       c.persona.genero || '-',
@@ -87,7 +88,7 @@ export const CompetidoresPage = () => {
       `Departamentos: ${departamentoSeleccionado.length > 0 ? departamentoSeleccionado.join(', ') : 'Todos'}`,
     ].join(' | ');
 
-    const data = filtrarCompetidores().map((c) => ({
+    const data = competidoresFiltrados.map((c) => ({
       Apellido: c.persona.apellido,
       Nombre: c.persona.nombre,
       Género: c.persona.genero || '-',
@@ -137,7 +138,7 @@ export const CompetidoresPage = () => {
             Listado de Competidores
           </h1>
 
-          <div className="flex flex-col max-w-[300px] sm:max-w-[700px] lg:max-w-[1200px] lg:flex-row gap-6 mx-auto">
+          <div className="flex flex-col max-w-[300px] sm:max-w-[700px] lg:max-w-[900px] xl:max-w-[1100px] 3xl:max-w-[1200px] lg:flex-row gap-6 mx-auto">
             <div className="flex flex-col gap-4 w-full">
               <div className="flex gap-4 ">
                 <div className="flex flex-col content-start sm:flex-col lg:flex:row lg:flex-row gap-3 lg:items-center w-60 lg:w-full">
@@ -274,14 +275,14 @@ export const CompetidoresPage = () => {
                             </div>
                           </td>
                         </tr>
-                      ) : filtrarCompetidores().length === 0 ? (
+                      ) : competidoresFiltrados.length === 0 ? (
                         <tr>
                           <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                             {mensajeSinCompetidores || 'No hay competidores disponibles.'}
                           </td>
                         </tr>
                       ) : (
-                        filtrarCompetidores().map((c, i) => (
+                        competidoresFiltrados.map((c, i) => (
                           <tr
                             key={i}
                             className={`border-b border-principal-100 transition-colors ${
