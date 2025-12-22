@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus} from 'lucide-react';
+import { useState} from 'react';
+import { Plus } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOlimpiadas } from '../hooks/useOlimpiadas';
 import { SelectorOlimpiada } from './SelectorOlimpiada';
@@ -9,11 +9,6 @@ import { olimpiadaService } from '../services/olimpiadaServices';
 export default function GestionOlimpiadas() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Cargar el ID seleccionado desde localStorage al iniciar
-  const [idSeleccionado, setIdSeleccionado] = useState(() => {
-    return localStorage.getItem('olimpiadaActiva') || "";
-  });
 
   const { data: olimpiadas = [], isLoading, isError } = useOlimpiadas();
 
@@ -21,7 +16,6 @@ export default function GestionOlimpiadas() {
   const mutationActivar = useMutation({
     mutationFn: olimpiadaService.activarOlimpiada,
     onSuccess: () => {
-      // Refresca la lista para actualizar el estado "esActual"
       queryClient.invalidateQueries({ queryKey: ['olimpiadas'] });
     },
     onError: (error: any) => {
@@ -29,17 +23,13 @@ export default function GestionOlimpiadas() {
     }
   });
 
-  const olimpiadaActiva = olimpiadas.find(o => o.id.toString() === idSeleccionado);
+  // Encontrar la olimpiada activa desde el API
+  const olimpiadaActiva = olimpiadas.find(o => o.estado === true);
 
   // Handler para cuando se selecciona una olimpiada
   const handleSeleccionarOlimpiada = (id: string) => {
-    setIdSeleccionado(id);
-    // Guardar en localStorage
     if (id) {
-      localStorage.setItem('olimpiadaActiva', id);
       mutationActivar.mutate(parseInt(id));
-    } else {
-      localStorage.removeItem('olimpiadaActiva');
     }
   };
 
@@ -63,7 +53,7 @@ export default function GestionOlimpiadas() {
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <SelectorOlimpiada 
             olimpiadas={olimpiadas} 
-            seleccionada={idSeleccionado}
+            olimpiadaActiva={olimpiadaActiva}
             onSelect={handleSeleccionarOlimpiada}
           />
 
@@ -93,7 +83,7 @@ export default function GestionOlimpiadas() {
                 <tr 
                   key={olimp.id} 
                   className={`hover:bg-blue-50/40 cursor-pointer transition-colors ${
-                    olimp.id.toString() === idSeleccionado ? 'bg-blue-50/60' : ''
+                    olimp.estado ? 'bg-blue-50/60' : ''
                   }`}
                   onClick={() => handleSeleccionarOlimpiada(olimp.id.toString())}
                 >
@@ -102,9 +92,9 @@ export default function GestionOlimpiadas() {
                   <td className="px-6 py-4 text-gray-600">{olimp.gestion}</td>
                   <td className="px-6 py-4 text-center">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      olimp.id.toString() === idSeleccionado ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                      olimp.estado ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
                     }`}>
-                      {olimp.id.toString() === idSeleccionado ? 'Activo' : 'Inactivo'}
+                      {olimp.estado ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                 </tr>

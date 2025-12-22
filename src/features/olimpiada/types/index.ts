@@ -2,7 +2,7 @@ export interface Olimpiada {
   id: number;//esto revisarlo para que si esta asi en la db
   nombre: string;
   gestion: string;
-  esActual: boolean;
+  estado: boolean;
 }
 
 export interface ApiResponse {
