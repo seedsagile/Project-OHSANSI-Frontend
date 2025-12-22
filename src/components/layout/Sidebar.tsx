@@ -225,6 +225,14 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             label="Configuración de Actividades de Fases"
             onClick={() => setOpen(false)}
           />
+
+          <NavLink
+            to="/permisosRoles"
+            icon={<Settings2 />}
+            label="Configuración de Permisos por Rol"
+            onClick={() => setOpen(false)}
+          />
+
           <NavLink
             to="/cronograma"
             icon={<CalendarRange />}

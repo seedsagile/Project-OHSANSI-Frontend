@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { configuracionService, type ConfiguracionUI } from '../services/configuracionService';
-import type { PermisoFase, Gestion } from '../types';
+import { configuracionService } from '../services/configuracionService';    
+import type { PermisoFase, Gestion, ConfiguracionUI } from '../types';       
 
 type ModalFeedbackState = {
   isOpen: boolean;
@@ -20,7 +20,6 @@ export function useConfiguracionFases() {
     message: '',
   });
   const [isCancelModalOpen, setCancelModalOpen] = useState(false);
-  
   const [resetKey, setResetKey] = useState(0);
 
   const closeModalFeedback = useCallback(() => {
@@ -31,48 +30,36 @@ export function useConfiguracionFases() {
     queryKey: ['gestionActual'],
     queryFn: configuracionService.obtenerGestionActual,
     staleTime: 1000 * 60 * 60,
-    retry: 1,
     refetchOnWindowFocus: false,
   });
 
   const gestionData = gestionQuery.data;
-  const idGestion = gestionData?.id;
 
   const configQuery = useQuery<ConfiguracionUI, Error>({
-    queryKey: ['configuracionFases', idGestion],
-    queryFn: () => configuracionService.obtenerConfiguracion(idGestion!),
-    enabled: !!idGestion,
-    staleTime: 1000 * 60 * 5,
+    queryKey: ['configuracionFases'],
+    queryFn: () => configuracionService.obtenerConfiguracion(),
     refetchOnWindowFocus: false,
   });
 
   const { mutate: guardarCambios, isPending: isSaving } = useMutation({
     mutationFn: async (permisosModificados: PermisoFase[]) => {
-      if (!idGestion || !configQuery.data) {
-        throw new Error('No se ha cargado la información necesaria para guardar.');
-      }
-      const idsFasesActivas = configQuery.data.fases.map((f) => f.id);
-      await configuracionService.guardarConfiguracion(
-        idGestion,
-        permisosModificados,
-        idsFasesActivas
-      );
+      await configuracionService.guardarConfiguracion(permisosModificados);
     },
     onSuccess: () => {
       setModalFeedback({
         isOpen: true,
         type: 'success',
         title: '¡Guardado Exitoso!',
-        message: 'La configuración de fases y permisos se ha actualizado correctamente.',
+        message: 'La configuración de acciones por fase se ha actualizado.',
       });
-      queryClient.invalidateQueries({ queryKey: ['configuracionFases', idGestion] });
+      queryClient.invalidateQueries({ queryKey: ['configuracionFases'] });
     },
     onError: (err: Error) => {
       setModalFeedback({
         isOpen: true,
         type: 'error',
         title: 'Error al Guardar',
-        message: err.message || 'Ocurrió un problema al intentar guardar los cambios.',
+        message: err.message || 'Ocurrió un problema de conexión.',
       });
     },
   });
@@ -106,7 +93,7 @@ export function useConfiguracionFases() {
   return {
     matrizData: configQuery.data,
     gestionActual: infoGestionParaUI,
-    isLoading: gestionQuery.isLoading || (!!idGestion && configQuery.isLoading),
+    isLoading: gestionQuery.isLoading || configQuery.isLoading,
     isSaving,
     isError: gestionQuery.isError || configQuery.isError,
     errorMessage: (gestionQuery.error as Error)?.message || (configQuery.error as Error)?.message,

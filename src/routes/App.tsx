@@ -66,6 +66,12 @@ const PaginaExamenes = lazy(() =>
     default: module.PaginaExamenes,
   }))
 );
+
+const PaginaConfiguracionRoles = lazy(() =>
+  import('@/features/ConfiguracionRoles/routes/PaginaConfiguracionRoles').then((module) => ({
+    default: module.PaginaConfiguracionRoles,
+  }))
+);
 const PaginaEvaluacionSala = lazy(() =>
   import('@/features/evaluaciones/routes/PaginaEvaluacionSala').then((module) => ({
     default: module.PaginaEvaluacionSala,
@@ -146,6 +152,7 @@ export default function App() {
               <Route path="parametrosCalificaciones" element={<Parametro />} />
               <Route path="medallero" element={<PaginaMedallero />} />
               <Route path="configuracionFasesGlobales" element={<PaginaConfiguracionFases />} />
+              <Route path="permisosRoles" element={<PaginaConfiguracionRoles />} />
               <Route path="cronograma" element={<PaginaCronograma />} />
               <Route path="reportesCambiosCalificaciones" element={<PaginaReporteCambios />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
