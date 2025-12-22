@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { ChevronDown, LoaderCircle } from 'lucide-react';
 import type { NivelFiltro } from '../types';
 
@@ -24,127 +23,99 @@ export const NivelFilterDropdown: React.FC<NivelFilterDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const portalContentRef = useRef<HTMLDivElement>(null); 
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
 
+  // Lógica de "Seleccionar Todos"
   const areAllSelected = useMemo(
     () => niveles.length > 0 && niveles.every(n => selectedNiveles.has(n.id_nivel)),
     [niveles, selectedNiveles]
   );
-  
-  const calculatePosition = () => {
-    if (dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + window.scrollY + 5,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  };
 
+  // Click Outside: Exactamente igual que en CustomDropdown
   useEffect(() => {
-    if (isOpen) {
-      calculatePosition();
-      window.addEventListener('resize', calculatePosition);
-      window.addEventListener('scroll', calculatePosition, true); 
-    } else {
-      window.removeEventListener('resize', calculatePosition);
-      window.removeEventListener('scroll', calculatePosition, true);
-    }
-    return () => {
-      window.removeEventListener('resize', calculatePosition);
-      window.removeEventListener('scroll', calculatePosition, true);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handler = (event: MouseEvent) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(event.target as Node) &&
-        portalContentRef.current &&
-        !portalContentRef.current.contains(event.target as Node)
-      ) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const MenuPortal = isOpen ? createPortal(
-    <div
-      ref={portalContentRef}
-      style={{
-        position: 'absolute',
-        top: `${position.top}px`,
-        left: `${position.left}px`,
-        width: `${position.width}px`,
-        zIndex: 9999, 
-      }}
-      className="bg-white border-2 border-principal-500 rounded-b-xl shadow-xl p-2 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100"
-      onClick={(e) => e.stopPropagation()} 
-    >
-      {isLoading ? (
-        <div className="p-4 text-center"><LoaderCircle className="animate-spin mx-auto text-principal-500"/></div>
-      ) : niveles.length === 0 ? (
-        <div className="p-4 text-center text-neutro-500 text-sm">No hay niveles disponibles</div>
-      ) : (
-        <>
-          <label className="flex items-center gap-3 p-2 hover:bg-principal-50 rounded-lg cursor-pointer border-b border-neutro-100 mb-1 transition-colors">
-            <input 
-              type="checkbox" 
-              checked={areAllSelected}
-              onChange={() => onToggleAll(niveles.map(n => n.id_nivel))}
-              className="w-4 h-4 text-principal-600 rounded border-neutro-300 focus:ring-principal-500 cursor-pointer"
-            />
-            <span className="text-sm font-bold text-principal-700 uppercase">Marcar Todos</span>
-          </label>
-
-          <div className="space-y-1">
-            {niveles.map((nivel) => (
-              <label key={nivel.id_nivel} className="flex items-center gap-3 p-2 hover:bg-neutro-50 rounded-lg cursor-pointer transition-colors">
-                <input 
-                  type="checkbox" 
-                  checked={selectedNiveles.has(nivel.id_nivel)}
-                  onChange={() => onToggleNivel(nivel.id_nivel)}
-                  className="w-4 h-4 text-principal-600 rounded border-neutro-300 focus:ring-principal-500"
-                />
-                <span className="text-sm text-neutro-700">{nivel.nombre}</span>
-              </label>
-            ))}
-          </div>
-        </>
-      )}
-    </div>,
-    document.body
-  ) : null;
-
   return (
+    // 1. Contenedor Relativo (Igual que CustomDropdown)
     <div className="relative" ref={dropdownRef}>
+      
+      {/* 2. Botón Trigger (Estilos idénticos a CustomDropdown) */}
       <button
         type="button"
-        id={id} 
-        onClick={() => !disabled && setIsOpen(prev => !prev)}
+        id={id}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        aria-expanded={isOpen}
         className={`w-full flex justify-between items-center bg-principal-500 transition-colors px-4 py-3 font-semibold text-white 
-          ${isOpen ? 'rounded-t-xl' : 'rounded-lg hover:bg-principal-600'}
+          ${isOpen ? 'rounded-t-xl hover:bg-principal-600' : 'rounded-lg hover:bg-principal-600'}
           ${disabled ? 'opacity-70 cursor-not-allowed' : ''}
         `}
       >
         <span className="font-medium truncate">
           {selectedNiveles.size > 0 
-            ? `${selectedNiveles.size} Nivel(es) seleccionado(s)` 
+            ? `${selectedNiveles.size} Nivel(es)` 
             : "Seleccionar Nivel"}
         </span>
         <ChevronDown 
-          size={18} 
-          className={`w-5 h-5 text-blanco transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          className={`w-5 h-5 text-white transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
-      {MenuPortal}
+
+      {/* 3. Menú Desplegable (Posicionamiento Absoluto estándar) 
+          Eliminamos createPortal y usamos la misma estrategia que CustomDropdown 
+      */}
+      {isOpen && (
+        <div className="absolute left-0 top-full z-50 w-full bg-white border-2 border-principal-500 rounded-b-xl shadow-lg overflow-hidden">
+          <div className="max-h-[250px] overflow-y-auto p-2 space-y-1">
+            
+            {isLoading ? (
+              <div className="p-4 text-center">
+                <LoaderCircle className="animate-spin mx-auto text-principal-500"/>
+              </div>
+            ) : niveles.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">No hay niveles disponibles</div>
+            ) : (
+              <>
+                {/* Opción: Marcar Todos */}
+                <label className="flex items-center gap-3 p-2 hover:bg-principal-50 rounded-lg cursor-pointer border-b border-gray-100 mb-1 transition-colors select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={areAllSelected}
+                    onChange={() => onToggleAll(niveles.map(n => n.id_nivel))}
+                    className="w-4 h-4 text-principal-600 rounded border-gray-300 focus:ring-principal-500 cursor-pointer"
+                  />
+                  <span className="text-sm font-bold text-principal-700 uppercase">Marcar Todos</span>
+                </label>
+
+                {/* Lista de Niveles */}
+                {niveles.map((nivel) => (
+                  <label 
+                    key={nivel.id_nivel} 
+                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors select-none ${
+                      selectedNiveles.has(nivel.id_nivel) ? 'bg-principal-50' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={selectedNiveles.has(nivel.id_nivel)}
+                      onChange={() => onToggleNivel(nivel.id_nivel)}
+                      className="w-4 h-4 text-principal-600 rounded border-gray-300 focus:ring-principal-500"
+                    />
+                    <span className={`text-sm ${selectedNiveles.has(nivel.id_nivel) ? 'text-principal-700 font-medium' : 'text-gray-700'}`}>
+                      {nivel.nombre}
+                    </span>
+                  </label>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
