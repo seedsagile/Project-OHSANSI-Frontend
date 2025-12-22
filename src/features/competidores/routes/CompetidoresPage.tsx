@@ -138,7 +138,7 @@ export const CompetidoresPage = () => {
             Listado de Competidores
           </h1>
 
-          <div className="flex flex-col max-w-[300px] sm:max-w-[700px] lg:max-w-[1200px] lg:flex-row gap-6 mx-auto">
+          <div className="flex flex-col max-w-[300px] sm:max-w-[700px] lg:max-w-[900px] xl:max-w-[1100px] 3xl:max-w-[1200px] lg:flex-row gap-6 mx-auto">
             <div className="flex flex-col gap-4 w-full">
               <div className="flex gap-4 ">
                 <div className="flex flex-col content-start sm:flex-col lg:flex:row lg:flex-row gap-3 lg:items-center w-60 lg:w-full">
