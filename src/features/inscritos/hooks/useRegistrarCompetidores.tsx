@@ -20,6 +20,7 @@ import {
   type ProcesamientoCSVResult,
   reverseHeaderMapping
 } from '../utils/csvProcessor';
+import { useSistemaStore } from '../../sistema/stores/useSistemaStore';
 
 export { reverseHeaderMapping };
 
@@ -32,7 +33,6 @@ export type ModalState = {
 };
 
 const initialModalState: ModalState = { isOpen: false, title: '', message: '', type: 'info' };
-const GESTION_ACTUAL_FALLBACK = "2025";
 
 export function useImportarCompetidores() {
   const [filas, setFilas] = useState<FilaProcesada[]>([]);
@@ -41,8 +41,7 @@ export function useImportarCompetidores() {
   const [modalState, setModalState] = useState<ModalState>(initialModalState);
   const [columnasDinamicas, setColumnasDinamicas] = useState<ColumnDef<FilaProcesada>[]>([]);
   const [invalidHeaders, setInvalidHeaders] = useState<string[]>([]);
-  const [gestionActual, setGestionActual] = useState<string | null>(null);
-
+  const anioGestion = useSistemaStore(state => state.getAnioGestion());
   const workerRef = useRef<Worker | null>(null);
   const modalTimerRef = useRef<number | undefined>(undefined);
 
@@ -51,19 +50,10 @@ export function useImportarCompetidores() {
     queryFn: obtenerAreasConNivelesAPI,
     select: (data: ApiResponseAreas) => ({
         areasConNiveles: data.data || [],
-        gestion: data.olimpiada_actual || GESTION_ACTUAL_FALLBACK
     })
   });
 
   const areasConNiveles = useMemo(() => apiResponseAreas?.areasConNiveles || [], [apiResponseAreas]);
-
-  useEffect(() => {
-    if (apiResponseAreas?.gestion) {
-        setGestionActual(apiResponseAreas.gestion);
-    } else if (!isLoadingData) {
-        setGestionActual(GESTION_ACTUAL_FALLBACK);
-    }
-  }, [apiResponseAreas, isLoadingData]);
 
   const reset = useCallback(() => {
     setFilas([]);
@@ -84,6 +74,7 @@ export function useImportarCompetidores() {
   >({
     mutationFn: ({ gestion, payload }) => importarCompetidoresAPI(gestion, payload),
     onSuccess: (data) => {
+      
       const { resumen } = data.data;
       const duplicados = data.detalles_duplicados || [];
       
@@ -107,18 +98,18 @@ export function useImportarCompetidores() {
               <span className="font-bold text-gray-900">{resumen.total_procesados}</span>
             </div>
             <div className="flex justify-between text-green-700 font-medium">
-              <span>✅ Registrados Exitosamente:</span>
+              <span>Registrados Exitosamente:</span>
               <span className="font-bold">{resumen.total_registrados}</span>
             </div>
             {resumen.total_duplicados > 0 && (
               <div className="flex justify-between text-amber-600 font-medium">
-                <span>⚠️ Duplicados (Omitidos):</span>
+                <span>Duplicados (Omitidos):</span>
                 <span className="font-bold">{resumen.total_duplicados}</span>
               </div>
             )}
             {resumen.total_errores > 0 && (
               <div className="flex justify-between text-red-600 font-medium">
-                <span>❌ Errores de Servidor:</span>
+                <span>Errores de Servidor:</span>
                 <span className="font-bold">{resumen.total_errores}</span>
               </div>
             )}
@@ -163,6 +154,8 @@ export function useImportarCompetidores() {
       reset();
     },
     onError: (error) => {
+        console.error('Error al importar competidores:', error);
+
         let errorMessage = 'Ocurrió un error inesperado al guardar.';
         const errorData = error.response?.data;
 
@@ -258,6 +251,17 @@ export function useImportarCompetidores() {
       }
     };
 
+    workerRef.current.onerror = (err) => {
+        console.error("Error crítico en Web Worker:", err);
+        setIsParsing(false);
+        setModalState({ 
+            isOpen: true, 
+            type: 'error', 
+            title: 'Error Interno', 
+            message: 'No se pudo iniciar el procesador de archivos.' 
+        });
+    };
+
     return () => {
       workerRef.current?.terminate();
       clearTimeout(modalTimerRef.current);
@@ -267,12 +271,23 @@ export function useImportarCompetidores() {
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
       reset();
+      
+      if (!anioGestion) {
+        setModalState({ 
+            isOpen: true, 
+            type: 'error', 
+            title: 'Sistema no inicializado', 
+            message: 'No se ha detectado una gestión activa. Por favor seleccione una olimpiada en el Dashboard.'
+        });
+        return;
+      }
+
       if (fileRejections.length > 0) {
         setModalState({ 
             isOpen: true, 
             type: 'error', 
             title: 'Archivo no válido', 
-            message: 'Archivo no válido- Formato no válido. Sólo se permiten archivos .csv'
+            message: 'Formato no válido. Sólo se permiten archivos .csv'
         });
         return;
       }
@@ -291,7 +306,7 @@ export function useImportarCompetidores() {
                 areasConNiveles: areasConNiveles,
             });
         } else {
-            console.error("Worker no inicializado.");
+            console.error("Worker no inicializado al intentar procesar.");
             setIsParsing(false);
         }
       };
@@ -301,11 +316,15 @@ export function useImportarCompetidores() {
       };
       reader.readAsText(file, 'UTF-8');
     },
-    [reset, areasConNiveles]
+    [reset, areasConNiveles, anioGestion]
   );
 
   const handleSave = () => {
-    if (!gestionActual || !nombreArchivo) return;
+    if (!anioGestion) {
+        setModalState({ isOpen: true, type: 'error', title: 'Error de Sesión', message: 'No se encuentra la gestión activa.' });
+        return;
+    }
+    if (!nombreArchivo) return;
     
     if (invalidHeaders.length > 0) {
       setModalState({ isOpen: true, type: 'error', title: 'Cabeceras no válidas', message: 'El archivo contiene columnas no reconocidas.' });
@@ -333,7 +352,7 @@ export function useImportarCompetidores() {
       isOpen: true,
       type: 'confirmation',
       title: 'Confirmar registro',
-      message: `Confirmar registro- ¿Está seguro que desea registrar a ${filasValidas.length} competidores?`,
+      message: `¿Está seguro que desea registrar a ${filasValidas.length} competidores en la gestión ${anioGestion}?`,
       onConfirm: () => {
         const competidoresIndividuales = filasValidas.map((fila) =>
           mapCSVRenglonToPayload(fila.datos as CompetidorCSV) as CompetidorIndividualPayloadAPI
@@ -342,7 +361,7 @@ export function useImportarCompetidores() {
           nombre_archivo: nombreArchivo,
           competidores: competidoresIndividuales,
         };
-        mutate({ gestion: gestionActual, payload });
+        mutate({ gestion: anioGestion, payload });
       },
     });
   };
@@ -362,7 +381,7 @@ export function useImportarCompetidores() {
     modalState,
     columnasDinamicas,
     invalidHeaders,
-    gestionActual,
+    gestionActual: anioGestion,
     onDrop,
     handleSave,
     handleCancel: reset,

@@ -14,6 +14,13 @@ export const DEPARTAMENTOS_VALIDOS = [
 
 export const DEFAULT_FECHA_NAC = '2000-01-01';
 export const DEFAULT_GRADO_ESCOLAR = 'No especificado';
-export const GESTION_ACTUAL_ANIO = '2025';
 
-export const ID_OLIMPIADA_ACTUAL = 1;
+import { useSistemaStore } from '@/features/sistema/stores/useSistemaStore';
+
+const state = useSistemaStore.getState();
+const gestionData = state.getGestionActual();
+export const GESTION_ACTUAL_ANIO = state.getAnioGestion() || '';
+  
+export const ID_OLIMPIADA_ACTUAL = gestionData 
+  ? Number((gestionData as unknown as { id: number }).id) 
+  : 0;

@@ -1,4 +1,9 @@
+import { useSistemaStore } from '@/features/sistema/stores/useSistemaStore';
 
-export const GESTION_ACTUAL_ANIO = '2025';
-
-export const ID_OLIMPIADA_ACTUAL = 1;
+const state = useSistemaStore.getState();
+const gestionData = state.getGestionActual();
+export const GESTION_ACTUAL_ANIO = state.getAnioGestion() || '';
+  
+export const ID_OLIMPIADA_ACTUAL = gestionData 
+  ? Number((gestionData as unknown as { id: number }).id) 
+  : 0;
