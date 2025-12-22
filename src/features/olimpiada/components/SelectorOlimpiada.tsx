@@ -11,9 +11,10 @@ interface Props {
   olimpiadas: Olimpiada[];
   olimpiadaActiva?: Olimpiada;
   onSelect: (id: string) => void;
+  isAdmin: boolean;
 }
 
-export const SelectorOlimpiada = ({ olimpiadas, olimpiadaActiva, onSelect }: Props) => {
+export const SelectorOlimpiada = ({ olimpiadas, olimpiadaActiva, onSelect, isAdmin }: Props) => {
   return (
     <div className="relative group min-w-[240px]">
       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 z-10">
@@ -22,7 +23,10 @@ export const SelectorOlimpiada = ({ olimpiadas, olimpiadaActiva, onSelect }: Pro
       <select 
         value={olimpiadaActiva?.id.toString() || ""}
         onChange={(e) => onSelect(e.target.value)}
-        className="appearance-none w-full bg-white border border-gray-200 text-gray-700 py-3 pl-10 pr-10 rounded-xl font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer shadow-sm hover:border-blue-400"
+        disabled={!isAdmin}
+        className={`appearance-none w-full bg-white border border-gray-200 text-gray-700 py-3 pl-10 pr-10 rounded-xl font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm hover:border-blue-400 ${
+          isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+        }`}
       >
         {!olimpiadaActiva && <option value="">-- Seleccionar Olimpiada --</option>}
         {olimpiadas.map((o) => (

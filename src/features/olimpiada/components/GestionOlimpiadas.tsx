@@ -1,16 +1,21 @@
-import { useState} from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOlimpiadas } from '../hooks/useOlimpiadas';
 import { SelectorOlimpiada } from './SelectorOlimpiada';
 import { ModalNuevaOlimpiada } from './ModalNuevaOlimpiada';
 import { olimpiadaService } from '../services/olimpiadaServices';
+import { useAuth } from '@/auth/login/hooks/useAuth';
 
 export default function GestionOlimpiadas() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user } = useAuth();
 
   const { data: olimpiadas = [], isLoading, isError } = useOlimpiadas();
+
+  // Verificar si el usuario es administrador
+  const isAdmin = user?.role === 'administrador';
 
   // Mutación para activar olimpiada
   const mutationActivar = useMutation({
@@ -28,7 +33,8 @@ export default function GestionOlimpiadas() {
 
   // Handler para cuando se selecciona una olimpiada
   const handleSeleccionarOlimpiada = (id: string) => {
-    if (id) {
+    // Solo permite cambiar si es administrador
+    if (id && isAdmin) {
       mutationActivar.mutate(parseInt(id));
     }
   };
@@ -55,14 +61,17 @@ export default function GestionOlimpiadas() {
             olimpiadas={olimpiadas} 
             olimpiadaActiva={olimpiadaActiva}
             onSelect={handleSeleccionarOlimpiada}
+            isAdmin={isAdmin}
           />
 
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 whitespace-nowrap"
-          >
-            <Plus size={20} /> Nueva Olimpiada
-          </button>
+          {isAdmin && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 whitespace-nowrap"
+            >
+              <Plus size={20} /> Nueva Olimpiada
+            </button>
+          )}
         </div>
       </div>
 
@@ -82,10 +91,10 @@ export default function GestionOlimpiadas() {
               {olimpiadas.map((olimp) => (
                 <tr 
                   key={olimp.id} 
-                  className={`hover:bg-blue-50/40 cursor-pointer transition-colors ${
+                  className={`transition-colors ${
                     olimp.estado ? 'bg-blue-50/60' : ''
-                  }`}
-                  onClick={() => handleSeleccionarOlimpiada(olimp.id.toString())}
+                  } ${isAdmin ? 'hover:bg-blue-50/40 cursor-pointer' : ''}`}
+                  onClick={() => isAdmin && handleSeleccionarOlimpiada(olimp.id.toString())}
                 >
                   <td className="px-6 py-4 text-gray-400 font-mono text-sm">{olimp.id}</td>
                   <td className="px-6 py-4 font-bold text-gray-800">{olimp.nombre}</td>
