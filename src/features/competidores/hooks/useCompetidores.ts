@@ -104,7 +104,6 @@ export const useCompetidores = ({ responsableId }: UseCompetidoresProps) => {
     }
   }, [responsableId]);
 
-  /* ================= FETCH FILTRADO OPTIMIZADO ================= */
   const actualizarCompetidores = useCallback(async () => {
     try {
       setLoadingCompetidores(true);
