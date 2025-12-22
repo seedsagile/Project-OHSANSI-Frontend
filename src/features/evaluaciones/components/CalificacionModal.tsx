@@ -253,7 +253,6 @@ export function CalificacionModal({
                   <p className="text-xs text-red-500 mt-1">{errors.motivo_descalificacion.message}</p>
                 )}
               </div>
-
               <button
                 type="button"
                 onClick={handleCancelarDescalificacion}
@@ -263,7 +262,6 @@ export function CalificacionModal({
               </button>
             </div>
           )}
-
           {/* Footer Actions */}
           <div className="flex justify-end gap-3 pt-2">
             <button
@@ -293,7 +291,6 @@ export function CalificacionModal({
               {modoDescalificacion ? 'Confirmar Descalificación' : 'Guardar Nota'}
             </button>
           </div>
-
         </form>
       </div>
     </div>

@@ -260,7 +260,6 @@ export function useSalaEvaluacion() {
       setNivelId: setSelectedNivelId,
       setExamenId: setSelectedExamenId
     },
-
     acciones: {
       bloquear: bloquearMutation,
       guardar: guardarMutation,
