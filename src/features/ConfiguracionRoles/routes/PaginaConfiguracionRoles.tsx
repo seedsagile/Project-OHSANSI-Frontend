@@ -2,7 +2,7 @@ import React from 'react';
 import { useRolesConfig } from '../hooks/useRolesConfig';
 import { TablaRoles } from '../components/TablaRoles';
 import { Modal } from '@/components/ui/Modal';
-import { ModalConfirmacion } from '@/features/areas/components/ModalConfirmacion'; // Reutilizamos o creamos uno genérico
+import { ModalConfirmacion } from '@/features/areas/components/ModalConfirmacion';
 import { LoaderCircle, AlertTriangle } from 'lucide-react';
 
 export const PaginaConfiguracionRoles: React.FC = () => {
@@ -48,7 +48,7 @@ export const PaginaConfiguracionRoles: React.FC = () => {
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <TablaRoles
-        key={resetKey} // Fuerza re-render al cancelar
+        key={resetKey}
         acciones={matrizData.acciones}
         roles={matrizData.roles}
         permisosIniciales={matrizData.permisos}
@@ -57,26 +57,25 @@ export const PaginaConfiguracionRoles: React.FC = () => {
         isSaving={isSaving}
       />
 
-      {/* Modal de Feedback (Éxito/Error) */}
       <Modal
         isOpen={modalFeedback.isOpen}
         onClose={closeModalFeedback}
         title={modalFeedback.title}
-        type={modalFeedback.type}
+        type={modalFeedback.type === 'error' ? 'error' : modalFeedback.type === 'success' ? 'success' : 'info'}
       >
         <p className="text-gray-600">{modalFeedback.message}</p>
       </Modal>
 
-      {/* Modal Confirmar Cancelación */}
       {isCancelModalOpen && (
         <ModalConfirmacion
           isOpen={true}
-          titulo="¿Descartar cambios?"
-          mensaje="Perderás todas las modificaciones no guardadas en la matriz de roles."
+          onClose={cerrarCancelModal}
           onConfirm={confirmarCancelacion}
-          onCancel={cerrarCancelModal}
-          tipo="advertencia"
-        />
+          title="¿Descartar cambios?"
+          type="confirmation"
+        >
+          Perderás todas las modificaciones no guardadas en la matriz de roles.
+        </ModalConfirmacion>
       )}
     </div>
   );

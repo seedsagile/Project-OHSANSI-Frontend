@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, LoaderCircle, Check, Info, Shield } from 'lucide-react';
+import { Save, LoaderCircle, Check, Shield } from 'lucide-react';
 import type { AccionSistema, RolGlobal, PermisoRol } from '../types';
 
 interface TablaRolesProps {
@@ -21,7 +21,6 @@ export const TablaRoles: React.FC<TablaRolesProps> = ({
 }) => {
   const [permisosSeleccionados, setPermisosSeleccionados] = useState<Set<string>>(new Set());
 
-  // Cargar estado inicial
   useEffect(() => {
     const iniciales = new Set<string>();
     permisosIniciales.forEach((p) => {
@@ -73,16 +72,32 @@ export const TablaRoles: React.FC<TablaRolesProps> = ({
     onGuardar(payload);
   };
 
-  const CustomCheckbox = ({ checked, onChange, label }: any) => (
-    <label className="relative flex items-center justify-center cursor-pointer p-2 rounded-full hover:bg-gray-100 transition-all" title={label}>
+  const CustomCheckbox = ({ 
+    checked, 
+    onChange, 
+    label 
+  }: { 
+    checked: boolean; 
+    onChange: () => void; 
+    label: string; 
+  }) => (
+    <label 
+      className="relative flex items-center justify-center cursor-pointer p-2 rounded-full hover:bg-gray-100 transition-all" 
+      title={label}
+    >
       <input
         type="checkbox"
-        className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded bg-white checked:bg-white checked:border-blue-600 transition-all cursor-pointer"
+        className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded bg-white checked:bg-white checked:border-blue-600 transition-all cursor-pointer focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 outline-none"
         checked={checked}
         onChange={onChange}
         disabled={isSaving}
+        aria-label={label}
       />
-      <Check size={16} strokeWidth={4} className="absolute text-blue-600 pointer-events-none opacity-0 peer-checked:opacity-100 transition-transform scale-50 peer-checked:scale-100" />
+      <Check 
+        size={16} 
+        strokeWidth={4} 
+        className="absolute text-blue-600 pointer-events-none opacity-0 peer-checked:opacity-100 transition-transform scale-50 peer-checked:scale-100" 
+      />
     </label>
   );
 
@@ -111,7 +126,19 @@ export const TablaRoles: React.FC<TablaRolesProps> = ({
                   <th key={rol.id} className="py-3 px-4 text-center min-w-[140px] align-top">
                     <div className="flex flex-col items-center gap-2">
                       <span className="font-semibold text-sm">{rol.nombre}</span>
-                      <div className="bg-white/10 p-1 rounded hover:bg-white/20 cursor-pointer" onClick={() => toggleColumn(rol.id)}>
+                      <div 
+                        className="bg-white/10 p-1 rounded hover:bg-white/20 cursor-pointer transition-colors" 
+                        onClick={() => toggleColumn(rol.id)}
+                        role="button"
+                        aria-label={`Seleccionar todos los permisos para ${rol.nombre}`}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                           if (e.key === 'Enter' || e.key === ' ') {
+                             e.preventDefault();
+                             toggleColumn(rol.id);
+                           }
+                        }}
+                      >
                         <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${isColumnFullySelected(rol.id) ? 'bg-white border-white' : 'border-white/60'}`}>
                            {isColumnFullySelected(rol.id) && <Check size={12} className="text-gray-900" strokeWidth={4} />}
                         </div>
@@ -149,10 +176,18 @@ export const TablaRoles: React.FC<TablaRolesProps> = ({
       </div>
 
       <footer className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-3">
-        <button onClick={onCancelar} disabled={isSaving} className="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+        <button 
+          onClick={onCancelar} 
+          disabled={isSaving} 
+          className="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+        >
           Cancelar
         </button>
-        <button onClick={handleGuardarClick} disabled={isSaving} className="px-8 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center gap-2">
+        <button 
+          onClick={handleGuardarClick} 
+          disabled={isSaving} 
+          className="px-8 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-sm transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        >
           {isSaving ? <LoaderCircle className="animate-spin" size={20} /> : <Save size={20} />}
           <span>Guardar Cambios</span>
         </button>

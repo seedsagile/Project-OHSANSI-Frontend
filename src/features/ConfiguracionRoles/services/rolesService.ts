@@ -10,7 +10,8 @@ import type {
   RolGlobal,
   PermisoRol,
   GuardarRolesPayload,
-  PayloadRolItem
+  PayloadRolItem,
+  PayloadAccionRol
 } from '../types';
 
 type ApiErrorResponse = {
@@ -23,7 +24,6 @@ export const rolesService = {
 
   async obtenerMatriz(): Promise<MatrizRolesUI> {
     try {
-      // 1. Peticiones en paralelo: Catálogo de Acciones + Configuración Actual
       const [accionesResponse, rolesResponse] = await Promise.all([
         apiClient.get<ApiResponseWrapper<ApiAccionMaestra[]>>('/acciones-sistema'),
         apiClient.get<ApiResponseWrapper<ApiRolData[]>>('/roles/matriz')
@@ -32,7 +32,6 @@ export const rolesService = {
       const accionesMaestras = accionesResponse.data.data;
       const rolesData = rolesResponse.data.data;
 
-      // 2. Procesar Filas (Acciones del Sistema)
       const accionesUI: AccionSistema[] = accionesMaestras.map(acc => ({
         id: acc.id_accion_sistema,
         codigo: acc.codigo,
@@ -40,19 +39,16 @@ export const rolesService = {
         descripcion: acc.descripcion
       })).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-      // 3. Procesar Columnas (Roles) y Permisos (Intersecciones)
       const roles: RolGlobal[] = [];
       const permisos: PermisoRol[] = [];
 
       if (Array.isArray(rolesData)) {
         rolesData.forEach((item) => {
-          // A. Extraer Rol
           roles.push({
             id: item.rol.id_rol,
             nombre: item.rol.nombre
           });
 
-          // B. Extraer Permisos actuales
           item.acciones.forEach((accRol) => {
             permisos.push({
               id_rol: item.rol.id_rol,
@@ -62,7 +58,6 @@ export const rolesService = {
           });
         });
         
-        // Ordenar roles por ID para consistencia visual
         roles.sort((a, b) => a.id - b.id);
       }
 
@@ -82,7 +77,6 @@ export const rolesService = {
 
   async guardarConfiguracion(permisosUI: PermisoRol[]): Promise<void> {
     try {
-      // 1. Agrupar permisos planos por Rol para el Payload anidado
       const permisosPorRol = new Map<number, PayloadAccionRol[]>();
 
       permisosUI.forEach(p => {
@@ -94,13 +88,11 @@ export const rolesService = {
         permisosPorRol.set(p.id_rol, accionesRol);
       });
 
-      // 2. Construir array de roles
       const rolesPayload: PayloadRolItem[] = Array.from(permisosPorRol.entries()).map(([idRol, acciones]) => ({
         id_rol: idRol,
         acciones
       }));
 
-      // TODO: Obtener ID real del usuario autenticado
       const payload: GuardarRolesPayload = {
         user_id: 1, 
         roles: rolesPayload
