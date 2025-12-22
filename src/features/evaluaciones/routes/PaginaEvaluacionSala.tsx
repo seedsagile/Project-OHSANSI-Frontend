@@ -3,13 +3,12 @@ import { useSalaEvaluacion } from '../hooks/useSalaEvaluacion';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { TablaSalaEvaluacion } from '../components/TablaSalaEvaluacion';
 import { CalificacionModal } from '../components/CalificacionModal';
-import { Modal1, type ModalType } from '@/components/ui/Modal1'; // Asegúrate de que Modal1 soporte un children de tipo ReactNode
+import { Modal1, type ModalType } from '@/components/ui/Modal1';
 import { SearchBar } from '../components/SearchBar';
-import { Gavel, AlertCircle, RefreshCw } from 'lucide-react'; // AlertCircle ahora se usa
+import { Gavel, AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { CompetidorSala, GuardarNotaPayload } from '../types/sala.types';
 
-// Estado para el modal de feedback
 type FeedbackState = {
   isOpen: boolean;
   type: ModalType;
@@ -29,12 +28,10 @@ export function PaginaEvaluacionSala() {
     acciones
   } = useSalaEvaluacion();
 
-  // Estados Locales
   const [modalCalificarOpen, setModalCalificarOpen] = useState(false);
   const [competidorSeleccionado, setCompetidorSeleccionado] = useState<CompetidorSala | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Estado para Modal1 (Feedback)
   const [feedback, setFeedback] = useState<FeedbackState>({ 
     isOpen: false, 
     type: 'info', 
@@ -42,7 +39,6 @@ export function PaginaEvaluacionSala() {
     message: '' 
   });
   
-  // Opciones para Dropdowns
   const areaOptions = areas.map(a => ({ value: a.id_area, label: a.nombre_area }));
   
   const nivelesOptions = filtros.areaId 
@@ -54,14 +50,11 @@ export function PaginaEvaluacionSala() {
 
   const examenesOptions = examenes.map(e => ({ value: e.id_examen, label: e.nombre_examen }));
 
-  // Helper para mostrar modal
   const showFeedback = (type: ModalType, title: string, message: string) => {
     setFeedback({ isOpen: true, type, title, message });
   };
 
-  // --- Manejadores del Flujo de Evaluación ---
-
-  // Paso 1: Intentar Bloquear (Semáforo Rojo)
+  // ✅ CALIFICAR: Bloquear y abrir modal
   const handleIntentarCalificar = (comp: CompetidorSala) => {
     if (comp.bloqueado_por_mi) {
         setCompetidorSeleccionado(comp);
@@ -75,13 +68,12 @@ export function PaginaEvaluacionSala() {
         setModalCalificarOpen(true);
       },
       onError: (err: any) => {
-        // Mostrar error en Modal1 si la ficha está ocupada
         showFeedback('error', 'No se puede calificar', err.response?.data?.message || 'La ficha está siendo usada por otro juez.');
       }
     });
   };
 
-  // Paso 2: Guardar Nota (Semáforo Verde)
+  // ✅ GUARDAR NOTA desde el modal
   const handleGuardarNota = (data: GuardarNotaPayload) => {
     if (!competidorSeleccionado) return;
 
@@ -100,7 +92,26 @@ export function PaginaEvaluacionSala() {
     });
   };
 
-  // Paso 3: Cancelar / Liberar (Desbloqueo)
+  // ✅ DESCALIFICAR DESDE EL MODAL (cuando ya está dentro)
+  const handleDescalificarDesdeModal = (motivo: string) => {
+    if (!competidorSeleccionado) return;
+
+    acciones.descalificarDesdeModal.mutate({ 
+      idEvaluacion: competidorSeleccionado.id_evaluacion, 
+      motivo 
+    }, {
+      onSuccess: () => {
+        setModalCalificarOpen(false);
+        setCompetidorSeleccionado(null);
+        showFeedback('success', 'Descalificación Exitosa', 'El competidor ha sido descalificado correctamente.');
+      },
+      onError: (err: any) => {
+        showFeedback('error', 'Error al Descalificar', err.response?.data?.message || 'No se pudo descalificar al competidor.');
+      }
+    });
+  };
+
+  // ✅ CANCELAR modal: Liberar bloqueo
   const handleCancelar = () => {
     if (competidorSeleccionado) {
       acciones.desbloquear.mutate(competidorSeleccionado.id_evaluacion);
@@ -109,7 +120,7 @@ export function PaginaEvaluacionSala() {
     setCompetidorSeleccionado(null);
   };
 
-  // Manejador para Descalificar
+  // ✅ DESCALIFICAR DESDE LA TABLA (botón rojo directo)
   const handleDescalificar = (comp: CompetidorSala) => {
     setCompetidorSeleccionado(comp);
     showFeedback(
@@ -117,8 +128,6 @@ export function PaginaEvaluacionSala() {
       'Confirmar Descalificación', 
       `¿Está seguro que desea descalificar a ${comp.nombre_completo}?`
     );
-    // El modal de feedback ahora tendrá un input para el motivo.
-    // La lógica de confirmación se moverá al `onConfirm` del Modal1.
   };
 
   const confirmarDescalificacion = (motivo: string) => {
@@ -132,11 +141,10 @@ export function PaginaEvaluacionSala() {
     }
 
     acciones.descalificar.mutate({ idEvaluacion: competidorSeleccionado.id_evaluacion, motivo });
-    setFeedback(prev => ({ ...prev, isOpen: false })); // Cerrar modal de confirmación
+    setFeedback(prev => ({ ...prev, isOpen: false }));
     setCompetidorSeleccionado(null);
   };
 
-  // Filtrado de competidores
   const competidoresFiltrados = competidores.filter((comp) =>
     comp.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -216,7 +224,6 @@ export function PaginaEvaluacionSala() {
            {!filtros.examenId ? (
               <div className="flex flex-col items-center justify-center h-96 bg-white border-2 border-dashed border-gray-200 rounded-xl text-center">
                  <div className="p-4 bg-gray-50 rounded-full mb-4 text-gray-400">
-                    {/* USO DE AlertCircle para estado vacío */}
                     <AlertCircle size={48} />
                  </div>
                  <h3 className="text-xl font-bold text-gray-400">Sala Cerrada</h3>
@@ -246,7 +253,7 @@ export function PaginaEvaluacionSala() {
                     competidores={competidoresFiltrados}
                     isLoading={isLoadingCompetidores}
                     onCalificar={handleIntentarCalificar}
-                    onDescalificar={handleDescalificar} // <-- Pasar la función
+                    onDescalificar={handleDescalificar}
                  />
               </div>
            )}
@@ -260,18 +267,19 @@ export function PaginaEvaluacionSala() {
           isOpen={modalCalificarOpen}
           onClose={handleCancelar}
           onGuardar={handleGuardarNota}
+          onDescalificar={handleDescalificarDesdeModal}
           competidor={competidorSeleccionado}
           isProcessing={acciones.guardar.isPending}
+          isDescalificando={acciones.descalificarDesdeModal.isPending}
         />
       )}
 
-      {/* USO DE Modal1 para Feedback */}
+      {/* Modal de Feedback */}
       <Modal1
         isOpen={feedback.isOpen}
         onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
         title={feedback.title}
         type={feedback.type}
-        // Lógica condicional para el modal de descalificación
         onConfirm={feedback.type === 'warning' && competidorSeleccionado ? () => {
           const motivoInput = document.getElementById('motivo-descalificacion') as HTMLInputElement;
           confirmarDescalificacion(motivoInput?.value || '');
@@ -279,7 +287,6 @@ export function PaginaEvaluacionSala() {
         confirmText={feedback.type === 'warning' && competidorSeleccionado ? 'Confirmar' : 'Entendido'}
       >
         <p>{feedback.message}</p>
-        {/* Mostrar input de motivo solo para el modal de descalificación */}
         {feedback.type === 'warning' && competidorSeleccionado && (
           <div className="mt-4">
             <label htmlFor="motivo-descalificacion" className="block text-sm font-bold text-gray-700 mb-1">Motivo (requerido)</label>

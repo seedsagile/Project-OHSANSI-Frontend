@@ -4,7 +4,6 @@ import type {
   ExamenCombo, 
   CompetidorSala, 
   GuardarNotaPayload,
-  DescalificarPayload,
   DescalificadoItem
 } from '../types/sala.types';
 
@@ -14,7 +13,6 @@ export const salaService = {
   async obtenerAreasNiveles(idUser: number): Promise<AreaEvaluador[]> {
     const { data } = await apiClient.get<any[]>(`/sala-evaluacion/evaluador/${idUser}/areas-niveles`);
     
-    // Adapter: Normalizar nombres "sucios" del backend
     return data.map(item => ({
       id_area: item.id_Area,
       nombre_area: item.área,
@@ -49,10 +47,12 @@ export const salaService = {
     await apiClient.post(`/sala-evaluacion/${idEvaluacion}/desbloquear`, { user_id: userId });
   },
 
-  // 7. DESCALIFICAR
-  async descalificarCompetidor(idEvaluacion: number, payload: DescalificarPayload): Promise<CompetidorSala> {
-    const { data } = await apiClient.post<{ data: CompetidorSala }>(`/sala-evaluacion/${idEvaluacion}/descalificar`, payload);
-    return data.data;
+  // 7. ✅ DESCALIFICAR - Endpoint correcto con id_evaluacion
+  async descalificarCompetidor(idEvaluacion: number, userId: number, motivo: string): Promise<void> {
+    await apiClient.post(`/sala-evaluacion/${idEvaluacion}/descalificar`, {
+      user_id: userId,
+      motivo: motivo
+    });
   },
 
   // 8. Obtener Lista de Descalificados (Lista Negra)
