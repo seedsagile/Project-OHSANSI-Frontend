@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus} from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOlimpiadas } from '../hooks/useOlimpiadas';
 import { SelectorOlimpiada } from './SelectorOlimpiada';
@@ -9,7 +9,11 @@ import { olimpiadaService } from '../services/olimpiadaServices';
 export default function GestionOlimpiadas() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [idSeleccionado, setIdSeleccionado] = useState("");
+  
+  // Cargar el ID seleccionado desde localStorage al iniciar
+  const [idSeleccionado, setIdSeleccionado] = useState(() => {
+    return localStorage.getItem('olimpiadaActiva') || "";
+  });
 
   const { data: olimpiadas = [], isLoading, isError } = useOlimpiadas();
 
@@ -30,8 +34,12 @@ export default function GestionOlimpiadas() {
   // Handler para cuando se selecciona una olimpiada
   const handleSeleccionarOlimpiada = (id: string) => {
     setIdSeleccionado(id);
+    // Guardar en localStorage
     if (id) {
+      localStorage.setItem('olimpiadaActiva', id);
       mutationActivar.mutate(parseInt(id));
+    } else {
+      localStorage.removeItem('olimpiadaActiva');
     }
   };
 
