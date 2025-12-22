@@ -9,7 +9,7 @@ import {
   Award,
   Briefcase,
   UserCheck,
-  UserPlus, 
+  UserPlus,
   Users,
   Trophy,
   FileQuestion,
@@ -18,7 +18,7 @@ import {
   Medal,
   Settings2,
   CalendarRange,
-  History
+  History,
 } from 'lucide-react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
 import { IconoUsuario } from '@/components/ui/IconoUsuario';
@@ -101,14 +101,23 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             className="lg:hidden absolute top-4 right-4 p-2 text-principal-200 hover:text-blanco transition-colors"
             aria-label="Cerrar menú"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <line x1="18" y1="6" x2="6" y2="18" /> <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
         <nav className="flex-grow flex flex-col gap-1 overflow-y-auto pr-1 custom-scrollbar pb-4">
-          
           <div className="mb-2">
             <NavLink
               to="/dashboard"
@@ -117,52 +126,122 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
               onClick={() => setOpen(false)}
             />
           </div>
-          
+
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Gestión de la Olimpiada
           </p>
           {/* Seccion genearl */}
-          <NavLink to="/olimpiada" icon={<Award />} label="Olimpiadas" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/olimpiada"
+            icon={<Award />}
+            label="Olimpiadas"
+            onClick={() => setOpen(false)}
+          />
           <NavLink to="/areas" icon={<Shapes />} label="Áreas" onClick={() => setOpen(false)} />
           <NavLink to="/niveles" icon={<Signal />} label="Niveles" onClick={() => setOpen(false)} />
-          <NavLink to="/asignarNiveles" icon={<Link2 />} label="Asignar Niveles a Áreas" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/asignarNiveles"
+            icon={<Link2 />}
+            label="Asignar Niveles a Áreas"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Gestión de Usuarios ----- */}
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Gestión de Usuarios
           </p>
-          <NavLink to="/responsables" icon={<Briefcase />} label="Responsables de Área" onClick={() => setOpen(false)} />
-          <NavLink to="/evaluadores" icon={<UserCheck />} label="Evaluadores" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/responsables"
+            icon={<Briefcase />}
+            label="Responsables de Área"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/evaluadores"
+            icon={<UserCheck />}
+            label="Evaluadores"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Gestión de Competidores ----- */}
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Gestión de Competidores
           </p>
-          <NavLink to="/competidores" icon={<UserPlus />} label="Registrar Competidores" onClick={() => setOpen(false)} />
-          <NavLink to="/listaCompetidores" icon={<Users />} label="Lista de Competidores" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/competidores"
+            icon={<UserPlus />}
+            label="Registrar Competidores"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/competidoresPage"
+            icon={<Users />}
+            label="Lista de Competidores"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Evaluación y Clasificación ----- */}
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Evaluación y Clasificación
           </p>
-          <NavLink to="/competencias" icon={<Trophy />} label="Registrar competencia" onClick={() => setOpen(false)} />
-          <NavLink to="/examenes" icon={<FileQuestion />} label="Exámenes" onClick={() => setOpen(false)} />
-          <NavLink to="/evaluaciones" icon={<ClipboardCheck />} label="Registrar Evaluación" onClick={() => setOpen(false)} />
-          <NavLink to="/parametrosCalificaciones" icon={<SlidersHorizontal />} label="Parámetros de Clasificación" onClick={() => setOpen(false)} />
-          <NavLink to="/medallero" icon={<Medal />} label="Parametrizar Medallero" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/competencias"
+            icon={<Trophy />}
+            label="Registrar competencia"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/examenes"
+            icon={<FileQuestion />}
+            label="Exámenes"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/evaluaciones"
+            icon={<ClipboardCheck />}
+            label="Registrar Evaluación"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/parametrosCalificaciones"
+            icon={<SlidersHorizontal />}
+            label="Parámetros de Clasificación"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/medallero"
+            icon={<Medal />}
+            label="Parametrizar Medallero"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Configuraciones ----- */}
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Configuraciones
           </p>
-          <NavLink to="/configuracionFasesGlobales" icon={<Settings2 />} label="Configuración de Actividades de Fases" onClick={() => setOpen(false)} />
-          <NavLink to="/cronograma" icon={<CalendarRange />} label="Configuración de Cronograma" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/configuracionFasesGlobales"
+            icon={<Settings2 />}
+            label="Configuración de Actividades de Fases"
+            onClick={() => setOpen(false)}
+          />
+          <NavLink
+            to="/cronograma"
+            icon={<CalendarRange />}
+            label="Configuración de Cronograma"
+            onClick={() => setOpen(false)}
+          />
 
           {/* ----- Reportes ----- */}
           <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
             Reportes
           </p>
-          <NavLink to="/reportesCambiosCalificaciones" icon={<History />} label="Reporte de cambio de calificaciones" onClick={() => setOpen(false)} />
+          <NavLink
+            to="/reportesCambiosCalificaciones"
+            icon={<History />}
+            label="Reporte de cambio de calificaciones"
+            onClick={() => setOpen(false)}
+          />
         </nav>
 
         <footer className="flex-shrink-0 border-t border-principal-600 pt-4 mt-2 bg-principal-700">
@@ -188,7 +267,7 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           </button>
         </footer>
       </aside>
-      
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

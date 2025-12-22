@@ -6,23 +6,86 @@ import { useAuth } from '@/auth/login/hooks/useAuth';
 import { RootLayout } from '@/components/layout/RootLayout';
 import { SystemGuard } from '@/features/sistema/components/SystemGuard';
 import { CronogramaGuard } from '@/features/cronograma/components/CronogramaGuard';
-const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard').then(module => ({ default: module.Dashboard })));
-const PaginaCronograma = lazy(() => import('@/features/cronograma/routes/PaginaCronograma').then(module => ({ default: module.PaginaCronograma })));
-const PaginaConfiguracionFases = lazy(() => import('@/features/ConfiguracionFases/routes/PaginaConfiguracionFases').then(module => ({ default: module.PaginaConfiguracionFases })));
-const PaginaOlimpiada = lazy(() => import('@/features/olimpiada/routes/PaginaOlimpiada').then(module => ({ default: module.PaginaOlimpiada })));
-const PaginaRegistrarEvaluador = lazy(() => import('@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador').then(module => ({ default: module.PaginaRegistrarEvaluador })));
-const PaginaRegistrarResponsable = lazy(() => import('@/features/usuarios/responsables/routes/PaginaRegistrarResponsable').then(module => ({ default: module.PaginaRegistrarResponsable })));
-const PaginaAreas = lazy(() => import('@/features/areas/routes/PaginaAreas').then(module => ({ default: module.PaginaAreas })));
-const PaginaNiveles = lazy(() => import('@/features/niveles/routes/PaginaNiveles').then(module => ({ default: module.PaginaNiveles })));
-const PaginaAsignarNiveles = lazy(() => import('@/features/asignaciones/routes/PaginaAsignarNiveles').then(module => ({ default: module.PaginaAsignarNiveles })));
-const PaginaCompetencias = lazy(() => import('@/features/competencias/routes/PaginaCompetencias').then(module => ({ default: module.PaginaCompetencias })));
-const PaginaImportarCompetidores = lazy(() => import('@/features/inscritos/routes/PaginaImportarCompetidores').then(module => ({ default: module.PaginaImportarCompetidores })));
-const ListaCompetidores = lazy(() => import('@/features/listaCompetidores/components/ListaCompetidores').then(module => ({ default: module.ListaCompetidores })));
-const PaginaExamenes = lazy(() => import('@/features/examenes/routes/PaginaExamenes').then(module => ({ default: module.PaginaExamenes })));
-const PaginaEvaluacionSala = lazy(() => import('@/features/evaluaciones/routes/PaginaEvaluacionSala').then(module => ({ default: module.PaginaEvaluacionSala })));
-const Parametro = lazy(() => import('@/features/parametros/components/Parametro').then(module => ({ default: module.Parametro })));
-const PaginaMedallero = lazy(() => import('@/features/medallero/routes/PaginaMedallero').then(module => ({ default: module.PaginaMedallero })));
-const PaginaReporteCambios = lazy(() => import('@/features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios').then(module => ({ default: module.PaginaReporteCambios })));
+import { CompetidoresPage } from '@/features/competidores/routes/CompetidoresPage';
+const Dashboard = lazy(() =>
+  import('@/features/dashboard/components/Dashboard').then((module) => ({
+    default: module.Dashboard,
+  }))
+);
+const PaginaCronograma = lazy(() =>
+  import('@/features/cronograma/routes/PaginaCronograma').then((module) => ({
+    default: module.PaginaCronograma,
+  }))
+);
+const PaginaConfiguracionFases = lazy(() =>
+  import('@/features/ConfiguracionFases/routes/PaginaConfiguracionFases').then((module) => ({
+    default: module.PaginaConfiguracionFases,
+  }))
+);
+const PaginaOlimpiada = lazy(() =>
+  import('@/features/olimpiada/routes/PaginaOlimpiada').then((module) => ({
+    default: module.PaginaOlimpiada,
+  }))
+);
+const PaginaRegistrarEvaluador = lazy(() =>
+  import('@/features/usuarios/evaluadores/routes/PaginaRegistrarEvaluador').then((module) => ({
+    default: module.PaginaRegistrarEvaluador,
+  }))
+);
+const PaginaRegistrarResponsable = lazy(() =>
+  import('@/features/usuarios/responsables/routes/PaginaRegistrarResponsable').then((module) => ({
+    default: module.PaginaRegistrarResponsable,
+  }))
+);
+const PaginaAreas = lazy(() =>
+  import('@/features/areas/routes/PaginaAreas').then((module) => ({ default: module.PaginaAreas }))
+);
+const PaginaNiveles = lazy(() =>
+  import('@/features/niveles/routes/PaginaNiveles').then((module) => ({
+    default: module.PaginaNiveles,
+  }))
+);
+const PaginaAsignarNiveles = lazy(() =>
+  import('@/features/asignaciones/routes/PaginaAsignarNiveles').then((module) => ({
+    default: module.PaginaAsignarNiveles,
+  }))
+);
+const PaginaCompetencias = lazy(() =>
+  import('@/features/competencias/routes/PaginaCompetencias').then((module) => ({
+    default: module.PaginaCompetencias,
+  }))
+);
+const PaginaImportarCompetidores = lazy(() =>
+  import('@/features/inscritos/routes/PaginaImportarCompetidores').then((module) => ({
+    default: module.PaginaImportarCompetidores,
+  }))
+);
+//const ListaCompetidores = lazy(() => import('@/features/listaCompetidores/components/ListaCompetidores').then(module => ({ default: module.ListaCompetidores })));
+const PaginaExamenes = lazy(() =>
+  import('@/features/examenes/routes/PaginaExamenes').then((module) => ({
+    default: module.PaginaExamenes,
+  }))
+);
+const PaginaEvaluacionSala = lazy(() =>
+  import('@/features/evaluaciones/routes/PaginaEvaluacionSala').then((module) => ({
+    default: module.PaginaEvaluacionSala,
+  }))
+);
+const Parametro = lazy(() =>
+  import('@/features/parametros/components/Parametro').then((module) => ({
+    default: module.Parametro,
+  }))
+);
+const PaginaMedallero = lazy(() =>
+  import('@/features/medallero/routes/PaginaMedallero').then((module) => ({
+    default: module.PaginaMedallero,
+  }))
+);
+const PaginaReporteCambios = lazy(() =>
+  import('@/features/reportes/cambiosCalificaciones/routes/PaginaReporteCambios').then(
+    (module) => ({ default: module.PaginaReporteCambios })
+  )
+);
 
 const PageLoader = () => (
   <div className="flex h-full w-full items-center justify-center p-10">
@@ -51,13 +114,13 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route 
-              path="configuracionCronograma" 
+            <Route
+              path="configuracionCronograma"
               element={
                 <div className="min-h-screen bg-gray-50 p-6 flex flex-col">
                   <PaginaCronograma />
                 </div>
-              } 
+              }
             />
             <Route
               element={
@@ -76,7 +139,7 @@ export default function App() {
               <Route path="responsables" element={<PaginaRegistrarResponsable />} />
               <Route path="evaluadores" element={<PaginaRegistrarEvaluador />} />
               <Route path="competidores" element={<PaginaImportarCompetidores />} />
-              <Route path="listaCompetidores" element={<ListaCompetidores />} />
+              <Route path="competidoresPage" element={<CompetidoresPage />} />
               <Route path="competencias" element={<PaginaCompetencias />} />
               <Route path="examenes" element={<PaginaExamenes />} />
               <Route path="evaluaciones" element={<PaginaEvaluacionSala />} />

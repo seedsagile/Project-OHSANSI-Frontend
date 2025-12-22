@@ -72,7 +72,7 @@ export function Dashboard() {
       title: 'Lista de Competidores',
       description:
         'Visualiza y filtra la lista completa de competidores inscritos por área y nivel.',
-      linkTo: '/listaCompetidores',
+      linkTo: '/competidoresPage',
     },
     {
       icon: SlidersHorizontal,
