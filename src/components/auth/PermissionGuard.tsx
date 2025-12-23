@@ -10,9 +10,10 @@ interface PermissionGuardProps {
 }
 
 export const PermissionGuard = ({ children, requiredPermission }: PermissionGuardProps) => {
-  const { canAccess, capabilities, isLoading } = useSistemaStore();
 
-  if (isLoading || !capabilities) {
+  const { canAccess, capabilities, isLoadingCapabilities } = useSistemaStore();
+  
+  if (isLoadingCapabilities || !capabilities) {
     return (
       <div className="h-[50vh] w-full flex flex-col items-center justify-center gap-3">
         <LoaderCircle className="h-10 w-10 animate-spin text-principal-500" />

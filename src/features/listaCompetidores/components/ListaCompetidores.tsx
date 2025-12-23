@@ -16,7 +16,7 @@ import { autoTable } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { excelIcon, pdfIcon } from '@/assets';
-import { Globe, List } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 interface Competidor {
   apellido: string;
