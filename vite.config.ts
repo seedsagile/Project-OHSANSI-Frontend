@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       target: 'esnext',
       minify: 'esbuild',
       cssCodeSplit: true,
+      chunkSizeWarningLimit: 1000, 
       rollupOptions: {
         output: {
           manualChunks(id) {
@@ -40,17 +41,31 @@ export default defineConfig(({ mode }) => {
                 id.includes('node_modules/react-router-dom')) {
               return 'react-core';
             }
-            if (id.includes('node_modules/xlsx') || 
-                id.includes('node_modules/jspdf') || 
+
+            if (id.includes('node_modules/xlsx')) {
+              return 'xlsx-lib';
+            }
+
+            if (id.includes('node_modules/jspdf') || 
+                id.includes('node_modules/jspdf-autotable') ||
                 id.includes('node_modules/html2canvas')) {
-              return 'heavy-libs';
+              return 'pdf-libs';
             }
 
             if (id.includes('node_modules/@tanstack') || 
                 id.includes('node_modules/date-fns') ||
-                id.includes('node_modules/lucide-react')) {
+                id.includes('node_modules/lucide-react') ||
+                id.includes('node_modules/clsx') ||
+                id.includes('node_modules/tailwind-merge')) {
               return 'utils-ui';
             }
+
+            if (id.includes('node_modules/react-hook-form') || 
+                id.includes('node_modules/zod') ||
+                id.includes('node_modules/@hookform')) {
+              return 'forms-data';
+            }
+
             if (id.includes('node_modules')) {
               return 'vendor';
             }
