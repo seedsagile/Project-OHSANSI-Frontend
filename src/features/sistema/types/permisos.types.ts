@@ -11,6 +11,7 @@ export interface DebugEstado {
 }
 
 export interface UserCapabilities {
+  user_id: number;
   usuario: string;
   roles: string[];
   debug_estado: DebugEstado;
