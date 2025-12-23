@@ -3,6 +3,8 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { SystemStatusBar } from './SystemStatusBar';
 import { cn } from '@/utils/cn';
+import { useSyncSistema } from '@/hooks/useSyncSistema';
+import { useSyncPermissions } from '@/hooks/useSyncPermissions';
 
 const HamburgerIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -15,6 +17,8 @@ interface RootLayoutProps {
 }
 
 export function RootLayout({ children }: RootLayoutProps) {
+  useSyncSistema();      
+  useSyncPermissions();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const mainContentPaddingClass = isSidebarVisible ? 'lg:pl-72' : 'lg:pl-0';
@@ -26,25 +30,23 @@ export function RootLayout({ children }: RootLayoutProps) {
         setOpen={setSidebarOpen} 
         isDesktopVisible={isSidebarVisible} 
       />
-
       <main className={cn(
         "flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out bg-blanco",
         mainContentPaddingClass
       )}>
-        {/* HEADER */}
         <header className="h-14 border-b border-slate-100 flex items-center px-4 shrink-0 bg-blanco sticky top-0 z-40">
           <div className="flex items-center gap-3 w-full">
             <button
               onClick={() => setIsSidebarVisible(!isSidebarVisible)}
               className="p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600 hidden lg:block"
-              aria-label="Toggle Sidebar"
+              aria-label="Alternar menú lateral"
             >
               <HamburgerIcon />
             </button>
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-2 bg-principal-700 text-blanco rounded-md hover:bg-principal-600 lg:hidden"
-              aria-label="Open Menu"
+              aria-label="Abrir menú"
             >
               <HamburgerIcon />
             </button>

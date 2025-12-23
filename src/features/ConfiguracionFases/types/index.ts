@@ -1,42 +1,22 @@
-export interface Gestion {
-  id: number;
-  nombre: string;
-  gestion: string;
-  esActual: boolean;
-}
-
-export interface FaseGlobal {
-  id: number;
-  codigo: string;
-  nombre: string;
-  orden?: number;
-}
-
 export interface AccionSistema {
   id: number;
   codigo: string;
   nombre: string;
-  descripcion?: string;
+  descripcion: string;
+}
+
+export interface FaseGlobal {
+  id: number;
+  nombre: string;
+  codigo: string;
+  orden: number;
 }
 
 export interface PermisoFase {
   id_fase: number;
   id_accion: number;
   habilitado: boolean;
-}
-
-export interface ConfiguracionUI {
-  gestion: Gestion | null;
-  fases: FaseGlobal[];
-  acciones: AccionSistema[];
-  permisos: PermisoFase[];
-}
-
-export interface ApiResponseWrapper<T> {
-  status?: string;
-  success?: boolean;
-  data: T;
-  count?: number;
+  id_configuracion_accion: number;
 }
 
 export interface ApiAccionMaestra {
@@ -46,6 +26,12 @@ export interface ApiAccionMaestra {
   descripcion: string;
 }
 
+export interface ApiConfiguracionDetalle {
+  id_configuracion_accion: number;
+  id_accion_sistema: number;
+  habilitada: boolean;
+}
+
 export interface ApiFaseDetalle {
   id: number;
   nombre: string;
@@ -53,28 +39,42 @@ export interface ApiFaseDetalle {
   orden: number;
 }
 
-export interface ApiAccionConfigurada {
-  id_configuracion_accion: number;
-  id_accion_sistema: number;
-  codigo: string;
-  nombre_accion: string;
-  habilitada: boolean;
-}
-
-export interface ApiFaseData {
+export interface ApiConfiguracionItem {
   fase: ApiFaseDetalle;
-  acciones: ApiAccionConfigurada[];
+  acciones: ApiConfiguracionDetalle[];
 }
 
-export type ApiConfiguracionResponse = Record<string, ApiFaseData>;
+export interface ApiConfiguracionResponse {
+  [key: string]: ApiConfiguracionItem;
+}
 
-export interface ConfigAccionPayload {
-  id_accion_sistema: number;
-  id_fase_global: number;
+export interface ApiResponseWrapper<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+export interface Gestion {
+  id: number;
+  gestion: string | number;
+  esActual: boolean;
+  activa: boolean;
+}
+
+export interface ConfiguracionUI {
+  gestion: Gestion | null;
+  fases: FaseGlobal[];
+  acciones: AccionSistema[];
+  permisos: PermisoFase[];
+}
+
+// NUEVOS TIPOS PARA EL POST (Payload)
+export interface ConfigPayloadItem {
+  id_configuracion_accion: number;
   habilitada: boolean;
 }
 
 export interface GuardarConfiguracionPayload {
   user_id: number;
-  accionesPorFase: ConfigAccionPayload[];
+  configuraciones: ConfigPayloadItem[];
 }

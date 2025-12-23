@@ -22,18 +22,28 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/login/hooks/useAuth';
 import { IconoUsuario } from '@/components/ui/IconoUsuario';
+import { useSistemaStore } from '@/features/sistema/stores/useSistemaStore';
+import type { SystemPermissionCode } from '@/features/sistema/types/permisos.types';
 
 const NavLink = ({
   to,
   icon,
   label,
   onClick,
+  permissionCode,
 }: {
   to: string;
   icon: ReactNode;
   label: string;
   onClick: () => void;
+  permissionCode?: SystemPermissionCode;
 }) => {
+  const { canAccess } = useSistemaStore();
+
+  if (permissionCode && !canAccess(permissionCode)) {
+    return null;
+  }
+
   return (
     <RouterNavLink
       to={to}
@@ -52,6 +62,26 @@ const NavLink = ({
   );
 };
 
+const SectionTitle = ({
+  label,
+  codes,
+}: {
+  label: string;
+  codes: SystemPermissionCode[];
+}) => {
+  const { canAccess } = useSistemaStore();
+  
+  const hasAccessToAny = codes.some((code) => canAccess(code));
+
+  if (!hasAccessToAny) return null;
+
+  return (
+    <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
+      {label}
+    </p>
+  );
+};
+
 interface SidebarProps {
   isOpen: boolean;
   setOpen: (isOpen: boolean) => void;
@@ -61,6 +91,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
+
   useEffect(() => {
     setOpen(false);
   }, [location.pathname, setOpen]);
@@ -117,120 +148,153 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
           </button>
         </div>
 
+        {/* NAVIGATION AREA */}
         <nav className="flex-grow flex flex-col gap-1 overflow-y-auto pr-1 custom-scrollbar pb-4">
+          
           <div className="mb-2">
             <NavLink
               to="/dashboard"
               icon={<LayoutDashboard />}
               label="Dashboard"
               onClick={() => setOpen(false)}
+              permissionCode="DASHBOARD"
             />
           </div>
 
-          <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
-            Gestión de la Olimpiada
-          </p>
-          {/* Seccion genearl */}
+          {/* --- GESTIÓN DE LA OLIMPIADA --- */}
+          <SectionTitle 
+            label="Gestión de la Olimpiada" 
+            codes={['OLIMPIADAS', 'AREAS', 'NIVELES', 'ASIGNACIONES']} 
+          />
           <NavLink
             to="/olimpiada"
             icon={<Award />}
             label="Olimpiadas"
             onClick={() => setOpen(false)}
+            permissionCode="OLIMPIADAS"
           />
-          <NavLink to="/areas" icon={<Shapes />} label="Áreas" onClick={() => setOpen(false)} />
-          <NavLink to="/niveles" icon={<Signal />} label="Niveles" onClick={() => setOpen(false)} />
+          <NavLink 
+            to="/areas" 
+            icon={<Shapes />} 
+            label="Áreas" 
+            onClick={() => setOpen(false)} 
+            permissionCode="AREAS"
+          />
+          <NavLink 
+            to="/niveles" 
+            icon={<Signal />} 
+            label="Niveles" 
+            onClick={() => setOpen(false)} 
+            permissionCode="NIVELES"
+          />
           <NavLink
             to="/asignarNiveles"
             icon={<Link2 />}
             label="Asignar Niveles a Áreas"
             onClick={() => setOpen(false)}
+            permissionCode="ASIGNACIONES"
           />
 
-          {/* ----- Gestión de Usuarios ----- */}
-          <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
-            Gestión de Usuarios
-          </p>
+          {/* --- GESTIÓN DE USUARIOS --- */}
+          <SectionTitle 
+            label="Gestión de Usuarios" 
+            codes={['RESPONSABLES', 'EVALUADORES']} 
+          />
           <NavLink
             to="/responsables"
             icon={<Briefcase />}
             label="Responsables de Área"
             onClick={() => setOpen(false)}
+            permissionCode="RESPONSABLES"
           />
           <NavLink
             to="/evaluadores"
             icon={<UserCheck />}
             label="Evaluadores"
             onClick={() => setOpen(false)}
+            permissionCode="EVALUADORES"
           />
 
-          {/* ----- Gestión de Competidores ----- */}
-          <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
-            Gestión de Competidores
-          </p>
+          {/* --- GESTIÓN DE COMPETIDORES --- */}
+          <SectionTitle 
+            label="Gestión de Competidores" 
+            codes={['INSCRIPCION', 'COMPETIDORES']} 
+          />
           <NavLink
             to="/competidores"
             icon={<UserPlus />}
             label="Registrar Competidores"
             onClick={() => setOpen(false)}
+            permissionCode="INSCRIPCION"
           />
           <NavLink
             to="/competidoresPage"
             icon={<Users />}
             label="Lista de Competidores"
             onClick={() => setOpen(false)}
+            permissionCode="COMPETIDORES"
           />
 
-          {/* ----- Evaluación y Clasificación ----- */}
-          <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
-            Evaluación y Clasificación
-          </p>
+          {/* --- EVALUACIÓN Y CLASIFICACIÓN --- */}
+          <SectionTitle 
+            label="Evaluación y Clasificación" 
+            codes={['COMPETENCIAS', 'EXAMENES', 'SALA_EVALUACION', 'PARAMETROS', 'MEDALLERO']} 
+          />
           <NavLink
             to="/competencias"
             icon={<Trophy />}
             label="Registrar competencia"
             onClick={() => setOpen(false)}
+            permissionCode="COMPETENCIAS"
           />
           <NavLink
             to="/examenes"
             icon={<FileQuestion />}
             label="Exámenes"
             onClick={() => setOpen(false)}
+            permissionCode="EXAMENES"
           />
           <NavLink
             to="/evaluaciones"
             icon={<ClipboardCheck />}
             label="Registrar Evaluación"
             onClick={() => setOpen(false)}
+            permissionCode="SALA_EVALUACION"
           />
           <NavLink
             to="/parametrosCalificaciones"
             icon={<SlidersHorizontal />}
             label="Parámetros de Clasificación"
             onClick={() => setOpen(false)}
+            permissionCode="PARAMETROS"
           />
           <NavLink
             to="/medallero"
             icon={<Medal />}
             label="Parametrizar Medallero"
             onClick={() => setOpen(false)}
+            permissionCode="MEDALLERO"
           />
 
-          {/* ----- Configuraciones ----- */}
-          <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
-            Configuraciones
-          </p>
+          {/* --- CONFIGURACIONES --- */}
+          <SectionTitle 
+            label="Configuraciones" 
+            codes={['ACTIVIDADES_FASES', 'GESTIONAR_ROLES', 'CRONOGRAMA']} 
+          />
           <NavLink
             to="/configuracionFasesGlobales"
             icon={<Settings2 />}
-            label="Configuración de Actividades de Fases"
+            label="Configuración de Fases"
             onClick={() => setOpen(false)}
+            permissionCode="ACTIVIDADES_FASES"
           />
 
           <NavLink
             to="/permisosRoles"
             icon={<Settings2 />}
-            label="Configuración de Permisos por Rol"
+            label="Configuración de Roles"
             onClick={() => setOpen(false)}
+            permissionCode="GESTIONAR_ROLES"
           />
 
           <NavLink
@@ -238,20 +302,24 @@ export function Sidebar({ isOpen, setOpen, isDesktopVisible }: SidebarProps) {
             icon={<CalendarRange />}
             label="Configuración de Cronograma"
             onClick={() => setOpen(false)}
+            permissionCode="CRONOGRAMA"
           />
 
-          {/* ----- Reportes ----- */}
-          <p className="px-3 mt-4 mb-2 text-[10px] font-bold text-principal-300 uppercase tracking-widest opacity-80">
-            Reportes
-          </p>
+          {/* --- REPORTES --- */}
+          <SectionTitle 
+            label="Reportes" 
+            codes={['REPORTES_CAMBIOS']} 
+          />
           <NavLink
             to="/reportesCambiosCalificaciones"
             icon={<History />}
-            label="Reporte de cambio de calificaciones"
+            label="Historial de Calificaciones"
             onClick={() => setOpen(false)}
+            permissionCode="REPORTES_CAMBIOS"
           />
         </nav>
 
+        {/* FOOTER */}
         <footer className="flex-shrink-0 border-t border-principal-600 pt-4 mt-2 bg-principal-700">
           <div className="flex items-center gap-3 px-3 mb-3">
             <div className="h-10 w-10 rounded-full bg-principal-800 border border-principal-500 flex items-center justify-center flex-shrink-0 shadow-sm text-principal-200">

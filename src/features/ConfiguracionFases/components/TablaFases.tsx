@@ -59,16 +59,23 @@ export const TablaFases: React.FC<TablaFasesProps> = ({
 
   const handleGuardarClick = () => {
     const payload: PermisoFase[] = [];
+    
     fases.forEach((fase) => {
       acciones.forEach((accion) => {
         const key = `${fase.id}-${accion.id}`;
+        const permisoOriginal = permisosIniciales.find(
+          (p) => p.id_fase === fase.id && p.id_accion === accion.id
+        );
+
         payload.push({
           id_fase: fase.id,
           id_accion: accion.id,
           habilitado: permisosSeleccionados.has(key),
+          id_configuracion_accion: permisoOriginal?.id_configuracion_accion || 0
         });
       });
     });
+
     onGuardar(payload);
   };
 
